@@ -127,7 +127,7 @@ export default function AccessibilityWidget() {
         onClick={() => setOpen(!open)}
         style={{
           position: "fixed",
-          bottom: 20,
+          bottom: 90,
           left: 20,
           zIndex: 10000,
           width: 56,
@@ -161,7 +161,7 @@ export default function AccessibilityWidget() {
         <div
           style={{
             position: "fixed",
-            bottom: 90,
+            bottom: 160,
             left: 20,
             zIndex: 10000,
             background: "#1a1a1a",
