@@ -28,13 +28,13 @@
 | kitchen@plus.co.il | Supplier123! |
 
 ---
-סיכום:
-פרט	ערך
-כתובת האתר	https://admin-dashboard-nu-mocha.vercel.app
-סיסמה לכולם	ChangeMe123!
-אדמין	superadmin@zira.local
-ספק	supplier-user-1@zira.local
-מעצב/ת	designer@zira.local
-האתר חי, עובד, ומחובר למסד נתונים אמיתי! ??
+האתר (zirat-community) חי ב: https://admin-dashboard-nu-mocha.vercel.app
+
+פרטי כניסה:
+
+תפקיד	אימייל	סיסמה
+?? אדמין	tamar@zirat.co.il	Zirat2024!
+?? ספק	supplier@zirat.co.il	Supplier123!
+?? מעצבת	designer@zirat.co.il	Designer123!
 
 **שים לב:** הנתונים האלה ייטענו רק אחרי שתריצי `prisma db seed` עם חיבור לדאטאבייס אמיתי. כרגע ה-`DATABASE_URL` ב-`.env` עדיין placeholder.

@@ -12,6 +12,25 @@ import CrmTemplates from "@/components/crm/CrmTemplates";
 import CrmWhatsApp from "@/components/crm/CrmWhatsApp";
 import CrmWebhooks from "@/components/crm/CrmWebhooks";
 import CrmWorkflowTemplates from "@/components/crm/CrmWorkflowTemplates";
+import CrmContracts from "@/components/crm/CrmContracts";
+import CrmCalendar from "@/components/crm/CrmCalendar";
+import CrmProjects from "@/components/crm/CrmProjects";
+import CrmBudgetTracker from "@/components/crm/CrmBudgetTracker";
+import CrmScheduler from "@/components/crm/CrmScheduler";
+import CrmMoodboards from "@/components/crm/CrmMoodboards";
+import CrmMaterials from "@/components/crm/CrmMaterials";
+import CrmQuotes from "@/components/crm/CrmQuotes";
+import CrmTasks from "@/components/crm/CrmTasks";
+import CrmTimeline from "@/components/crm/CrmTimeline";
+import CrmTimeTracking from "@/components/crm/CrmTimeTracking";
+import CrmSurveys from "@/components/crm/CrmSurveys";
+import CrmApprovals from "@/components/crm/CrmApprovals";
+import CrmBeforeAfter from "@/components/crm/CrmBeforeAfter";
+import CrmHandoffChecklist from "@/components/crm/CrmHandoffChecklist";
+import CrmInspirationLibrary from "@/components/crm/CrmInspirationLibrary";
+import CrmOnboarding from "@/components/crm/CrmOnboarding";
+import CrmPlans from "@/components/crm/CrmPlans";
+import CrmStyleQuiz from "@/components/crm/CrmStyleQuiz";
 import ChatBot from "@/components/crm/ChatBot";
 import type { DesignerContext } from "@/components/crm/ChatBot";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
@@ -53,7 +72,7 @@ const dealHistory = [
     { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "\u05E0\u05D5\u05E3 \u05D2\u05E8\u05D9\u05DF"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
 ];
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings";
+type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "budget" | "scheduler" | "moodboards" | "materials" | "quotes" | "tasks" | "timeline" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "inspiration" | "onboarding" | "plans" | "style-quiz";
 
 interface NavGroup {
   title: string;
@@ -81,17 +100,41 @@ const navGroups: NavGroup[] = [
     title: "CRM",
     items: [
       { key: "clients", label: "\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA", icon: Users },
-      { key: "workflows", label: "\u05EA\u05D1\u05E0\u05D9\u05D5\u05EA \u05E2\u05D1\u05D5\u05D3\u05D4", icon: Workflow },
-      { key: "templates", label: "\u05EA\u05D1\u05E0\u05D9\u05D5\u05EA", icon: MessageSquare },
-      { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
-      { key: "webhooks", label: "Webhooks", icon: Zap },
-      { key: "crm-settings", label: "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA CRM", icon: Settings },
+      { key: "projects", label: "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD", icon: FileText },
+      { key: "contracts", label: "\u05D7\u05D5\u05D6\u05D9\u05DD", icon: FileText },
+      { key: "quotes", label: "\u05D4\u05E6\u05E2\u05D5\u05EA \u05DE\u05D7\u05D9\u05E8", icon: CreditCard },
+      { key: "calendar", label: "\u05D9\u05D5\u05DE\u05DF", icon: CalendarIcon },
+      { key: "tasks", label: "\u05DE\u05E9\u05D9\u05DE\u05D5\u05EA", icon: CheckCircle2 },
+      { key: "budget", label: "\u05EA\u05E7\u05E6\u05D9\u05D1", icon: TrendingUp },
+      { key: "scheduler", label: "\u05DC\u05D5\u05D7 \u05D6\u05DE\u05E0\u05D9\u05DD", icon: CalendarIcon },
+      { key: "timeline", label: "\u05E6\u05D9\u05E8 \u05D6\u05DE\u05DF", icon: Activity },
+      { key: "time-tracking", label: "\u05DE\u05E2\u05E7\u05D1 \u05E9\u05E2\u05D5\u05EA", icon: Clock },
     ]
   },
   {
     title: "\u05E2\u05D9\u05E6\u05D5\u05D1",
     items: [
+      { key: "moodboards", label: "\u05DE\u05D5\u05D3\u05D1\u05D5\u05E8\u05D3\u05D9\u05DD", icon: Grid3X3 },
+      { key: "materials", label: "\u05D7\u05D5\u05DE\u05E8\u05D9\u05DD", icon: List },
+      { key: "inspiration", label: "\u05D4\u05E9\u05E8\u05D0\u05D4", icon: Heart },
+      { key: "before-after", label: "\u05DC\u05E4\u05E0\u05D9/\u05D0\u05D7\u05E8\u05D9", icon: Grid3X3 },
+      { key: "plans", label: "\u05EA\u05D5\u05DB\u05E0\u05D9\u05D5\u05EA", icon: FileText },
+      { key: "style-quiz", label: "\u05E9\u05D0\u05DC\u05D5\u05DF \u05E1\u05D2\u05E0\u05D5\u05DF", icon: Star },
       { key: "crm-suppliers", label: "\u05E1\u05E4\u05E7\u05D9\u05DD \u05E9\u05DC\u05D9", icon: Building2 },
+    ]
+  },
+  {
+    title: "\u05E0\u05D9\u05D4\u05D5\u05DC",
+    items: [
+      { key: "approvals", label: "\u05D0\u05D9\u05E9\u05D5\u05E8\u05D9\u05DD", icon: CheckCircle2 },
+      { key: "onboarding", label: "\u05E7\u05DC\u05D9\u05D8\u05EA \u05DC\u05E7\u05D5\u05D7", icon: Users },
+      { key: "handoff", label: "\u05DE\u05E1\u05D9\u05E8\u05D4", icon: CheckCircle2 },
+      { key: "surveys", label: "\u05E1\u05E7\u05E8\u05D9\u05DD", icon: Star },
+      { key: "workflows", label: "\u05EA\u05D1\u05E0\u05D9\u05D5\u05EA \u05E2\u05D1\u05D5\u05D3\u05D4", icon: Workflow },
+      { key: "templates", label: "\u05EA\u05D1\u05E0\u05D9\u05D5\u05EA \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA", icon: MessageSquare },
+      { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+      { key: "webhooks", label: "Webhooks", icon: Zap },
+      { key: "crm-settings", label: "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA CRM", icon: Settings },
     ]
   },
 ];
@@ -701,6 +744,25 @@ export default function DesignerDashboard() {
             {activeTab === "templates" && <CrmTemplates />}
             {activeTab === "crm-settings" && <CrmSettings />}
             {activeTab === "workflows" && <CrmWorkflowTemplates />}
+            {activeTab === "contracts" && <CrmContracts />}
+            {activeTab === "calendar" && <CrmCalendar />}
+            {activeTab === "projects" && <CrmProjects />}
+            {activeTab === "budget" && <CrmBudgetTracker />}
+            {activeTab === "scheduler" && <CrmScheduler />}
+            {activeTab === "moodboards" && <CrmMoodboards />}
+            {activeTab === "materials" && <CrmMaterials />}
+            {activeTab === "quotes" && <CrmQuotes />}
+            {activeTab === "tasks" && <CrmTasks />}
+            {activeTab === "timeline" && <CrmTimeline />}
+            {activeTab === "time-tracking" && <CrmTimeTracking />}
+            {activeTab === "surveys" && <CrmSurveys />}
+            {activeTab === "approvals" && <CrmApprovals />}
+            {activeTab === "before-after" && <CrmBeforeAfter />}
+            {activeTab === "handoff" && <CrmHandoffChecklist />}
+            {activeTab === "inspiration" && <CrmInspirationLibrary />}
+            {activeTab === "onboarding" && <CrmOnboarding />}
+            {activeTab === "plans" && <CrmPlans />}
+            {activeTab === "style-quiz" && <CrmStyleQuiz />}
 
             {/* ===== PROFILE TAB ===== */}
             {activeTab === "profile" && (
