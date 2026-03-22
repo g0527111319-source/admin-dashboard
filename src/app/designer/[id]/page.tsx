@@ -253,7 +253,7 @@ export default function DesignerDashboard() {
                       }}
                       className={`
                         sidebar-item-premium
-                        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm min-h-[44px]
                         transition-all duration-200 ease-out
                         ${isActive
                           ? "active bg-gradient-to-l from-gold/10 to-transparent text-gold font-semibold border-r-2 border-gold"
@@ -278,7 +278,7 @@ export default function DesignerDashboard() {
           fixed top-0 left-0 h-16 z-30
           bg-white/80 backdrop-blur-2xl
           border-b border-border-subtle/50
-          flex items-center justify-between px-6
+          flex items-center justify-between px-3 sm:px-6
           transition-all duration-300 ease-out
           ${sidebarOpen ? "right-[260px]" : "right-[72px]"}
           max-md:right-0
@@ -337,14 +337,14 @@ export default function DesignerDashboard() {
           ${sidebarOpen ? "mr-[260px]" : "mr-[72px]"}
           max-md:mr-0
         `}>
-          <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
 
             {/* ===== HOME TAB ===== */}
             {activeTab === "home" && (
               <div className="space-y-8 animate-in">
                 {/* Welcome — Gradient Text */}
                 <div>
-                  <h2 className="text-3xl font-heading font-bold">
+                  <h2 className="text-2xl sm:text-3xl font-heading font-bold">
                     <span className="text-gradient-gold">{txt("src/app/designer/[id]/page.tsx::051", "שלום")}{" "}{designerData.fullName.split(" ")[0]}</span> 👋
                   </h2>
                   <p className="text-text-muted text-sm mt-2">

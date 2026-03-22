@@ -97,7 +97,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 items-end">
             <div className="max-w-3xl">
               <div className="mb-8 animate-in">
                 <Logo size="xl" variant="dark" />
@@ -148,7 +148,7 @@ export default function HomePage() {
                       <Link
                         key={card.text.title}
                         href={card.href}
-                        className="group relative block overflow-hidden rounded-[28px] border border-white/10 p-5 sm:p-6 min-h-[185px] transition-all duration-500 hover:-translate-y-1.5 hover:border-gold/45"
+                        className="group relative block overflow-hidden rounded-[20px] sm:rounded-[28px] border border-white/10 p-5 sm:p-6 min-h-[160px] sm:min-h-[185px] transition-all duration-500 hover:-translate-y-1.5 hover:border-gold/45"
                         style={{
                           backgroundImage: `linear-gradient(135deg, rgba(5,5,5,0.84), rgba(5,5,5,0.4)), url(${card.image})`,
                           backgroundSize: "cover",
@@ -208,7 +208,7 @@ export default function HomePage() {
       <section className="relative py-20 sm:py-24 px-4 sm:px-6 bg-bg">
         <div className="absolute inset-x-0 top-0 h-32 bg-[linear-gradient(180deg,rgba(201,168,76,0.08),transparent)]" />
         <div className="relative max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start mb-14">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start mb-14">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-white px-4 py-2 text-sm text-gold-700 shadow-soft mb-5">
                 <Star className="w-4 h-4" />
@@ -221,9 +221,9 @@ export default function HomePage() {
             </div>
 
             <div className="rounded-[28px] border border-border-gold bg-white/90 backdrop-blur-sm p-6 sm:p-7 shadow-[0_25px_70px_rgba(38,30,12,0.08)]">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {siteText.home.inspiration.map((moment) => (
-                  <div key={moment.title} className="rounded-[22px] bg-bg-surface px-4 py-5 min-h-[170px] flex flex-col justify-between">
+                  <div key={moment.title} className="rounded-[22px] bg-bg-surface px-4 py-5 sm:min-h-[170px] flex flex-col justify-between">
                     <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold font-mono text-sm">
                       {moment.title.charAt(0)}
                     </div>
@@ -252,8 +252,8 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-14 rounded-[34px] overflow-hidden border border-border-gold bg-[#0A0A0A] text-white shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
-            <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="mt-14 rounded-[20px] sm:rounded-[34px] overflow-hidden border border-border-gold bg-[#0A0A0A] text-white shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
+            <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr]">
               <div className="relative min-h-[320px]">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
@@ -271,7 +271,7 @@ export default function HomePage() {
               </div>
 
               <div className="p-8 sm:p-10 lg:p-12">
-                <div className="grid sm:grid-cols-3 gap-5 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
                   {communityHighlights.map((item) => {
                     const Icon = item.icon;
                     return (

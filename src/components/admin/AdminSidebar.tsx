@@ -31,9 +31,9 @@ export default function AdminSidebar() {
     };
     return (<>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 right-0 left-0 z-50 bg-white/90 backdrop-blur-md border-b border-border-subtle px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 right-0 left-0 z-50 bg-bg-card/90 backdrop-blur-md border-b border-border-subtle px-4 py-2 flex items-center justify-between">
         <Logo size="sm"/>
-        <button onClick={() => setIsOpen(!isOpen)} className="p-2 rounded-btn hover:bg-bg-surface transition-colors">
+        <button onClick={() => setIsOpen(!isOpen)} className="p-2.5 rounded-btn hover:bg-bg-surface transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
           {isOpen ? <X className="w-5 h-5 text-text-primary"/> : <Menu className="w-5 h-5 text-text-primary"/>}
         </button>
       </div>
@@ -55,7 +55,7 @@ export default function AdminSidebar() {
           {menuItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
             const Icon = item.icon;
-            return (<Link key={item.href} href={item.href} onClick={() => setIsOpen(false)} className={`flex items-center gap-3 px-4 py-2.5 rounded-btn transition-all duration-200
+            return (<Link key={item.href} href={item.href} onClick={() => setIsOpen(false)} className={`flex items-center gap-3 px-4 py-3 rounded-btn transition-all duration-200 min-h-[44px]
                   ${isActive
                     ? "bg-gold/10 text-gold font-semibold border-r-[3px] border-gold"
                     : "text-text-muted hover:text-text-primary hover:bg-bg-surface"}`}>

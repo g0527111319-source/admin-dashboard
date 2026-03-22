@@ -67,8 +67,8 @@ function LoginContent() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center px-4 py-6 sm:p-12">
+        <div className="w-full max-w-md mx-auto">
           <div className="lg:hidden mb-8 text-center">
             <Logo size="lg" variant="light"/>
           </div>
@@ -82,9 +82,9 @@ function LoginContent() {
               </p>
 
               <div className="space-y-3">
-                {roles.map((roleKey) => (<button key={roleKey} onClick={() => setSelectedRole(roleKey)} className="w-full flex items-center gap-4 p-5 rounded-card border border-border-subtle
+                {roles.map((roleKey) => (<button key={roleKey} onClick={() => setSelectedRole(roleKey)} className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-card border border-border-subtle
                              hover:border-gold hover:shadow-card-hover transition-all duration-300
-                             bg-white group text-right">
+                             bg-white group text-right min-h-[44px]">
                     <div className="w-12 h-12 rounded-xl bg-amber-50 group-hover:bg-gold/20
                                   flex items-center justify-center text-gold transition-colors">
                       {roleMeta[roleKey].icon}
@@ -151,7 +151,7 @@ function LoginContent() {
                     {error}
                   </div>)}
 
-                <button type="submit" disabled={loading} className="w-full btn-gold py-3 text-lg font-semibold flex items-center justify-center gap-2
+                <button type="submit" disabled={loading} className="w-full btn-gold py-3 text-base sm:text-lg font-semibold flex items-center justify-center gap-2 min-h-[48px]
                            disabled:opacity-50 disabled:cursor-not-allowed">
                   {loading ? (<Loader2 className="w-5 h-5 animate-spin"/>) : (siteText.auth.common.loginButton)}
                 </button>

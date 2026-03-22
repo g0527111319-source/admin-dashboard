@@ -74,7 +74,7 @@ export default function SupplierDashboard() {
     return (<div className="min-h-screen bg-bg">
       {/* Header */}
       <header className="bg-white border-b border-border-subtle shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-4">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <Logo size="sm"/>
             <div className="flex items-center gap-3">
@@ -125,21 +125,21 @@ export default function SupplierDashboard() {
       </header>
 
       {/* Navigation tabs */}
-      <nav className="bg-white border-b border-border-subtle overflow-x-auto shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 flex gap-1">
+      <nav className="bg-white border-b border-border-subtle overflow-x-auto shadow-sm" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="max-w-5xl mx-auto px-2 sm:px-4 flex gap-0 sm:gap-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            return (<button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-all duration-200 ${activeTab === tab.key
+            return (<button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-all duration-200 min-h-[48px] min-w-[44px] ${activeTab === tab.key
                     ? "border-gold text-gold font-semibold"
                     : "border-transparent text-text-muted hover:text-text-primary"}`}>
-                <Icon className="w-4 h-4"/>
+                <Icon className="w-4 h-4 flex-shrink-0"/>
                 <span className="hidden sm:inline">{tab.label}</span>
               </button>);
         })}
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* ===== OVERVIEW TAB ===== */}
         {activeTab === "overview" && (<div className="space-y-6 animate-in">
             <h2 className="text-xl sm:text-2xl font-heading text-text-primary">{txt("src/app/supplier/[id]/page.tsx::024", "שלום")}{supplierData.contactName}

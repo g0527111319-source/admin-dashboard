@@ -766,6 +766,55 @@ textarea.input-field {
   h1 { font-size: 1.5rem; }
   h2 { font-size: 1.25rem; }
   h3 { font-size: 1.1rem; }
+
+  /* Prevent iOS zoom on input focus — inputs must be 16px+ */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Touch targets — minimum 44px for interactive elements */
+  button, a, [role="button"], .sidebar-item, .sidebar-item-premium, .tab-item {
+    min-height: 44px;
+  }
+
+  /* Tables: horizontal scroll wrapper */
+  .table-luxury {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Cards: reduce padding on mobile */
+  .card, .card-static, .card-gold, .card-interactive, .card-premium, .card-glass, .card-hero {
+    padding: 16px;
+  }
+
+  /* Modals: full width on mobile */
+  .modal-content {
+    max-width: calc(100vw - 32px);
+    margin: 0 16px;
+  }
+
+  /* Floating bar: stick to bottom edge */
+  .floating-bar {
+    bottom: 12px;
+    width: calc(100% - 24px);
+    justify-content: center;
+  }
+
+  /* Search bar: fit mobile width */
+  .search-global {
+    min-width: unset;
+    width: 100%;
+  }
+  .search-global:focus-within {
+    min-width: unset;
+  }
+
+  /* Disable hover-lift on touch */
+  .hover-lift:hover {
+    transform: none;
+  }
 }
 
 /* ============================
