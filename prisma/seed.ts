@@ -542,15 +542,15 @@ async function main() {
   await prisma.crmBudgetItem.createMany({
     data: [
       { projectId: project1.id, designerId: demoDesigner.id, category: "מטבח", description: "מטבח מותאם אישית — קיטשן פלוס", plannedAmount: 55000, actualAmount: 52000, status: "approved", supplierName: "קיטשן פלוס" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "ריצוף וחיפוי", description: "אריחי פורצלן — סלון + מטבח + חדרי אמבטיה", plannedAmount: 35000, actualAmount: null, status: "quoted", supplierName: "סטון דיזיין" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "אינסטלציה", description: "צנרת + כלים סניטריים", plannedAmount: 28000, actualAmount: null, status: "planned" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "חשמל", description: "חשמל + תאורה שקועה", plannedAmount: 22000, actualAmount: null, status: "planned" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "נגרות", description: "ארונות קיר + ארון אמבטיה", plannedAmount: 38000, actualAmount: null, status: "planned" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "צבע", description: "צביעת כל הדירה", plannedAmount: 12000, actualAmount: null, status: "planned" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "תאורה", description: "גופי תאורה — אור תאורה", plannedAmount: 18000, actualAmount: null, status: "quoted", supplierName: "אור תאורה" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "קבלן שלד", description: "הריסות + בניה + טיח", plannedAmount: 45000, actualAmount: null, status: "planned" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "דלתות", description: "6 דלתות פנים + דלת כניסה", plannedAmount: 15000, actualAmount: null, status: "planned" },
-      { projectId: project1.id, designerId: demoDesigner.id, category: "ריהוט", description: "ספה + שולחן אוכל + כסאות", plannedAmount: 25000, actualAmount: null, status: "planned" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "ריצוף וחיפוי", description: "אריחי פורצלן — סלון + מטבח + חדרי אמבטיה", plannedAmount: 35000, actualAmount: 0, status: "quoted", supplierName: "סטון דיזיין" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "אינסטלציה", description: "צנרת + כלים סניטריים", plannedAmount: 28000, actualAmount: 0, status: "planned" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "חשמל", description: "חשמל + תאורה שקועה", plannedAmount: 22000, actualAmount: 0, status: "planned" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "נגרות", description: "ארונות קיר + ארון אמבטיה", plannedAmount: 38000, actualAmount: 0, status: "planned" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "צבע", description: "צביעת כל הדירה", plannedAmount: 12000, actualAmount: 0, status: "planned" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "תאורה", description: "גופי תאורה — אור תאורה", plannedAmount: 18000, actualAmount: 0, status: "quoted", supplierName: "אור תאורה" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "קבלן שלד", description: "הריסות + בניה + טיח", plannedAmount: 45000, actualAmount: 0, status: "planned" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "דלתות", description: "6 דלתות פנים + דלת כניסה", plannedAmount: 15000, actualAmount: 0, status: "planned" },
+      { projectId: project1.id, designerId: demoDesigner.id, category: "ריהוט", description: "ספה + שולחן אוכל + כסאות", plannedAmount: 25000, actualAmount: 0, status: "planned" },
     ],
   });
 
@@ -581,9 +581,9 @@ async function main() {
   // ==========================================
   await prisma.crmCalendarEvent.createMany({
     data: [
-      { designerId: demoDesigner.id, clientId: client1.id, title: "פגישה עם רונית — בחירת אריחים", description: "לקחת דוגמאות מסטון דיזיין", startTime: new Date("2026-03-22T10:00:00"), endTime: new Date("2026-03-22T11:30:00"), location: "אולם תצוגה — סטון דיזיין, תל אביב", type: "MEETING" },
-      { designerId: demoDesigner.id, clientId: client2.id, title: "סיור בדירה — יוסי ומיכל", description: "מדידות סופיות + צילום", startTime: new Date("2026-03-24T14:00:00"), endTime: new Date("2026-03-24T16:00:00"), location: "רוטשילד 15, רמת גן", type: "SITE_VISIT" },
-      { designerId: demoDesigner.id, clientId: client3.id, title: "פגישה טלפונית — דנה", description: "סיכום קונספט מטבח", startTime: new Date("2026-03-25T09:00:00"), endTime: new Date("2026-03-25T09:30:00"), type: "CALL" },
+      { designerId: demoDesigner.id, clientId: client1.id, title: "פגישה עם רונית — בחירת אריחים", description: "לקחת דוגמאות מסטון דיזיין", startAt: new Date("2026-03-22T10:00:00"), endAt: new Date("2026-03-22T11:30:00"), location: "אולם תצוגה — סטון דיזיין, תל אביב" },
+      { designerId: demoDesigner.id, clientId: client2.id, title: "סיור בדירה — יוסי ומיכל", description: "מדידות סופיות + צילום", startAt: new Date("2026-03-24T14:00:00"), endAt: new Date("2026-03-24T16:00:00"), location: "רוטשילד 15, רמת גן" },
+      { designerId: demoDesigner.id, clientId: client3.id, title: "פגישה טלפונית — דנה", description: "סיכום קונספט מטבח", startAt: new Date("2026-03-25T09:00:00"), endAt: new Date("2026-03-25T09:30:00") },
     ],
   });
 
