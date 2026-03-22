@@ -97,7 +97,7 @@ export default function CrmSettings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [newPhase, setNewPhase] = useState("");
-  const [activeSection, setActiveSection] = useState<"branding" | "phases" | "messages" | "office-hours" | "automations">("branding");
+  const [activeSection, setActiveSection] = useState<"branding" | "phases" | "messages" | "office-hours" | "automations" | "notifications">("branding");
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -111,6 +111,8 @@ export default function CrmSettings() {
     officeHoursDays: [0, 1, 2, 3, 4] as number[],
     officeHoursStart: "10:00",
     officeHoursEnd: "17:00",
+    notifyEmail: true,
+    notifyWhatsApp: false,
   });
 
   useEffect(() => {
@@ -138,6 +140,12 @@ export default function CrmSettings() {
             ? JSON.parse(data.officeHoursDays)
             : data.officeHoursDays || [0, 1, 2, 3, 4];
         } catch { /* keep default */ }
+        let notif: Record<string, boolean> = {};
+        try {
+          notif = typeof data.notifications === "string"
+            ? JSON.parse(data.notifications)
+            : data.notifications || {};
+        } catch { /* keep default */ }
         setFormData({
           companyName: data.companyName || "",
           primaryColor: data.primaryColor || "#2563eb",
@@ -150,6 +158,8 @@ export default function CrmSettings() {
           officeHoursDays: ohDays,
           officeHoursStart: data.officeHoursStart || "10:00",
           officeHoursEnd: data.officeHoursEnd || "17:00",
+          notifyEmail: notif.email !== undefined ? notif.email : true,
+          notifyWhatsApp: notif.whatsapp !== undefined ? notif.whatsapp : false,
         });
       }
     } catch {
@@ -181,6 +191,10 @@ export default function CrmSettings() {
         body: JSON.stringify({
           ...formData,
           defaultPhases: formData.defaultPhases,
+          notifications: {
+            email: formData.notifyEmail,
+            whatsapp: formData.notifyWhatsApp,
+          },
         }),
       });
       if (res.ok) {
@@ -273,6 +287,7 @@ export default function CrmSettings() {
     { key: "phases" as const, label: "שלבי פרויקט", icon: Settings },
     { key: "messages" as const, label: "הודעות", icon: Mail },
     { key: "office-hours" as const, label: "שעות קבלה", icon: Clock },
+    { key: "notifications" as const, label: "העדפות התראות", icon: Bell },
     { key: "automations" as const, label: "אוטומציות", icon: Zap },
   ];
 
@@ -524,6 +539,59 @@ export default function CrmSettings() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Notifications */}
+      {activeSection === "notifications" && (
+        <div className="card-static space-y-4">
+          <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+            <Bell className="w-4 h-4 text-gold" />
+            העדפות התראות
+          </h3>
+          <p className="text-text-muted text-xs">
+            בחרי באילו ערוצים את רוצה לקבל עדכונים על פעילות לקוחות ופרויקטים.
+          </p>
+
+          <div className="space-y-3">
+            {/* Email toggle */}
+            <div className="flex items-center justify-between p-4 bg-bg-surface rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-100">
+                  <Mail size={18} className="text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-800 text-sm">קבלת עדכונים באימייל</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">עדכוני פרויקט, אישורים ותזכורות למייל</p>
+                </div>
+              </div>
+              <div
+                onClick={() => setFormData({ ...formData, notifyEmail: !formData.notifyEmail })}
+                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${formData.notifyEmail ? "bg-blue-600" : "bg-gray-300"}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${formData.notifyEmail ? "right-0.5" : "right-[22px]"}`} />
+              </div>
+            </div>
+
+            {/* WhatsApp toggle */}
+            <div className="flex items-center justify-between p-4 bg-bg-surface rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-100">
+                  <Bell size={18} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-800 text-sm">קבלת עדכונים בוואצפ</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">התראות מיידיות בוואטסאפ על פעילות חשובה</p>
+                </div>
+              </div>
+              <div
+                onClick={() => setFormData({ ...formData, notifyWhatsApp: !formData.notifyWhatsApp })}
+                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${formData.notifyWhatsApp ? "bg-emerald-600" : "bg-gray-300"}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${formData.notifyWhatsApp ? "right-0.5" : "right-[22px]"}`} />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

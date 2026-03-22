@@ -6,7 +6,8 @@ import {
   ChevronLeft, ChevronRight, User, CheckSquare, FileText, Palette,
   Calendar, Layout, Package, DollarSign, GitBranch, ArrowLeftRight,
   ThumbsUp, Clock, ClipboardCheck, CalendarClock, UserPlus, Sparkles,
-  BarChart3, Lightbulb, ScrollText, Ruler
+  BarChart3, Lightbulb, ScrollText, Ruler, Link2, Copy, ExternalLink,
+  MessageCircle, Building2
 } from "lucide-react";
 
 // ===== Client-specific CRM components (sub-tabs) =====
@@ -150,11 +151,17 @@ export default function CrmClients() {
   const [editingClient, setEditingClient] = useState<CrmClient | null>(null);
   const [selectedClient, setSelectedClient] = useState<CrmClient | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<ClientSubTab>("details");
-  const [formData, setFormData] = useState({ name: "", phone: "", email: "", address: "", notes: "" });
+  const [formData, setFormData] = useState({
+    name: "", phone: "", email: "", address: "", notes: "",
+    propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [isUsingDemo, setIsUsingDemo] = useState(false);
   const subTabsRef = useRef<HTMLDivElement>(null);
+  const [portalUrl, setPortalUrl] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalCopied, setPortalCopied] = useState(false);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -227,7 +234,7 @@ export default function CrmClients() {
       }
       setShowAddForm(false);
       setEditingClient(null);
-      setFormData({ name: "", phone: "", email: "", address: "", notes: "" });
+      setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" });
       setSaving(false);
       return;
     }
@@ -252,7 +259,7 @@ export default function CrmClients() {
 
       setShowAddForm(false);
       setEditingClient(null);
-      setFormData({ name: "", phone: "", email: "", address: "", notes: "" });
+      setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" });
       fetchClients();
     } catch {
       setError("שגיאת רשת");
@@ -287,8 +294,48 @@ export default function CrmClients() {
       email: client.email || "",
       address: client.address || "",
       notes: client.notes || "",
+      propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
     });
     setShowAddForm(true);
+  };
+
+  const generatePortalLink = async (clientId: string) => {
+    setPortalLoading(true);
+    setPortalUrl("");
+    setPortalCopied(false);
+    try {
+      const res = await fetch(`/api/designer/crm/clients/${clientId}/portal-token`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const fullUrl = `${window.location.origin}${data.url}`;
+        setPortalUrl(fullUrl);
+      }
+    } catch {
+      console.error("Failed to generate portal link");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const copyPortalLink = async () => {
+    try {
+      await navigator.clipboard.writeText(portalUrl);
+      setPortalCopied(true);
+      setTimeout(() => setPortalCopied(false), 2000);
+    } catch {
+      console.error("Copy failed");
+    }
+  };
+
+  const sendViaWhatsApp = (phone: string | null) => {
+    const message = encodeURIComponent(`הנה הקישור לאזור האישי שלך:\n${portalUrl}`);
+    const phoneNum = phone ? phone.replace(/[^0-9]/g, "") : "";
+    const whatsappUrl = phoneNum
+      ? `https://wa.me/972${phoneNum.startsWith("0") ? phoneNum.slice(1) : phoneNum}?text=${message}`
+      : `https://wa.me/?text=${message}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   const statusLabel: Record<string, string> = {
@@ -425,6 +472,63 @@ export default function CrmClients() {
                 )}
               </div>
 
+              {/* Portal Link — Premium */}
+              <div className="card-glass">
+                <h3 className="text-base font-heading font-bold text-text-primary mb-3 flex items-center gap-2">
+                  <Link2 className="w-4 h-4 text-gold" />
+                  לינק לאזור אישי
+                </h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => generatePortalLink(selectedClient.id)}
+                    disabled={portalLoading}
+                    className="btn-gold text-sm flex items-center gap-2"
+                  >
+                    {portalLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Link2 className="w-4 h-4" />
+                    )}
+                    שלח לינק לאזור אישי
+                  </button>
+
+                  {portalUrl && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={portalUrl}
+                          className="input-field flex-1 text-xs"
+                          dir="ltr"
+                        />
+                        <button
+                          onClick={copyPortalLink}
+                          className={`p-2.5 rounded-xl transition-all duration-200 ${
+                            portalCopied
+                              ? "bg-emerald-100 text-emerald-600"
+                              : "bg-bg-surface text-text-muted hover:text-gold hover:bg-gold/5"
+                          }`}
+                          title="העתק לינק"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {portalCopied && (
+                        <span className="text-emerald-600 text-xs">הלינק הועתק!</span>
+                      )}
+                      <button
+                        onClick={() => sendViaWhatsApp(selectedClient.phone)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-sm font-medium"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        שלח בוואצפ
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Projects summary — Premium */}
               <div className="card-glass">
                 <h3 className="text-base font-heading font-bold text-text-primary mb-3 flex items-center gap-2">
@@ -549,6 +653,77 @@ export default function CrmClients() {
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
           </div>
+
+          {/* Intake — Project Details */}
+          {!editingClient && (
+            <div className="border-t border-border-subtle pt-4 mt-4 space-y-4">
+              <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-gold" />
+                פרטי הפרויקט (שאלון קליטה)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-text-secondary text-sm font-medium block mb-1">כתובת הנכס</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={formData.propertyAddress}
+                    onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
+                    placeholder="רחוב ומספר"
+                  />
+                </div>
+                <div>
+                  <label className="text-text-secondary text-sm font-medium block mb-1">עיר</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="תל אביב"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">פרטי השיפוץ</label>
+                <textarea
+                  className="input-field h-20 resize-none"
+                  value={formData.renovationDetails}
+                  onChange={(e) => setFormData({ ...formData, renovationDetails: e.target.value })}
+                  placeholder="תיאור קצר של העבודה הנדרשת..."
+                />
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">מטרת השיפוץ</label>
+                <select
+                  className="input-field"
+                  value={formData.renovationPurpose}
+                  onChange={(e) => setFormData({ ...formData, renovationPurpose: e.target.value })}
+                >
+                  <option value="">בחרי מטרה...</option>
+                  <option value="דירת מגורים">דירת מגורים</option>
+                  <option value="משרד">משרד</option>
+                  <option value="חנות/עסק">חנות/עסק</option>
+                  <option value="דירת Airbnb">דירת Airbnb</option>
+                  <option value="אחר">אחר</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">תקציב משוער</label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">&#x20AA;</span>
+                  <input
+                    type="number"
+                    className="input-field pr-8"
+                    value={formData.estimatedBudget}
+                    onChange={(e) => setFormData({ ...formData, estimatedBudget: e.target.value })}
+                    placeholder="0"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button type="submit" disabled={saving} className="btn-gold w-full">
             {saving ? "שומר..." : editingClient ? "עדכון לקוח" : "הוספת לקוח"}
@@ -567,7 +742,7 @@ export default function CrmClients() {
         <h2 className="text-xl font-heading font-bold text-gradient-gold">הלקוחות שלי</h2>
         <button
           onClick={() => {
-            setFormData({ name: "", phone: "", email: "", address: "", notes: "" });
+            setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" });
             setEditingClient(null);
             setShowAddForm(true);
           }}
@@ -608,7 +783,7 @@ export default function CrmClients() {
           </p>
           {!search && (
             <button
-              onClick={() => { setFormData({ name: "", phone: "", email: "", address: "", notes: "" }); setEditingClient(null); setShowAddForm(true); }}
+              onClick={() => { setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" }); setEditingClient(null); setShowAddForm(true); }}
               className="btn-gold text-sm flex items-center gap-1.5 mx-auto"
             >
               <Plus className="w-4 h-4" /> לקוח חדש

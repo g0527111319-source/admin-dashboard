@@ -45,6 +45,7 @@ export async function PATCH(req: NextRequest) {
       defaultPhases,
       welcomeMessage,
       completionMessage,
+      notifications,
     } = body;
 
     const settings = await prisma.designerCrmSettings.upsert({
@@ -59,6 +60,7 @@ export async function PATCH(req: NextRequest) {
         ...(defaultPhases !== undefined && { defaultPhases }),
         ...(welcomeMessage !== undefined && { welcomeMessage }),
         ...(completionMessage !== undefined && { completionMessage }),
+        ...(notifications !== undefined && { notifications }),
       },
       update: {
         ...(companyName !== undefined && { companyName }),
@@ -69,6 +71,7 @@ export async function PATCH(req: NextRequest) {
         ...(defaultPhases !== undefined && { defaultPhases }),
         ...(welcomeMessage !== undefined && { welcomeMessage }),
         ...(completionMessage !== undefined && { completionMessage }),
+        ...(notifications !== undefined && { notifications }),
       },
     });
 

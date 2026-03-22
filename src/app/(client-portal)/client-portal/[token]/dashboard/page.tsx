@@ -6,6 +6,7 @@ import {
   CheckCircle2, Circle, Clock, FileText, Image as ImageIcon,
   MessageCircle, Send, Loader2, AlertCircle,
   Download, Calendar, MapPin, FolderOpen, Ruler, Maximize2,
+  Bell, Mail, Building2, Save,
 } from "lucide-react";
 
 type Phase = {
@@ -72,6 +73,24 @@ export default function ClientPortalDashboard() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Notification preferences
+  const [notifyEmail, setNotifyEmail] = useState(true);
+  const [notifyWhatsApp, setNotifyWhatsApp] = useState(false);
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifSaved, setNotifSaved] = useState(false);
+
+  // Intake form
+  const [intakeData, setIntakeData] = useState({
+    propertyAddress: "",
+    city: "",
+    renovationDetails: "",
+    renovationPurpose: "",
+    estimatedBudget: "",
+  });
+  const [intakeProjectId, setIntakeProjectId] = useState("");
+  const [intakeSaving, setIntakeSaving] = useState(false);
+  const [intakeSaved, setIntakeSaved] = useState(false);
 
   // Fetch project data
   const fetchData = useCallback(async () => {
@@ -143,6 +162,95 @@ export default function ClientPortalDashboard() {
       console.error("Send message failed");
     } finally {
       setSendingMessage(false);
+    }
+  };
+
+  // Fetch notification preferences
+  const fetchNotificationSettings = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/client-portal/${token}/settings`);
+      if (res.ok) {
+        const data = await res.json();
+        const notif = data.notifications || {};
+        setNotifyEmail(notif.email !== undefined ? notif.email : true);
+        setNotifyWhatsApp(notif.whatsapp !== undefined ? notif.whatsapp : false);
+      }
+    } catch {
+      console.error("Failed to fetch notification settings");
+    }
+  }, [token]);
+
+  // Fetch intake data
+  const fetchIntakeData = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/client-portal/${token}/intake`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.intake) {
+          setIntakeData({
+            propertyAddress: data.intake.propertyAddress || "",
+            city: data.intake.city || "",
+            renovationDetails: data.intake.renovationDetails || "",
+            renovationPurpose: data.intake.renovationPurpose || "",
+            estimatedBudget: data.intake.estimatedBudget ? String(data.intake.estimatedBudget) : "",
+          });
+        }
+        if (data.projectId) {
+          setIntakeProjectId(data.projectId);
+        }
+      }
+    } catch {
+      console.error("Failed to fetch intake data");
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchNotificationSettings();
+    fetchIntakeData();
+  }, [fetchNotificationSettings, fetchIntakeData]);
+
+  const handleSaveNotifications = async () => {
+    setNotifSaving(true);
+    setNotifSaved(false);
+    try {
+      const res = await fetch(`/api/client-portal/${token}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notifications: { email: notifyEmail, whatsapp: notifyWhatsApp },
+        }),
+      });
+      if (res.ok) {
+        setNotifSaved(true);
+        setTimeout(() => setNotifSaved(false), 3000);
+      }
+    } catch {
+      console.error("Save notifications failed");
+    } finally {
+      setNotifSaving(false);
+    }
+  };
+
+  const handleSaveIntake = async () => {
+    setIntakeSaving(true);
+    setIntakeSaved(false);
+    try {
+      const res = await fetch(`/api/client-portal/${token}/intake`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...intakeData,
+          projectId: intakeProjectId,
+        }),
+      });
+      if (res.ok) {
+        setIntakeSaved(true);
+        setTimeout(() => setIntakeSaved(false), 3000);
+      }
+    } catch {
+      console.error("Save intake failed");
+    } finally {
+      setIntakeSaving(false);
     }
   };
 
@@ -576,6 +684,150 @@ export default function ClientPortalDashboard() {
               </form>
             </div>
           )}
+
+          {/* Project Details Intake Form */}
+          <div className="bg-white border border-border-subtle rounded-card p-6 shadow-sm mt-8" dir="rtl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-heading text-text-primary flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-gold" />
+                פרטי הפרויקט
+              </h3>
+              {intakeSaved && (
+                <span className="text-emerald-600 text-sm">נשמר בהצלחה</span>
+              )}
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-text-secondary text-sm font-medium block mb-1">כתובת הנכס</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={intakeData.propertyAddress}
+                    onChange={(e) => setIntakeData({ ...intakeData, propertyAddress: e.target.value })}
+                    placeholder="רחוב ומספר"
+                  />
+                </div>
+                <div>
+                  <label className="text-text-secondary text-sm font-medium block mb-1">עיר</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={intakeData.city}
+                    onChange={(e) => setIntakeData({ ...intakeData, city: e.target.value })}
+                    placeholder="תל אביב"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">פרטי השיפוץ</label>
+                <textarea
+                  className="input-field h-24 resize-none"
+                  value={intakeData.renovationDetails}
+                  onChange={(e) => setIntakeData({ ...intakeData, renovationDetails: e.target.value })}
+                  placeholder="תארו את העבודה הנדרשת..."
+                />
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">מטרת השיפוץ</label>
+                <select
+                  className="input-field"
+                  value={intakeData.renovationPurpose}
+                  onChange={(e) => setIntakeData({ ...intakeData, renovationPurpose: e.target.value })}
+                >
+                  <option value="">בחרו מטרה...</option>
+                  <option value="דירת מגורים">דירת מגורים</option>
+                  <option value="משרד">משרד</option>
+                  <option value="חנות/עסק">חנות/עסק</option>
+                  <option value="דירת Airbnb">דירת Airbnb</option>
+                  <option value="אחר">אחר</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">תקציב משוער</label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">&#x20AA;</span>
+                  <input
+                    type="number"
+                    className="input-field pr-8"
+                    value={intakeData.estimatedBudget}
+                    onChange={(e) => setIntakeData({ ...intakeData, estimatedBudget: e.target.value })}
+                    placeholder="0"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleSaveIntake}
+                disabled={intakeSaving}
+                className="btn-gold w-full flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {intakeSaving ? "שומר..." : "שמור פרטי פרויקט"}
+              </button>
+            </div>
+          </div>
+
+          {/* Notification Preferences */}
+          <div className="bg-white border border-border-subtle rounded-card p-6 shadow-sm mt-6" dir="rtl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-heading text-text-primary flex items-center gap-2">
+                <Bell className="w-5 h-5 text-gold" />
+                העדפות התראות
+              </h3>
+              {notifSaved && (
+                <span className="text-emerald-600 text-sm">נשמר בהצלחה</span>
+              )}
+            </div>
+            <div className="space-y-3">
+              {/* Email toggle */}
+              <div className="flex items-center justify-between p-4 bg-bg-surface rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-50">
+                    <Mail size={18} className="text-blue-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-text-primary text-sm">קבלת עדכונים באימייל</h4>
+                    <p className="text-xs text-text-muted mt-0.5">עדכוני פרויקט ותזכורות למייל</p>
+                  </div>
+                </div>
+                <div
+                  onClick={() => setNotifyEmail(!notifyEmail)}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${notifyEmail ? "bg-gold" : "bg-gray-300"}`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${notifyEmail ? "right-0.5" : "right-[22px]"}`} />
+                </div>
+              </div>
+
+              {/* WhatsApp toggle */}
+              <div className="flex items-center justify-between p-4 bg-bg-surface rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-50">
+                    <MessageCircle size={18} className="text-emerald-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-text-primary text-sm">קבלת עדכונים בוואצפ</h4>
+                    <p className="text-xs text-text-muted mt-0.5">התראות מיידיות בוואטסאפ</p>
+                  </div>
+                </div>
+                <div
+                  onClick={() => setNotifyWhatsApp(!notifyWhatsApp)}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${notifyWhatsApp ? "bg-emerald-500" : "bg-gray-300"}`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${notifyWhatsApp ? "right-0.5" : "right-[22px]"}`} />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveNotifications}
+                disabled={notifSaving}
+                className="btn-gold w-full flex items-center justify-center gap-2 mt-3"
+              >
+                <Save className="w-4 h-4" />
+                {notifSaving ? "שומר..." : "שמור העדפות"}
+              </button>
+            </div>
+          </div>
         </>
       )}
     </div>
