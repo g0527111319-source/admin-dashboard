@@ -100,6 +100,11 @@ model Designer {
   resetToken           String?  @unique // טוקן לאיפוס סיסמה
   resetTokenExpiry     DateTime? // תפוגת טוקן איפוס
 
+  // הסכמה לתנאי שימוש
+  termsAcceptedAt      DateTime? // מתי אישר/ה את התנאים
+  termsAcceptedIp      String?   // כתובת IP בזמן ההסכמה
+  termsAcceptedAgent   String?   // User-Agent בזמן ההסכמה
+
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

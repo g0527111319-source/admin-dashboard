@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/suppliers-directory",
   "/events",
+  "/terms",
 ];
 
 const API_PUBLIC_PATHS = [

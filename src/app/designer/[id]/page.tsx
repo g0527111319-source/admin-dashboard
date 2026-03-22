@@ -33,6 +33,7 @@ import CrmStyleQuiz from "@/components/crm/CrmStyleQuiz";
 import ChatBot from "@/components/crm/ChatBot";
 import type { DesignerContext } from "@/components/crm/ChatBot";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
+import TermsConsentModal from "@/components/TermsConsentModal";
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 
 const designerData = {
@@ -170,6 +171,8 @@ export default function DesignerDashboard() {
 
     return (
       <div className="min-h-screen bg-bg">
+        {/* Terms consent modal — shows if not yet accepted */}
+        <TermsConsentModal />
         {/* ============ SIDEBAR ============ */}
         {/* Mobile overlay */}
         {mobileSidebarOpen && (
