@@ -2,9 +2,8 @@
 import { txt } from "@/content/siteText";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
-import StarRating from "@/components/ui/StarRating";
 import Image from "next/image";
-import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy } from "lucide-react";
+import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck } from "lucide-react";
 import CrmClients from "@/components/crm/CrmClients";
 import CrmSettings from "@/components/crm/CrmSettings";
 import CrmSuppliers from "@/components/crm/CrmSuppliers";
@@ -56,12 +55,12 @@ const designerData = {
 };
 
 const demoSuppliers = [
-    { id: "1", name: txt("src/app/designer/[id]/page.tsx::005", "סטון דיזיין"), category: txt("src/app/designer/[id]/page.tsx::006", "ריצוף וחיפוי"), city: txt("src/app/designer/[id]/page.tsx::007", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::008", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::009", "מובילים בתחום הריצוף והחיפוי — יבוא ישיר מאיטליה ופורטוגל"), phone: "0521234567", averageRating: 4.5, ratingCount: 12, recommendationCount: 15, dealsCount: 34, workedWithMe: true },
-    { id: "2", name: txt("src/app/designer/[id]/page.tsx::010", "אור תאורה"), category: txt("src/app/designer/[id]/page.tsx::011", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::012", "הרצליה"), area: txt("src/app/designer/[id]/page.tsx::013", "שרון"), description: txt("src/app/designer/[id]/page.tsx::014", "גופי תאורה מעוצבים — סקנדינבי, מודרני ואקלקטי"), phone: "0529876543", averageRating: 3.8, ratingCount: 6, recommendationCount: 8, dealsCount: 18, workedWithMe: false },
-    { id: "3", name: txt("src/app/designer/[id]/page.tsx::015", "קיטשן פלוס"), category: txt("src/app/designer/[id]/page.tsx::016", "מטבחים"), city: txt("src/app/designer/[id]/page.tsx::017", "ראשון לציון"), area: txt("src/app/designer/[id]/page.tsx::018", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::019", "מטבחים מותאמים אישית — עיצוב, ייצור והתקנה מקצה לקצה"), phone: "0541112233", averageRating: 4.8, ratingCount: 18, recommendationCount: 22, dealsCount: 45, workedWithMe: true },
-    { id: "4", name: txt("src/app/designer/[id]/page.tsx::020", "נוף גרין"), category: txt("src/app/designer/[id]/page.tsx::021", "חוץ ונוף"), city: txt("src/app/designer/[id]/page.tsx::022", "כפר סבא"), area: txt("src/app/designer/[id]/page.tsx::023", "שרון"), description: txt("src/app/designer/[id]/page.tsx::024", "עיצוב גנים, מרפסות ומרחבים ירוקים — מהתכנון ועד הביצוע"), phone: "0501234567", averageRating: 4.2, ratingCount: 9, recommendationCount: 11, dealsCount: 20, workedWithMe: false },
-    { id: "5", name: txt("src/app/designer/[id]/page.tsx::025", "דלת הזהב"), category: txt("src/app/designer/[id]/page.tsx::026", "דלתות וחלונות"), city: txt("src/app/designer/[id]/page.tsx::027", "חיפה"), area: txt("src/app/designer/[id]/page.tsx::028", "צפון"), description: txt("src/app/designer/[id]/page.tsx::029", "דלתות פנים וכניסה — עץ, אלומיניום, ופורניר ברמה הגבוהה ביותר"), phone: "0541234567", averageRating: 4.6, ratingCount: 14, recommendationCount: 16, dealsCount: 30, workedWithMe: false },
-    { id: "6", name: txt("src/app/designer/[id]/page.tsx::030", "לייט אפ"), category: txt("src/app/designer/[id]/page.tsx::031", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::032", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::033", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::034", "פתרונות תאורה חכמה — LED, דימרים ותאורה אדריכלית"), phone: "0531234567", averageRating: 4.3, ratingCount: 10, recommendationCount: 13, dealsCount: 25, workedWithMe: false },
+    { id: "1", name: txt("src/app/designer/[id]/page.tsx::005", "סטון דיזיין"), category: txt("src/app/designer/[id]/page.tsx::006", "ריצוף וחיפוי"), city: txt("src/app/designer/[id]/page.tsx::007", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::008", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::009", "מובילים בתחום הריצוף והחיפוי — יבוא ישיר מאיטליה ופורטוגל"), phone: "0521234567", email: "info@stonedesign.co.il", contactPerson: "יוסי כהן", address: "רחוב הברזל 12, תל אביב", areas: ["מרכז", "שרון", "תל אביב"], averageRating: 4.5, ratingCount: 12, recommendationCount: 15, dealsCount: 34, workedWithMe: true, isCommunity: true, isVerified: true, logo: "" },
+    { id: "2", name: txt("src/app/designer/[id]/page.tsx::010", "אור תאורה"), category: txt("src/app/designer/[id]/page.tsx::011", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::012", "הרצליה"), area: txt("src/app/designer/[id]/page.tsx::013", "שרון"), description: txt("src/app/designer/[id]/page.tsx::014", "גופי תאורה מעוצבים — סקנדינבי, מודרני ואקלקטי"), phone: "0529876543", email: "contact@or-teura.co.il", contactPerson: "דנה לוי", address: "שד. אבא אבן 8, הרצליה", areas: ["שרון", "מרכז"], averageRating: 3.8, ratingCount: 6, recommendationCount: 8, dealsCount: 18, workedWithMe: false, isCommunity: true, isVerified: true, logo: "" },
+    { id: "3", name: txt("src/app/designer/[id]/page.tsx::015", "קיטשן פלוס"), category: txt("src/app/designer/[id]/page.tsx::016", "מטבחים"), city: txt("src/app/designer/[id]/page.tsx::017", "ראשון לציון"), area: txt("src/app/designer/[id]/page.tsx::018", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::019", "מטבחים מותאמים אישית — עיצוב, ייצור והתקנה מקצה לקצה"), phone: "0541112233", email: "sales@kitchenplus.co.il", contactPerson: "רונית אברהם", address: "אזור תעשייה, ראשון לציון", areas: ["מרכז", "דרום"], averageRating: 4.8, ratingCount: 18, recommendationCount: 22, dealsCount: 45, workedWithMe: true, isCommunity: true, isVerified: true, logo: "" },
+    { id: "4", name: txt("src/app/designer/[id]/page.tsx::020", "נוף גרין"), category: txt("src/app/designer/[id]/page.tsx::021", "חוץ ונוף"), city: txt("src/app/designer/[id]/page.tsx::022", "כפר סבא"), area: txt("src/app/designer/[id]/page.tsx::023", "שרון"), description: txt("src/app/designer/[id]/page.tsx::024", "עיצוב גנים, מרפסות ומרחבים ירוקים — מהתכנון ועד הביצוע"), phone: "0501234567", email: "nof@green.co.il", contactPerson: "עמית גרין", address: "רחוב ויצמן 45, כפר סבא", areas: ["שרון"], averageRating: 4.2, ratingCount: 9, recommendationCount: 11, dealsCount: 20, workedWithMe: false, isCommunity: false, isVerified: false, logo: "" },
+    { id: "5", name: txt("src/app/designer/[id]/page.tsx::025", "דלת הזהב"), category: txt("src/app/designer/[id]/page.tsx::026", "דלתות וחלונות"), city: txt("src/app/designer/[id]/page.tsx::027", "חיפה"), area: txt("src/app/designer/[id]/page.tsx::028", "צפון"), description: txt("src/app/designer/[id]/page.tsx::029", "דלתות פנים וכניסה — עץ, אלומיניום, ופורניר ברמה הגבוהה ביותר"), phone: "0541234567", email: "info@golddoor.co.il", contactPerson: "משה דהן", address: "רחוב העצמאות 20, חיפה", areas: ["צפון", "חיפה"], averageRating: 4.6, ratingCount: 14, recommendationCount: 16, dealsCount: 30, workedWithMe: false, isCommunity: true, isVerified: false, logo: "" },
+    { id: "6", name: txt("src/app/designer/[id]/page.tsx::030", "לייט אפ"), category: txt("src/app/designer/[id]/page.tsx::031", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::032", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::033", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::034", "פתרונות תאורה חכמה — LED, דימרים ותאורה אדריכלית"), phone: "0531234567", email: "hello@lightup.co.il", contactPerson: "תמר שלום", address: "רחוב דיזנגוף 200, תל אביב", areas: ["מרכז", "תל אביב"], averageRating: 4.3, ratingCount: 10, recommendationCount: 13, dealsCount: 25, workedWithMe: false, isCommunity: false, isVerified: false, logo: "" },
 ];
 
 const dealHistory = [
@@ -148,7 +147,7 @@ export default function DesignerDashboard() {
     const [search, setSearch] = useState("");
     const [categoryFilter, setCategoryFilter] = useState(ALL_DESIGNER_FILTER);
     const [areaFilter, setAreaFilter] = useState(ALL_DESIGNER_FILTER);
-    const [sortBy, setSortBy] = useState("rating");
+    const [sortBy, setSortBy] = useState("recommendations");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [showDealModal, setShowDealModal] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState<typeof demoSuppliers[0] | null>(null);
@@ -161,7 +160,6 @@ export default function DesignerDashboard() {
             return matchSearch && matchCategory && matchArea;
         })
         .sort((a, b) => {
-            if (sortBy === "rating") return b.averageRating - a.averageRating;
             if (sortBy === "recommendations") return b.recommendationCount - a.recommendationCount;
             if (sortBy === "deals") return b.dealsCount - a.dealsCount;
             return a.name.localeCompare(b.name, "he");
@@ -541,7 +539,6 @@ export default function DesignerDashboard() {
                       {SUPPLIER_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                     <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select-field text-sm">
-                      <option value="rating">{txt("src/app/designer/[id]/page.tsx::066", "דירוג הכי גבוה")}</option>
                       <option value="recommendations">{txt("src/app/designer/[id]/page.tsx::067", "הכי ממליצות")}</option>
                       <option value="deals">{txt("src/app/designer/[id]/page.tsx::068", "הכי עסקאות")}</option>
                       <option value="name">{txt("src/app/designer/[id]/page.tsx::069", "שם א-ב")}</option>
@@ -571,11 +568,37 @@ export default function DesignerDashboard() {
                 {/* Supplier Cards */}
                 <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3"}>
                   {filteredSuppliers.map((supplier) => (
-                    <div key={supplier.id} className="card-gold group cursor-pointer">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-14 h-14 bg-bg-surface rounded-xl flex items-center justify-center flex-shrink-0 border border-border-subtle">
-                          <span className="text-xl font-heading font-bold text-gold">{supplier.name[0]}</span>
+                    <div key={supplier.id} className={`group cursor-pointer ${supplier.isCommunity ? "card-gold border-2 border-gold/30" : "card-static"}`}>
+                      {/* Community badge */}
+                      {supplier.isCommunity && (
+                        <div className="flex items-center gap-1.5 mb-3">
+                          <span className="inline-flex items-center gap-1 bg-gold/10 text-gold text-[10px] font-bold px-2.5 py-1 rounded-full border border-gold/20">
+                            <ShieldCheck className="w-3 h-3" /> ספק קהילה
+                          </span>
+                          {supplier.isVerified && (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3" /> מאומת
+                            </span>
+                          )}
                         </div>
+                      )}
+                      <div className="flex items-start gap-3 mb-3">
+                        {/* Logo: show branded logo for community, simple initial for non-community */}
+                        {supplier.isCommunity ? (
+                          supplier.logo ? (
+                            <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gold overflow-hidden" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
+                              <Image src={supplier.logo} alt={supplier.name} width={56} height={56} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-14 h-14 bg-gradient-to-br from-gold/20 to-gold/5 rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gold" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
+                              <span className="text-xl font-heading font-bold text-gold">{supplier.name[0]}</span>
+                            </div>
+                          )
+                        ) : (
+                          <div className="w-14 h-14 bg-bg-surface rounded-xl flex items-center justify-center flex-shrink-0 border border-border-subtle">
+                            <span className="text-xl font-heading font-bold text-text-muted">{supplier.name[0]}</span>
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-heading text-text-primary text-base font-bold truncate">{supplier.name}</h3>
                           <span className="badge-gold text-[10px]">{supplier.category}</span>
@@ -592,12 +615,42 @@ export default function DesignerDashboard() {
 
                       <p className="text-text-muted text-sm leading-relaxed mb-3 line-clamp-2">{supplier.description}</p>
 
-                      <div className="flex items-center gap-3 mb-3 text-sm">
-                        <div className="flex items-center gap-1">
-                          <StarRating rating={supplier.averageRating} size={14} />
-                          <span className="text-gold font-mono text-xs">{supplier.averageRating} ({supplier.ratingCount})</span>
+                      {/* Contact & details section */}
+                      <div className="space-y-1.5 mb-3 text-xs text-text-muted">
+                        {supplier.contactPerson && (
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-3 h-3 text-text-faint" />
+                            <span>{supplier.contactPerson}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3 h-3 text-text-faint" />
+                          <span dir="ltr">{supplier.phone}</span>
                         </div>
+                        {supplier.email && (
+                          <div className="flex items-center gap-1.5">
+                            <Mail className="w-3 h-3 text-text-faint" />
+                            <span dir="ltr">{supplier.email}</span>
+                          </div>
+                        )}
+                        {supplier.address && (
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3 h-3 text-text-faint" />
+                            <span>{supplier.address}</span>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Areas of activity */}
+                      {supplier.areas && supplier.areas.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          <span className="text-[10px] text-text-faint">אזורי פעילות:</span>
+                          {supplier.areas.map((a) => (
+                            <span key={a} className="text-[10px] bg-bg-surface text-text-muted px-1.5 py-0.5 rounded">{a}</span>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="flex gap-4 text-xs text-text-muted mb-4">
                         <span>{supplier.recommendationCount} {txt("src/app/designer/[id]/page.tsx::078", "ממליצות")}</span>
                         <span>{supplier.dealsCount} {txt("src/app/designer/[id]/page.tsx::079", "עסקאות")}</span>
@@ -641,10 +694,6 @@ export default function DesignerDashboard() {
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::088", "תאריך העסקה")}</label>
                     <input type="date" className="input-field" dir="ltr" />
-                  </div>
-                  <div>
-                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::089", "דירוג (אנונימי — רק תמר רואה)")}</label>
-                    <StarRating rating={0} interactive onChange={() => { }} size={28} />
                   </div>
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::090", "הערות (אופציונלי — אנונימי)")}</label>
@@ -854,10 +903,6 @@ export default function DesignerDashboard() {
               <div className="space-y-3">
                 <input type="number" className="input-field" placeholder="סכום העסקה (₪)" />
                 <input type="text" className="input-field" placeholder="תיאור קצר" />
-                <div>
-                  <p className="text-text-secondary text-sm mb-1.5">{txt("src/app/designer/[id]/page.tsx::126", "דירוג (אנונימי)")}</p>
-                  <StarRating rating={0} interactive onChange={() => { }} size={24} />
-                </div>
                 <button onClick={() => setShowDealModal(false)} className="btn-gold w-full mt-2">{txt("src/app/designer/[id]/page.tsx::127", "שלח דיווח")}</button>
               </div>
             </div>
