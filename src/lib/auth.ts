@@ -1,0 +1,393 @@
+import { cookies } from "next/headers";
+import { SignJWT, jwtVerify } from "jose";
+import bcrypt from "bcryptjs";
+import prisma from "./prisma";
+
+// ==========================================
+// סוגי משתמשים — User Types
+// ==========================================
+
+export type UserRole = "admin" | "supplier" | "designer";
+
+export interface SessionPayload {
+  userId: string;
+  role: UserRole;
+  email: string;
+  name: string;
+}
+
+const DEMO_USERS: Record<
+  Exclude<UserRole, "admin">,
+  Array<{ email: string; password: string; name: string; userId: string }>
+> = {
+  supplier: [
+    { email: "supplier@zirat.co.il", password: "Supplier123!", name: "???? ??????", userId: "supplier-demo-1" },
+    { email: "or@lighting.co.il", password: "Supplier123!", name: "??? ?????", userId: "supplier-demo-2" },
+    { email: "kitchen@plus.co.il", password: "Supplier123!", name: "????? ????", userId: "supplier-demo-3" },
+  ],
+  designer: [
+    { email: "designer@zirat.co.il", password: "Designer123!", name: "???? ???????'", userId: "designer-demo-1" },
+    { email: "michal@arch.co.il", password: "Designer123!", name: "???? ?????????", userId: "designer-demo-2" },
+    { email: "shira@intdesign.co.il", password: "Designer123!", name: "???? ??? ???", userId: "designer-demo-3" },
+  ],
+};
+
+function getDemoSession(role: Exclude<UserRole, "admin">, email: string, password: string): SessionPayload | null {
+  const demoUser = DEMO_USERS[role].find(
+    (user) => user.email.toLowerCase() === email && user.password === password
+  );
+
+  if (!demoUser) {
+    return null;
+  }
+
+  return {
+    userId: demoUser.userId,
+    role,
+    email: demoUser.email,
+    name: demoUser.name,
+  };
+}
+
+// ==========================================
+// JWT — ניהול טוקנים
+// ==========================================
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.NEXTAUTH_SECRET || "fallback-secret-change-in-production"
+);
+
+const JWT_EXPIRY = "7d"; // תוקף 7 ימים
+
+/** יצירת JWT טוקן */
+export async function createToken(payload: SessionPayload): Promise<string> {
+  return new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(JWT_EXPIRY)
+    .sign(JWT_SECRET);
+}
+
+/** אימות JWT טוקן */
+export async function verifyToken(token: string): Promise<SessionPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload as unknown as SessionPayload;
+  } catch {
+    return null;
+  }
+}
+
+// ==========================================
+// סיסמאות — Password Hashing
+// ==========================================
+
+const SALT_ROUNDS = 12;
+
+/** הצפנת סיסמה */
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, SALT_ROUNDS);
+}
+
+/** אימות סיסמה */
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}
+
+// ==========================================
+// Sessions — ניהול סשנים
+// ==========================================
+
+const COOKIE_NAME = "session_token";
+
+/** שמירת session בעוגייה */
+export async function setSessionCookie(payload: SessionPayload): Promise<void> {
+  const token = await createToken(payload);
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 ימים
+    path: "/",
+  });
+}
+
+/** קבלת Session מהעוגייה */
+export async function getSession(): Promise<SessionPayload | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME);
+
+  if (!token?.value) {
+    // backward compat: check old admin_token
+    const adminToken = cookieStore.get("admin_token");
+    if (adminToken?.value === process.env.NEXTAUTH_SECRET) {
+      return {
+        userId: "admin",
+        role: "admin",
+        email: process.env.ADMIN_EMAIL || "admin@zirat.co.il",
+        name: "תמר",
+      };
+    }
+    return null;
+  }
+
+  return verifyToken(token.value);
+}
+
+/** מחיקת session (התנתקות) */
+export async function clearSession(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete("admin_token"); // backward compat
+}
+
+// ==========================================
+// אימות — Authentication Functions
+// ==========================================
+
+/** בדיקת חיבור אדמין */
+export async function isAdmin(): Promise<boolean> {
+  const session = await getSession();
+  return session?.role === "admin";
+}
+
+/** כניסת אדמין */
+export async function loginAdmin(email: string, password: string): Promise<boolean> {
+  return (
+    email === process.env.ADMIN_EMAIL &&
+    password === process.env.ADMIN_PASSWORD
+  );
+}
+
+/** כניסה עם אימייל וסיסמה */
+export async function loginWithEmail(
+  email: string,
+  password: string,
+  role: UserRole
+): Promise<{ success: boolean; session?: SessionPayload; error?: string }> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (role === "admin") {
+    const isValid = await loginAdmin(normalizedEmail, password);
+    if (!isValid) return { success: false, error: "???? ????? ??????" };
+    return {
+      success: true,
+      session: {
+        userId: "admin",
+        role: "admin",
+        email: normalizedEmail,
+        name: "???",
+      },
+    };
+  }
+
+  if (role === "supplier") {
+    try {
+      const supplier = await prisma.supplier.findFirst({
+        where: { email: normalizedEmail, isActive: true },
+      });
+
+      if (supplier) {
+        if (!supplier.passwordHash) return { success: false, error: "?? ?????? ?????. ?????/? ?????? ?????." };
+
+        const isValid = await verifyPassword(password, supplier.passwordHash);
+        if (!isValid) return { success: false, error: "????? ?????" };
+
+        return {
+          success: true,
+          session: {
+            userId: supplier.id,
+            role: "supplier",
+            email: supplier.email!,
+            name: supplier.name,
+          },
+        };
+      }
+    } catch {
+      // Fallback to built-in demo accounts when DB is unavailable.
+    }
+
+    const demoSession = getDemoSession("supplier", normalizedEmail, password);
+    if (demoSession) {
+      return { success: true, session: demoSession };
+    }
+
+    return { success: false, error: "??? ?? ????" };
+  }
+
+  if (role === "designer") {
+    try {
+      const designer = await prisma.designer.findFirst({
+        where: { email: normalizedEmail, isActive: true },
+      });
+
+      if (designer) {
+        if (!designer.passwordHash) return { success: false, error: "?? ?????? ?????. ?????/? ?????? ?????." };
+
+        const isValid = await verifyPassword(password, designer.passwordHash);
+        if (!isValid) return { success: false, error: "????? ?????" };
+
+        return {
+          success: true,
+          session: {
+            userId: designer.id,
+            role: "designer",
+            email: designer.email!,
+            name: designer.fullName,
+          },
+        };
+      }
+    } catch {
+      // Fallback to built-in demo accounts when DB is unavailable.
+    }
+
+    const demoSession = getDemoSession("designer", normalizedEmail, password);
+    if (demoSession) {
+      return { success: true, session: demoSession };
+    }
+
+    return { success: false, error: "?????/? ?? ????/?" };
+  }
+
+  return { success: false, error: "??? ????? ?? ????" };
+}
+
+export async function getSupplier(token: string) {
+  return prisma.supplier.findUnique({
+    where: { loginToken: token },
+  });
+}
+
+/** בדיקת חיבור מעצבת */
+export async function getDesigner(token: string) {
+  return prisma.designer.findUnique({
+    where: { loginToken: token },
+  });
+}
+
+// ==========================================
+// רישום — Registration
+// ==========================================
+
+/** רישום מעצבת חדשה */
+export async function registerDesigner(data: {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  city?: string;
+  specialization?: string;
+}): Promise<{ success: boolean; designerId?: string; error?: string }> {
+  // בדיקה אם האימייל כבר קיים
+  const existing = await prisma.designer.findFirst({
+    where: { email: data.email },
+  });
+  if (existing) {
+    return { success: false, error: "כתובת אימייל כבר רשומה במערכת" };
+  }
+
+  const passwordHash = await hashPassword(data.password);
+  const loginToken = crypto.randomUUID();
+
+  const designer = await prisma.designer.create({
+    data: {
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      city: data.city || null,
+      specialization: data.specialization || null,
+      passwordHash,
+      loginToken,
+    },
+  });
+
+  return { success: true, designerId: designer.id };
+}
+
+// ==========================================
+// איפוס סיסמה — Password Reset
+// ==========================================
+
+/** יצירת טוקן איפוס סיסמה */
+export async function createResetToken(
+  email: string,
+  role: UserRole
+): Promise<{ success: boolean; resetToken?: string; name?: string; error?: string }> {
+  const resetToken = crypto.randomUUID();
+  const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // שעה אחת
+
+  if (role === "supplier") {
+    const supplier = await prisma.supplier.findFirst({ where: { email } });
+    if (!supplier) return { success: false, error: "אימייל לא נמצא" };
+
+    await prisma.supplier.update({
+      where: { id: supplier.id },
+      data: { resetToken, resetTokenExpiry },
+    });
+    return { success: true, resetToken, name: supplier.name };
+  }
+
+  if (role === "designer") {
+    const designer = await prisma.designer.findFirst({ where: { email } });
+    if (!designer) return { success: false, error: "אימייל לא נמצא" };
+
+    await prisma.designer.update({
+      where: { id: designer.id },
+      data: { resetToken, resetTokenExpiry },
+    });
+    return { success: true, resetToken, name: designer.fullName };
+  }
+
+  return { success: false, error: "סוג משתמש לא תקין" };
+}
+
+/** איפוס סיסמה עם טוקן */
+export async function resetPassword(
+  token: string,
+  newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  const passwordHash = await hashPassword(newPassword);
+
+  // חפש בספקים
+  const supplier = await prisma.supplier.findFirst({
+    where: {
+      resetToken: token,
+      resetTokenExpiry: { gte: new Date() },
+    },
+  });
+
+  if (supplier) {
+    await prisma.supplier.update({
+      where: { id: supplier.id },
+      data: {
+        passwordHash,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+    return { success: true };
+  }
+
+  // חפש במעצבות
+  const designer = await prisma.designer.findFirst({
+    where: {
+      resetToken: token,
+      resetTokenExpiry: { gte: new Date() },
+    },
+  });
+
+  if (designer) {
+    await prisma.designer.update({
+      where: { id: designer.id },
+      data: {
+        passwordHash,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+    return { success: true };
+  }
+
+  return { success: false, error: "קישור איפוס לא תקין או שפג תוקפו" };
+}

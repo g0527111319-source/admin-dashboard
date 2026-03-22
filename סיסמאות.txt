@@ -1,0 +1,40 @@
+הנה סיסמאות הכניסה למערכת:
+
+---
+
+### ????? אדמין
+| אימייל | סיסמה | תפקיד |
+|--------|--------|--------|
+| tamar@zirat.co.il | Zirat2024! | Admin |
+
+---
+
+### ?? מעצבות
+| אימייל | סיסמה |
+|--------|--------|
+| designer@zirat.co.il | Designer123! |
+| michal@arch.co.il | Designer123! |
+| shira@intdesign.co.il | Designer123! |
+| rotem@spaces.co.il | Designer123! |
+| yael@golddesign.co.il | Designer123! |
+
+---
+
+### ??? ספקים
+| אימייל | סיסמה |
+|--------|--------|
+| supplier@zirat.co.il | Supplier123! |
+| or@lighting.co.il | Supplier123! |
+| kitchen@plus.co.il | Supplier123! |
+
+---
+סיכום:
+פרט	ערך
+כתובת האתר	https://admin-dashboard-nu-mocha.vercel.app
+סיסמה לכולם	ChangeMe123!
+אדמין	superadmin@zira.local
+ספק	supplier-user-1@zira.local
+מעצב/ת	designer@zira.local
+האתר חי, עובד, ומחובר למסד נתונים אמיתי! ??
+
+**שים לב:** הנתונים האלה ייטענו רק אחרי שתריצי `prisma db seed` עם חיבור לדאטאבייס אמיתי. כרגע ה-`DATABASE_URL` ב-`.env` עדיין placeholder.

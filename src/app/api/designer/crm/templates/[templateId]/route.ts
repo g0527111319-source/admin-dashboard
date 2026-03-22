@@ -1,0 +1,79 @@
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+
+// PATCH /api/designer/crm/templates/[templateId]
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ templateId: string }> }
+) {
+  try {
+    const designerId = req.headers.get("x-user-id");
+    if (!designerId) {
+      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    }
+
+    const { templateId } = await params;
+    const body = await req.json();
+
+    const existing = await prisma.crmMessageTemplate.findFirst({
+      where: { id: templateId, designerId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "תבנית לא נמצאה" }, { status: 404 });
+    }
+
+    const { name, content, category, variables } = body;
+
+    const template = await prisma.crmMessageTemplate.update({
+      where: { id: templateId },
+      data: {
+        ...(name !== undefined && { name: name.trim() }),
+        ...(content !== undefined && { content: content.trim() }),
+        ...(category !== undefined && { category: category?.trim() || null }),
+        ...(variables !== undefined && { variables }),
+      },
+    });
+
+    return NextResponse.json(template);
+  } catch (error) {
+    console.error("CRM template update error:", error);
+    return NextResponse.json(
+      { error: "שגיאה בעדכון תבנית" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/designer/crm/templates/[templateId]
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ templateId: string }> }
+) {
+  try {
+    const designerId = req.headers.get("x-user-id");
+    if (!designerId) {
+      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    }
+
+    const { templateId } = await params;
+
+    const existing = await prisma.crmMessageTemplate.findFirst({
+      where: { id: templateId, designerId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "תבנית לא נמצאה" }, { status: 404 });
+    }
+
+    await prisma.crmMessageTemplate.delete({
+      where: { id: templateId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("CRM template delete error:", error);
+    return NextResponse.json(
+      { error: "שגיאה במחיקת תבנית" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,22 @@
+
+> zirat-community@0.1.0 dev
+> next dev
+
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:420:11)
+    at spawn (node:child_process:787:9)
+    at fork (node:child_process:174:10)
+    at C:\Users\This_user\Downloads\zirat-community\node_modules\next\dist\cli\next-dev.js:213:45
+    at new Promise (<anonymous>)
+    at startServer (C:\Users\This_user\Downloads\zirat-community\node_modules\next\dist\cli\next-dev.js:199:16)
+    at runDevServer (C:\Users\This_user\Downloads\zirat-community\node_modules\next\dist\cli\next-dev.js:280:23)
+    at Module.nextDev (C:\Users\This_user\Downloads\zirat-community\node_modules\next\dist\cli\next-dev.js:288:11) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 11.11.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+npm notice To update run: npm install -g npm@11.11.1
+npm notice

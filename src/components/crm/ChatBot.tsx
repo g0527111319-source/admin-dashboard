@@ -1,0 +1,1079 @@
+"use client";
+
+import { useState, useRef, useEffect, useCallback } from "react";
+import { MessageCircle, X, Send, Sparkles, Copy, Check, ChevronDown, Trash2, Maximize2, Minimize2, Users, Palette, Settings } from "lucide-react";
+
+// ==========================================
+// Types
+// ==========================================
+
+type ChatMessage = {
+  id: string;
+  text: string;
+  sender: "bot" | "user";
+  timestamp: Date;
+  isTyping?: boolean;
+  relatedTopics?: string[];
+};
+
+type QAPair = {
+  keywords: string[];
+  synonyms?: string[];
+  answer: string | ((ctx: DesignerContext) => string);
+  relatedTopics?: string[];
+  category?: "management" | "design" | "system" | "financial" | "communication";
+};
+
+// Designer context for personalization
+export type DesignerContext = {
+  name?: string;
+  city?: string;
+  specialization?: string;
+  yearsExperience?: number;
+  totalDeals?: number;
+  totalDealAmount?: number;
+  rank?: number;
+  lotteryEntries?: number;
+  eventsAttended?: number;
+  joinDate?: string;
+  activeProjects?: number;
+  pendingTasks?: number;
+};
+
+// ==========================================
+// Response Variation Helpers
+// ==========================================
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function firstName(ctx: DesignerContext): string {
+  if (!ctx.name) return "";
+  return ctx.name.split(" ")[0];
+}
+
+function personalGreeting(ctx: DesignerContext): string {
+  const name = firstName(ctx);
+  if (!name) return "";
+  return pick([`${name}, `, `היי ${name}! `, `${name} יקרה, `]);
+}
+
+function getTimeGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 6) return "לילה טוב 🌙";
+  if (h < 12) return "בוקר טוב ☀️";
+  if (h < 17) return "צהריים טובים 🌤";
+  if (h < 21) return "ערב טוב 🌅";
+  return "לילה טוב 🌙";
+}
+
+// ==========================================
+// Conversational Patterns (greetings, thanks, etc.)
+// ==========================================
+
+type ConversationalPattern = {
+  patterns: RegExp[];
+  responses: string[] | ((ctx: DesignerContext) => string[]);
+  relatedTopics?: string[];
+};
+
+const conversationalPatterns: ConversationalPattern[] = [
+  // Greetings
+  {
+    patterns: [/^(היי|הי|שלום|אהלן|הלו|בוקר טוב|ערב טוב|צהריים טובים|מה נשמע|מה קורה|הידד)/],
+    responses: (ctx) => {
+      const name = firstName(ctx);
+      const timeG = getTimeGreeting();
+      return name ? [
+        `${timeG} ${name}! 😊 שמחה לראות אותך. איך אפשר לעזור היום?`,
+        `היי ${name}! ✨ ${timeG}. מה תרצי לדעת?`,
+        `${name} יקרה, ${timeG}! 💛 אני כאן בשבילך. במה אוכל לעזור?`,
+      ] : [
+        `${timeG}! ✨ שמחה שפנית אליי. איך אפשר לעזור?`,
+        `היי! 😊 ${timeG}. אני כאן בשבילך — שאלי כל דבר!`,
+      ];
+    },
+    relatedTopics: ["מה אפשר לעשות?", "ניווט באתר"],
+  },
+  // Thanks
+  {
+    patterns: [/^(תודה|תודה רבה|מעולה|אחלה|סבבה|מושלם|יופי|נהדר|שיהיה|ביי|להתראות)/],
+    responses: (ctx) => {
+      const name = firstName(ctx);
+      return [
+        `${name ? name + ", " : ""}בשמחה! 💛 אני תמיד כאן אם תצטרכי עוד משהו.`,
+        `שמחה שעזרתי! ✨ ${name ? "אל תהססי לפנות שוב, " + name : "פני אליי בכל עת"}.`,
+        `בכיף! 😊 ${name ? name + ", " : ""}המערכת שלך ביד טובות. הצלחה!`,
+      ];
+    },
+    relatedTopics: [],
+  },
+  // Frustration / help
+  {
+    patterns: [/^(לא מבינה|לא מצליחה|עוזרי|עזרה|אני צריכה|בעיה|תקועה|לא עובד|באג|שגיאה|נתקעתי)/],
+    responses: (ctx) => {
+      const name = firstName(ctx);
+      return [
+        `${name ? name + ", " : ""}אני כאן בדיוק בשביל זה! 🤗 ספרי לי מה קורה ואני אעזור צעד אחרי צעד.`,
+        `לא נורא! 💪 ${name ? name + ", " : ""}בואי נפתור את זה ביחד. על איזה נושא מדובר?`,
+        `${name ? name + ", " : ""}אל דאגה, הכל בסדר. 😊 תתארי לי את הבעיה ואני אדריך אותך.`,
+      ];
+    },
+    relatedTopics: ["ניווט באתר", "מה אפשר לעשות?", "הגדרות CRM"],
+  },
+  // Who are you
+  {
+    patterns: [/^(מי את|מה את|ספרי על עצמך|מה את יודעת|מה את עושה)/],
+    responses: (ctx) => {
+      const name = firstName(ctx);
+      return [
+        `${name ? name + ", " : ""}אני העוזרת החכמה של זירת! 🤖✨\n\nאני מכירה כל פינה במערכת — מניהול לקוחות ופרויקטים, דרך חוזים דיגיטליים, ועד מעקב תקציב ותזמון.\n\nאני כאן 24/7 ותמיד שמחה לעזור. שאלי כל דבר!`,
+      ];
+    },
+    relatedTopics: ["מה אפשר לעשות?", "ניווט באתר"],
+  },
+  // Compliment
+  {
+    patterns: [/^(וואו|מגניב|מדהים|אהבתי|כל הכבוד|יפה|מקצועי)/],
+    responses: (ctx) => {
+      const name = firstName(ctx);
+      return [
+        `תודה${name ? " " + name : ""}! 🥰 שמחה שאת מרוצה. יש עוד הרבה דברים מגניבים במערכת — רוצה לגלות?`,
+        `איזה כיף! ✨ ${name ? name + ", " : ""}המערכת באמת עמוסה ביכולות. רוצה שאראה לך עוד?`,
+      ];
+    },
+    relatedTopics: ["מה אפשר לעשות?", "ספריית השראה", "חוזים דיגיטליים"],
+  },
+];
+
+// ==========================================
+// Knowledge Base — Enriched & Personalized
+// ==========================================
+
+const knowledgeBase: QAPair[] = [
+  {
+    keywords: ["לקוח", "מוסיפים", "הוספת", "ליצור לקוח", "לקוח חדש", "להוסיף לקוח", "לקוחות", "ניהול לקוחות"],
+    synonyms: ["קליינט", "client", "רשימת לקוחות", "הלקוחות שלי"],
+    category: "management",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const intro = name
+        ? pick([`${name}, ניהול לקוחות זה הלב`, `${name} יקרה, בואי נדבר על לקוחות`])
+        : "ניהול לקוחות — הלב";
+      return `${intro} של ה-CRM שלך! 💛\n\n📍 מיקום: תפריט צד ← CRM ← לקוחות\n\nאיך מתחילים?\n1️⃣ לחצי \"+ לקוח חדש\" בפינה העליונה\n2️⃣ מלאי פרטים: שם מלא, טלפון, אימייל, כתובת\n3️⃣ הלקוח מופיע ברשימה — ומכאן הכל זורם!\n\n🔹 שיוך: כל לקוח ניתן לשייך לפרויקט אחד או יותר\n🔹 כרטיס לקוח: מרכז הכל — פרויקטים, חוזים, תשלומים, הערות\n🔹 חיפוש: סנני לפי שם, סטטוס, או פרויקט\n🔹 פעולות מהירות: ישירות מהכרטיס — צרי פרויקט, שלחי חוזה, פתחי WhatsApp\n\n💡 טיפ מקצועי: הוסיפי הערות פנימיות לכל לקוח (רק את רואה אותן!) — לדוגמה, מה הלקוחה אמרה שחשוב לה, מה הסגנון שאהבה, תאריכי תשלום.`;
+    },
+    relatedTopics: ["איך יוצרים פרויקט?", "קליטת לקוח", "WhatsApp"],
+  },
+  {
+    keywords: ["פרויקט", "ליצור פרויקט", "פרויקט חדש", "ניהול פרויקט", "פרויקטים", "סטטוס פרויקט"],
+    synonyms: ["פרוייקט", "project", "לפתוח פרויקט"],
+    category: "management",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? `${name}, ` : "";
+      return `${prefix}פרויקטים זה איפה שהקסם קורה! ✨\n\n📍 מיקום: תפריט צד ← CRM ← פרויקטים\n\nיצירת פרויקט חדש:\n1️⃣ לחצי \"+ פרויקט חדש\"\n2️⃣ מלאי: שם הפרויקט, סוג (שיפוץ / עיצוב / בנייה)\n3️⃣ הגדירי תקציב, תאריכי התחלה וסיום\n4️⃣ שייכי ללקוח קיים\n\n📊 מעקב סטטוסים:\nחדש → ייעוץ → תכנון → ביצוע → מסירה → הושלם\n\n🔹 דשבורד פרויקט: מרכז הכל — משימות, חוזים, תקציב, ציר זמן, צ'קליסט מסירה, לוחות השראה\n🔹 תבנית: החילי תבנית עבודה מוכנה → שלבים ומשימות נוצרים אוטומטית\n\n💡 טיפ: שני סטטוס בלחיצה אחת — מעדכן את כל הדשבורד!`;
+    },
+    relatedTopics: ["תבניות עבודה", "מעקב תקציב", "תזמון חכם"],
+  },
+  {
+    keywords: ["חוזה", "ליצור חוזה", "יצירת חוזה", "חוזה חדש", "חוזים", "חוזים דיגיטליים"],
+    synonyms: ["הסכם", "contract", "מסמך משפטי"],
+    category: "management",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? pick([`${name}, `, `${name} יקרה, `]) : "";
+      return `${prefix}מערכת החוזים הדיגיטליים היא אחד הכלים הכי חזקים שלך! 📝✨\n\nהתהליך המלא — 5 שלבים פשוטים:\n\n1️⃣ תבנית: חוזים ← \"תבניות\" ← \"+ תבנית חדשה\"\n   📎 העלי PDF/תמונה של החוזה שלך, או בני מאפס\n   ✏️ הוסיפי שדות: פרטי מעצבת, פרטי לקוח, חתימה\n\n2️⃣ חוזה חדש: בחרי תבנית → מלאי פרטים → טיוטה מוכנה\n\n3️⃣ חתמי כמעצבת: אייקון העט → חתמי בקנבס עם האצבע\n\n4️⃣ שלחי ללקוח: הלקוח מקבל קישור ייחודי ומאובטח\n\n5️⃣ הלקוח חותם → שניכם מקבלים אישור מיידי ✅\n\n📊 מעקב: 👁️ לקוח צפה / ✅ לקוח חתם / ⏳ ממתין\n\n💡 טיפ מנצח: העתיקי את קישור החתימה ושלחי ישירות בוואטסאפ — שיעור החתימה גבוה פי 3 לעומת מייל!`;
+    },
+    relatedTopics: ["תבנית חוזה", "חתימה דיגיטלית", "הצעות מחיר"],
+  },
+  {
+    keywords: ["תבנית חוזה", "להעלות חוזה", "העלאת חוזה", "קובץ חוזה", "pdf חוזה", "תבניות חוזה"],
+    synonyms: ["template", "תבנית הסכם"],
+    category: "management",
+    answer: "העלאת תבנית חוזה — פעם אחת, משתמשים לנצח! 📋\n\n📍 מיקום: חוזים ← לשונית \"תבניות\" ← \"+ תבנית חדשה\"\n\n🔹 העלאה: גררי קובץ PDF, PNG, JPG או WEBP\n🔹 בנייה מאפס: הוסיפי בלוקים — כותרת, פסקה, מפריד, רווח\n🔹 שדות חכמים: שדות מעצבת (נמלאים אוטומטית!), שדות לקוח, שדות חתימה דיגיטלית\n🔹 ברירת מחדל: סמני תבנית אחת כברירת מחדל — תחסוך לך זמן\n\n💡 הטיפ שלי: קחי את החוזה הנוכחי שלך → העלי כ-PDF → הוסיפי רק שדות חתימה → מוכנה תוך 2 דקות!",
+    relatedTopics: ["חוזים דיגיטליים", "חתימה דיגיטלית"],
+  },
+  {
+    keywords: ["לשלוח חוזה", "שליחת חוזה", "חתימה", "לחתום", "לשלוח ללקוח", "חתימה דיגיטלית", "קישור חתימה"],
+    synonyms: ["signature", "signing", "חתימת לקוח"],
+    category: "management",
+    answer: "שליחת חוזה לחתימה — פשוט כמו לשלוח הודעה! ✍️\n\n📍 מיקום: חוזים ← בחרי חוזה בסטטוס \"טיוטה\"\n\n🔹 חתמי קודם: לחצי על 🖊️ → חתמי בקנבס כמעצבת\n🔹 שלחי: לחצי ← הלקוח מקבל קישור ייחודי ומאובטח\n🔹 קישור ידני: לחצי על 🔗 → מעתיק קישור חתימה\n\n📊 מעקב בזמן אמת:\n   👁️ \"לקוח צפה\" — הלקוח פתח את הקישור\n   ✅ \"לקוח חתם\" — הושלם! שניכם מקבלים אישור\n\n🔒 אבטחה: כל חתימה מתועדת עם IP, תאריך ושעה\n\n💡 טיפ: לפני שליחה → לחצי \"תצוגה מקדימה\" לוודא שהכל מושלם.",
+    relatedTopics: ["חוזים דיגיטליים", "WhatsApp"],
+  },
+  {
+    keywords: ["צ'קליסט", "מסירה", "צ'קליסט מסירה", "רשימת מסירה", "handoff", "בדיקות מסירה", "רשימת בדיקה"],
+    synonyms: ["checklist", "רשימה", "מסירת דירה", "מסירת פרויקט"],
+    category: "management",
+    answer: "צ'קליסט מסירה — אף פרט לא נשכח! ✅\n\n📍 מיקום: תפריט צד ← CRM ← צ'קליסט מסירה\n\nאיך זה עובד:\n1️⃣ בחרי פרויקט ← נוצרים 11 פריטי ברירת מחדל\n2️⃣ סמני V על כל פריט שהושלם ← הוסיפי הערה\n3️⃣ כשהכל ירוק — הפרויקט מוכן למסירה! 🎉\n\n📋 קטגוריות ברירת מחדל:\n   🍳 מטבח | 🚿 חדרים רטובים | 🛋️ סלון | 🛏️ חדר שינה | ⚙️ כללי\n\n🔹 כל פריט: אחראי (מעצבת / לקוח) + סטטוס + הערות\n📊 מעקב: פס התקדמות צבעוני + אחוז השלמה\n\n💡 טיפ: הוסיפי פריטים ייחודיים לכל פרויקט — כי כל שיפוץ שונה!",
+    relatedTopics: ["ניהול פרויקטים", "משימות", "אישורים"],
+  },
+  {
+    keywords: ["תקציב", "לעקוב אחרי תקציב", "ניהול תקציב", "budget", "עלויות", "חריגה", "עלות", "כמה עולה"],
+    synonyms: ["כסף", "תמחור", "הוצאות", "עלות פרויקט"],
+    category: "financial",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? `${name}, ` : "";
+      return `${prefix}מעקב תקציב — שליטה מלאה בכל שקל! 💰\n\n📍 מיקום: תפריט צד ← CRM ← מעקב תקציב\n\nאיך עובדים עם זה:\n1️⃣ בחרי פרויקט → הגדירי תקציב כולל\n2️⃣ הוסיפי פריטים לפי קטגוריות: מטבח, ריצוף, תאורה, נגרות, אינסטלציה...\n3️⃣ לכל פריט: סכום מתוכנן ← סכום בפועל ← ספק ← סטטוס\n\n📊 דשבורד תקציב:\n   💵 סה\"כ מתוכנן vs. בפועל\n   📈 אחוז ניצול לכל קטגוריה\n   ⚠️ התראת חריגה אוטומטית\n   📊 גרף פילוח הוצאות\n\n🔹 סטטוסים: מתוכנן → הצעה התקבלה → מאושר → שולם\n\n💡 טיפ מקצועי: קשרי כל פריט תקציב להצעת מחיר של ספק — ככה את רואה הכל ממקום אחד ואף חריגה לא מפתיעה!`;
+    },
+    relatedTopics: ["הצעות מחיר", "ניהול חומרים", "ספקים"],
+  },
+  {
+    keywords: ["תזמון", "gantt", "לוח זמנים", "שלבים", "scheduler", "ציר זמן חכם", "לוז", "עיכוב"],
+    synonyms: ["גנט", "timeline", "schedule", "תכנון זמנים"],
+    category: "management",
+    answer: "תזמון חכם — ציר זמן ויזואלי שמונע עיכובים! 📅\n\n📍 מיקום: תפריט צד ← CRM ← תזמון חכם\n\n🔹 תצוגת Gantt: ציר זמן אופקי מקצועי — כל שלב בצבע אחר\n🔹 יצירת שלב: שם ← תאריך התחלה ← משך בימים ← תלויות\n🔹 תלויות: הגדירי \"שלב X מתחיל רק אחרי שלב Y\" — המערכת מנהלת אוטומטית\n\n📊 סטטוסים צבעוניים:\n   ⬜ ממתין | 🔵 בתהליך | ✅ הושלם | 🔴 באיחור\n\n🔹 ספקים: שייכי ספק + טלפון לכל שלב — תקשרי ישירות\n🔹 התראות: ⚠️ המערכת מתריעה כשתלות מתעכבת!\n\n💡 טיפ: שלב באיחור? שני ל\"באיחור\" + תרשמי סיבה. ככה בסוף הפרויקט יש לך תיעוד מלא.",
+    relatedTopics: ["ניהול פרויקטים", "משימות", "ספקים"],
+  },
+  {
+    keywords: ["השראה", "inspiration", "תמונות השראה", "בורד השראה", "ספריית השראה", "pinterest", "תמונות", "סגנון"],
+    synonyms: ["רעיונות", "אינספירציה", "references", "רפרנסים"],
+    category: "design",
+    answer: "ספריית השראה — ה-Pinterest הפרטי שלך! 🎨\n\n📍 מיקום: תפריט צד ← CRM ← ספריית השראה\n\nאיך עובדים:\n1️⃣ צרי בורדים: לפי פרויקט, סגנון, או חדר\n2️⃣ הוסיפי תמונות: גררי מהמחשב או הדביקי לינק\n3️⃣ תייגי: סגנון (מודרני/סקנדינבי/קלאסי...) + חדר + חומר\n\n🔹 שיתוף חכם: הפעילי \"שתף עם לקוח\" → הלקוחה מסמנת ❤️ על מה שאהבה\n🔹 סינון: מצאי תמונות לפי סגנון / חדר / חומר\n🔹 תצוגה: גריד יפה עם hover preview\n\n💡 טיפ: שלחי קישור שיתוף בוואטסאפ → הלקוחה תסמן מה אהבה → את תראי בדיוק מה מתאים לה. חוסך שעות של פגישות!",
+    relatedTopics: ["מודבורד", "שאלון סגנון", "לפני/אחרי"],
+  },
+  {
+    keywords: ["תבנית עבודה", "תבנית תהליך", "workflow", "תהליך עבודה", "תבניות", "אוטומציה"],
+    synonyms: ["וורקפלו", "שלבים אוטומטיים", "תהליך אוטומטי"],
+    category: "system",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? `${name}, ` : "";
+      return `${prefix}תבניות עבודה — הסוד של מעצבות יעילות! ⚡\n\n📍 מיקום: תפריט צד ← CRM ← תבניות עבודה\n\nמה זה?\nתבנית שמגדירה מראש את כל השלבים, המשימות וההגדרות — ואז כשפותחים פרויקט חדש, הכל נוצר אוטומטית! 🪄\n\nאיך מגדירים:\n1️⃣ \"+ תבנית חדשה\" → שם ← סוג פרויקט\n2️⃣ הגדירי שלבים: ייעוץ → מדידות → תכנון → ביצוע → מסירה\n3️⃣ לכל שלב: משימות + משך + אחראי\n\n🔹 החלה: \"החל על פרויקט\" → נוצרים שלבים ומשימות אוטומטית\n🔹 ברירת מחדל: סמני תבנית אחת כ-default\n\n💡 המלצה: צרי לפחות 2 תבניות:\n   📐 \"שיפוץ מלא\" — 8-10 שלבים\n   💬 \"ייעוץ בלבד\" — 3-4 שלבים`;
+    },
+    relatedTopics: ["ניהול פרויקטים", "תזמון חכם", "משימות"],
+  },
+  {
+    keywords: ["הצעת מחיר", "הצעה", "quote", "הצעת עבודה", "הצעות", "מחיר", "מחירון"],
+    synonyms: ["quotation", "הצעה ללקוח", "תמחור ללקוח"],
+    category: "financial",
+    answer: "הצעות מחיר — מקצועי ומרשים! 💎\n\n📍 מיקום: תפריט צד ← CRM ← הצעות מחיר\n\nיצירת הצעה:\n1️⃣ \"+ הצעה חדשה\" → בחרי לקוח ← פרויקט\n2️⃣ הוסיפי פריטים: תיאור, כמות, מחיר ליחידה\n3️⃣ סכום כולל — מחושב אוטומטית!\n\n📊 מחזור חיים:\n   📝 טיוטה → 📤 נשלחה → ✅ אושרה → ❌ נדחתה\n\n🔥 פיצ'ר מנצח: הצעה שאושרה → לחצי \"המר לחוזה\" → חוזה נוצר אוטומטית עם כל הפרטים!\n\n💡 טיפ: הגדירי תבנית הצעה בהגדרות CRM — חוסכת זמן בכל הצעה חדשה.",
+    relatedTopics: ["חוזים דיגיטליים", "מעקב תקציב", "ספקים"],
+  },
+  {
+    keywords: ["משימה", "משימות", "task", "ליצור משימה", "מטלה", "מטלות", "to do", "לעשות"],
+    synonyms: ["todo", "רשימת מטלות", "מה צריך לעשות"],
+    category: "management",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? `${name}, ` : "";
+      const taskHint = ctx.pendingTasks && ctx.pendingTasks > 0
+        ? `\n\n📌 אגב, יש לך ${ctx.pendingTasks} משימות פתוחות כרגע — בדקי בדשבורד!`
+        : "";
+      return `${prefix}ניהול משימות — שום דבר לא נופל בין הכיסאות! ✅\n\n📍 מיקום: תפריט צד ← CRM ← משימות\n\nיצירת משימה:\n1️⃣ \"+ משימה חדשה\" → כותרת, תאריך יעד, עדיפות\n2️⃣ שייכי לפרויקט ← ככה הכל מסודר במקום אחד\n\n📊 סטטוסים:\n   📋 לביצוע → ⚙️ בתהליך → ✅ הושלם\n\n🔹 סינון: לפי סטטוס, עדיפות (דחוף/רגיל/נמוך), או פרויקט\n🔹 דחוף: משימות \"דחוף\" מופיעות בדשבורד הראשי עם 🔴${taskHint}\n\n💡 טיפ: בסוף כל יום, עדכני סטטוסים — ככה את מתחילה כל בוקר עם תמונה ברורה!`;
+    },
+    relatedTopics: ["ניהול פרויקטים", "יומן ופגישות", "תבניות עבודה"],
+  },
+  {
+    keywords: ["יומן", "פגישה", "פגישות", "לוח שנה", "calendar", "אירוע", "תזכורת"],
+    synonyms: ["meeting", "פגישת לקוח", "תור", "לקבוע פגישה"],
+    category: "management",
+    answer: "יומן ופגישות — הזמן שלך מנוהל! 📅\n\n📍 מיקום: תפריט צד ← CRM ← יומן\n\n🔹 תצוגות: חודש 📆 | שבוע 📋 | יום ⏰\n🔹 יצירה: לחצי על תאריך בלוח או \"+ פגישה חדשה\"\n🔹 פרטים: כותרת, תאריך ושעה, שיוך ללקוח, מיקום (כתובת / זום)\n🔹 תזכורות: קבעי תזכורת 15 דק / שעה / יום לפני\n🔹 גרור-ושחרר: שני תאריך פגישה בגרירה פשוטה!\n\n💡 טיפ מקצועי: הוסיפי הערה לכל פגישה עם מה לדבר — תגיעי מוכנה ותרשימי את הלקוח!",
+    relatedTopics: ["משימות", "ניהול לקוחות"],
+  },
+  {
+    keywords: ["ספק", "ספקים", "להוסיף ספק", "ניהול ספקים", "ספק חדש", "ספריית ספקים"],
+    synonyms: ["קבלן", "מתקין", "supplier", "vendor"],
+    category: "management",
+    answer: "ניהול ספקים — שתי מערכות שעובדות ביחד! 🤝\n\n📍 ספריית הקהילה: תפריט צד ← קהילה ← ספריית ספקים\n   🌐 כל ספקי הקהילה: חיפוש לפי קטגוריה, אזור\n   ⭐ דירוגים והמלצות של מעצבות אחרות\n   📊 היסטוריית עסקאות לכל ספק\n\n📍 הספקים שלי: תפריט צד ← עיצוב ← ספקים שלי\n   📝 ניהול אישי: שם, תחום, טלפון, הערות פרטיות\n   🔗 שייכי ספקים לפרויקטים\n   📞 חיוג ישיר מהכרטיס\n\n💡 טיפ: ספק שדירגת בספרייה → יופיע גבוה יותר ויעזור למעצבות אחרות. קהילה חזקה!",
+    relatedTopics: ["דיווח עסקה", "ניהול חומרים", "מעקב תקציב"],
+  },
+  {
+    keywords: ["whatsapp", "וואטסאפ", "הודעה", "הודעות", "שליחת הודעה", "תקשורת"],
+    synonyms: ["ווטסאפ", "ווצאפ", "ווטצאפ", "לשלוח הודעה", "לכתוב ללקוח"],
+    category: "communication",
+    answer: "WhatsApp — תקשורת ישירה מהמערכת! 📱\n\n📍 מיקום: תפריט צד ← CRM ← WhatsApp\n\nחיבור ראשוני (פעם אחת):\n1️⃣ לחצי \"חבר WhatsApp\"\n2️⃣ סרקי QR code עם הוואטסאפ שלך\n3️⃣ מחובר! ✅ הודעות נשלחות ישירות\n\n🔹 שליחה: כתבי הודעה → שלחי ישירות ללקוח\n🔹 תבניות: הודעות מוגדרות מראש — חוסכות זמן\n🔹 היסטוריה: כל ההתכתבות שמורה בכרטיס הלקוח\n\n🔥 שילובים חכמים:\n   📎 שלחי קישור חתימת חוזה\n   📋 שלחי סיכום פגישה\n   🔗 שלחי קישור לבורד השראה\n\n💡 טיפ: הגדירי תבנית \"הודעת פתיחה\" — ברגע שלקוחה חדשה מתווספת, שלחי מיד!",
+    relatedTopics: ["חוזים דיגיטליים", "ניהול לקוחות"],
+  },
+  {
+    keywords: ["סקר", "שאלון", "סקר שביעות רצון", "סקר לקוח", "פידבק", "משוב"],
+    synonyms: ["feedback", "חוות דעת", "ביקורת", "survey"],
+    category: "management",
+    answer: "סקרים ומשוב — למדי מכל פרויקט! 📊\n\n📍 מיקום: תפריט צד ← CRM ← סקרים\n\n🔹 סוגי סקרים:\n   😊 שביעות רצון — אחרי כל שלב\n   🎨 שאלון סגנון — בתחילת הפרויקט\n   📝 משוב סיום — בסיום הפרויקט\n\n🔹 סוגי שאלות: פתוחות, דירוג 1-5 ⭐, בחירה מרובה\n🔹 שליחה: קישור ייחודי ← הלקוח ממלא בנייד/מחשב\n🔹 תוצאות: סיכום + ממוצע דירוגים + השוואה בין פרויקטים\n\n💡 טיפ: שלחי סקר שביעות רצון אחרי כל פרויקט — תגובות חיוביות הופכות להמלצות שאפשר לשתף! ⭐",
+    relatedTopics: ["קליטת לקוח", "שאלון סגנון"],
+  },
+  {
+    keywords: ["מודבורד", "moodboard", "לוח השראה", "עיצוב ויזואלי"],
+    synonyms: ["mood board", "לוח מצב רוח", "קולאז'", "collage"],
+    category: "design",
+    answer: "מודבורד — לוח עיצוב שהלקוח אוהב! 🎨\n\n📍 מיקום: תפריט צד ← CRM ← מודבורד\n\n🔹 יצירה: \"+ מודבורד חדש\" ← שם ← שייכי לפרויקט\n🔹 הוסיפי: תמונות, טקסטים, דוגמאות צבע, חומרים, הערות\n🔹 סידור: גררי ושחררי ← סדרי כרצונך\n🔹 שיתוף: שתפי עם הלקוח — הוא רואה ומגיב!\n\n✨ ההבדל ממודבורד לספריית השראה:\n   📌 מודבורד = קונספט כללי, מצב רוח, כיוון\n   📸 ספריית השראה = תמונות ספציפיות, רפרנסים\n\n💡 טיפ: הכיני מודבורד לכל חדר — הלקוח מרגיש שהבנת אותו!",
+    relatedTopics: ["ספריית השראה", "ניהול חומרים", "שאלון סגנון"],
+  },
+  {
+    keywords: ["חומרים", "ניהול חומרים", "מעקב חומרים", "הזמנת חומרים", "חומר"],
+    synonyms: ["materials", "פריטים", "הזמנות", "ריצוף", "תאורה", "נגרות"],
+    category: "management",
+    answer: "ניהול חומרים — מעקב מדויק מהזמנה להתקנה! 📦\n\n📍 מיקום: תפריט צד ← CRM ← חומרים\n\nלכל חומר:\n🔹 שם, ספק, כמות, מחיר, תמונה\n🔹 שיוך לפרויקט ולחדר\n\n📊 סטטוסים:\n   📋 הוזמן → 🚚 בדרך → ✅ הגיע → 🔧 הותקן\n\n🔹 סיכום: עלויות מצטברות לפרויקט\n🔹 קישור חכם: קשרי לפריט תקציב ← מעקב כפול אוטומטי\n\n💡 טיפ: כשחומר מגיע — עדכני מיד + צלמי! ככה יש תיעוד אם משהו לא מתאים.",
+    relatedTopics: ["מעקב תקציב", "ספקים"],
+  },
+  {
+    keywords: ["לפני אחרי", "before after", "תמונות לפני", "תמונות אחרי", "גלריה"],
+    synonyms: ["השוואה", "תוצאות", "פורטפוליו"],
+    category: "design",
+    answer: "לפני/אחרי — הציגי את הקסם שעשית! ✨\n\n📍 מיקום: תפריט צד ← CRM ← לפני/אחרי\n\n🔹 יצירה: בחרי פרויקט ← העלי תמונת \"לפני\" + \"אחרי\"\n🔹 סלייד: תצוגת סלייד מרשימה להשוואה ויזואלית\n🔹 שיתוף: הוסיפי לפרופיל ← לקוחות פוטנציאליים רואים\n\n📸 טיפים לצילום מנצח:\n   📐 צלמי מאותה זווית בדיוק — אפקט \"וואו\" חזק!\n   💡 אותה תאורה — אל תצלמי ביום שונה אם אפשר\n   🧹 נקי ומסודר — בלפני ובאחרי\n\n💡 טיפ: לפני/אחרי טובים = כלי השיווק הכי חזק שלך!",
+    relatedTopics: ["ספריית השראה", "ניהול פרויקטים", "פרופיל"],
+  },
+  {
+    keywords: ["אישור", "אישורים", "אישור לקוח", "אישור חומרים"],
+    synonyms: ["approval", "לאשר", "הסכמה"],
+    category: "management",
+    answer: "מערכת אישורים — תיעוד כל החלטה! ✅\n\n📍 מיקום: תפריט צד ← CRM ← אישורים\n\n🔹 סוגי אישורים:\n   🎨 אישור עיצוב — קונספט, פלטת צבעים\n   📦 אישור חומרים — ריצוף, תאורה, ברזים\n   💰 אישור הצעת מחיר — סכומים ותנאים\n\n📊 מעקב: ⏳ ממתין / ✅ מאושר / ❌ נדחה + הערת לקוח\n🔹 הודעות: הלקוח מקבל התראה ← מגיב ← את רואה מיד\n\n🔒 למה זה חשוב?\nכל אישור מתועד עם תאריך ושעה — מגן עליך אם יש חילוקי דעות!\n\n💡 טיפ: לפני שמזמינים חומר יקר — שלחי אישור ללקוח. 2 דקות שחוסכות כאב ראש!",
+    relatedTopics: ["הצעות מחיר", "חוזים דיגיטליים", "חומרים"],
+  },
+  {
+    keywords: ["קליטה", "onboarding", "קליטת לקוח", "שאלון ראשוני", "טופס קליטה"],
+    synonyms: ["תחילת עבודה", "לקוח חדש התחלה", "אינטייק", "intake"],
+    category: "management",
+    answer: "קליטת לקוח — הרושם הראשון חשוב! 🌟\n\n📍 מיקום: תפריט צד ← CRM ← קליטת לקוח\n\nאיך זה עובד:\n1️⃣ צרי טופס קליטה ← בחרי שאלות\n2️⃣ שלחי קישור ← הלקוח ממלא בנוחות\n3️⃣ התשובות נשמרות אוטומטית בכרטיס הלקוח\n\n📋 שאלות מומלצות:\n   🎨 סגנון מועדף + תמונות דוגמה\n   💰 טווח תקציב\n   📅 לוח זמנים רצוי\n   📐 רשימת חדרים / דרישות מיוחדות\n   👨‍👩‍👧‍👦 הרכב המשפחה + אורח חיים\n\n💡 טיפ מקצועי: שלבי עם שאלון סגנון — תגיעי לפגישה הראשונה כבר עם תמונה מלאה של הלקוח!",
+    relatedTopics: ["שאלון סגנון", "ניהול לקוחות", "מודבורד"],
+  },
+  {
+    keywords: ["שאלון סגנון", "סגנון", "style quiz", "סגנון עיצובי"],
+    synonyms: ["סגנון לקוח", "העדפות עיצוב", "טעם"],
+    category: "design",
+    answer: "שאלון סגנון — גלי מה הלקוח באמת אוהב! 🎭\n\n📍 מיקום: תפריט צד ← CRM ← שאלון סגנון\n\n✨ איך זה עובד:\n🔹 שאלון ויזואלי: הלקוח בוחר תמונות שאהב\n🔹 ניתוח אוטומטי: המערכת מזהה סגנון דומיננטי\n🔹 תוצאה: דף תוצאות מרשים + המלצות\n\n🎨 סגנונות: מודרני, סקנדינבי, אינדוסטריאלי, קלאסי, בוהו, מינימליסטי, ים-תיכוני...\n\n💡 טיפ שמרשים: שתפי את דף התוצאות בפגישה הראשונה — הלקוח מרגיש ש\"הבנת אותו\" מהרגע הראשון! זה בונה אמון מהיום הראשון.",
+    relatedTopics: ["קליטת לקוח", "ספריית השראה", "מודבורד"],
+  },
+  {
+    keywords: ["שעות", "מעקב שעות", "time tracking", "זמן", "טיימר", "כמה שעות"],
+    synonyms: ["שעת עבודה", "תיעוד שעות", "לעקוב אחרי זמן"],
+    category: "financial",
+    answer: "מעקב שעות — דעי בדיוק כמה השקעת! ⏱️\n\n📍 מיקום: תפריט צד ← CRM ← מעקב שעות\n\n🔹 טיימר חכם: ▶️ התחילי ← ⏸️ עצרי ← נשמר אוטומטית\n🔹 הוספה ידנית: תאריך ← שעות ← תיאור ← פרויקט\n🔹 קטגוריות: ייעוץ, תכנון, ליווי, ביקור באתר, רכש\n\n📊 דוחות:\n   📋 סיכום לפרויקט — כמה שעות על כל פרויקט\n   📅 סיכום חודשי — כמה שעות עבדת החודש\n   👤 סיכום ללקוח — כמה שעות לכל לקוח\n\n💡 למה זה חשוב? אם את גובה לפי שעה — תיעוד מדויק. אם לא — תבדקי אם את מתמחרת נכון! ככה תדעי בפרויקט הבא כמה לגבות.",
+    relatedTopics: ["משימות", "מעקב תקציב"],
+  },
+  {
+    keywords: ["הגדרות", "settings", "crm", "ברירת מחדל", "קונפיגורציה", "הגדרות מערכת"],
+    synonyms: ["configuration", "התאמה", "לשנות הגדרה"],
+    category: "system",
+    answer: "הגדרות CRM — התאימי את המערכת אלייך! ⚙️\n\n📍 מיקום: תפריט צד ← CRM ← הגדרות CRM\n\n🔹 ברירות מחדל:\n   📊 שלבי פרויקט — הגדירי את השלבים שלך\n   💰 תנאי תשלום — ברירת מחדל לחוזים\n   📝 תבנית חוזה — בחרי תבנית ברירת מחדל\n   📋 תבנית הצעה — מתאימה מראש\n\n🔹 כלליות:\n   💱 מטבע (₪ / $ / €)\n   🕐 אזור זמן\n   🌐 שפת הודעות ללקוח\n\n💡 טיפ: הגדירי פעם אחת — כל פרויקט, חוזה והצעת מחיר חדשים ישתמשו בהגדרות שלך אוטומטית!",
+    relatedTopics: ["תבניות עבודה", "ניווט באתר"],
+  },
+  {
+    keywords: ["כרטיס ביקור", "כרטיס", "business card", "כרטיס דיגיטלי"],
+    synonyms: ["כרטיס אישי", "כרטיס עסקי", "ביזנס קארד"],
+    category: "system",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? `${name}, ` : "";
+      const specLine = ctx.specialization
+        ? `\n\n🎯 עם ההתמחות שלך ב${ctx.specialization} — הכרטיס יראה סופר מקצועי!`
+        : "";
+      return `${prefix}כרטיס ביקור דיגיטלי — הרושם הראשון שלך! 💳✨\n\n📍 מיקום: תפריט צד ← ראשי ← כרטיס ביקור\n\n🔹 עריכה: שם, התמחות, טלפון, אימייל, אינסטגרם\n🔹 עיצוב: בחרי צבעים ועיצוב שמתאימים לברנד\n🔹 שיתוף: קישור ייחודי + QR code${specLine}\n\n📱 איך משתמשים?\n   📤 שלחי בוואטסאפ ללקוחות פוטנציאליים\n   🖨️ הדפיסי QR על כרטיסי ביקור פיזיים\n   📸 הוסיפי לביו באינסטגרם\n\n💡 טיפ: שלחי בסוף כל פגישת ייעוץ — הלקוח שומר ומעביר הלאה!`;
+    },
+    relatedTopics: ["פרופיל", "ניהול לקוחות"],
+  },
+  {
+    keywords: ["פרופיל", "עריכת פרופיל", "הפרופיל שלי", "תמונה"],
+    synonyms: ["profile", "פרטים שלי", "העמוד שלי"],
+    category: "system",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? `${name}, ` : "";
+      const statsLine = ctx.rank
+        ? `\n\n📊 אגב, את במקום ${ctx.rank} בדירוג הקהילה — ${ctx.rank <= 50 ? "מרשים!" : "ממשיכות לעלות!"} 🏆`
+        : "";
+      return `${prefix}הפרופיל שלך — הפנים של העסק! 👤\n\n📍 מיקום: תפריט צד ← ראשי ← פרופיל\n\n🔹 פרטים: שם מלא, עיר, התמחות, שנות ניסיון\n🔹 קישורים: אינסטגרם, אתר אישי, אימייל, טלפון\n🔹 תמונה: העלי תמונה מקצועית — מגדילה אמינות ב-80%!${statsLine}\n\n💡 טיפ: פרופיל מלא = נראות גבוהה בקהילה + אמון מלקוחות!`;
+    },
+    relatedTopics: ["כרטיס ביקור", "דשבורד"],
+  },
+  {
+    keywords: ["דשבורד", "מסך ראשי", "דף הבית", "הבית שלי", "סטטיסטיקה", "נתונים", "דוח", "דוחות"],
+    synonyms: ["מבט על", "סיכום", "dashboard", "תמונת מצב"],
+    category: "system",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      let statsLine = "";
+      if (ctx.totalDeals || ctx.rank) {
+        const parts: string[] = [];
+        if (ctx.totalDeals) parts.push(`${ctx.totalDeals} עסקאות`);
+        if (ctx.totalDealAmount) parts.push(`₪${ctx.totalDealAmount.toLocaleString()} מחזור`);
+        if (ctx.rank) parts.push(`מקום ${ctx.rank} בדירוג`);
+        statsLine = `\n\n📈 הנתונים שלך: ${parts.join(" • ")}`;
+      }
+      return `${name ? name + ", " : ""}הדשבורד — הכל במבט אחד! 📊\n\n📍 מיקום: תפריט צד ← ראשי ← הבית שלי\n\n📊 כרטיסי KPI:\n   🏗️ פרויקטים פעילים\n   💰 עסקאות ומחזור\n   🎰 כניסות להגרלה\n   📅 אירועים\n   🏆 דירוג בקהילה${statsLine}\n\n🔹 התקדמות חודשית: progress bar עם יעד\n🔹 פעילויות אחרונות: ציר זמן חי\n🔹 פעולות מהירות: חיפוש, דיווח, לקוחות, WhatsApp\n\n💡 טיפ: פתחי כל בוקר — 10 שניות ויש לך תמונת מצב מלאה!`;
+    },
+    relatedTopics: ["ניווט באתר", "ניהול לקוחות", "מעקב תקציב"],
+  },
+  {
+    keywords: ["ניווט", "תפריט", "סיידבר", "sidebar", "איפה", "איך מגיעים", "איך מוצאים"],
+    synonyms: ["navigation", "לנווט", "למצוא", "היכן", "לחפש"],
+    category: "system",
+    answer: "ניווט באתר — מצאי הכל בשנייה! 🧭\n\n📌 4 קבוצות בתפריט צד:\n\n🏠 ראשי:\n   • הבית שלי (דשבורד)\n   • פרופיל\n   • כרטיס ביקור\n\n👥 קהילה:\n   • ספריית ספקים\n   • דיווח עסקה\n   • היסטוריית עסקאות\n\n💼 CRM:\n   • לקוחות ← כל לקוח מכיל 20 tabs!\n   • תבניות עבודה, תבניות חוזה\n   • WhatsApp, Webhooks, הגדרות\n\n🎨 עיצוב:\n   • ספקים שלי\n\n📋 20 tabs בכרטיס לקוח: פרטים, פרויקטים, משימות, הצעות מחיר, חוזים, מודבורד, יומן, תכניות, חומרים, תקציב, ציר זמן, לפני/אחרי, אישורים, מעקב שעות, מסירה, תזמון, קליטה, שאלון סגנון, סקרים, השראה\n\n💡 טיפ: לחצי על ← בתפריט לכווץ ← יותר מקום לעבוד!",
+    relatedTopics: ["דשבורד", "הגדרות CRM", "ניהול לקוחות"],
+  },
+  {
+    keywords: ["מה אפשר", "מה יש", "פיצ'רים", "יכולות", "עזרה", "help"],
+    synonyms: ["מה המערכת עושה", "תראי לי", "מה יש כאן"],
+    category: "system",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      const prefix = name ? `${name}, ` : "";
+      return `${prefix}המערכת שלך עמוסה ביכולות! 🚀\n\n💼 ניהול:\n   ✅ לקוחות ופרויקטים (20 כלים לכל לקוח!)\n   ✅ משימות, יומן ופגישות\n   ✅ צ'קליסט מסירה\n\n📝 מסמכים:\n   ✅ חוזים דיגיטליים עם חתימה\n   ✅ הצעות מחיר מקצועיות\n   ✅ מערכת אישורים\n\n💰 כספים:\n   ✅ מעקב תקציב חי\n   ✅ מעקב שעות\n\n🎨 עיצוב:\n   ✅ ספריית השראה + מודבורד\n   ✅ שאלון סגנון + לפני/אחרי\n\n⚙️ מערכת:\n   ✅ תבניות תהליך עבודה\n   ✅ WhatsApp + Webhooks\n   ✅ ניהול ספקים וחומרים\n   ✅ סקרים + כרטיס ביקור\n\n💬 שאלי על כל נושא ואני אסביר בפירוט!`;
+    },
+    relatedTopics: ["ניווט באתר", "ניהול לקוחות", "חוזים דיגיטליים"],
+  },
+  {
+    keywords: ["webhook", "webhooks", "אינטגרציה", "חיבור", "api"],
+    synonyms: ["integration", "zapier", "make", "אוטומציה חיצונית"],
+    category: "system",
+    answer: "Webhooks — חברי את המערכת לכל דבר! 🔌\n\n📍 מיקום: תפריט צד ← CRM ← Webhooks\n\n🔹 מה זה? התראות אוטומטיות לשירותים חיצוניים — כל מה שקורה במערכת, יכול להפעיל פעולה במקום אחר!\n\n🔹 אירועים נתמכים:\n   👤 לקוח חדש נוצר\n   ✍️ חוזה נחתם\n   ✅ משימה הושלמה\n   💰 הצעה אושרה\n\n🔹 חיבור: הגדירי URL של השירות החיצוני ← המערכת שולחת אוטומטית\n\n🔥 דוגמאות:\n   📊 Zapier → שורה חדשה ב-Google Sheets\n   📧 Make → מייל אוטומטי ללקוח\n   📱 Slack → התראה לצוות\n\n💡 טיפ: התחילי עם Zapier — קל להגדרה וחינמי ל-100 פעולות!",
+    relatedTopics: ["הגדרות CRM", "WhatsApp"],
+  },
+  {
+    keywords: ["עסקה", "עסקאות", "דיווח עסקה", "deal", "דיל"],
+    synonyms: ["דיווח", "הגרלה", "דירוג"],
+    category: "management",
+    answer: (ctx) => {
+      const name = firstName(ctx);
+      let statsLine = "";
+      if (ctx.totalDeals) {
+        statsLine = `\n\n🌟 ${name ? name + ", " : ""}דיווחת על ${ctx.totalDeals} עסקאות${ctx.totalDealAmount ? ` בסכום כולל של ₪${ctx.totalDealAmount.toLocaleString()}` : ""}! ${ctx.lotteryEntries ? `יש לך ${ctx.lotteryEntries} כניסות להגרלה` : ""} 🎰`;
+      }
+      return `דיווח עסקאות — הרוויחי מכל עסקה! 🤝${statsLine}\n\n📍 מיקום: תפריט צד ← קהילה ← דיווח עסקה\n\n🔹 תהליך פשוט:\n   1️⃣ בחרי ספק מהרשימה\n   2️⃣ הזיני סכום העסקה\n   3️⃣ הוסיפי פרטים ← שלחי!\n\n🎁 מה את מרוויחה:\n   🎰 כניסות להגרלה — כל עסקה = סיכוי!\n   ⭐ בניית דירוג — ככל שמדווחת יותר, הדירוג עולה\n   🤝 חיזוק הקהילה — ספקים טובים מקבלים חשיפה\n\n💡 טיפ: דווחי על כל עסקה, גם קטנה — הכל נספר!`;
+    },
+    relatedTopics: ["ספקים", "דשבורד"],
+  },
+];
+
+// ==========================================
+// Topic Categories for Welcome Screen
+// ==========================================
+
+const TOPIC_CATEGORIES = [
+  {
+    title: "ניהול",
+    icon: Users,
+    color: "from-gold/30 to-gold/10",
+    textColor: "text-gold",
+    topics: ["ניהול לקוחות", "איך יוצרים חוזה?", "הצעות מחיר"],
+  },
+  {
+    title: "עיצוב",
+    icon: Palette,
+    color: "from-purple-500/30 to-purple-500/10",
+    textColor: "text-purple-400",
+    topics: ["ספריית השראה", "מודבורד", "שאלון סגנון"],
+  },
+  {
+    title: "מערכת",
+    icon: Settings,
+    color: "from-blue-500/30 to-blue-500/10",
+    textColor: "text-blue-400",
+    topics: ["ניווט באתר", "מה אפשר לעשות?", "הגדרות CRM"],
+  },
+];
+
+// ==========================================
+// Helpers
+// ==========================================
+
+function getGreetingMessage(ctx: DesignerContext): string {
+  const name = firstName(ctx);
+  const timeG = getTimeGreeting();
+  if (name) {
+    return pick([
+      `${timeG} ${name}! ✨ אני העוזרת החכמה של זירת.\n\nאני מכירה כל פינה במערכת — שאלי אותי כל דבר!\n\n💡 בחרי נושא למטה או כתבי שאלה.`,
+      `היי ${name}! 💛 ${timeG}.\n\nאני כאן לעזור לך עם כל מה שקשור למערכת — מלקוחות וחוזים, דרך עיצוב ותקציב.\n\n💡 בחרי נושא או שאלי חופשי!`,
+    ]);
+  }
+  return `${timeG}! ✨ אני העוזרת החכמה של זירת.\n\nאני מכירה את כל המערכת לעומק — שאלי אותי כל דבר!\n\n💡 בחרי נושא למטה או כתבי שאלה.`;
+}
+
+function getNoMatchMessage(ctx: DesignerContext): string {
+  const name = firstName(ctx);
+  const prefix = name ? `${name}, ` : "";
+  return pick([
+    `${prefix}לא הצלחתי למצוא תשובה מדויקת. 🤔\n\nנסי לנסח אחרת, או שאלי על:\n• לקוחות, פרויקטים, חוזים\n• הצעות מחיר, משימות, יומן\n• תקציב, תזמון, השראה\n\nאו כתבי \"מה אפשר\" לרשימה מלאה!`,
+    `${prefix}לא מצאתי מענה מדויק לשאלה. 🤔\n\nאולי ניסוח קצת שונה יעזור? אני מתמחה ב:\n📋 ניהול (לקוחות, פרויקטים, משימות)\n💰 כספים (תקציב, הצעות, מעקב שעות)\n🎨 עיצוב (השראה, מודבורד, סגנון)\n\nכתבי \"מה אפשר\" ← רשימה מלאה!`,
+  ]);
+}
+
+// Enhanced matching algorithm
+function findAnswer(input: string, ctx: DesignerContext): { answer: string; relatedTopics: string[] } {
+  const normalized = input.trim().replace(/[?!.,؟\u200f\u200e]/g, "").toLowerCase();
+  const words = normalized.split(/\s+/).filter(w => w.length > 1);
+
+  // 1. Check conversational patterns first (greetings, thanks, etc.)
+  for (const pattern of conversationalPatterns) {
+    for (const rx of pattern.patterns) {
+      if (rx.test(normalized)) {
+        const responses = typeof pattern.responses === "function" ? pattern.responses(ctx) : pattern.responses;
+        const answer = pick(responses);
+        return { answer, relatedTopics: pattern.relatedTopics || [] };
+      }
+    }
+  }
+
+  // 2. Knowledge base search with enhanced scoring
+  let bestMatch: QAPair | null = null;
+  let bestScore = 0;
+
+  for (const qa of knowledgeBase) {
+    let score = 0;
+
+    // Check main keywords
+    for (const kw of qa.keywords) {
+      if (normalized.includes(kw)) {
+        score += kw.length * 3;
+        continue;
+      }
+      const kwWords = kw.split(/\s+/);
+      for (const kwWord of kwWords) {
+        for (const word of words) {
+          if (word === kwWord) {
+            score += kwWord.length * 2;
+          } else if (kwWord.length >= 2 && (word.startsWith(kwWord) || kwWord.startsWith(word))) {
+            score += Math.min(word.length, kwWord.length);
+          }
+        }
+      }
+    }
+
+    // Check synonyms with slightly lower score
+    if (qa.synonyms) {
+      for (const syn of qa.synonyms) {
+        if (normalized.includes(syn.toLowerCase())) {
+          score += syn.length * 2.5;
+        }
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = qa;
+    }
+  }
+
+  if (bestMatch && bestScore > 0) {
+    const answer = typeof bestMatch.answer === "function"
+      ? bestMatch.answer(ctx)
+      : bestMatch.answer;
+    return { answer, relatedTopics: bestMatch.relatedTopics || [] };
+  }
+
+  return { answer: getNoMatchMessage(ctx), relatedTopics: ["מה אפשר לעשות?", "ניווט באתר"] };
+}
+
+let msgIdCounter = 0;
+function genId() {
+  return `msg_${++msgIdCounter}_${Date.now()}`;
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+}
+
+// ==========================================
+// Typewriter Hook
+// ==========================================
+
+function useTypewriter(text: string, speed = 15, enabled = true) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      setDisplayed(text);
+      setDone(true);
+      return;
+    }
+
+    setDisplayed("");
+    setDone(false);
+
+    let i = 0;
+    const timer = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) {
+        clearInterval(timer);
+        setDone(true);
+      }
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [text, speed, enabled]);
+
+  return { displayed, done };
+}
+
+// ==========================================
+// Typewriter Message Component
+// ==========================================
+
+function TypewriterMessage({ msg, isLast, onTypingDone }: { msg: ChatMessage; isLast: boolean; onTypingDone: () => void }) {
+  const { displayed, done } = useTypewriter(msg.text, 12, isLast && msg.sender === "bot");
+
+  useEffect(() => {
+    if (done) onTypingDone();
+  }, [done, onTypingDone]);
+
+  return <span>{displayed}{!done && <span className="chat-cursor">|</span>}</span>;
+}
+
+// ==========================================
+// ChatBot Component
+// ==========================================
+
+type ChatBotProps = {
+  designerContext?: DesignerContext;
+};
+
+export default function ChatBot({ designerContext }: ChatBotProps) {
+  const ctx: DesignerContext = designerContext || {};
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [initialized, setInitialized] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [typingDoneForLast, setTypingDoneForLast] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [sendFlash, setSendFlash] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const tooltipTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const greetingMessage = getGreetingMessage(ctx);
+
+  // Show tooltip after 5s idle
+  useEffect(() => {
+    if (!isOpen && !initialized) {
+      tooltipTimer.current = setTimeout(() => setShowTooltip(true), 5000);
+      return () => clearTimeout(tooltipTimer.current);
+    }
+    setShowTooltip(false);
+  }, [isOpen, initialized]);
+
+  // Initialize greeting
+  useEffect(() => {
+    if (isOpen && !initialized) {
+      setMessages([{
+        id: genId(),
+        text: greetingMessage,
+        sender: "bot",
+        timestamp: new Date(),
+      }]);
+      setInitialized(true);
+      setTypingDoneForLast(false);
+    }
+  }, [isOpen, initialized, greetingMessage]);
+
+  // Auto scroll
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping]);
+
+  // Scroll detection for scroll-to-bottom button
+  const handleScroll = useCallback(() => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    setShowScrollBtn(scrollHeight - scrollTop - clientHeight > 100);
+  }, []);
+
+  // Keyboard shortcut: Escape to close
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) handleClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+    }, 250);
+  };
+
+  const handleOpen = () => {
+    setShowTooltip(false);
+    setIsOpen(true);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleCopy = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      // fallback: do nothing
+    }
+  };
+
+  const handleReset = () => {
+    setMessages([{
+      id: genId(),
+      text: greetingMessage,
+      sender: "bot",
+      timestamp: new Date(),
+    }]);
+    setTypingDoneForLast(false);
+  };
+
+  const handleSend = (text?: string) => {
+    const msgText = (text || input).trim();
+    if (!msgText || isTyping) return;
+
+    const userMsg: ChatMessage = {
+      id: genId(),
+      text: msgText,
+      sender: "user",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsTyping(true);
+    setTypingDoneForLast(true);
+    setSendFlash(true);
+    setTimeout(() => setSendFlash(false), 300);
+
+    // Simulate bot thinking — longer answers take more time
+    const delay = 600 + Math.random() * 600;
+    setTimeout(() => {
+      const { answer, relatedTopics } = findAnswer(msgText, ctx);
+      const botMsg: ChatMessage = {
+        id: genId(),
+        text: answer,
+        sender: "bot",
+        timestamp: new Date(),
+        relatedTopics,
+      };
+      setMessages((prev) => [...prev, botMsg]);
+      setIsTyping(false);
+      setTypingDoneForLast(false);
+    }, delay);
+  };
+
+  const onTypingDone = useCallback(() => {
+    setTypingDoneForLast(true);
+  }, []);
+
+  // Check if messages are grouped (same sender in sequence)
+  const isGrouped = (i: number) => {
+    if (i === 0) return false;
+    return messages[i].sender === messages[i - 1].sender;
+  };
+
+  // Last message related topics
+  const lastBotMsg = [...messages].reverse().find(m => m.sender === "bot");
+  const showSuggestions = typingDoneForLast && lastBotMsg?.relatedTopics && lastBotMsg.relatedTopics.length > 0;
+
+  const chatWidth = expanded ? 460 : 380;
+  const chatHeight = expanded ? 640 : 520;
+
+  return (
+    <>
+      {/* ============ FLOATING ACTION BUTTON ============ */}
+      <div className="fixed bottom-6 left-6 z-50">
+        {/* Tooltip */}
+        {showTooltip && !isOpen && (
+          <div className="absolute bottom-[70px] left-0 chat-tooltip-enter">
+            <div className="bg-black/90 backdrop-blur-xl text-white text-sm px-4 py-2.5 rounded-2xl rounded-bl-sm shadow-xl border border-white/10 whitespace-nowrap">
+              {firstName(ctx) ? `${firstName(ctx)}, צריכה עזרה? 💬` : "צריכה עזרה? 💬"}
+            </div>
+          </div>
+        )}
+
+        {/* Pulse ring */}
+        {!isOpen && (
+          <div className="absolute inset-0 w-14 h-14 rounded-full bg-gold/20 animate-ping" style={{ animationDuration: "2s" }} />
+        )}
+
+        {/* FAB Button */}
+        <button
+          onClick={() => isOpen ? handleClose() : handleOpen()}
+          className={`
+            relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center
+            transition-all duration-300 ease-out
+            ${isOpen
+              ? "bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/30 rotate-0"
+              : "bg-gradient-to-br from-gold to-gold-dark shadow-gold/30 hover:shadow-gold/50 hover:scale-110"
+            }
+          `}
+          title="צ'אט עזרה"
+        >
+          <div className={`transition-transform duration-300 ${isOpen ? "rotate-90" : "rotate-0"}`}>
+            {isOpen ? (
+              <X className="w-6 h-6 text-white" />
+            ) : (
+              <MessageCircle className="w-6 h-6 text-white" />
+            )}
+          </div>
+        </button>
+      </div>
+
+      {/* ============ CHAT PANEL ============ */}
+      {(isOpen || isClosing) && (
+        <div
+          dir="rtl"
+          className={`
+            fixed z-50 flex flex-col overflow-hidden rounded-3xl shadow-2xl
+            border border-white/10
+            max-md:!inset-0 max-md:!rounded-none max-md:!w-auto max-md:!h-auto
+            ${isClosing ? "chat-panel-exit" : "chat-panel-enter"}
+          `}
+          style={{
+            bottom: "100px",
+            left: "24px",
+            width: `${chatWidth}px`,
+            height: `${chatHeight}px`,
+            background: "rgba(16, 16, 24, 0.92)",
+            backdropFilter: "blur(40px)",
+            WebkitBackdropFilter: "blur(40px)",
+            transition: "width 0.3s ease, height 0.3s ease",
+          }}
+        >
+          {/* ===== Header ===== */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/8"
+            style={{ background: "linear-gradient(135deg, rgba(201,168,76,0.12) 0%, transparent 60%)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center chat-avatar-glow">
+                  <Sparkles className="w-5 h-5 text-white chat-sparkle-spin" />
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#101018]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                  בוט זירת
+                  <span className="text-[10px] font-normal text-gold/60 bg-gold/10 px-1.5 py-0.5 rounded-full">AI</span>
+                </h3>
+                <p className="text-white/30" style={{ fontSize: "10px" }}>
+                  {isTyping ? "מקלידה..." : "מחוברת • עוזרת חכמה"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleReset}
+                className="p-2 rounded-xl text-white/30 hover:text-white/60 hover:bg-white/5 transition-all"
+                title="נקה שיחה"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="p-2 rounded-xl text-white/30 hover:text-white/60 hover:bg-white/5 transition-all hidden md:flex"
+                title={expanded ? "הקטן" : "הגדל"}
+              >
+                {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={handleClose}
+                className="p-2 rounded-xl text-white/30 hover:text-white/60 hover:bg-white/5 transition-all md:hidden"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* ===== Messages ===== */}
+          <div
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto px-4 py-4 chat-messages-area"
+            style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}
+          >
+            {messages.map((msg, i) => {
+              const grouped = isGrouped(i);
+              const isLast = i === messages.length - 1;
+              const showTime = !isGrouped(i + 1 < messages.length ? i + 1 : -1);
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`
+                    flex chat-msg-enter
+                    ${msg.sender === "bot" ? "justify-end" : "justify-start"}
+                    ${grouped ? "mt-1" : "mt-3"}
+                    ${i === 0 ? "mt-0" : ""}
+                  `}
+                >
+                  <div className={`flex items-end gap-2 max-w-[88%] ${msg.sender === "bot" ? "flex-row" : "flex-row-reverse"}`}>
+                    {/* Avatar — only for first in group */}
+                    {msg.sender === "bot" && !grouped ? (
+                      <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center flex-shrink-0 mb-5">
+                        <Sparkles className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    ) : msg.sender === "bot" ? (
+                      <div className="w-7 flex-shrink-0" />
+                    ) : null}
+
+                    {/* Bubble */}
+                    <div className="group relative">
+                      <div
+                        className={`
+                          rounded-2xl px-4 py-2.5 whitespace-pre-line
+                          ${msg.sender === "bot"
+                            ? "bg-white/[0.07] text-white/90 rounded-br-md border border-white/[0.06]"
+                            : "bg-gradient-to-br from-gold to-gold-dark text-white rounded-bl-md shadow-lg shadow-gold/10"
+                          }
+                        `}
+                        style={{ fontSize: "13px", lineHeight: "1.7" }}
+                      >
+                        {msg.sender === "bot" && isLast ? (
+                          <TypewriterMessage msg={msg} isLast={isLast} onTypingDone={onTypingDone} />
+                        ) : (
+                          msg.text
+                        )}
+                      </div>
+
+                      {/* Copy button — bot messages only */}
+                      {msg.sender === "bot" && (
+                        <button
+                          onClick={() => handleCopy(msg.text, msg.id)}
+                          className={`
+                            absolute -left-2 top-2 p-1.5 rounded-lg transition-all duration-200
+                            ${copiedId === msg.id
+                              ? "bg-emerald-500/20 text-emerald-400 opacity-100"
+                              : "bg-white/5 text-white/20 opacity-0 group-hover:opacity-100 hover:text-white/50"
+                            }
+                          `}
+                          title="העתק"
+                        >
+                          {copiedId === msg.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      )}
+
+                      {/* Timestamp */}
+                      {showTime && (
+                        <p className={`text-white/20 mt-1 ${msg.sender === "bot" ? "text-right" : "text-left"}`}
+                          style={{ fontSize: "10px" }}
+                        >
+                          {formatTime(msg.timestamp)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="flex justify-end mt-3 chat-msg-enter">
+                <div className="flex items-end gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-3.5 h-3.5 text-white chat-sparkle-spin" />
+                  </div>
+                  <div className="bg-white/[0.07] border border-white/[0.06] rounded-2xl rounded-br-md px-5 py-3">
+                    <div className="flex gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-gold/60 chat-typing-dot" style={{ animationDelay: "0ms" }} />
+                      <div className="w-2 h-2 rounded-full bg-gold/60 chat-typing-dot" style={{ animationDelay: "150ms" }} />
+                      <div className="w-2 h-2 rounded-full bg-gold/60 chat-typing-dot" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* ===== Follow-up Suggestions / Welcome Topics ===== */}
+          {messages.length <= 1 && typingDoneForLast ? (
+            // Welcome categories
+            <div className="px-4 pb-3">
+              <div className="grid grid-cols-3 gap-2">
+                {TOPIC_CATEGORIES.map((cat) => {
+                  const CatIcon = cat.icon;
+                  return (
+                    <div key={cat.title} className="space-y-1.5">
+                      <div className={`flex items-center gap-1.5 ${cat.textColor}`}>
+                        <CatIcon className="w-3 h-3" />
+                        <span className="text-[10px] font-bold">{cat.title}</span>
+                      </div>
+                      {cat.topics.map(topic => (
+                        <button
+                          key={topic}
+                          onClick={() => handleSend(topic)}
+                          className="w-full text-right text-white/50 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/8 hover:bg-white/5 hover:text-white/70 hover:border-white/15 transition-all duration-200 truncate"
+                        >
+                          {topic}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : showSuggestions && lastBotMsg?.relatedTopics ? (
+            // Follow-up suggestions
+            <div className="px-4 pb-2 flex flex-wrap gap-1.5 chat-msg-enter">
+              {lastBotMsg.relatedTopics.map(topic => (
+                <button
+                  key={topic}
+                  onClick={() => handleSend(topic)}
+                  className="text-white/50 text-[11px] border border-white/10 rounded-full px-3 py-1.5 hover:bg-gold/10 hover:text-gold hover:border-gold/30 transition-all duration-200"
+                >
+                  {topic}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {/* ===== Scroll to bottom ===== */}
+          {showScrollBtn && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute left-1/2 -translate-x-1/2 bottom-[80px] w-8 h-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/20 transition-all chat-msg-enter z-10"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* ===== Input ===== */}
+          <div className="p-3 border-t border-white/8" style={{ background: "rgba(255,255,255,0.02)" }}>
+            <div className={`flex items-center gap-2 rounded-2xl border transition-all duration-300 px-1 ${sendFlash ? "border-gold/50 shadow-[0_0_12px_rgba(201,168,76,0.15)]" : "border-white/10"}`}>
+              <input
+                ref={inputRef}
+                className="flex-1 bg-transparent text-white/90 text-sm placeholder-white/25 px-3 py-3 focus:outline-none"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="💬 שאלי אותי כל דבר..."
+                disabled={isTyping}
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || isTyping}
+                className={`
+                  w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 flex-shrink-0 m-0.5
+                  ${input.trim() && !isTyping
+                    ? "bg-gradient-to-br from-gold to-gold-dark text-white shadow-lg shadow-gold/20 hover:shadow-gold/40 hover:scale-105"
+                    : "bg-white/5 text-white/20"
+                  }
+                `}
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

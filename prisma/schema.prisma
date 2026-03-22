@@ -1,0 +1,1688 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// ספקים — Suppliers
+// ==========================================
+model Supplier {
+  id                String   @id @default(uuid())
+  name              String   // שם העסק
+  contactName       String   // שם איש קשר
+  phone             String   // טלפון (WhatsApp)
+  email             String?  // מייל
+  logo              String?  // URL לוגו
+  category          String   // קטגוריה
+  city              String?  // עיר
+  area              String?  // אזור שירות
+  website           String?  // אתר אינטרנט
+  description       String?  // תיאור קצר לפרופיל
+  gallery           String[] // גלריית תמונות URLs
+
+  // מנוי
+  subscriptionStart DateTime?
+  subscriptionEnd   DateTime?
+  monthlyFee        Float?    // תשלום חודשי ₪
+  paymentStatus     PaymentStatus @default(PENDING)
+  lastPaymentDate   DateTime?
+
+  // סטטיסטיקות
+  postsThisMonth    Int      @default(0)
+  totalPosts        Int      @default(0)
+  totalDeals        Int      @default(0)
+  totalDealAmount   Float    @default(0)
+  averageRating     Float    @default(0)
+  ratingCount       Int      @default(0)
+
+  isActive          Boolean  @default(true)
+  isHidden          Boolean  @default(false)
+  notes             String?  // הערות פנימיות לתמר
+  loginToken        String?  @unique
+
+  // אימות
+  passwordHash      String?  // סיסמה מוצפנת
+  googleId          String?  @unique // Google OAuth ID
+  resetToken        String?  @unique // טוקן לאיפוס סיסמה
+  resetTokenExpiry  DateTime? // תפוגת טוקן איפוס
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  posts             Post[]
+  deals             Deal[]
+  recommendations   Recommendation[]
+  recommenders      SupplierRecommender[]
+  reservations      SupplierReservation[]
+}
+
+// ==========================================
+// מעצבות — Designers
+// ==========================================
+model Designer {
+  id                   String   @id @default(uuid())
+  fullName             String
+  phone                String
+  email                String?
+  city                 String?
+  area                 String?
+  specialization       String?
+  yearsExperience      Int?
+  instagram            String?
+  website              String?
+
+  // סוג העסקה
+  employmentType       EmploymentType @default(FREELANCE) // שכירה / עצמאית
+  yearsAsIndependent   Int?     // שנות וותק כעצמאית
+
+  // סטטוס אישור (רשימת המתנה)
+  approvalStatus       ApprovalStatus @default(APPROVED) // מאושרת / ממתינה / נדחתה
+
+  joinDate             DateTime @default(now())
+
+  totalDealsReported   Int      @default(0)
+  totalDealAmount      Float    @default(0)
+  lotteryEntriesTotal  Int      @default(0)
+  lotteryWinsTotal     Int      @default(0)
+  eventsAttended       Int      @default(0)
+
+  isActive             Boolean  @default(true)
+  notes                String?
+  loginToken           String?  @unique
+
+  // אימות
+  passwordHash         String?  // סיסמה מוצפנת
+  googleId             String?  @unique // Google OAuth ID
+  resetToken           String?  @unique // טוקן לאיפוס סיסמה
+  resetTokenExpiry     DateTime? // תפוגת טוקן איפוס
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  deals                Deal[]
+  eventRegistrations   EventRegistration[]
+  lotteryWins          LotteryWinner[]
+  recommendations      Recommendation[]
+
+  // CRM
+  crmClients           CrmClient[]
+  crmProjects          CrmProject[]
+  crmSettings          DesignerCrmSettings?
+  crmQuotes            CrmQuote[]
+  crmContracts         CrmContract[]
+  crmContractTemplates CrmContractTemplate[]
+  crmSuppliers         CrmSupplier[]
+  messageTemplates     CrmMessageTemplate[]
+  whatsAppConfig       WhatsAppConfig?
+  whatsAppMessages     WhatsAppMessage[]
+  clientCrmSettings    ClientCrmSettings[]
+  timeEntries          CrmTimeEntry[]
+  calendarEvents       CrmCalendarEvent[]
+  webhookEndpoints     CrmWebhookEndpoint[]
+  googleCalendar       DesignerGoogleCalendar?
+
+  // CRM V2 — פיצ'רים חדשים
+  approvalRequests     CrmApprovalRequest[]
+  onboardingTemplates  CrmOnboardingTemplate[]
+  styleQuizTemplates   CrmStyleQuizTemplate[]
+  activityLogs         CrmActivityLog[]
+  clientRecommendations CrmClientRecommendation[]
+  automationRules      CrmAutomationRule[]
+
+  // V3 — 5 פיצ'רים חדשים
+  workflowTemplates    CrmWorkflowTemplate[]
+  inspirationBoards    CrmInspirationBoard[]
+  budgetItems          CrmBudgetItem[]
+  scheduleBlocks       CrmScheduleBlock[]
+  handoffChecklists    CrmHandoffChecklist[]
+}
+
+// ==========================================
+// פרסומים — Posts
+// ==========================================
+model Post {
+  id                String     @id @default(uuid())
+  supplierId        String
+  supplier          Supplier   @relation(fields: [supplierId], references: [id])
+
+  status            PostStatus @default(PENDING)
+  scheduledTime     String?    // "10:30" / "13:30" / "20:30"
+  scheduledDate     DateTime?
+  publishedAt       DateTime?
+
+  imageUrl          String?
+  images            String[]   // עד 20 תמונות
+  caption           String?
+
+  hasLogo           Boolean    @default(false)
+  hasSupplierLogo   Boolean    @default(false)
+  hasDesignerCredit Boolean    @default(false)
+
+  rejectionReason   String?
+  whatsappMessageId String?
+  approvedBy        String?
+
+  // מחיקה אוטומטית — יום אחרי תאריך הפרסום
+  autoDeleteAt      DateTime?
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+// ==========================================
+// עסקאות — Deals
+// ==========================================
+model Deal {
+  id                    String    @id @default(uuid())
+  designerId            String
+  designer              Designer  @relation(fields: [designerId], references: [id])
+  supplierId            String
+  supplier              Supplier  @relation(fields: [supplierId], references: [id])
+
+  amount                Float
+  description           String?
+  dealDate              DateTime?
+  reportedAt            DateTime  @default(now())
+
+  supplierConfirmed     Boolean   @default(false)
+  supplierConfirmedAt   DateTime?
+
+  rating                Int?      // 1-5
+  ratingText            String?
+
+  lotteryEligible       Boolean   @default(true)
+  lotteryId             String?
+
+  addedManuallyByAdmin  Boolean   @default(false)
+  excludedFromLottery   Boolean   @default(false)
+  exclusionReason       String?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// ==========================================
+// המלצות — Recommendations
+// ==========================================
+model Recommendation {
+  id           String   @id @default(uuid())
+  designerId   String
+  designer     Designer @relation(fields: [designerId], references: [id])
+  supplierId   String
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+
+  rating       Int      // 1-5
+  text         String?
+  isAnonymous  Boolean  @default(false)
+  isApproved   Boolean  @default(true)
+  isHidden     Boolean  @default(false)
+
+  createdAt    DateTime @default(now())
+
+  @@unique([designerId, supplierId])
+}
+
+// ==========================================
+// הגרלות — Lotteries
+// ==========================================
+model Lottery {
+  id                  String        @id @default(uuid())
+  month               String        // YYYY-MM
+  prize               String
+  prizeValue          Float?
+  status              LotteryStatus @default(PREPARING)
+
+  minDealAmount       Float?
+  minDealCount        Int?
+
+  eligibleDesigners   String[]
+  manualAdditions     String[]
+  manualExclusions    String[]
+
+  numberOfWinners     Int           @default(1) // מספר זוכות (1, 2, 3...)
+  drawnAt             DateTime?
+  notes               String?
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  winners             LotteryWinner[]
+}
+
+// ==========================================
+// זוכי הגרלות — Lottery Winners
+// ==========================================
+model LotteryWinner {
+  id           String   @id @default(uuid())
+  lotteryId    String
+  lottery      Lottery  @relation(fields: [lotteryId], references: [id])
+  designerId   String
+  designer     Designer @relation(fields: [designerId], references: [id])
+  rank         Int      // מקום 1, 2, 3
+
+  createdAt    DateTime @default(now())
+
+  @@unique([lotteryId, rank])
+  @@unique([lotteryId, designerId])
+}
+
+// ==========================================
+// מעצבות ממליצות לספקים
+// ==========================================
+model SupplierRecommender {
+  id           String   @id @default(uuid())
+  supplierId   String
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  name         String   // שם המעצבת הממליצה
+  phone        String   // טלפון
+
+  createdAt    DateTime @default(now())
+}
+
+// ==========================================
+// קטגוריות ספקים דינמיות
+// ==========================================
+model SupplierCategory {
+  id           String   @id @default(uuid())
+  name         String   @unique  // שם הקטגוריה
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+
+  createdAt    DateTime @default(now())
+}
+
+// ==========================================
+// שעות פרסום — Publishing Slots
+// ==========================================
+model PublishingSlot {
+  id           String   @id @default(uuid())
+  dayOfWeek    Int      // 0=ראשון .. 6=שבת
+  time         String   // "10:30", "13:30", "20:30"
+  isActive     Boolean  @default(true)
+
+  createdAt    DateTime @default(now())
+
+  @@unique([dayOfWeek, time])
+}
+
+// ==========================================
+// כרטיס ביקור דיגיטלי — Digital Business Card
+// ==========================================
+model BusinessCard {
+  id              String   @id @default(uuid())
+
+  // Owner — one of these will be set
+  designerId      String?  @unique
+  supplierId      String?  @unique
+
+  // Dynamic personal fields (JSON array of { id, label, value, icon })
+  fields          Json     @default("[]")
+
+  // Social links (JSON array of { type, url })
+  socialLinks     Json     @default("[]")
+
+  // Gallery (up to 4 image URLs)
+  galleryImages   String[]
+
+  // Testimonials (JSON array of { id, name, text })
+  testimonials    Json     @default("[]")
+
+  // Theme & Colors
+  themeId         String   @default("elegant-gold")
+  customColors    Json?    // Custom color overrides
+
+  // Optional card header
+  title           String?
+  subtitle        String?
+  avatarUrl       String?
+  logoUrl         String?
+
+  // Fonts & Branding
+  headingFontId   String?  // Google Font ID for headings
+  bodyFontId      String?  // Google Font ID for body text
+  headerBgImage   String?  // Background image URL for header
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ==========================================
+// שריון ספקים בלוח שנה
+// ==========================================
+model SupplierReservation {
+  id           String   @id @default(uuid())
+  supplierId   String
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  date         DateTime // תאריך השריון
+  time         String   // שעה
+  notes        String?  // הערות
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([supplierId, date, time])
+}
+
+// ==========================================
+// אירועים — Events
+// ==========================================
+model Event {
+  id                    String      @id @default(uuid())
+  title                 String
+  description           String?
+  date                  DateTime
+  location              String?
+  isPaid                Boolean     @default(false)
+  price                 Float?
+  icountProductId       String?
+  maxAttendees          Int?
+  registrationDeadline  DateTime?
+  imageUrl              String?
+  status                EventStatus @default(DRAFT)
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  registrations         EventRegistration[]
+}
+
+// ==========================================
+// הרשמות לאירועים
+// ==========================================
+model EventRegistration {
+  id                String              @id @default(uuid())
+  eventId           String
+  event             Event               @relation(fields: [eventId], references: [id])
+  designerId        String
+  designer          Designer            @relation(fields: [designerId], references: [id])
+
+  registeredAt      DateTime            @default(now())
+  paymentStatus     EventPaymentStatus  @default(FREE)
+  icountInvoiceId   String?
+  icountPaymentLink String?
+  paidAt            DateTime?
+  attended          Boolean             @default(false)
+
+  @@unique([eventId, designerId])
+}
+
+// ==========================================
+// לוג הודעות וואטסאפ
+// ==========================================
+model WhatsAppLog {
+  id          String   @id @default(uuid())
+  direction   String   // SENT / RECEIVED
+  phone       String
+  message     String
+  messageType String?
+  relatedTo   String?
+  relatedId   String?
+  status      String?
+
+  createdAt   DateTime @default(now())
+}
+
+// ==========================================
+// Enums
+// ==========================================
+enum PaymentStatus {
+  PAID
+  PENDING
+  OVERDUE
+  CANCELLED
+}
+
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum LotteryStatus {
+  PREPARING
+  READY
+  DRAWN
+  COMPLETED
+}
+
+enum EventStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum EventPaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FREE
+}
+
+enum EmploymentType {
+  SALARIED    // שכירה
+  FREELANCE   // עצמאית
+}
+
+enum ApprovalStatus {
+  PENDING     // ממתינה לאישור
+  APPROVED    // מאושרת
+  REJECTED    // נדחתה
+}
+
+// ==========================================
+// CRM — ניהול לקוחות ופרויקטים
+// ==========================================
+
+enum CrmProjectType {
+  RENOVATION       // שיפוץ
+  CONSTRUCTION     // בנייה חדשה
+  HOME_STYLING     // הום סטיילינג
+  CONSULTATION     // ייעוץ
+  COMMERCIAL       // מסחרי
+  OTHER            // אחר
+}
+
+enum CrmProjectStatus {
+  ACTIVE       // פעיל
+  ON_HOLD      // בהמתנה
+  COMPLETED    // הושלם
+  CANCELLED    // בוטל
+}
+
+// לקוח של מעצבת
+model CrmClient {
+  id             String    @id @default(uuid())
+  designerId     String
+  designer       Designer  @relation(fields: [designerId], references: [id])
+
+  name           String    // שם הלקוח
+  phone          String?   // טלפון
+  email          String?   // מייל
+  address        String?   // כתובת הנכס
+  notes          String?   // הערות פנימיות
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime? // מחיקה רכה
+
+  projects           CrmProject[]
+  portalTokens       ClientPortalToken[]
+  whatsAppMessages   WhatsAppMessage[]    @relation("ClientWhatsAppMessages")
+  clientSettings     ClientCrmSettings?
+  surveys            CrmSatisfactionSurvey[]
+  calendarEvents     CrmCalendarEvent[]   @relation("ClientCalendarEvents")
+
+  // CRM V2
+  approvalRequests     CrmApprovalRequest[]
+  onboardingItems      CrmOnboardingItem[]
+  styleQuizResponses   CrmStyleQuizResponse[]
+  beforeAfterSets      CrmBeforeAfter[]
+  clientUploads        CrmClientUpload[]
+  activityLogs         CrmActivityLog[]     @relation("ClientActivityLogs")
+  recommendations      CrmClientRecommendation[]
+
+  @@index([designerId])
+}
+
+// פרויקט עיצוב
+model CrmProject {
+  id               String           @id @default(uuid())
+  clientId         String
+  client           CrmClient        @relation(fields: [clientId], references: [id])
+  designerId       String
+  designer         Designer         @relation(fields: [designerId], references: [id])
+
+  name             String           // שם הפרויקט
+  projectType      CrmProjectType   @default(RENOVATION)
+  status           CrmProjectStatus @default(ACTIVE)
+  estimatedBudget  Float?           // תקציב משוער
+  address          String?          // כתובת הפרויקט
+  notes            String?          // הערות פנימיות
+
+  startDate        DateTime?
+  endDate          DateTime?
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  phases              CrmProjectPhase[]
+  messages            CrmProjectMessage[]
+  documents           CrmProjectDocument[]
+  photos              CrmProjectPhoto[]
+  materialCategories  CrmMaterialCategory[]
+  quotes              CrmQuote[]
+  contracts           CrmContract[]
+  tasks               CrmTask[]
+  reminders           CrmReminder[]
+  timeEntries         CrmTimeEntry[]
+  moodboards          CrmMoodboard[]
+  surveys             CrmSatisfactionSurvey[]
+  calendarEvents      CrmCalendarEvent[]
+
+  // CRM V2
+  approvalRequests    CrmApprovalRequest[]
+  onboardingItems     CrmOnboardingItem[]
+  beforeAfterSets     CrmBeforeAfter[]
+  clientUploads       CrmClientUpload[]
+  activityLogs        CrmActivityLog[]
+  projectSettings     CrmProjectSettings?
+
+  // V3 — 5 פיצ'רים חדשים
+  handoffChecklists   CrmHandoffChecklist[]
+  budgetItems         CrmBudgetItem[]
+  scheduleBlocks      CrmScheduleBlock[]
+  inspirationBoards   CrmInspirationBoard[]
+
+  @@index([designerId])
+  @@index([clientId])
+}
+
+// שלב בפרויקט
+model CrmProjectPhase {
+  id            String     @id @default(uuid())
+  projectId     String
+  project       CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name          String     // שם השלב
+  sortOrder     Int        @default(0)
+  isCurrent     Boolean    @default(false)
+  isCompleted   Boolean    @default(false)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  deadline      DateTime?  // דדליין לשלב — לספירה לאחור (פיצ'ר 13)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([projectId])
+}
+
+// הודעה בפרויקט (בין מעצבת ללקוח)
+model CrmProjectMessage {
+  id           String     @id @default(uuid())
+  projectId    String
+  project      CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  senderType   String     // "designer" | "client"
+  content      String
+  isRead       Boolean    @default(false)
+
+  createdAt    DateTime   @default(now())
+
+  @@index([projectId])
+}
+
+// מסמך מצורף לפרויקט
+model CrmProjectDocument {
+  id                String     @id @default(uuid())
+  projectId         String
+  project           CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  fileName          String
+  fileUrl           String
+  fileSize          Int?       // bytes
+  title             String?
+  description       String?
+  category          String?    // plan category: electrical, plumbing, furniture, etc.
+  isVisibleToClient Boolean    @default(false)
+
+  createdAt         DateTime   @default(now())
+
+  @@index([projectId])
+}
+
+// תמונת התקדמות בפרויקט
+model CrmProjectPhoto {
+  id                String     @id @default(uuid())
+  projectId         String
+  project           CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  imageUrl          String
+  caption           String?
+  phaseName         String?    // שם השלב שבו צולם
+  isVisibleToClient Boolean    @default(false)
+
+  createdAt         DateTime   @default(now())
+
+  @@index([projectId])
+}
+
+// הגדרות CRM למעצבת (self-service)
+model DesignerCrmSettings {
+  id                  String   @id @default(uuid())
+  designerId          String   @unique
+  designer            Designer @relation(fields: [designerId], references: [id])
+
+  // מיתוג
+  companyName         String?
+  logoUrl             String?
+  primaryColor        String?  @default("#2563eb")
+  secondaryColor      String?  @default("#f59e0b")
+  tagline             String?
+
+  // שלבי פרויקט ברירת מחדל
+  defaultPhases       Json     @default("[\"ייעוץ ראשוני\",\"תכנון ועיצוב\",\"בחירת חומרים\",\"ביצוע\",\"פיקוח\",\"מסירה\"]")
+
+  // הודעות אוטומטיות
+  welcomeMessage      String?
+  completionMessage   String?
+
+  // שעות קבלה דיגיטליות (פיצ'ר 4)
+  officeHoursEnabled  Boolean  @default(false)
+  officeHoursDays     Json     @default("[0,1,2,3,4]") // ימים 0=א..6=שבת
+  officeHoursStart    String?  @default("10:00")
+  officeHoursEnd      String?  @default("17:00")
+
+  // הגדרות ברירת מחדל לתהליכי עבודה
+  workflowDefaults    Json     @default("{\"autoWelcomeEmail\":true,\"autoPhaseNotify\":true,\"requireApprovalBeforeNext\":false,\"autoSendContract\":false,\"defaultPaymentTerms\":30,\"reminderDaysBeforeDeadline\":3,\"autoWeeklySummary\":true,\"clientPortalEnabled\":true,\"allowClientUploads\":true,\"autoOnboardingFlow\":true}")
+  contractDefaults    Json     @default("{\"defaultTemplateId\":null,\"autoNumbering\":true,\"numberPrefix\":\"CTR\",\"requireDesignerSignFirst\":true,\"sendEmailOnSign\":true,\"sendEmailOnView\":true,\"expirationDays\":30}")
+
+  // הגדרות נוספות (JSON)
+  features            Json     @default("{}")
+  portal              Json     @default("{}")
+  notifications       Json     @default("{}")
+  automations         Json     @default("{}")
+  quoteDefaults       Json     @default("{}")
+  calendar            Json     @default("{}")
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ==========================================
+// CRM — חומרים ובחירות
+// ==========================================
+
+model CrmMaterialCategory {
+  id          String     @id @default(uuid())
+  projectId   String
+  project     CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  items       CrmMaterialItem[]
+
+  @@index([projectId])
+}
+
+model CrmMaterialItem {
+  id                String              @id @default(uuid())
+  categoryId        String
+  category          CrmMaterialCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productName       String
+  supplierName      String?
+  price             Float?
+  notes             String?
+  imageUrl          String?
+  clientApproved    Boolean             @default(false)
+  clientComment     String?
+  isVisibleToClient Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  history           CrmMaterialHistory[]
+
+  @@index([categoryId])
+}
+
+model CrmMaterialHistory {
+  id             String          @id @default(uuid())
+  materialItemId String
+  materialItem   CrmMaterialItem @relation(fields: [materialItemId], references: [id], onDelete: Cascade)
+  action         String          // added | updated | removed | approved | rejected
+  fieldChanged   String?
+  oldValue       String?
+  newValue       String?
+  changedBy      String?
+  createdAt      DateTime        @default(now())
+
+  @@index([materialItemId])
+}
+
+// ==========================================
+// CRM — הצעות מחיר וחוזים
+// ==========================================
+
+enum CrmQuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REVISION_REQUESTED
+  REJECTED
+  CONVERTED_TO_CONTRACT
+}
+
+enum CrmContractStatus {
+  DRAFT
+  SENT_FOR_SIGNATURE
+  SIGNED
+  CANCELLED
+}
+
+model CrmQuote {
+  id               String         @id @default(uuid())
+  projectId        String
+  project          CrmProject     @relation(fields: [projectId], references: [id])
+  designerId       String
+  designer         Designer       @relation(fields: [designerId], references: [id])
+  quoteNumber      String?
+  title            String
+  services         Json           // שורות שירותים [{name, description, quantity, unitPrice, total}]
+  totalAmount      Float
+  paymentTerms     String?
+  validUntil       DateTime?
+  status           CrmQuoteStatus @default(DRAFT)
+  clientApprovedAt DateTime?
+  notesInternal    String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([projectId])
+  @@index([designerId])
+  @@index([status])
+}
+
+// תבניות חוזה — מעצבת מגדירה פעם אחת, משתמשת בכמה חוזים
+model CrmContractTemplate {
+  id             String   @id @default(uuid())
+  designerId     String
+  designer       Designer @relation(fields: [designerId], references: [id])
+  name           String                              // "חוזה עיצוב פנים", "חוזה ליווי פרויקט"
+  description    String?
+  isDefault      Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+
+  // תוכן התבנית — בלוקים (פסקאות טקסט, כותרות, מפרידים)
+  contentBlocks  Json     @default("[]")
+  // הגדרות שדות — שדות מילוי (מעצבת, לקוח, חתימה)
+  fields         Json     @default("[]")
+  // הגדרות ויזואליות
+  headerHtml     String?                             // HTML לכותרת עליונה (לוגו וכו')
+  footerHtml     String?                             // HTML לתחתית
+  styling        Json     @default("{}")             // צבעים, פונטים, מרווחים
+
+  contracts      CrmContract[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([designerId])
+}
+
+model CrmContract {
+  id                    String               @id @default(uuid())
+  projectId             String
+  project               CrmProject           @relation(fields: [projectId], references: [id])
+  designerId            String
+  designer              Designer             @relation(fields: [designerId], references: [id])
+  templateId            String?
+  template              CrmContractTemplate? @relation(fields: [templateId], references: [id])
+  contractNumber        String?
+  title                 String
+  pdfUrl                String?
+  totalAmount           Float
+  status                CrmContractStatus    @default(DRAFT)
+
+  // שדות שמולאו — JSON של fieldId => value
+  designerFieldValues   Json                 @default("{}")
+  clientFieldValues     Json                 @default("{}")
+
+  // חתימות
+  clientSignedAt        DateTime?
+  designerSignedAt      DateTime?
+  clientSignatureData   Json?
+  designerSignatureData Json?
+  signatureIp           String?
+  signatureAuditLog     Json?
+
+  // לקוח
+  clientName            String?
+  clientEmail           String?
+  clientPhone           String?
+
+  // קישור חתימה ללקוח (טוקן ציבורי)
+  signToken             String               @unique @default(uuid())
+  sentToClientAt        DateTime?
+  clientViewedAt        DateTime?
+
+  // מיילים שנשלחו
+  emailsSent            Json                 @default("[]")
+
+  notesInternal         String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@index([projectId])
+  @@index([designerId])
+  @@index([status])
+  @@index([signToken])
+}
+
+// ==========================================
+// CRM — משימות ותזכורות
+// ==========================================
+
+enum CrmTaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum CrmReminderType {
+  TASK_DEADLINE
+  QUOTE_EXPIRY
+  FOLLOW_UP
+  MEETING
+  CUSTOM
+}
+
+model CrmTask {
+  id          String        @id @default(uuid())
+  projectId   String
+  project     CrmProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  assignee    String?
+  dueDate     DateTime?
+  status      CrmTaskStatus @default(TODO)
+  sortOrder   Int           @default(0)
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model CrmReminder {
+  id          String          @id @default(uuid())
+  projectId   String
+  project     CrmProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type        CrmReminderType
+  title       String
+  message     String?
+  scheduledAt DateTime
+  sentAt      DateTime?
+  channel     String          @default("email")
+  recipientId String?
+  createdAt   DateTime        @default(now())
+
+  @@index([projectId])
+  @@index([scheduledAt])
+}
+
+// ==========================================
+// CRM — ספקים פנימיים של המעצבת
+// ==========================================
+
+model CrmSupplier {
+  id            String    @id @default(uuid())
+  designerId    String
+  designer      Designer  @relation(fields: [designerId], references: [id])
+  name          String
+  category      String
+  contactName   String?
+  phone         String?
+  email         String?
+  website       String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([designerId])
+  @@index([category])
+}
+
+// ==========================================
+// CRM — תבניות הודעה
+// ==========================================
+
+model CrmMessageTemplate {
+  id          String   @id @default(uuid())
+  designerId  String
+  designer    Designer @relation(fields: [designerId], references: [id])
+  name        String
+  content     String
+  category    String   @default("general") // general | update | reminder | greeting
+  variables   String[] // e.g. ["clientName", "projectName"]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([designerId])
+}
+
+// ==========================================
+// CRM — WhatsApp אינטגרציה
+// ==========================================
+
+model WhatsAppConfig {
+  id            String   @id @default(uuid())
+  designerId    String   @unique
+  designer      Designer @relation(fields: [designerId], references: [id])
+  phoneNumberId String?
+  accessToken   String?
+  webhookSecret String?
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model WhatsAppMessage {
+  id           String    @id @default(uuid())
+  designerId   String
+  designer     Designer  @relation(fields: [designerId], references: [id])
+  clientId     String?
+  client       CrmClient? @relation("ClientWhatsAppMessages", fields: [clientId], references: [id])
+  direction    String    // inbound | outbound
+  phoneNumber  String
+  messageType  String    @default("text")
+  content      String
+  status       String    @default("sent") // sent | delivered | read | failed
+  waMessageId  String?   @unique
+  createdAt    DateTime  @default(now())
+
+  @@index([designerId])
+  @@index([clientId])
+}
+
+// ==========================================
+// CRM — הגדרות לקוח (override למעצבת)
+// ==========================================
+
+model ClientCrmSettings {
+  id            String    @id @default(uuid())
+  clientId      String    @unique
+  client        CrmClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  designerId    String
+  designer      Designer  @relation(fields: [designerId], references: [id])
+  features      Json      @default("{}")
+  portal        Json      @default("{}")
+  notifications Json      @default("{}")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([designerId])
+}
+
+// ==========================================
+// CRM — מעקב שעות
+// ==========================================
+
+model CrmTimeEntry {
+  id          String     @id @default(uuid())
+  projectId   String
+  project     CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  designerId  String
+  designer    Designer   @relation(fields: [designerId], references: [id])
+  description String?
+  startTime   DateTime
+  endTime     DateTime?
+  durationMin Int?
+  billable    Boolean    @default(true)
+  hourlyRate  Float?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([designerId])
+}
+
+// ==========================================
+// CRM — מודבורד עיצובי
+// ==========================================
+
+model CrmMoodboard {
+  id                 String     @id @default(uuid())
+  projectId          String
+  project            CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title              String
+  description        String?
+  isSharedWithClient Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  items              CrmMoodboardItem[]
+
+  @@index([projectId])
+}
+
+model CrmMoodboardItem {
+  id          String       @id @default(uuid())
+  moodboardId String
+  moodboard   CrmMoodboard @relation(fields: [moodboardId], references: [id], onDelete: Cascade)
+  type        String       @default("image") // image | link | note | color
+  title       String?
+  content     String?      // URL, note text, color hex
+  imageUrl    String?
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  @@index([moodboardId])
+}
+
+// ==========================================
+// CRM — סקר שביעות רצון
+// ==========================================
+
+model CrmSatisfactionSurvey {
+  id                 String     @id @default(uuid())
+  projectId          String
+  project            CrmProject @relation(fields: [projectId], references: [id])
+  clientId           String
+  client             CrmClient  @relation(fields: [clientId], references: [id])
+  overallScore       Int?       // 1-5
+  communicationScore Int?
+  qualityScore       Int?
+  timelinessScore    Int?
+  freeTextComment    String?
+  sentAt             DateTime?
+  completedAt        DateTime?
+  token              String     @unique @default(uuid())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([clientId])
+}
+
+// ==========================================
+// CRM — יומן ולוח שנה
+// ==========================================
+
+model CrmCalendarEvent {
+  id            String      @id @default(uuid())
+  designerId    String
+  designer      Designer    @relation(fields: [designerId], references: [id])
+  projectId     String?
+  project       CrmProject? @relation(fields: [projectId], references: [id])
+  clientId      String?
+  client        CrmClient?  @relation("ClientCalendarEvents", fields: [clientId], references: [id])
+  title         String
+  description   String?
+  startAt       DateTime
+  endAt         DateTime
+  location      String?
+  isAllDay      Boolean     @default(false)
+  color         String?
+  googleEventId String?
+  reminderMin   Int?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([designerId])
+  @@index([projectId])
+  @@index([startAt])
+}
+
+model DesignerGoogleCalendar {
+  id           String    @id @default(uuid())
+  designerId   String    @unique
+  designer     Designer  @relation(fields: [designerId], references: [id])
+  accessToken  String?
+  refreshToken String?
+  calendarId   String?
+  syncEnabled  Boolean   @default(false)
+  lastSyncAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ==========================================
+// CRM — Webhooks (Zapier/Make)
+// ==========================================
+
+model CrmWebhookEndpoint {
+  id              String    @id @default(uuid())
+  designerId      String
+  designer        Designer  @relation(fields: [designerId], references: [id])
+  name            String
+  url             String
+  events          String[]  // e.g. ["client.created", "project.updated"]
+  secret          String?
+  isActive        Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  failCount       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([designerId])
+}
+
+model CrmWebhookLog {
+  id          String   @id @default(uuid())
+  endpointId  String
+  event       String
+  payload     Json
+  statusCode  Int?
+  response    String?
+  success     Boolean
+  createdAt   DateTime @default(now())
+
+  @@index([endpointId])
+}
+
+// ==========================================
+// CRM — פורטל לקוח
+// ==========================================
+
+model ClientPortalToken {
+  id          String    @id @default(uuid())
+  clientId    String
+  client      CrmClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  isActive    Boolean   @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([clientId])
+}
+
+model ClientPortalOtp {
+  id        String    @id @default(uuid())
+  tokenId   String
+  code      String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tokenId, code])
+}
+
+// ==========================================
+// CRM V2 — אישורים דיגיטליים (פיצ'רים 5, 6, 8)
+// ==========================================
+
+enum CrmApprovalStatus {
+  PENDING_CLIENT   // ממתין ללקוח
+  APPROVED         // אושר
+  CHANGES_REQUESTED // הלקוח ביקש שינויים
+  REJECTED         // נדחה
+}
+
+enum CrmApprovalType {
+  SINGLE           // אישור פריט בודד (פיצ'ר 5, 8)
+  SELECTION        // בחירה מרובה A/B/C (פיצ'ר 6)
+}
+
+model CrmApprovalRequest {
+  id              String              @id @default(uuid())
+  projectId       String
+  project         CrmProject          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId        String
+  client          CrmClient           @relation(fields: [clientId], references: [id])
+  designerId      String
+  designer        Designer            @relation(fields: [designerId], references: [id])
+
+  type            CrmApprovalType     @default(SINGLE)
+  title           String              // "אישור הדמיית סלון" / "בחירת ריצוף"
+  description     String?             // הסבר קצר
+  status          CrmApprovalStatus   @default(PENDING_CLIENT)
+  clientComment   String?             // הערת הלקוח
+  token           String              @unique @default(uuid()) // לינק אישור מהיר (פיצ'ר 8)
+
+  respondedAt     DateTime?
+  reminderSentAt  DateTime?           // תזכורת אוטומטית (פיצ'ר 12)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  options         CrmApprovalOption[]
+
+  @@index([projectId])
+  @@index([clientId])
+  @@index([designerId])
+  @@index([status])
+}
+
+model CrmApprovalOption {
+  id              String              @id @default(uuid())
+  approvalId      String
+  approval        CrmApprovalRequest  @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+
+  label           String              // "אפשרות A" / "ריצוף פורצלן"
+  description     String?
+  imageUrl        String?             // תמונת האפשרות
+  sortOrder       Int                 @default(0)
+  isSelected      Boolean             @default(false) // הלקוח בחר באפשרות זו
+
+  createdAt       DateTime            @default(now())
+
+  @@index([approvalId])
+}
+
+// ==========================================
+// CRM V2 — ציר זמן ולוג פעילות (פיצ'ר 9, 14)
+// ==========================================
+
+model CrmActivityLog {
+  id          String      @id @default(uuid())
+  designerId  String
+  designer    Designer    @relation(fields: [designerId], references: [id])
+  projectId   String?
+  project     CrmProject? @relation(fields: [projectId], references: [id])
+  clientId    String?
+  client      CrmClient?  @relation("ClientActivityLogs", fields: [clientId], references: [id])
+
+  action      String      // phase_completed | approval_sent | client_viewed | client_approved | message_sent | photo_uploaded | quote_sent | project_created | client_uploaded | etc.
+  entityType  String?     // "phase" | "approval" | "message" | "quote" | "photo" etc.
+  entityId    String?     // ID של הישות הקשורה
+  metadata    Json?       // נתונים נוספים גמישים
+  actorType   String      @default("designer") // "designer" | "client" | "system"
+
+  createdAt   DateTime    @default(now())
+
+  @@index([designerId])
+  @@index([projectId])
+  @@index([clientId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+// ==========================================
+// CRM V2 — לפני ואחרי (פיצ'ר 10)
+// ==========================================
+
+model CrmBeforeAfter {
+  id               String     @id @default(uuid())
+  projectId        String
+  project          CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId         String
+  client           CrmClient  @relation(fields: [clientId], references: [id])
+
+  title            String     // "סלון" / "מטבח" / "חדר שינה"
+  beforeImageUrl   String?
+  afterImageUrl    String?
+  beforeCaption    String?
+  afterCaption     String?
+  isVisibleInPortal Boolean   @default(true)
+  isPublic         Boolean    @default(false) // מוצג בכרטיס המעצבת
+
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([projectId])
+}
+
+// ==========================================
+// CRM V2 — העלאות מהלקוח (פיצ'ר 11)
+// ==========================================
+
+model CrmClientUpload {
+  id          String      @id @default(uuid())
+  projectId   String
+  project     CrmProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      CrmClient   @relation(fields: [clientId], references: [id])
+
+  imageUrl    String
+  caption     String?
+  category    String      @default("general") // inspiration | current_state | reference | general
+  isReviewed  Boolean     @default(false) // האם המעצבת ראתה
+
+  createdAt   DateTime    @default(now())
+
+  @@index([projectId])
+  @@index([clientId])
+}
+
+// ==========================================
+// CRM V2 — צ'קליסט כניסה (פיצ'ר 16)
+// ==========================================
+
+model CrmOnboardingTemplate {
+  id          String    @id @default(uuid())
+  designerId  String
+  designer    Designer  @relation(fields: [designerId], references: [id])
+
+  title       String    // "חתום על חוזה" / "מלא שאלון העדפות"
+  sortOrder   Int       @default(0)
+  isDefault   Boolean   @default(true)  // כלול אוטומטית בכל לקוח חדש
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([designerId])
+}
+
+model CrmOnboardingItem {
+  id            String      @id @default(uuid())
+  clientId      String
+  client        CrmClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       CrmProject? @relation(fields: [projectId], references: [id])
+
+  title         String      // "חתום על חוזה"
+  sortOrder     Int         @default(0)
+  isCompleted   Boolean     @default(false)
+  completedAt   DateTime?
+  completedBy   String?     // "designer" | "client"
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([clientId])
+  @@index([projectId])
+}
+
+// ==========================================
+// CRM V2 — שאלון העדפות עיצוב (פיצ'ר 17)
+// ==========================================
+
+model CrmStyleQuizTemplate {
+  id          String    @id @default(uuid())
+  designerId  String
+  designer    Designer  @relation(fields: [designerId], references: [id])
+
+  question    String    // "איזה סגנון מדבר אליך?"
+  questionType String   @default("image_choice") // image_choice | text_choice | rating | free_text
+  options     Json      @default("[]") // [{label, imageUrl?}]
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  responses   CrmStyleQuizResponse[]
+
+  @@index([designerId])
+}
+
+model CrmStyleQuizResponse {
+  id          String                @id @default(uuid())
+  questionId  String
+  question    CrmStyleQuizTemplate  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      CrmClient             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  answer      Json                  // תשובה גמישה — בחירה, טקסט, דירוג
+  createdAt   DateTime              @default(now())
+
+  @@unique([questionId, clientId])
+  @@index([clientId])
+}
+
+// ==========================================
+// CRM V2 — המלצות מלקוחות (פיצ'ר 19)
+// ==========================================
+
+model CrmClientRecommendation {
+  id            String    @id @default(uuid())
+  designerId    String
+  designer      Designer  @relation(fields: [designerId], references: [id])
+  clientId      String
+  client        CrmClient @relation(fields: [clientId], references: [id])
+
+  rating        Int?      // 1-5
+  text          String?
+  isPublic      Boolean   @default(false) // מוצג בכרטיס המעצבת בזירה
+  token         String    @unique @default(uuid()) // לינק להשארת המלצה
+  completedAt   DateTime?
+  requestedAt   DateTime  @default(now())
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([designerId])
+  @@index([clientId])
+}
+
+// ==========================================
+// CRM V2 — כללי אוטומציה (פיצ'רים 1,3,4,12,13,14,18,19)
+// ==========================================
+
+model CrmAutomationRule {
+  id            String    @id @default(uuid())
+  designerId    String
+  designer      Designer  @relation(fields: [designerId], references: [id])
+
+  ruleType      String    // phase_complete_notify | weekly_summary | office_hours | pending_reminder | countdown_alerts | smart_alerts | auto_report | auto_recommendation
+  isEnabled     Boolean   @default(true)
+  config        Json      @default("{}") // הגדרות ספציפיות לכל כלל
+  // דוגמאות config:
+  // phase_complete_notify: { emailTemplate: "...", includeNextPhase: true }
+  // weekly_summary: { dayOfWeek: 0, hour: 9 }
+  // office_hours: { days: [0,1,2,3,4], start: "10:00", end: "17:00" }
+  // pending_reminder: { hoursBeforeFirst: 48, hoursBeforeSecond: 120 }
+  // countdown_alerts: { daysBeforeDeadline: [7, 3, 1] }
+  // smart_alerts: { trackViews: true, inactivityDays: 14 }
+  // auto_report: { includeTimeline: true, includePhotos: true }
+  // auto_recommendation: { minSurveyScore: 4 }
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([designerId, ruleType])
+  @@index([designerId])
+}
+
+// ==========================================
+// CRM V2 — הגדרות פרויקט ספציפיות (override)
+// ==========================================
+
+model CrmProjectSettings {
+  id                  String     @id @default(uuid())
+  projectId           String     @unique
+  project             CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // אישורים
+  enableApprovals     Boolean    @default(true)
+  enableClientUploads Boolean    @default(true)
+  enableCountdown     Boolean    @default(true)
+  enableWeeklySummary Boolean?   // null = ברירת מחדל מהמעצבת
+  enableAutoNotify    Boolean?   // null = ברירת מחדל
+
+  // שעות קבלה — override לפרויקט
+  officeHoursOverride Json?      // null = ירושה מהמעצבת
+
+  // הגדרות נוספות
+  customConfig        Json       @default("{}")
+
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+}
+
+// ==========================================
+// V3 — פיצ'ר 1: צ'קליסט מסירה
+// ==========================================
+
+model CrmHandoffChecklist {
+  id            String     @id @default(uuid())
+  projectId     String
+  project       CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  designerId    String
+  designer      Designer   @relation(fields: [designerId], references: [id])
+
+  title         String     @default("צ'קליסט מסירה")
+  status        String     @default("open") // open, completed
+  completedAt   DateTime?
+
+  items         CrmHandoffItem[]
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([designerId])
+}
+
+model CrmHandoffItem {
+  id              String              @id @default(uuid())
+  checklistId     String
+  checklist       CrmHandoffChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  label           String            // "ריצוף הושלם", "ארונות מותקנים"
+  category        String?           // "מטבח", "חדר רטוב", "סלון"
+  assignee        String            @default("designer") // "designer" | "client"
+  isChecked       Boolean           @default(false)
+  checkedAt       DateTime?
+  checkedBy       String?           // who checked
+  note            String?           // הערה / בעיה שנמצאה
+  photoUrl        String?           // תמונה שצורפה
+  sortOrder       Int               @default(0)
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([checklistId])
+}
+
+// ==========================================
+// V3 — פיצ'ר 2: מעקב תקציב חי
+// ==========================================
+
+model CrmBudgetItem {
+  id              String     @id @default(uuid())
+  projectId       String
+  project         CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  designerId      String
+  designer        Designer   @relation(fields: [designerId], references: [id])
+
+  category        String            // "מטבח", "ריצוף", "תאורה", "נגרות", "אינסטלציה"
+  description     String?
+  plannedAmount   Float             @default(0)
+  actualAmount    Float             @default(0)
+  supplierName    String?
+  quoteId         String?           // קישור להצעת מחיר
+  contractId      String?           // קישור לחוזה
+  status          String            @default("planned") // planned, quoted, approved, paid
+  notes           String?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([projectId])
+  @@index([designerId])
+}
+
+// ==========================================
+// V3 — פיצ'ר 3: תזמון חכם (Gantt)
+// ==========================================
+
+model CrmScheduleBlock {
+  id              String     @id @default(uuid())
+  projectId       String
+  project         CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  designerId      String
+  designer        Designer   @relation(fields: [designerId], references: [id])
+
+  title           String             // "אינסטלציה", "ריצוף", "נגרות"
+  startDate       DateTime?
+  endDate         DateTime?
+  durationDays    Int                @default(7)
+  color           String?            @default("#C9A84C")
+
+  // תלויות: JSON array של block IDs שחייבים להסתיים לפני
+  dependsOn       String[]           @default([])
+
+  supplierName    String?
+  supplierPhone   String?
+  status          String             @default("pending") // pending, in_progress, completed, delayed
+  delayReason     String?
+  notes           String?
+  sortOrder       Int                @default(0)
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([projectId])
+  @@index([designerId])
+}
+
+// ==========================================
+// V3 — פיצ'ר 4: ספריית השראה
+// ==========================================
+
+model CrmInspirationBoard {
+  id              String     @id @default(uuid())
+  projectId       String?
+  project         CrmProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  designerId      String
+  designer        Designer   @relation(fields: [designerId], references: [id])
+
+  name            String             // "השראה למטבח", "סגנון סקנדינבי"
+  description     String?
+  isSharedWithClient Boolean         @default(false)
+  shareToken      String?            @unique
+
+  items           CrmInspirationItem[]
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([projectId])
+  @@index([designerId])
+}
+
+model CrmInspirationItem {
+  id              String               @id @default(uuid())
+  boardId         String
+  board           CrmInspirationBoard  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  imageUrl        String
+  sourceUrl       String?              // קישור מקורי (pinterest, instagram)
+  title           String?
+  notes           String?
+
+  // תיוגים
+  style           String?              // "מודרני", "כפרי", "מינימליסטי"
+  room            String?              // "סלון", "מטבח", "חדר שינה"
+  material        String?              // "עץ", "בטון", "שיש"
+
+  clientLiked     Boolean              @default(false) // לקוח סימן ❤️
+  sortOrder       Int                  @default(0)
+
+  createdAt       DateTime             @default(now())
+
+  @@index([boardId])
+}
+
+// ==========================================
+// V3 — פיצ'ר 5: תבניות תהליך עבודה
+// ==========================================
+
+model CrmWorkflowTemplate {
+  id              String     @id @default(uuid())
+  designerId      String
+  designer        Designer   @relation(fields: [designerId], references: [id])
+
+  name            String             // "פרויקט עיצוב פנים סטנדרטי"
+  description     String?
+  projectType     String?            @default("RENOVATION")
+  isDefault       Boolean            @default(false)
+
+  // JSON: שלבים עם deadlines יחסיים
+  // [{ name: "ייעוץ", daysFromStart: 0, duration: 7, tasks: [...] }, ...]
+  phases          Json               @default("[]")
+
+  // JSON: משימות ברירת מחדל לכל שלב
+  defaultTasks    Json               @default("[]")
+
+  // JSON: הודעות אוטומטיות
+  autoMessages    Json               @default("[]")
+
+  // קישורים לתבניות
+  contractTemplateId  String?
+  quoteTemplateData   Json           @default("{}")
+  onboardingEnabled   Boolean        @default(true)
+
+  // JSON: הגדרות תקציב ברירת מחדל
+  budgetCategories    Json           @default("[]")
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([designerId])
+}

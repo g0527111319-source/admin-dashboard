@@ -1,0 +1,47 @@
+{
+  "name": "zirat-community",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:push": "npx prisma db push",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
+    "db:reset": "npx prisma db push --force-reset && npx tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/client": "^7.4.2",
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/supabase-js": "^2.99.0",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "bcryptjs": "^3.0.3",
+    "date-fns": "^4.1.0",
+    "jose": "^6.2.1",
+    "lucide-react": "^0.577.0",
+    "next": "14.2.35",
+    "pg": "^8.20.0",
+    "prisma": "^7.4.2",
+    "react": "^18",
+    "react-dom": "^18",
+    "recharts": "^3.8.0",
+    "resend": "^6.9.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/pg": "^8.18.0",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
