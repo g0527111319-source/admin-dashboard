@@ -640,7 +640,7 @@ export default function ChatBot({ designerContext }: ChatBotProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const tooltipTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const greetingMessage = getGreetingMessage(ctx);
+  const greetingMessageRef = useRef(getGreetingMessage(ctx));
 
   // Show tooltip after 5s idle
   useEffect(() => {
@@ -656,14 +656,14 @@ export default function ChatBot({ designerContext }: ChatBotProps) {
     if (isOpen && !initialized) {
       setMessages([{
         id: genId(),
-        text: greetingMessage,
+        text: greetingMessageRef.current,
         sender: "bot",
         timestamp: new Date(),
       }]);
       setInitialized(true);
       setTypingDoneForLast(false);
     }
-  }, [isOpen, initialized, greetingMessage]);
+  }, [isOpen, initialized]);
 
   // Auto scroll
   useEffect(() => {
@@ -766,7 +766,7 @@ export default function ChatBot({ designerContext }: ChatBotProps) {
 
   // Check if messages are grouped (same sender in sequence)
   const isGrouped = (i: number) => {
-    if (i === 0) return false;
+    if (i === 0 || !messages[i] || !messages[i - 1]) return false;
     return messages[i].sender === messages[i - 1].sender;
   };
 
