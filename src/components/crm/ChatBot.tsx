@@ -128,7 +128,7 @@ const conversationalPatterns: ConversationalPattern[] = [
     responses: (ctx) => {
       const name = firstName(ctx);
       return [
-        `${name ? name + ", " : ""}אני העוזרת החכמה של זירת! 🤖✨\n\nאני מכירה כל פינה במערכת — מניהול לקוחות ופרויקטים, דרך חוזים דיגיטליים, ועד מעקב תקציב ותזמון.\n\nאני כאן 24/7 ותמיד שמחה לעזור. שאלי כל דבר!`,
+        `${name ? name + ", " : ""}אני העוזרת החכמה של זירת האדריכלות! 🤖✨\n\nאני מכירה כל פינה במערכת — מניהול לקוחות ופרויקטים, דרך חוזים דיגיטליים, ועד מעקב תקציב ותזמון.\n\nאני כאן 24/7 ותמיד שמחה לעזור. שאלי כל דבר!`,
       ];
     },
     relatedTopics: ["מה אפשר לעשות?", "ניווט באתר"],
@@ -473,11 +473,11 @@ function getGreetingMessage(ctx: DesignerContext): string {
   const timeG = getTimeGreeting();
   if (name) {
     return pick([
-      `${timeG} ${name}! ✨ אני העוזרת החכמה של זירת.\n\nאני מכירה כל פינה במערכת — שאלי אותי כל דבר!\n\n💡 בחרי נושא למטה או כתבי שאלה.`,
+      `${timeG} ${name}! ✨ אני העוזרת החכמה של זירת האדריכלות.\n\nאני מכירה כל פינה במערכת — שאלי אותי כל דבר!\n\n💡 בחרי נושא למטה או כתבי שאלה.`,
       `היי ${name}! 💛 ${timeG}.\n\nאני כאן לעזור לך עם כל מה שקשור למערכת — מלקוחות וחוזים, דרך עיצוב ותקציב.\n\n💡 בחרי נושא או שאלי חופשי!`,
     ]);
   }
-  return `${timeG}! ✨ אני העוזרת החכמה של זירת.\n\nאני מכירה את כל המערכת לעומק — שאלי אותי כל דבר!\n\n💡 בחרי נושא למטה או כתבי שאלה.`;
+  return `${timeG}! ✨ אני העוזרת החכמה של זירת האדריכלות.\n\nאני מכירה את כל המערכת לעומק — שאלי אותי כל דבר!\n\n💡 בחרי נושא למטה או כתבי שאלה.`;
 }
 
 function getNoMatchMessage(ctx: DesignerContext): string {
@@ -852,7 +852,7 @@ export default function ChatBot({ designerContext }: ChatBotProps) {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  בוט זירת
+                  בוט זירת האדריכלות
                   <span className="text-[10px] font-normal text-gold/60 bg-gold/10 px-1.5 py-0.5 rounded-full">AI</span>
                 </h3>
                 <p className="text-white/30" style={{ fontSize: "10px" }}>

@@ -86,13 +86,13 @@ export default function SupplierDashboard() {
                   border: '3px solid #C9A84C',
                   boxShadow: '0 0 8px rgba(201, 168, 76, 0.35)',
                   overflow: 'hidden',
-                  background: '#f5f0e8',
+                  background: 'transparent',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
                   {supplierData.supplierLogo ? (
-                    <img src={supplierData.supplierLogo} alt={supplierData.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={supplierData.supplierLogo} alt={supplierData.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   ) : (
                     <span className="text-gold font-bold text-lg">{supplierData.name[0]}</span>
                   )}
@@ -265,7 +265,7 @@ export default function SupplierDashboard() {
                     borderRadius: '50%',
                     border: '2px solid #C9A84C',
                     overflow: 'hidden',
-                    background: '#f5f0e8',
+                    background: 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -273,7 +273,7 @@ export default function SupplierDashboard() {
                     zIndex: 1,
                   }}>
                     {supplierData.supplierLogo ? (
-                      <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     ) : (
                       <span className="text-gold font-bold" style={{ fontSize: 10 }}>{supplierData.name[0]}</span>
                     )}
@@ -330,14 +330,14 @@ export default function SupplierDashboard() {
                               borderRadius: '50%',
                               border: '2px solid #C9A84C',
                               overflow: 'hidden',
-                              background: '#f5f0e8',
+                              background: 'transparent',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               flexShrink: 0,
                             }}>
                               {supplierData.supplierLogo ? (
-                                <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                               ) : (
                                 <span className="text-gold font-bold" style={{ fontSize: 8 }}>{supplierData.name[0]}</span>
                               )}
@@ -488,14 +488,14 @@ export default function SupplierDashboard() {
                         height: 20,
                         borderRadius: '50%',
                         overflow: 'hidden',
-                        background: '#f5f0e8',
+                        background: 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         opacity: 0.3,
                       }}>
                         {supplierData.supplierLogo ? (
-                          <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         ) : (
                           <span className="text-gold font-bold" style={{ fontSize: 7 }}>{supplierData.name[0]}</span>
                         )}

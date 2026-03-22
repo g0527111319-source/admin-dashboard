@@ -255,7 +255,7 @@ export default function CrmPlans() {
                 <input
                   type="file"
                   className="hidden"
-                  accept="image/*,.pdf"
+                  accept=".png,.webp,.svg,.jpg,.jpeg,.pdf,image/png,image/webp,image/svg+xml,image/jpeg"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) {

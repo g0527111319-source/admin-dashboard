@@ -213,7 +213,7 @@ export default function DesignerDashboard() {
                 <div className="avatar-gold flex-shrink-0">
                   {designerData.designerLogo ? (
                     <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden" style={{ boxShadow: '0 0 20px rgba(201, 168, 76, 0.3)' }}>
-                      <Image src={designerData.designerLogo} alt={designerData.fullName} width={40} height={40} className="w-full h-full object-cover" />
+                      <Image src={designerData.designerLogo} alt={designerData.fullName} width={40} height={40} className="w-full h-full object-contain" />
                     </div>
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center border-2 border-gold" style={{ boxShadow: '0 0 20px rgba(201, 168, 76, 0.3)' }}>
@@ -323,7 +323,7 @@ export default function DesignerDashboard() {
             <div className="hidden sm:flex items-center gap-2 text-xs text-text-muted bg-bg-surface/80 rounded-xl px-3 py-2 backdrop-blur-sm">
               {designerData.designerLogo ? (
                 <div className="w-6 h-6 rounded-full border border-gold overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 10px rgba(201, 168, 76, 0.2)' }}>
-                  <Image src={designerData.designerLogo} alt={designerData.fullName} width={24} height={24} className="w-full h-full object-cover" />
+                  <Image src={designerData.designerLogo} alt={designerData.fullName} width={24} height={24} className="w-full h-full object-contain" />
                 </div>
               ) : (
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -461,7 +461,7 @@ export default function DesignerDashboard() {
                     <div className="flex items-center gap-3 pb-3 border-b border-border-subtle">
                       {designerData.designerLogo ? (
                         <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
-                          <Image src={designerData.designerLogo} alt={designerData.fullName} width={40} height={40} className="w-full h-full object-cover" />
+                          <Image src={designerData.designerLogo} alt={designerData.fullName} width={40} height={40} className="w-full h-full object-contain" />
                         </div>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center border-2 border-gold flex-shrink-0" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
@@ -590,7 +590,7 @@ export default function DesignerDashboard() {
                         {supplier.isCommunity ? (
                           supplier.logo ? (
                             <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gold overflow-hidden" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
-                              <Image src={supplier.logo} alt={supplier.name} width={56} height={56} className="w-full h-full object-cover" />
+                              <Image src={supplier.logo} alt={supplier.name} width={56} height={56} className="w-full h-full object-contain" />
                             </div>
                           ) : (
                             <div className="w-14 h-14 bg-gradient-to-br from-gold/20 to-gold/5 rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gold" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
@@ -824,7 +824,7 @@ export default function DesignerDashboard() {
                   <div className="relative">
                     {designerData.designerLogo ? (
                       <div className="w-24 h-24 rounded-full border-4 border-gold overflow-hidden animate-pulse-slow" style={{ boxShadow: '0 0 30px rgba(201, 168, 76, 0.4)' }}>
-                        <Image src={designerData.designerLogo} alt={designerData.fullName} width={96} height={96} className="w-full h-full object-cover" />
+                        <Image src={designerData.designerLogo} alt={designerData.fullName} width={96} height={96} className="w-full h-full object-contain" />
                       </div>
                     ) : (
                       <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center border-4 border-gold" style={{ boxShadow: '0 0 30px rgba(201, 168, 76, 0.4)' }}>

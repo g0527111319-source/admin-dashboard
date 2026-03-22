@@ -526,7 +526,7 @@ function TemplateEditor({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.png,.jpg,.jpeg,.webp"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.svg,image/png,image/webp,image/svg+xml"
                 multiple
                 onChange={handleFileUpload}
                 className="hidden"
@@ -557,7 +557,7 @@ function TemplateEditor({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.png,.jpg,.jpeg,.webp"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.svg,image/png,image/webp,image/svg+xml"
                     multiple
                     onChange={handleFileUpload}
                     className="hidden"

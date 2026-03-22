@@ -393,7 +393,7 @@ export default function AdminChatBot() {
               </button>
             </div>
             <p className="text-center text-[9px] text-text-muted/40 mt-1.5">
-              בוט ניהול זירת · מבוסס נתוני דמו
+              בוט ניהול זירת האדריכלות · מבוסס נתוני דמו
             </p>
           </div>
         </div>

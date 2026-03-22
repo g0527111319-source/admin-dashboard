@@ -96,7 +96,7 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             </>)}
         </button>)}
 
-      <input ref={inputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden"/>
+      <input ref={inputRef} type="file" accept=".png,.webp,.svg,.jpg,.jpeg,image/png,image/webp,image/svg+xml,image/jpeg" onChange={handleUpload} className="hidden"/>
 
       {error && (<p className="text-red-500 text-[10px] mt-1">{error}</p>)}
     </div>);

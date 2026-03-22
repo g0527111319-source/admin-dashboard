@@ -57,7 +57,7 @@ function GalleryUploadButton({ onUploaded }: {
         {uploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Upload className="w-4 h-4"/>}
         {uploading ? txt("src/components/business-card/BusinessCardEditor.tsx::004", "מעלה...") : txt("src/components/business-card/BusinessCardEditor.tsx::005", "העלאת תמונה לגלריה")}
       </button>
-      <input ref={inputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden"/>
+      <input ref={inputRef} type="file" accept=".png,.webp,.svg,.jpg,.jpeg,image/png,image/webp,image/svg+xml,image/jpeg" onChange={handleUpload} className="hidden"/>
       {error && <p className="text-red-500 text-[10px] mt-1">{error}</p>}
     </div>);
 }
