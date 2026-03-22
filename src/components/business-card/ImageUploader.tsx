@@ -20,11 +20,11 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             return;
         // Client-side validation
         if (!file.type.startsWith("image/")) {
-            setError("\u05D9\u05E9 \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA \u05E7\u05D5\u05D1\u05E5 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05D1\u05DC\u05D1\u05D3");
+            setError("יש להעלות קובץ תמונה בלבד");
             return;
         }
         if (file.size > 5 * 1024 * 1024) {
-            setError("\u05D4\u05E7\u05D5\u05D1\u05E5 \u05D2\u05D3\u05D5\u05DC \u05DE\u05D3\u05D9. \u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD 5MB");
+            setError("הקובץ גדול מדי. מקסימום 5MB");
             return;
         }
         setError("");
@@ -39,13 +39,13 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             });
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || "\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05DC\u05D0\u05D4");
+                throw new Error(data.error || "שגיאה בהעלאה");
             }
             const { url } = await res.json();
             onChange(url);
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05DC\u05D0\u05D4");
+            setError(err instanceof Error ? err.message : "שגיאה בהעלאה");
         }
         finally {
             setUploading(false);
@@ -83,7 +83,7 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             <X className="w-3.5 h-3.5"/>
           </button>
           <button type="button" onClick={() => inputRef.current?.click()} className="absolute bottom-1 left-1 px-2 py-1 bg-black/60 text-white rounded text-[10px]
-                       opacity-0 group-hover:opacity-100 transition-opacity">{"\u05D4\u05D7\u05DC\u05E3"}</button>
+                       opacity-0 group-hover:opacity-100 transition-opacity">{"החלף"}</button>
         </div>) : (
         /* Upload button */
         <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className={`${shape === "banner" ? "w-full aspect-[3/1]" : "w-24 h-24"} ${shape === "circle" ? "rounded-full" : "rounded-lg"} border-2 border-dashed border-border-subtle bg-bg-surface
@@ -92,7 +92,7 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             disabled:opacity-50 disabled:cursor-not-allowed`}>
           {uploading ? (<Loader2 className="w-5 h-5 text-gold animate-spin"/>) : (<>
               <Upload className="w-5 h-5 text-text-muted"/>
-              <span className="text-text-muted text-[10px]">{"\u05D4\u05E2\u05DC\u05D0\u05EA \u05EA\u05DE\u05D5\u05E0\u05D4"}</span>
+              <span className="text-text-muted text-[10px]">{"העלאת תמונה"}</span>
             </>)}
         </button>)}
 

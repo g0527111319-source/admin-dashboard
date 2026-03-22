@@ -9,18 +9,18 @@ interface Reservation {
     notes?: string;
 }
 const demoReservations: Reservation[] = [
-    { id: "r1", supplierName: "\u05E1\u05D8\u05D5\u05DF \u05D3\u05D9\u05D6\u05D9\u05D9\u05DF", date: "2026-03-12", time: "10:30", notes: "\u05E4\u05E8\u05E1\u05D5\u05DD \u05E7\u05D5\u05DC\u05E7\u05E6\u05D9\u05D4 \u05D7\u05D3\u05E9\u05D4" },
-    { id: "r2", supplierName: "\u05D0\u05D5\u05E8 \u05EA\u05D0\u05D5\u05E8\u05D4", date: "2026-03-12", time: "13:30" },
-    { id: "r3", supplierName: "\u05E7\u05D9\u05D8\u05E9\u05DF \u05E4\u05DC\u05D5\u05E1", date: "2026-03-12", time: "20:30", notes: "\u05DE\u05D1\u05E6\u05E2 \u05D7\u05D5\u05D3\u05E9\u05D9" },
-    { id: "r4", supplierName: "\u05E1\u05D8\u05D5\u05DF \u05D3\u05D9\u05D6\u05D9\u05D9\u05DF", date: "2026-03-15", time: "10:30" },
-    { id: "r5", supplierName: "\u05D0\u05D5\u05E8 \u05EA\u05D0\u05D5\u05E8\u05D4", date: "2026-03-16", time: "13:30", notes: "\u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u05D7\u05D3\u05E9\u05D5\u05EA" },
+    { id: "r1", supplierName: "סטון דיזיין", date: "2026-03-12", time: "10:30", notes: "פרסום קולקציה חדשה" },
+    { id: "r2", supplierName: "אור תאורה", date: "2026-03-12", time: "13:30" },
+    { id: "r3", supplierName: "קיטשן פלוס", date: "2026-03-12", time: "20:30", notes: "מבצע חודשי" },
+    { id: "r4", supplierName: "סטון דיזיין", date: "2026-03-15", time: "10:30" },
+    { id: "r5", supplierName: "אור תאורה", date: "2026-03-16", time: "13:30", notes: "תמונות חדשות" },
 ];
 const timeSlots = ["10:30", "13:30", "20:30"];
-const dayNames = ["\u05E8\u05D0\u05E9\u05D5\u05DF", "\u05E9\u05E0\u05D9", "\u05E9\u05DC\u05D9\u05E9\u05D9", "\u05E8\u05D1\u05D9\u05E2\u05D9", "\u05D7\u05DE\u05D9\u05E9\u05D9", "\u05E9\u05D9\u05E9\u05D9", "\u05E9\u05D1\u05EA"];
+const dayNames = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 const demoSuppliers = [
-    { id: "1", name: "\u05E1\u05D8\u05D5\u05DF \u05D3\u05D9\u05D6\u05D9\u05D9\u05DF" },
-    { id: "2", name: "\u05D0\u05D5\u05E8 \u05EA\u05D0\u05D5\u05E8\u05D4" },
-    { id: "3", name: "\u05E7\u05D9\u05D8\u05E9\u05DF \u05E4\u05DC\u05D5\u05E1" },
+    { id: "1", name: "סטון דיזיין" },
+    { id: "2", name: "אור תאורה" },
+    { id: "3", name: "קיטשן פלוס" },
 ];
 export default function ReservationsPage() {
     const [reservations, setReservations] = useState(demoReservations);
@@ -86,8 +86,8 @@ export default function ReservationsPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading text-text-primary flex items-center gap-2">
-            <CalendarClock className="w-7 h-7"/>{"\u05E9\u05E8\u05D9\u05D5\u05DF \u05E1\u05E4\u05E7\u05D9\u05DD"}</h1>
-          <p className="text-text-muted text-sm mt-1">{"\u05DC\u05D5\u05D7 \u05E9\u05E0\u05D4 \u05DC\u05E9\u05E8\u05D9\u05D5\u05DF \u05D9\u05DE\u05D9 \u05D5\u05E9\u05E2\u05D5\u05EA \u05E4\u05E8\u05E1\u05D5\u05DD \u05DC\u05E1\u05E4\u05E7\u05D9\u05DD"}</p>
+            <CalendarClock className="w-7 h-7"/>{"שריון ספקים"}</h1>
+          <p className="text-text-muted text-sm mt-1">{"לוח שנה לשריון ימי ושעות פרסום לספקים"}</p>
         </div>
       </div>
 
@@ -155,7 +155,7 @@ export default function ReservationsPage() {
 
       {/* Upcoming reservations list */}
       <div className="card-static">
-        <h2 className="text-lg font-heading text-text-primary mb-4">{"\u05E9\u05E8\u05D9\u05D5\u05E0\u05D9\u05DD \u05E7\u05E8\u05D5\u05D1\u05D9\u05DD"}</h2>
+        <h2 className="text-lg font-heading text-text-primary mb-4">{"שריונים קרובים"}</h2>
         <div className="space-y-2">
           {reservations
             .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
@@ -182,33 +182,33 @@ export default function ReservationsPage() {
       {showAddModal && selectedSlot && (<div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-border-subtle rounded-card p-6 max-w-md w-full">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-heading text-text-primary">{"\u05E9\u05E8\u05D9\u05D5\u05DF \u05E1\u05E4\u05E7"}</h3>
+              <h3 className="text-lg font-heading text-text-primary">{"שריון ספק"}</h3>
               <button onClick={() => setShowAddModal(false)} className="text-text-muted hover:text-gold">
                 <X className="w-5 h-5"/>
               </button>
             </div>
 
             <p className="text-text-muted text-sm mb-4">
-              {selectedSlot.date}{"| \u05E9\u05E2\u05D4"}{selectedSlot.time}
+              {selectedSlot.date}{"| שעה"}{selectedSlot.time}
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-text-primary text-sm mb-1">{"\u05E1\u05E4\u05E7 *"}</label>
+                <label className="block text-text-primary text-sm mb-1">{"ספק *"}</label>
                 <select value={newReservation.supplierId} onChange={(e) => setNewReservation({ ...newReservation, supplierId: e.target.value })} className="select-field">
-                  <option value="">{"\u05D1\u05D7\u05E8 \u05E1\u05E4\u05E7"}</option>
+                  <option value="">{"בחר ספק"}</option>
                   {demoSuppliers.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
                 </select>
               </div>
               <div>
-                <label className="block text-text-primary text-sm mb-1">{"\u05D4\u05E2\u05E8\u05D5\u05EA"}</label>
-                <input type="text" value={newReservation.notes} onChange={(e) => setNewReservation({ ...newReservation, notes: e.target.value })} className="input-field" placeholder="\u05E4\u05E8\u05E1\u05D5\u05DD \u05E7\u05D5\u05DC\u05E7\u05E6\u05D9\u05D4 \u05D7\u05D3\u05E9\u05D4..."/>
+                <label className="block text-text-primary text-sm mb-1">{"הערות"}</label>
+                <input type="text" value={newReservation.notes} onChange={(e) => setNewReservation({ ...newReservation, notes: e.target.value })} className="input-field" placeholder="פרסום קולקציה חדשה..."/>
               </div>
             </div>
 
             <div className="flex gap-2 mt-6">
-              <button onClick={handleAddReservation} disabled={!newReservation.supplierId} className="btn-gold flex-1 disabled:opacity-50 disabled:cursor-not-allowed">{"\u05E9\u05E8\u05D9\u05D9\u05DF"}</button>
-              <button onClick={() => setShowAddModal(false)} className="btn-outline flex-1">{"\u05D1\u05D9\u05D8\u05D5\u05DC"}</button>
+              <button onClick={handleAddReservation} disabled={!newReservation.supplierId} className="btn-gold flex-1 disabled:opacity-50 disabled:cursor-not-allowed">{"שריין"}</button>
+              <button onClick={() => setShowAddModal(false)} className="btn-outline flex-1">{"ביטול"}</button>
             </div>
           </div>
         </div>)}

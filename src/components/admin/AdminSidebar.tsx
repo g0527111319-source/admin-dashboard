@@ -5,21 +5,21 @@ import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import { LayoutDashboard, Users, Palette, FileText, Trophy, Calendar, BarChart3, Settings, MessageCircle, Star, ChevronRight, Menu, X, LogOut, UserPlus, CalendarClock, MapPin, Zap, CheckSquare, } from "lucide-react";
 const menuItems = [
-    { href: "/admin", label: "\u05E1\u05E7\u05D9\u05E8\u05D4 \u05DB\u05DC\u05DC\u05D9\u05EA", icon: LayoutDashboard },
-    { href: "/admin/suppliers", label: "\u05E0\u05D9\u05D4\u05D5\u05DC \u05E1\u05E4\u05E7\u05D9\u05DD", icon: Users },
-    { href: "/admin/designers", label: "\u05E0\u05D9\u05D4\u05D5\u05DC \u05DE\u05E2\u05E6\u05D1\u05D5\u05EA", icon: Palette },
-    { href: "/admin/waitlist", label: "\u05E8\u05E9\u05D9\u05DE\u05EA \u05D4\u05DE\u05EA\u05E0\u05D4", icon: UserPlus },
-    { href: "/admin/posts", label: "\u05E0\u05D9\u05D4\u05D5\u05DC \u05E4\u05E8\u05E1\u05D5\u05DE\u05D9\u05DD", icon: FileText },
-    { href: "/admin/ratings", label: "\u05D3\u05D9\u05E8\u05D5\u05D2\u05D9\u05DD", icon: Star },
-    { href: "/admin/lottery", label: "\u05D4\u05D2\u05E8\u05DC\u05D5\u05EA", icon: Trophy },
-    { href: "/admin/events", label: "\u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD", icon: Calendar },
-    { href: "/admin/reservations", label: "\u05E9\u05E8\u05D9\u05D5\u05E0\u05D9\u05DD", icon: CalendarClock },
-    { href: "/admin/reports", label: "\u05D3\u05D5\u05D7\u05D5\u05EA \u05D5\u05D0\u05E0\u05DC\u05D9\u05D8\u05D9\u05E7\u05D4", icon: BarChart3 },
-    { href: "/admin/whatsapp", label: "\u05D5\u05D5\u05D0\u05D8\u05E1\u05D0\u05E4", icon: MessageCircle },
-    { href: "/admin/map", label: "\u05DE\u05E4\u05EA \u05E7\u05D4\u05D9\u05DC\u05D4", icon: MapPin },
-    { href: "/admin/automations", label: "\u05D0\u05D5\u05D8\u05D5\u05DE\u05E6\u05D9\u05D5\u05EA", icon: Zap },
-    { href: "/admin/tasks", label: "\u05DC\u05D5\u05D7 \u05DE\u05E9\u05D9\u05DE\u05D5\u05EA", icon: CheckSquare },
-    { href: "/admin/settings", label: "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA", icon: Settings },
+    { href: "/admin", label: "סקירה כללית", icon: LayoutDashboard },
+    { href: "/admin/suppliers", label: "ניהול ספקים", icon: Users },
+    { href: "/admin/designers", label: "ניהול מעצבות", icon: Palette },
+    { href: "/admin/waitlist", label: "רשימת המתנה", icon: UserPlus },
+    { href: "/admin/posts", label: "ניהול פרסומים", icon: FileText },
+    { href: "/admin/ratings", label: "דירוגים", icon: Star },
+    { href: "/admin/lottery", label: "הגרלות", icon: Trophy },
+    { href: "/admin/events", label: "אירועים", icon: Calendar },
+    { href: "/admin/reservations", label: "שריונים", icon: CalendarClock },
+    { href: "/admin/reports", label: "דוחות ואנליטיקה", icon: BarChart3 },
+    { href: "/admin/whatsapp", label: "וואטסאפ", icon: MessageCircle },
+    { href: "/admin/map", label: "מפת קהילה", icon: MapPin },
+    { href: "/admin/automations", label: "אוטומציות", icon: Zap },
+    { href: "/admin/tasks", label: "לוח משימות", icon: CheckSquare },
+    { href: "/admin/settings", label: "הגדרות", icon: Settings },
 ];
 export default function AdminSidebar() {
     const pathname = usePathname();
@@ -48,7 +48,7 @@ export default function AdminSidebar() {
         <div className="p-5 border-b border-border-subtle">
           <Logo size="md"/>
           <p className="text-text-muted text-xs mt-2 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"/>{"\u05DC\u05D5\u05D7 \u05D1\u05E7\u05E8\u05D4 \u2014 \u05EA\u05DE\u05E8"}</p>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"/>{"לוח בקרה — תמר"}</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
@@ -68,7 +68,7 @@ export default function AdminSidebar() {
 
         <div className="p-4 border-t border-border-subtle">
           <button onClick={handleLogout} className="flex items-center gap-2 text-text-muted text-sm hover:text-red-500 transition-colors px-3 py-2 w-full">
-            <LogOut className="w-4 h-4"/>{"\u05D4\u05EA\u05E0\u05EA\u05E7\u05D5\u05EA"}</button>
+            <LogOut className="w-4 h-4"/>{"התנתקות"}</button>
         </div>
       </aside>
     </>);

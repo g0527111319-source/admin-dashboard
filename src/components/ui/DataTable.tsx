@@ -16,7 +16,7 @@ interface DataTableProps<T> {
     onExport?: () => void;
     emptyMessage?: string;
 }
-export default function DataTable<T extends Record<string, unknown>>({ columns, data, searchable = true, searchPlaceholder = "\u05D7\u05D9\u05E4\u05D5\u05E9...", exportable = true, onExport, emptyMessage = "\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05EA\u05D5\u05E6\u05D0\u05D5\u05EA", }: DataTableProps<T>) {
+export default function DataTable<T extends Record<string, unknown>>({ columns, data, searchable = true, searchPlaceholder = "חיפוש...", exportable = true, onExport, emptyMessage = "לא נמצאו תוצאות", }: DataTableProps<T>) {
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -54,7 +54,7 @@ export default function DataTable<T extends Record<string, unknown>>({ columns, 
             <input type="text" placeholder={searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="input-dark pr-10"/>
           </div>)}
         {exportable && (<button onClick={onExport} className="btn-outline flex items-center gap-2 text-sm">
-            <Download className="w-4 h-4"/>{"\u05D9\u05D9\u05E6\u05D5\u05D0 Excel"}</button>)}
+            <Download className="w-4 h-4"/>{"ייצוא Excel"}</button>)}
       </div>
 
       {/* Table */}
@@ -86,6 +86,6 @@ export default function DataTable<T extends Record<string, unknown>>({ columns, 
 
       {/* Footer */}
       <div className="mt-3 text-text-muted text-sm">
-        {sortedData.length}{"\u05EA\u05D5\u05E6\u05D0\u05D5\u05EA"}</div>
+        {sortedData.length}{"תוצאות"}</div>
     </div>);
 }

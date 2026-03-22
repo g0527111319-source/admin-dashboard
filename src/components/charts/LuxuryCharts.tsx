@@ -54,7 +54,7 @@ export function RevenueBarChart({ data }: {
         <XAxis dataKey="month" tick={TICK} axisLine={AXIS}/>
         <YAxis tick={TICK} axisLine={AXIS} tickFormatter={(v) => `₪${(v / 1000).toFixed(0)}K`}/>
         <Tooltip content={<CustomTooltip formatter={(val) => `₪${val.toLocaleString("he-IL")}`}/>}/>
-        <Bar dataKey="revenue" name="\u05D4\u05DB\u05E0\u05E1\u05D5\u05EA" fill={COLORS.gold} radius={[6, 6, 0, 0]}/>
+        <Bar dataKey="revenue" name="הכנסות" fill={COLORS.gold} radius={[6, 6, 0, 0]}/>
       </BarChart>
     </ResponsiveContainer>);
 }
@@ -73,7 +73,7 @@ export function DealsAreaChart({ data }: {
         <XAxis dataKey="month" tick={TICK} axisLine={AXIS}/>
         <YAxis tick={TICK} axisLine={AXIS}/>
         <Tooltip content={<CustomTooltip />}/>
-        <Area type="monotone" dataKey="deals" name="\u05E2\u05E1\u05E7\u05D0\u05D5\u05EA" stroke={COLORS.gold} strokeWidth={2} fill="url(#goldGradient)"/>
+        <Area type="monotone" dataKey="deals" name="עסקאות" stroke={COLORS.gold} strokeWidth={2} fill="url(#goldGradient)"/>
       </AreaChart>
     </ResponsiveContainer>);
 }
@@ -109,8 +109,8 @@ export function ComboLineChart({ data }: {
         <YAxis yAxisId="right" orientation="left" tick={TICK} axisLine={AXIS} tickFormatter={(v) => `₪${(v / 1000).toFixed(0)}K`}/>
         <Tooltip content={<CustomTooltip />}/>
         <Legend wrapperStyle={{ color: "#6B7280", fontSize: 12, paddingTop: 8 }}/>
-        <Line yAxisId="left" type="monotone" dataKey="deals" name="\u05E2\u05E1\u05E7\u05D0\u05D5\u05EA" stroke={COLORS.gold} strokeWidth={2} dot={{ fill: COLORS.gold, r: 4 }}/>
-        <Line yAxisId="right" type="monotone" dataKey="revenue" name="\u05D4\u05DB\u05E0\u05E1\u05D5\u05EA" stroke={COLORS.green} strokeWidth={2} dot={{ fill: COLORS.green, r: 4 }}/>
+        <Line yAxisId="left" type="monotone" dataKey="deals" name="עסקאות" stroke={COLORS.gold} strokeWidth={2} dot={{ fill: COLORS.gold, r: 4 }}/>
+        <Line yAxisId="right" type="monotone" dataKey="revenue" name="הכנסות" stroke={COLORS.green} strokeWidth={2} dot={{ fill: COLORS.green, r: 4 }}/>
       </LineChart>
     </ResponsiveContainer>);
 }
@@ -130,9 +130,9 @@ export function PostsStackedChart({ data }: {
         <YAxis tick={TICK} axisLine={AXIS}/>
         <Tooltip content={<CustomTooltip />}/>
         <Legend wrapperStyle={{ color: "#6B7280", fontSize: 12, paddingTop: 8 }}/>
-        <Bar dataKey="published" name="\u05E4\u05D5\u05E8\u05E1\u05DE\u05D5" stackId="a" fill={COLORS.green}/>
-        <Bar dataKey="pending" name="\u05DE\u05DE\u05EA\u05D9\u05E0\u05D9\u05DD" stackId="a" fill={COLORS.gold}/>
-        <Bar dataKey="rejected" name="\u05E0\u05D3\u05D7\u05D5" stackId="a" fill={COLORS.red} radius={[4, 4, 0, 0]}/>
+        <Bar dataKey="published" name="פורסמו" stackId="a" fill={COLORS.green}/>
+        <Bar dataKey="pending" name="ממתינים" stackId="a" fill={COLORS.gold}/>
+        <Bar dataKey="rejected" name="נדחו" stackId="a" fill={COLORS.red} radius={[4, 4, 0, 0]}/>
       </BarChart>
     </ResponsiveContainer>);
 }
@@ -162,8 +162,8 @@ export function PaymentsChart({ data }: {
         <YAxis tick={TICK} axisLine={AXIS} tickFormatter={(v) => `₪${(v / 1000).toFixed(0)}K`}/>
         <Tooltip content={<CustomTooltip formatter={(val) => `₪${val.toLocaleString("he-IL")}`}/>}/>
         <Legend wrapperStyle={{ color: "#6B7280", fontSize: 12, paddingTop: 8 }}/>
-        <Area type="monotone" dataKey="paid" name="\u05E9\u05D5\u05DC\u05DD" stroke={COLORS.green} fill="url(#paidGradient)" strokeWidth={2}/>
-        <Area type="monotone" dataKey="overdue" name="\u05D1\u05D0\u05D9\u05D7\u05D5\u05E8" stroke={COLORS.red} fill="url(#overdueGradient)" strokeWidth={2}/>
+        <Area type="monotone" dataKey="paid" name="שולם" stroke={COLORS.green} fill="url(#paidGradient)" strokeWidth={2}/>
+        <Area type="monotone" dataKey="overdue" name="באיחור" stroke={COLORS.red} fill="url(#overdueGradient)" strokeWidth={2}/>
       </AreaChart>
     </ResponsiveContainer>);
 }
@@ -180,7 +180,7 @@ export function RatingDistributionChart({ data }: {
         <XAxis type="number" tick={TICK} axisLine={AXIS}/>
         <YAxis type="category" dataKey="rating" tick={{ fill: "#C9A84C", fontSize: 13 }} axisLine={AXIS} width={60}/>
         <Tooltip content={<CustomTooltip />}/>
-        <Bar dataKey="count" name="\u05D3\u05D9\u05E8\u05D5\u05D2\u05D9\u05DD" radius={[0, 6, 6, 0]}>
+        <Bar dataKey="count" name="דירוגים" radius={[0, 6, 6, 0]}>
           {data.map((entry, index) => {
             const num = parseInt(entry.rating);
             let color = COLORS.green;

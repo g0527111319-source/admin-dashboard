@@ -20,10 +20,10 @@ export default function BusinessCardBuilder({ initialData, userName = "", userRo
         return {
             ...defaultBusinessCard,
             fields: [
-                { id: "1", label: "\u05E9\u05DD \u05DE\u05DC\u05D0", value: userName, icon: "user" },
-                { id: "2", label: "\u05EA\u05E4\u05E7\u05D9\u05D3", value: userRole, icon: "briefcase" },
-                { id: "3", label: "\u05D8\u05DC\u05E4\u05D5\u05DF", value: userPhone, icon: "phone" },
-                { id: "4", label: "\u05DE\u05D9\u05D9\u05DC", value: userEmail, icon: "mail" },
+                { id: "1", label: "שם מלא", value: userName, icon: "user" },
+                { id: "2", label: "תפקיד", value: userRole, icon: "briefcase" },
+                { id: "3", label: "טלפון", value: userPhone, icon: "phone" },
+                { id: "4", label: "מייל", value: userEmail, icon: "mail" },
             ],
         };
     });
@@ -43,19 +43,19 @@ export default function BusinessCardBuilder({ initialData, userName = "", userRo
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-heading text-text-primary flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-gold"/>{"\u05DB\u05E8\u05D8\u05D9\u05E1 \u05D1\u05D9\u05E7\u05D5\u05E8 \u05D3\u05D9\u05D2\u05D9\u05D8\u05DC\u05D9"}</h2>
-          <p className="text-text-muted text-xs mt-0.5">{"\u05E2\u05E6\u05D1\u05D5 \u05DB\u05E8\u05D8\u05D9\u05E1 \u05D1\u05D9\u05E7\u05D5\u05E8 \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9 \u2014 \u05DB\u05DC \u05E9\u05D9\u05E0\u05D5\u05D9 \u05DE\u05D5\u05E6\u05D2 \u05D1\u05D6\u05DE\u05DF \u05D0\u05DE\u05EA"}</p>
+            <CreditCard className="w-5 h-5 text-gold"/>{"כרטיס ביקור דיגיטלי"}</h2>
+          <p className="text-text-muted text-xs mt-0.5">{"עצבו כרטיס ביקור מקצועי — כל שינוי מוצג בזמן אמת"}</p>
         </div>
         <div className="flex items-center gap-2">
-          {lastSaved && (<span className="text-text-muted text-[10px]">{"\u05E0\u05E9\u05DE\u05E8 \u05D1-"}{lastSaved}
+          {lastSaved && (<span className="text-text-muted text-[10px]">{"נשמר ב-"}{lastSaved}
             </span>)}
           <button onClick={handleSave} disabled={isSaving} className="btn-gold text-sm py-2 px-4 flex items-center gap-1.5 disabled:opacity-50">
             <Save className="w-4 h-4"/>
-            {isSaving ? "\u05E9\u05D5\u05DE\u05E8..." : "\u05E9\u05DE\u05D5\u05E8"}
+            {isSaving ? "שומר..." : "שמור"}
           </button>
           <button className="btn-outline text-sm py-2 px-3 flex items-center gap-1.5">
             <Share2 className="w-4 h-4"/>
-            <span className="hidden sm:inline">{"\u05E9\u05EA\u05E3"}</span>
+            <span className="hidden sm:inline">{"שתף"}</span>
           </button>
         </div>
       </div>
@@ -64,7 +64,7 @@ export default function BusinessCardBuilder({ initialData, userName = "", userRo
       <div className="flex items-center justify-between lg:hidden">
         <button onClick={() => setShowPreview(!showPreview)} className={`flex items-center gap-1.5 px-3 py-2 rounded-btn text-xs font-medium transition-all ${showPreview ? "bg-gold/10 text-gold" : "bg-bg-surface text-text-muted"}`}>
           {showPreview ? <Eye className="w-3.5 h-3.5"/> : <EyeOff className="w-3.5 h-3.5"/>}
-          {showPreview ? "\u05D4\u05E1\u05EA\u05E8 \u05EA\u05E6\u05D5\u05D2\u05D4" : "\u05D4\u05E6\u05D2 \u05EA\u05E6\u05D5\u05D2\u05D4"}
+          {showPreview ? "הסתר תצוגה" : "הצג תצוגה"}
         </button>
         {showPreview && (<div className="flex gap-1 bg-bg-surface rounded-btn p-0.5 border border-border-subtle">
             <button onClick={() => setViewMode("mobile")} className={`p-1.5 rounded transition-all ${viewMode === "mobile" ? "bg-gold text-white" : "text-text-muted"}`}>
@@ -88,12 +88,12 @@ export default function BusinessCardBuilder({ initialData, userName = "", userRo
           <div className="lg:sticky lg:top-4">
             {/* View Mode Toggle (Desktop) */}
             <div className="hidden lg:flex items-center justify-between mb-3">
-              <p className="text-text-muted text-xs font-medium">{"\u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4"}</p>
+              <p className="text-text-muted text-xs font-medium">{"תצוגה מקדימה"}</p>
               <div className="flex gap-1 bg-bg-surface rounded-btn p-0.5 border border-border-subtle">
                 <button onClick={() => setViewMode("mobile")} className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-all ${viewMode === "mobile" ? "bg-gold text-white font-medium" : "text-text-muted hover:text-text-primary"}`}>
-                  <Smartphone className="w-3.5 h-3.5"/>{"\u05E0\u05D9\u05D9\u05D3"}</button>
+                  <Smartphone className="w-3.5 h-3.5"/>{"נייד"}</button>
                 <button onClick={() => setViewMode("desktop")} className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-all ${viewMode === "desktop" ? "bg-gold text-white font-medium" : "text-text-muted hover:text-text-primary"}`}>
-                  <Monitor className="w-3.5 h-3.5"/>{"\u05DE\u05D7\u05E9\u05D1"}</button>
+                  <Monitor className="w-3.5 h-3.5"/>{"מחשב"}</button>
               </div>
             </div>
 

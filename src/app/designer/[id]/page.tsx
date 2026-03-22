@@ -38,10 +38,10 @@ import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 
 const designerData = {
     designerLogo: "",
-    fullName: txt("src/app/designer/[id]/page.tsx::001", "\u05E0\u05D5\u05E2\u05D4 \u05DB\u05D4\u05E0\u05D5\u05D1\u05D9\u05E5'"),
-    city: txt("src/app/designer/[id]/page.tsx::002", "\u05EA\u05DC \u05D0\u05D1\u05D9\u05D1"),
-    area: txt("src/app/designer/[id]/page.tsx::003", "\u05DE\u05E8\u05DB\u05D6"),
-    specialization: txt("src/app/designer/[id]/page.tsx::004", "\u05E2\u05D9\u05E6\u05D5\u05D1 \u05E4\u05E0\u05D9\u05DD"),
+    fullName: txt("src/app/designer/[id]/page.tsx::001", "נועה כהנוביץ'"),
+    city: txt("src/app/designer/[id]/page.tsx::002", "תל אביב"),
+    area: txt("src/app/designer/[id]/page.tsx::003", "מרכז"),
+    specialization: txt("src/app/designer/[id]/page.tsx::004", "עיצוב פנים"),
     yearsExperience: 8,
     instagram: "@noa.design",
     email: "noa@design.co.il",
@@ -56,20 +56,20 @@ const designerData = {
 };
 
 const demoSuppliers = [
-    { id: "1", name: txt("src/app/designer/[id]/page.tsx::005", "\u05E1\u05D8\u05D5\u05DF \u05D3\u05D9\u05D6\u05D9\u05D9\u05DF"), category: txt("src/app/designer/[id]/page.tsx::006", "\u05E8\u05D9\u05E6\u05D5\u05E3 \u05D5\u05D7\u05D9\u05E4\u05D5\u05D9"), city: txt("src/app/designer/[id]/page.tsx::007", "\u05EA\u05DC \u05D0\u05D1\u05D9\u05D1"), area: txt("src/app/designer/[id]/page.tsx::008", "\u05DE\u05E8\u05DB\u05D6"), description: txt("src/app/designer/[id]/page.tsx::009", "\u05DE\u05D5\u05D1\u05D9\u05DC\u05D9\u05DD \u05D1\u05EA\u05D7\u05D5\u05DD \u05D4\u05E8\u05D9\u05E6\u05D5\u05E3 \u05D5\u05D4\u05D7\u05D9\u05E4\u05D5\u05D9 \u2014 \u05D9\u05D1\u05D5\u05D0 \u05D9\u05E9\u05D9\u05E8 \u05DE\u05D0\u05D9\u05D8\u05DC\u05D9\u05D4 \u05D5\u05E4\u05D5\u05E8\u05D8\u05D5\u05D2\u05DC"), phone: "0521234567", averageRating: 4.5, ratingCount: 12, recommendationCount: 15, dealsCount: 34, workedWithMe: true },
-    { id: "2", name: txt("src/app/designer/[id]/page.tsx::010", "\u05D0\u05D5\u05E8 \u05EA\u05D0\u05D5\u05E8\u05D4"), category: txt("src/app/designer/[id]/page.tsx::011", "\u05EA\u05D0\u05D5\u05E8\u05D4"), city: txt("src/app/designer/[id]/page.tsx::012", "\u05D4\u05E8\u05E6\u05DC\u05D9\u05D4"), area: txt("src/app/designer/[id]/page.tsx::013", "\u05E9\u05E8\u05D5\u05DF"), description: txt("src/app/designer/[id]/page.tsx::014", "\u05D2\u05D5\u05E4\u05D9 \u05EA\u05D0\u05D5\u05E8\u05D4 \u05DE\u05E2\u05D5\u05E6\u05D1\u05D9\u05DD \u2014 \u05E1\u05E7\u05E0\u05D3\u05D9\u05E0\u05D1\u05D9, \u05DE\u05D5\u05D3\u05E8\u05E0\u05D9 \u05D5\u05D0\u05E7\u05DC\u05E7\u05D8\u05D9"), phone: "0529876543", averageRating: 3.8, ratingCount: 6, recommendationCount: 8, dealsCount: 18, workedWithMe: false },
-    { id: "3", name: txt("src/app/designer/[id]/page.tsx::015", "\u05E7\u05D9\u05D8\u05E9\u05DF \u05E4\u05DC\u05D5\u05E1"), category: txt("src/app/designer/[id]/page.tsx::016", "\u05DE\u05D8\u05D1\u05D7\u05D9\u05DD"), city: txt("src/app/designer/[id]/page.tsx::017", "\u05E8\u05D0\u05E9\u05D5\u05DF \u05DC\u05E6\u05D9\u05D5\u05DF"), area: txt("src/app/designer/[id]/page.tsx::018", "\u05DE\u05E8\u05DB\u05D6"), description: txt("src/app/designer/[id]/page.tsx::019", "\u05DE\u05D8\u05D1\u05D7\u05D9\u05DD \u05DE\u05D5\u05EA\u05D0\u05DE\u05D9\u05DD \u05D0\u05D9\u05E9\u05D9\u05EA \u2014 \u05E2\u05D9\u05E6\u05D5\u05D1, \u05D9\u05D9\u05E6\u05D5\u05E8 \u05D5\u05D4\u05EA\u05E7\u05E0\u05D4 \u05DE\u05E7\u05E6\u05D4 \u05DC\u05E7\u05E6\u05D4"), phone: "0541112233", averageRating: 4.8, ratingCount: 18, recommendationCount: 22, dealsCount: 45, workedWithMe: true },
-    { id: "4", name: txt("src/app/designer/[id]/page.tsx::020", "\u05E0\u05D5\u05E3 \u05D2\u05E8\u05D9\u05DF"), category: txt("src/app/designer/[id]/page.tsx::021", "\u05D7\u05D5\u05E5 \u05D5\u05E0\u05D5\u05E3"), city: txt("src/app/designer/[id]/page.tsx::022", "\u05DB\u05E4\u05E8 \u05E1\u05D1\u05D0"), area: txt("src/app/designer/[id]/page.tsx::023", "\u05E9\u05E8\u05D5\u05DF"), description: txt("src/app/designer/[id]/page.tsx::024", "\u05E2\u05D9\u05E6\u05D5\u05D1 \u05D2\u05E0\u05D9\u05DD, \u05DE\u05E8\u05E4\u05E1\u05D5\u05EA \u05D5\u05DE\u05E8\u05D7\u05D1\u05D9\u05DD \u05D9\u05E8\u05D5\u05E7\u05D9\u05DD \u2014 \u05DE\u05D4\u05EA\u05DB\u05E0\u05D5\u05DF \u05D5\u05E2\u05D3 \u05D4\u05D1\u05D9\u05E6\u05D5\u05E2"), phone: "0501234567", averageRating: 4.2, ratingCount: 9, recommendationCount: 11, dealsCount: 20, workedWithMe: false },
-    { id: "5", name: txt("src/app/designer/[id]/page.tsx::025", "\u05D3\u05DC\u05EA \u05D4\u05D6\u05D4\u05D1"), category: txt("src/app/designer/[id]/page.tsx::026", "\u05D3\u05DC\u05EA\u05D5\u05EA \u05D5\u05D7\u05DC\u05D5\u05E0\u05D5\u05EA"), city: txt("src/app/designer/[id]/page.tsx::027", "\u05D7\u05D9\u05E4\u05D4"), area: txt("src/app/designer/[id]/page.tsx::028", "\u05E6\u05E4\u05D5\u05DF"), description: txt("src/app/designer/[id]/page.tsx::029", "\u05D3\u05DC\u05EA\u05D5\u05EA \u05E4\u05E0\u05D9\u05DD \u05D5\u05DB\u05E0\u05D9\u05E1\u05D4 \u2014 \u05E2\u05E5, \u05D0\u05DC\u05D5\u05DE\u05D9\u05E0\u05D9\u05D5\u05DD, \u05D5\u05E4\u05D5\u05E8\u05E0\u05D9\u05E8 \u05D1\u05E8\u05DE\u05D4 \u05D4\u05D2\u05D1\u05D5\u05D4\u05D4 \u05D1\u05D9\u05D5\u05EA\u05E8"), phone: "0541234567", averageRating: 4.6, ratingCount: 14, recommendationCount: 16, dealsCount: 30, workedWithMe: false },
-    { id: "6", name: txt("src/app/designer/[id]/page.tsx::030", "\u05DC\u05D9\u05D9\u05D8 \u05D0\u05E4"), category: txt("src/app/designer/[id]/page.tsx::031", "\u05EA\u05D0\u05D5\u05E8\u05D4"), city: txt("src/app/designer/[id]/page.tsx::032", "\u05EA\u05DC \u05D0\u05D1\u05D9\u05D1"), area: txt("src/app/designer/[id]/page.tsx::033", "\u05DE\u05E8\u05DB\u05D6"), description: txt("src/app/designer/[id]/page.tsx::034", "\u05E4\u05EA\u05E8\u05D5\u05E0\u05D5\u05EA \u05EA\u05D0\u05D5\u05E8\u05D4 \u05D7\u05DB\u05DE\u05D4 \u2014 LED, \u05D3\u05D9\u05DE\u05E8\u05D9\u05DD \u05D5\u05EA\u05D0\u05D5\u05E8\u05D4 \u05D0\u05D3\u05E8\u05D9\u05DB\u05DC\u05D9\u05EA"), phone: "0531234567", averageRating: 4.3, ratingCount: 10, recommendationCount: 13, dealsCount: 25, workedWithMe: false },
+    { id: "1", name: txt("src/app/designer/[id]/page.tsx::005", "סטון דיזיין"), category: txt("src/app/designer/[id]/page.tsx::006", "ריצוף וחיפוי"), city: txt("src/app/designer/[id]/page.tsx::007", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::008", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::009", "מובילים בתחום הריצוף והחיפוי — יבוא ישיר מאיטליה ופורטוגל"), phone: "0521234567", averageRating: 4.5, ratingCount: 12, recommendationCount: 15, dealsCount: 34, workedWithMe: true },
+    { id: "2", name: txt("src/app/designer/[id]/page.tsx::010", "אור תאורה"), category: txt("src/app/designer/[id]/page.tsx::011", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::012", "הרצליה"), area: txt("src/app/designer/[id]/page.tsx::013", "שרון"), description: txt("src/app/designer/[id]/page.tsx::014", "גופי תאורה מעוצבים — סקנדינבי, מודרני ואקלקטי"), phone: "0529876543", averageRating: 3.8, ratingCount: 6, recommendationCount: 8, dealsCount: 18, workedWithMe: false },
+    { id: "3", name: txt("src/app/designer/[id]/page.tsx::015", "קיטשן פלוס"), category: txt("src/app/designer/[id]/page.tsx::016", "מטבחים"), city: txt("src/app/designer/[id]/page.tsx::017", "ראשון לציון"), area: txt("src/app/designer/[id]/page.tsx::018", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::019", "מטבחים מותאמים אישית — עיצוב, ייצור והתקנה מקצה לקצה"), phone: "0541112233", averageRating: 4.8, ratingCount: 18, recommendationCount: 22, dealsCount: 45, workedWithMe: true },
+    { id: "4", name: txt("src/app/designer/[id]/page.tsx::020", "נוף גרין"), category: txt("src/app/designer/[id]/page.tsx::021", "חוץ ונוף"), city: txt("src/app/designer/[id]/page.tsx::022", "כפר סבא"), area: txt("src/app/designer/[id]/page.tsx::023", "שרון"), description: txt("src/app/designer/[id]/page.tsx::024", "עיצוב גנים, מרפסות ומרחבים ירוקים — מהתכנון ועד הביצוע"), phone: "0501234567", averageRating: 4.2, ratingCount: 9, recommendationCount: 11, dealsCount: 20, workedWithMe: false },
+    { id: "5", name: txt("src/app/designer/[id]/page.tsx::025", "דלת הזהב"), category: txt("src/app/designer/[id]/page.tsx::026", "דלתות וחלונות"), city: txt("src/app/designer/[id]/page.tsx::027", "חיפה"), area: txt("src/app/designer/[id]/page.tsx::028", "צפון"), description: txt("src/app/designer/[id]/page.tsx::029", "דלתות פנים וכניסה — עץ, אלומיניום, ופורניר ברמה הגבוהה ביותר"), phone: "0541234567", averageRating: 4.6, ratingCount: 14, recommendationCount: 16, dealsCount: 30, workedWithMe: false },
+    { id: "6", name: txt("src/app/designer/[id]/page.tsx::030", "לייט אפ"), category: txt("src/app/designer/[id]/page.tsx::031", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::032", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::033", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::034", "פתרונות תאורה חכמה — LED, דימרים ותאורה אדריכלית"), phone: "0531234567", averageRating: 4.3, ratingCount: 10, recommendationCount: 13, dealsCount: 25, workedWithMe: false },
 ];
 
 const dealHistory = [
-    { id: "1", supplier: txt("src/app/designer/[id]/page.tsx::035", "\u05E1\u05D8\u05D5\u05DF \u05D3\u05D9\u05D6\u05D9\u05D9\u05DF"), amount: 12000, date: "08.03.2026", status: "confirmed", rating: 5 },
-    { id: "2", supplier: txt("src/app/designer/[id]/page.tsx::036", "\u05E7\u05D9\u05D8\u05E9\u05DF \u05E4\u05DC\u05D5\u05E1"), amount: 35000, date: "20.02.2026", status: "confirmed", rating: 5 },
-    { id: "3", supplier: txt("src/app/designer/[id]/page.tsx::037", "\u05D0\u05D5\u05E8 \u05EA\u05D0\u05D5\u05E8\u05D4"), amount: 8500, date: "10.01.2026", status: "confirmed", rating: 4 },
-    { id: "4", supplier: txt("src/app/designer/[id]/page.tsx::038", "\u05E1\u05D8\u05D5\u05DF \u05D3\u05D9\u05D6\u05D9\u05D9\u05DF"), amount: 15000, date: "05.12.2025", status: "confirmed", rating: 4 },
-    { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "\u05E0\u05D5\u05E3 \u05D2\u05E8\u05D9\u05DF"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
+    { id: "1", supplier: txt("src/app/designer/[id]/page.tsx::035", "סטון דיזיין"), amount: 12000, date: "08.03.2026", status: "confirmed", rating: 5 },
+    { id: "2", supplier: txt("src/app/designer/[id]/page.tsx::036", "קיטשן פלוס"), amount: 35000, date: "20.02.2026", status: "confirmed", rating: 5 },
+    { id: "3", supplier: txt("src/app/designer/[id]/page.tsx::037", "אור תאורה"), amount: 8500, date: "10.01.2026", status: "confirmed", rating: 4 },
+    { id: "4", supplier: txt("src/app/designer/[id]/page.tsx::038", "סטון דיזיין"), amount: 15000, date: "05.12.2025", status: "confirmed", rating: 4 },
+    { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "נוף גרין"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
 ];
 
 type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "budget" | "scheduler" | "moodboards" | "materials" | "quotes" | "tasks" | "timeline" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "inspiration" | "onboarding" | "plans" | "style-quiz";
@@ -81,60 +81,60 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    title: "\u05E8\u05D0\u05E9\u05D9",
+    title: "ראשי",
     items: [
-      { key: "home", label: "\u05D4\u05D1\u05D9\u05EA \u05E9\u05DC\u05D9", icon: Home },
-      { key: "profile", label: "\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC", icon: User },
-      { key: "card", label: "\u05DB\u05E8\u05D8\u05D9\u05E1 \u05D1\u05D9\u05E7\u05D5\u05E8", icon: CreditCard },
+      { key: "home", label: "הבית שלי", icon: Home },
+      { key: "profile", label: "פרופיל", icon: User },
+      { key: "card", label: "כרטיס ביקור", icon: CreditCard },
     ]
   },
   {
-    title: "\u05E7\u05D4\u05D9\u05DC\u05D4",
+    title: "קהילה",
     items: [
-      { key: "suppliers", label: "\u05E1\u05E4\u05E8\u05D9\u05D9\u05EA \u05E1\u05E4\u05E7\u05D9\u05DD", icon: Search },
-      { key: "deals", label: "\u05D3\u05D9\u05D5\u05D5\u05D7 \u05E2\u05E1\u05E7\u05D4", icon: HandCoins },
-      { key: "history", label: "\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4", icon: History },
+      { key: "suppliers", label: "ספריית ספקים", icon: Search },
+      { key: "deals", label: "דיווח עסקה", icon: HandCoins },
+      { key: "history", label: "היסטוריה", icon: History },
     ]
   },
   {
     title: "CRM",
     items: [
-      { key: "clients", label: "\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA", icon: Users },
-      { key: "projects", label: "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD", icon: FileText },
-      { key: "contracts", label: "\u05D7\u05D5\u05D6\u05D9\u05DD", icon: FileText },
-      { key: "quotes", label: "\u05D4\u05E6\u05E2\u05D5\u05EA \u05DE\u05D7\u05D9\u05E8", icon: CreditCard },
-      { key: "calendar", label: "\u05D9\u05D5\u05DE\u05DF", icon: CalendarIcon },
-      { key: "tasks", label: "\u05DE\u05E9\u05D9\u05DE\u05D5\u05EA", icon: CheckCircle2 },
-      { key: "budget", label: "\u05EA\u05E7\u05E6\u05D9\u05D1", icon: TrendingUp },
-      { key: "scheduler", label: "\u05DC\u05D5\u05D7 \u05D6\u05DE\u05E0\u05D9\u05DD", icon: CalendarIcon },
-      { key: "timeline", label: "\u05E6\u05D9\u05E8 \u05D6\u05DE\u05DF", icon: Activity },
-      { key: "time-tracking", label: "\u05DE\u05E2\u05E7\u05D1 \u05E9\u05E2\u05D5\u05EA", icon: Clock },
+      { key: "clients", label: "לקוחות", icon: Users },
+      { key: "projects", label: "פרויקטים", icon: FileText },
+      { key: "contracts", label: "חוזים", icon: FileText },
+      { key: "quotes", label: "הצעות מחיר", icon: CreditCard },
+      { key: "calendar", label: "יומן", icon: CalendarIcon },
+      { key: "tasks", label: "משימות", icon: CheckCircle2 },
+      { key: "budget", label: "תקציב", icon: TrendingUp },
+      { key: "scheduler", label: "לוח זמנים", icon: CalendarIcon },
+      { key: "timeline", label: "ציר זמן", icon: Activity },
+      { key: "time-tracking", label: "מעקב שעות", icon: Clock },
     ]
   },
   {
-    title: "\u05E2\u05D9\u05E6\u05D5\u05D1",
+    title: "עיצוב",
     items: [
-      { key: "moodboards", label: "\u05DE\u05D5\u05D3\u05D1\u05D5\u05E8\u05D3\u05D9\u05DD", icon: Grid3X3 },
-      { key: "materials", label: "\u05D7\u05D5\u05DE\u05E8\u05D9\u05DD", icon: List },
-      { key: "inspiration", label: "\u05D4\u05E9\u05E8\u05D0\u05D4", icon: Heart },
-      { key: "before-after", label: "\u05DC\u05E4\u05E0\u05D9/\u05D0\u05D7\u05E8\u05D9", icon: Grid3X3 },
-      { key: "plans", label: "\u05EA\u05D5\u05DB\u05E0\u05D9\u05D5\u05EA", icon: FileText },
-      { key: "style-quiz", label: "\u05E9\u05D0\u05DC\u05D5\u05DF \u05E1\u05D2\u05E0\u05D5\u05DF", icon: Star },
-      { key: "crm-suppliers", label: "\u05E1\u05E4\u05E7\u05D9\u05DD \u05E9\u05DC\u05D9", icon: Building2 },
+      { key: "moodboards", label: "מודבורדים", icon: Grid3X3 },
+      { key: "materials", label: "חומרים", icon: List },
+      { key: "inspiration", label: "השראה", icon: Heart },
+      { key: "before-after", label: "לפני/אחרי", icon: Grid3X3 },
+      { key: "plans", label: "תוכניות", icon: FileText },
+      { key: "style-quiz", label: "שאלון סגנון", icon: Star },
+      { key: "crm-suppliers", label: "ספקים שלי", icon: Building2 },
     ]
   },
   {
-    title: "\u05E0\u05D9\u05D4\u05D5\u05DC",
+    title: "ניהול",
     items: [
-      { key: "approvals", label: "\u05D0\u05D9\u05E9\u05D5\u05E8\u05D9\u05DD", icon: CheckCircle2 },
-      { key: "onboarding", label: "\u05E7\u05DC\u05D9\u05D8\u05EA \u05DC\u05E7\u05D5\u05D7", icon: Users },
-      { key: "handoff", label: "\u05DE\u05E1\u05D9\u05E8\u05D4", icon: CheckCircle2 },
-      { key: "surveys", label: "\u05E1\u05E7\u05E8\u05D9\u05DD", icon: Star },
-      { key: "workflows", label: "\u05EA\u05D1\u05E0\u05D9\u05D5\u05EA \u05E2\u05D1\u05D5\u05D3\u05D4", icon: Workflow },
-      { key: "templates", label: "\u05EA\u05D1\u05E0\u05D9\u05D5\u05EA \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA", icon: MessageSquare },
+      { key: "approvals", label: "אישורים", icon: CheckCircle2 },
+      { key: "onboarding", label: "קליטת לקוח", icon: Users },
+      { key: "handoff", label: "מסירה", icon: CheckCircle2 },
+      { key: "surveys", label: "סקרים", icon: Star },
+      { key: "workflows", label: "תבניות עבודה", icon: Workflow },
+      { key: "templates", label: "תבניות הודעות", icon: MessageSquare },
       { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
       { key: "webhooks", label: "Webhooks", icon: Zap },
-      { key: "crm-settings", label: "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA CRM", icon: Settings },
+      { key: "crm-settings", label: "הגדרות CRM", icon: Settings },
     ]
   },
 ];
@@ -296,7 +296,7 @@ export default function DesignerDashboard() {
             <div>
               {/* Breadcrumb */}
               <div className="breadcrumb hidden sm:flex">
-                <span onClick={() => setActiveTab("home")} className="cursor-pointer hover:text-gold transition-colors">{txt("src/app/designer/[id]/page.tsx::048", "\u05E8\u05D0\u05E9\u05D9")}</span>
+                <span onClick={() => setActiveTab("home")} className="cursor-pointer hover:text-gold transition-colors">{txt("src/app/designer/[id]/page.tsx::048", "הכל")}</span>
                 <span className="mx-1.5 text-text-faint">/</span>
                 <span className="text-gold font-medium">{activeLabel}</span>
               </div>
@@ -309,7 +309,7 @@ export default function DesignerDashboard() {
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint" />
               <input
                 type="text"
-                placeholder={txt("src/app/designer/[id]/page.tsx::049", "\u05D7\u05D9\u05E4\u05D5\u05E9...")}
+                placeholder={txt("src/app/designer/[id]/page.tsx::049", "חיפוש...")}
                 className="search-global"
               />
             </div>
@@ -347,20 +347,20 @@ export default function DesignerDashboard() {
                 {/* Welcome — Gradient Text */}
                 <div>
                   <h2 className="text-3xl font-heading font-bold">
-                    <span className="text-gradient-gold">{txt("src/app/designer/[id]/page.tsx::051", "\u05E9\u05DC\u05D5\u05DD")}{" "}{designerData.fullName.split(" ")[0]}</span> 👋
+                    <span className="text-gradient-gold">{txt("src/app/designer/[id]/page.tsx::051", "שלום")}{" "}{designerData.fullName.split(" ")[0]}</span> 👋
                   </h2>
                   <p className="text-text-muted text-sm mt-2">
-                    \u05D4\u05E0\u05D4 \u05E1\u05E7\u05D9\u05E8\u05D4 \u05E9\u05DC \u05DE\u05D4 \u05E7\u05D5\u05E8\u05D4 \u05D4\u05D9\u05D5\u05DD
+                    הנה סקירה של מה קורה היום
                   </p>
                 </div>
 
                 {/* KPI Cards — Premium with count-up animation */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { icon: HandCoins, color: "text-gold", bg: "bg-gradient-to-br from-gold/15 to-gold/5", label: txt("src/app/designer/[id]/page.tsx::052", "\u05D4\u05E2\u05E1\u05E7\u05D0\u05D5\u05EA \u05E9\u05DC\u05D9"), value: designerData.totalDeals, sub: formatCurrency(designerData.totalDealAmount), trend: "+3" },
-                    { icon: Trophy, color: "text-purple-600", bg: "bg-gradient-to-br from-purple-100 to-purple-50", label: txt("src/app/designer/[id]/page.tsx::053", "\u05D4\u05D2\u05E8\u05DC\u05D5\u05EA"), value: designerData.lotteryEntries, sub: designerData.lotteryWins > 0 ? `\u05D6\u05DB\u05D9\u05EA ${designerData.lotteryWins} \u05E4\u05E2\u05DE\u05D9\u05DD!` : txt("src/app/designer/[id]/page.tsx::054", "\u05D1\u05D4\u05E6\u05DC\u05D7\u05D4 \u05D1\u05D4\u05D2\u05E8\u05DC\u05D4 \u05D4\u05D1\u05D0\u05D4!"), trend: "+2" },
-                    { icon: CalendarIcon, color: "text-blue-600", bg: "bg-gradient-to-br from-blue-100 to-blue-50", label: txt("src/app/designer/[id]/page.tsx::055", "\u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD \u05E7\u05E8\u05D5\u05D1\u05D9\u05DD"), value: "2", sub: txt("src/app/designer/[id]/page.tsx::056", "\u05D4\u05D9\u05E8\u05E9\u05DE\u05D9 \u05E2\u05DB\u05E9\u05D9\u05D5"), trend: null },
-                    { icon: Heart, color: "text-pink-600", bg: "bg-gradient-to-br from-pink-100 to-pink-50", label: txt("src/app/designer/[id]/page.tsx::057", "\u05D0\u05E0\u05D9 \u05D5\u05D1\u05E7\u05D4\u05D9\u05DC\u05D4"), value: `#${designerData.rank}`, sub: `\u05DE\u05D0\u05D6 ${designerData.joinDate}`, trend: null },
+                    { icon: HandCoins, color: "text-gold", bg: "bg-gradient-to-br from-gold/15 to-gold/5", label: txt("src/app/designer/[id]/page.tsx::052", "העסקאות שלי"), value: designerData.totalDeals, sub: formatCurrency(designerData.totalDealAmount), trend: "+3" },
+                    { icon: Trophy, color: "text-purple-600", bg: "bg-gradient-to-br from-purple-100 to-purple-50", label: txt("src/app/designer/[id]/page.tsx::053", "הגרלות"), value: designerData.lotteryEntries, sub: designerData.lotteryWins > 0 ? `זכית ${designerData.lotteryWins} פעמים!` : txt("src/app/designer/[id]/page.tsx::054", "בהצלחה בהגרלה הבאה!"), trend: "+2" },
+                    { icon: CalendarIcon, color: "text-blue-600", bg: "bg-gradient-to-br from-blue-100 to-blue-50", label: txt("src/app/designer/[id]/page.tsx::055", "אירועים קרובים"), value: "2", sub: txt("src/app/designer/[id]/page.tsx::056", "הירשמי עכשיו"), trend: null },
+                    { icon: Heart, color: "text-pink-600", bg: "bg-gradient-to-br from-pink-100 to-pink-50", label: txt("src/app/designer/[id]/page.tsx::057", "אני ובקהילה"), value: `#${designerData.rank}`, sub: `מאז ${designerData.joinDate}`, trend: null },
                   ].map((card, i) => (
                     <div key={i} className={`card-premium text-center stagger-${i + 1} animate-in hover-lift`}>
                       <div className={`w-12 h-12 rounded-2xl ${card.bg} flex items-center justify-center mx-auto mb-3`}>
@@ -385,24 +385,24 @@ export default function DesignerDashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Activity className="w-4 h-4 text-gold" />
-                      <h3 className="text-sm font-semibold text-text-primary">{txt("src/app/designer/[id]/page.tsx::060", "\u05D4\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA \u05D7\u05D5\u05D3\u05E9\u05D9\u05EA")}</h3>
+                      <h3 className="text-sm font-semibold text-text-primary">{txt("src/app/designer/[id]/page.tsx::060", "התקדמות חודשית")}</h3>
                     </div>
-                    <span className="text-xs font-mono text-gold font-bold">{designerData.totalDeals}/15 {txt("src/app/designer/[id]/page.tsx::061", "\u05E2\u05E1\u05E7\u05D0\u05D5\u05EA")}</span>
+                    <span className="text-xs font-mono text-gold font-bold">{designerData.totalDeals}/15 {txt("src/app/designer/[id]/page.tsx::061", "עסקאות")}</span>
                   </div>
                   <div className="progress-bar">
                     <div className="progress-bar-fill" style={{ width: `${Math.min((designerData.totalDeals / 15) * 100, 100)}%` }} />
                   </div>
-                  <p className="text-text-faint text-xs mt-2">{txt("src/app/designer/[id]/page.tsx::062", "\u05E2\u05D5\u05D3 3 \u05E2\u05E1\u05E7\u05D0\u05D5\u05EA \u05DC\u05D4\u05E9\u05D2\u05EA \u05D4\u05D9\u05E2\u05D3 \u05D4\u05D7\u05D5\u05D3\u05E9\u05D9!")}</p>
+                  <p className="text-text-faint text-xs mt-2">{txt("src/app/designer/[id]/page.tsx::062", "עוד 3 עסקאות להשגת היעד החודשי!")}</p>
                 </div>
 
                 {/* Quick Actions — Premium with glow */}
                 <div>
-                  <h3 className="text-sm font-semibold text-text-muted mb-3">\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA \u05DE\u05D4\u05D9\u05E8\u05D5\u05EA</h3>
+                  <h3 className="text-sm font-semibold text-text-muted mb-3">פעולות מהירות</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { key: "suppliers" as TabKey, icon: Search, label: txt("src/app/designer/[id]/page.tsx::058", "\u05D7\u05E4\u05E9\u05D9 \u05E1\u05E4\u05E7") },
-                      { key: "deals" as TabKey, icon: Plus, label: txt("src/app/designer/[id]/page.tsx::059", "\u05D3\u05D5\u05D5\u05D7\u05D9 \u05E2\u05DC \u05E2\u05E1\u05E7\u05D4") },
-                      { key: "clients" as TabKey, icon: Users, label: "\u05D4\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA \u05E9\u05DC\u05D9" },
+                      { key: "suppliers" as TabKey, icon: Search, label: txt("src/app/designer/[id]/page.tsx::058", "חפשי ספק") },
+                      { key: "deals" as TabKey, icon: Plus, label: txt("src/app/designer/[id]/page.tsx::059", "דווחי על עסקה") },
+                      { key: "clients" as TabKey, icon: Users, label: "הלקוחות שלי" },
                       { key: "whatsapp" as TabKey, icon: MessageCircle, label: "WhatsApp" },
                     ].map((action) => (
                       <button
@@ -421,13 +421,13 @@ export default function DesignerDashboard() {
 
                 {/* Mini Portfolio — with logo watermark */}
                 <div>
-                  <h3 className="text-sm font-semibold text-text-muted mb-3">{txt("src/app/designer/[id]/page.tsx::200", "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD \u05D0\u05D7\u05E8\u05D5\u05E0\u05D9\u05DD")}</h3>
+                  <h3 className="text-sm font-semibold text-text-muted mb-3">{txt("src/app/designer/[id]/page.tsx::200", "פרויקטים אחרונים")}</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { title: txt("src/app/designer/[id]/page.tsx::201", "\u05E1\u05DC\u05D5\u05DF \u05DE\u05D5\u05D3\u05E8\u05E0\u05D9"), color: "from-amber-100 to-orange-50" },
-                      { title: txt("src/app/designer/[id]/page.tsx::202", "\u05DE\u05D8\u05D1\u05D7 \u05E1\u05E7\u05E0\u05D3\u05D9\u05E0\u05D1\u05D9"), color: "from-blue-100 to-indigo-50" },
-                      { title: txt("src/app/designer/[id]/page.tsx::203", "\u05D7\u05D3\u05E8 \u05E9\u05D9\u05E0\u05D4"), color: "from-emerald-100 to-teal-50" },
-                      { title: txt("src/app/designer/[id]/page.tsx::204", "\u05D1\u05D9\u05EA \u05E7\u05E4\u05D4"), color: "from-pink-100 to-rose-50" },
+                      { title: txt("src/app/designer/[id]/page.tsx::201", "סלון מודרני"), color: "from-amber-100 to-orange-50" },
+                      { title: txt("src/app/designer/[id]/page.tsx::202", "מטבח סקנדינבי"), color: "from-blue-100 to-indigo-50" },
+                      { title: txt("src/app/designer/[id]/page.tsx::203", "חדר שינה"), color: "from-emerald-100 to-teal-50" },
+                      { title: txt("src/app/designer/[id]/page.tsx::204", "בית קפה"), color: "from-pink-100 to-rose-50" },
                     ].map((project, i) => (
                       <div key={i} className="relative rounded-xl overflow-hidden group cursor-pointer hover-lift">
                         <div className={`bg-gradient-to-br ${project.color} h-32 flex items-center justify-center`}>
@@ -453,7 +453,7 @@ export default function DesignerDashboard() {
                 <div className="card-glass">
                   <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-gold" />
-                    {txt("src/app/designer/[id]/page.tsx::210", "\u05D7\u05EA\u05D9\u05DE\u05D4 \u05D3\u05D9\u05D2\u05D9\u05D8\u05DC\u05D9\u05EA")}
+                    {txt("src/app/designer/[id]/page.tsx::210", "חתימה דיגיטלית")}
                   </h3>
                   <div className="bg-white rounded-xl border border-border-subtle p-5 space-y-3 max-w-sm mx-auto">
                     {/* Letterhead style preview */}
@@ -485,7 +485,7 @@ export default function DesignerDashboard() {
                     className="btn-outline text-sm py-2 mt-4 flex items-center justify-center gap-2 w-full sm:w-auto mx-auto"
                   >
                     <Copy className="w-4 h-4" />
-                    {txt("src/app/designer/[id]/page.tsx::211", "\u05D4\u05E2\u05EA\u05E7 \u05D7\u05EA\u05D9\u05DE\u05D4")}
+                    {txt("src/app/designer/[id]/page.tsx::211", "העתק חתימה")}
                   </button>
                 </div>
 
@@ -493,13 +493,13 @@ export default function DesignerDashboard() {
                 <div className="card-glass">
                   <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-gold" />
-                    {txt("src/app/designer/[id]/page.tsx::063b", "\u05E4\u05E2\u05D9\u05DC\u05D5\u05EA \u05D0\u05D7\u05E8\u05D5\u05E0\u05D5\u05EA")}
+                    {txt("src/app/designer/[id]/page.tsx::063b", "פעילות אחרונות")}
                   </h3>
                   <div className="space-y-3">
                     {[
-                      { text: txt("src/app/designer/[id]/page.tsx::064b", "\u05E2\u05E1\u05E7\u05D4 \u05D7\u05D3\u05E9\u05D4 \u05E2\u05DD \u05E1\u05D8\u05D5\u05DF \u05D3\u05D9\u05D6\u05D9\u05D9\u05DF"), time: txt("src/app/designer/[id]/page.tsx::065b", "\u05DC\u05E4\u05E0\u05D9 3 \u05E9\u05E2\u05D5\u05EA"), color: "bg-gold" },
-                      { text: txt("src/app/designer/[id]/page.tsx::066b", "\u05E0\u05E8\u05E9\u05DE\u05EA \u05DC\u05D0\u05D9\u05E8\u05D5\u05E2 \u05E0\u05D8\u05D5\u05D5\u05E8\u05E7\u05D9\u05E0\u05D2"), time: txt("src/app/designer/[id]/page.tsx::067b", "\u05D0\u05EA\u05DE\u05D5\u05DC"), color: "bg-blue-500" },
-                      { text: txt("src/app/designer/[id]/page.tsx::068b", "\u05D3\u05D9\u05E8\u05D5\u05D2 5 \u05DB\u05D5\u05DB\u05D1\u05D9\u05DD \u05DC\u05E7\u05D9\u05D8\u05E9\u05DF \u05E4\u05DC\u05D5\u05E1"), time: txt("src/app/designer/[id]/page.tsx::069b", "\u05D0\u05EA\u05DE\u05D5\u05DC"), color: "bg-emerald-500" },
+                      { text: txt("src/app/designer/[id]/page.tsx::064b", "עסקה חדשה עם סטון דיזיין"), time: txt("src/app/designer/[id]/page.tsx::065b", "לפני 3 שעות"), color: "bg-gold" },
+                      { text: txt("src/app/designer/[id]/page.tsx::066b", "נרשמת לאירוע נטוורקינג"), time: txt("src/app/designer/[id]/page.tsx::067b", "אתמול"), color: "bg-blue-500" },
+                      { text: txt("src/app/designer/[id]/page.tsx::068b", "דירוג 5 כוכבים לקיטשן פלוס"), time: txt("src/app/designer/[id]/page.tsx::069b", "אתמול"), color: "bg-emerald-500" },
                     ].map((activity, i) => (
                       <div key={i} className="flex items-center gap-3 group">
                         <div className="relative flex-shrink-0">
@@ -525,7 +525,7 @@ export default function DesignerDashboard() {
                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                     <input
                       type="text"
-                      placeholder="\u05D7\u05E4\u05E9\u05D9 \u05E1\u05E4\u05E7 \u05DC\u05E4\u05D9 \u05E9\u05DD, \u05DE\u05D5\u05E6\u05E8, \u05D0\u05D5 \u05E2\u05D9\u05E8..."
+                      placeholder="חפשי ספק לפי שם, מוצר, או עיר..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="input-field pr-12 text-base py-3"
@@ -533,21 +533,21 @@ export default function DesignerDashboard() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="select-field text-sm">
-                      <option value={ALL_DESIGNER_FILTER}>{txt("src/app/designer/[id]/page.tsx::063", "\u05DB\u05DC \u05D4\u05D0\u05D6\u05D5\u05E8\u05D9\u05DD")}</option>
+                      <option value={ALL_DESIGNER_FILTER}>{txt("src/app/designer/[id]/page.tsx::063", "כל האזורים")}</option>
                       {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
                     </select>
                     <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="select-field text-sm">
-                      <option value={ALL_DESIGNER_FILTER}>{txt("src/app/designer/[id]/page.tsx::065", "\u05DB\u05DC \u05D4\u05E7\u05D8\u05D2\u05D5\u05E8\u05D9\u05D5\u05EA")}</option>
+                      <option value={ALL_DESIGNER_FILTER}>{txt("src/app/designer/[id]/page.tsx::065", "כל הקטגוריות")}</option>
                       {SUPPLIER_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                     <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select-field text-sm">
-                      <option value="rating">{txt("src/app/designer/[id]/page.tsx::066", "\u05D3\u05D9\u05E8\u05D5\u05D2 \u05D4\u05DB\u05D9 \u05D2\u05D1\u05D5\u05D4")}</option>
-                      <option value="recommendations">{txt("src/app/designer/[id]/page.tsx::067", "\u05D4\u05DB\u05D9 \u05DE\u05DE\u05DC\u05D9\u05E6\u05D5\u05EA")}</option>
-                      <option value="deals">{txt("src/app/designer/[id]/page.tsx::068", "\u05D4\u05DB\u05D9 \u05E2\u05E1\u05E7\u05D0\u05D5\u05EA")}</option>
-                      <option value="name">{txt("src/app/designer/[id]/page.tsx::069", "\u05E9\u05DD \u05D0-\u05D1")}</option>
+                      <option value="rating">{txt("src/app/designer/[id]/page.tsx::066", "דירוג הכי גבוה")}</option>
+                      <option value="recommendations">{txt("src/app/designer/[id]/page.tsx::067", "הכי ממליצות")}</option>
+                      <option value="deals">{txt("src/app/designer/[id]/page.tsx::068", "הכי עסקאות")}</option>
+                      <option value="name">{txt("src/app/designer/[id]/page.tsx::069", "שם א-ב")}</option>
                     </select>
                     <div className="flex items-center justify-between">
-                      <p className="text-text-muted text-sm">{filteredSuppliers.length} \u05E1\u05E4\u05E7\u05D9\u05DD</p>
+                      <p className="text-text-muted text-sm">{filteredSuppliers.length} ספקים</p>
                       <div className="flex gap-1">
                         <button onClick={() => setViewMode("grid")} className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? "bg-gold/10 text-gold" : "text-text-muted hover:text-text-primary"}`}>
                           <Grid3X3 className="w-4 h-4" />
@@ -585,7 +585,7 @@ export default function DesignerDashboard() {
                         </div>
                         {supplier.workedWithMe && (
                           <span className="badge-green text-[10px] whitespace-nowrap">
-                            <CheckCircle2 className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::077", "\u05E2\u05D1\u05D3\u05EA\u05D9 \u05D0\u05D9\u05EA\u05DD")}
+                            <CheckCircle2 className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::077", "עבדתי איתם")}
                           </span>
                         )}
                       </div>
@@ -599,18 +599,18 @@ export default function DesignerDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-4 text-xs text-text-muted mb-4">
-                        <span>{supplier.recommendationCount} {txt("src/app/designer/[id]/page.tsx::078", "\u05DE\u05DE\u05DC\u05D9\u05E6\u05D5\u05EA")}</span>
-                        <span>{supplier.dealsCount} {txt("src/app/designer/[id]/page.tsx::079", "\u05E2\u05E1\u05E7\u05D0\u05D5\u05EA")}</span>
+                        <span>{supplier.recommendationCount} {txt("src/app/designer/[id]/page.tsx::078", "ממליצות")}</span>
+                        <span>{supplier.dealsCount} {txt("src/app/designer/[id]/page.tsx::079", "עסקאות")}</span>
                       </div>
 
                       <div className="flex gap-2">
                         <a href={`https://wa.me/972${supplier.phone.slice(1)}`} target="_blank" rel="noopener noreferrer"
                           className="flex-1 bg-emerald-600 text-white rounded-lg py-2.5 text-sm text-center flex items-center justify-center gap-1.5 hover:bg-emerald-500 transition-all duration-200 font-medium">
-                          <MessageCircle className="w-4 h-4" />{txt("src/app/designer/[id]/page.tsx::080", "\u05D5\u05D5\u05D0\u05D8\u05E1\u05D0\u05E4")}
+                          <MessageCircle className="w-4 h-4" />{txt("src/app/designer/[id]/page.tsx::080", "וואטסאפ")}
                         </a>
                         <button onClick={(e) => { e.stopPropagation(); setSelectedSupplier(supplier); setShowDealModal(true); }}
                           className="flex-1 btn-outline text-sm py-2.5 flex items-center justify-center gap-1.5">
-                          <Plus className="w-4 h-4" />{txt("src/app/designer/[id]/page.tsx::081", "\u05D3\u05D5\u05D5\u05D7 \u05E2\u05E1\u05E7\u05D4")}
+                          <Plus className="w-4 h-4" />{txt("src/app/designer/[id]/page.tsx::081", "דווח עסקה")}
                         </button>
                       </div>
                     </div>
@@ -624,34 +624,34 @@ export default function DesignerDashboard() {
               <div className="space-y-6 animate-in max-w-lg mx-auto">
                 <div className="card-static space-y-4">
                   <div>
-                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::083", "\u05E1\u05E4\u05E7")}</label>
+                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::083", "ספק")}</label>
                     <select className="select-field">
-                      <option value="">{txt("src/app/designer/[id]/page.tsx::084", "\u05D1\u05D7\u05E8\u05D9 \u05E1\u05E4\u05E7...")}</option>
+                      <option value="">{txt("src/app/designer/[id]/page.tsx::084", "בחרי ספק...")}</option>
                       {demoSuppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::085", "\u05E1\u05DB\u05D5\u05DD \u05D4\u05E2\u05E1\u05E7\u05D4 (\u20AA)")}</label>
+                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::085", "סכום העסקה (₪)")}</label>
                     <input type="number" className="input-field" placeholder="0" dir="ltr" />
                   </div>
                   <div>
-                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::086", "\u05EA\u05D9\u05D0\u05D5\u05E8 \u05E7\u05E6\u05E8")}</label>
-                    <input type="text" className="input-field" placeholder="\u05DE\u05D4 \u05D4\u05D5\u05D6\u05DE\u05DF?" />
+                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::086", "תיאור קצר")}</label>
+                    <input type="text" className="input-field" placeholder="מה הוזמן?" />
                   </div>
                   <div>
-                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::088", "\u05EA\u05D0\u05E8\u05D9\u05DA \u05D4\u05E2\u05E1\u05E7\u05D4")}</label>
+                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::088", "תאריך העסקה")}</label>
                     <input type="date" className="input-field" dir="ltr" />
                   </div>
                   <div>
-                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::089", "\u05D3\u05D9\u05E8\u05D5\u05D2 (\u05D0\u05E0\u05D5\u05E0\u05D9\u05DE\u05D9 \u2014 \u05E8\u05E7 \u05EA\u05DE\u05E8 \u05E8\u05D5\u05D0\u05D4)")}</label>
+                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::089", "דירוג (אנונימי — רק תמר רואה)")}</label>
                     <StarRating rating={0} interactive onChange={() => { }} size={28} />
                   </div>
                   <div>
-                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::090", "\u05D4\u05E2\u05E8\u05D5\u05EA (\u05D0\u05D5\u05E4\u05E6\u05D9\u05D5\u05E0\u05DC\u05D9 \u2014 \u05D0\u05E0\u05D5\u05E0\u05D9\u05DE\u05D9)")}</label>
-                    <textarea className="input-field h-20 resize-none" placeholder="\u05E9\u05EA\u05E4\u05D9 \u05D0\u05EA \u05D4\u05D7\u05D5\u05D5\u05D9\u05D4 \u05E9\u05DC\u05DA..." />
+                    <label className="form-label">{txt("src/app/designer/[id]/page.tsx::090", "הערות (אופציונלי — אנונימי)")}</label>
+                    <textarea className="input-field h-20 resize-none" placeholder="שתפי את החוויה שלך..." />
                   </div>
-                  <button className="btn-gold w-full">{txt("src/app/designer/[id]/page.tsx::092", "\u05E9\u05DC\u05D7 \u05D3\u05D9\u05D5\u05D5\u05D7")}</button>
-                  <p className="text-text-muted text-xs text-center">{txt("src/app/designer/[id]/page.tsx::093", "\u05D4\u05E1\u05E4\u05E7 \u05D9\u05EA\u05D1\u05E7\u05E9 \u05DC\u05D0\u05E9\u05E8 \u05D0\u05EA \u05D4\u05E2\u05E1\u05E7\u05D4. \u05DC\u05D0\u05D7\u05E8 \u05D0\u05D9\u05E9\u05D5\u05E8 \u05EA\u05D9\u05DB\u05E0\u05E1\u05D9 \u05DC\u05D4\u05D2\u05E8\u05DC\u05D4 \u05D4\u05D7\u05D5\u05D3\u05E9\u05D9\u05EA!")}</p>
+                  <button className="btn-gold w-full">{txt("src/app/designer/[id]/page.tsx::092", "שלח דיווח")}</button>
+                  <p className="text-text-muted text-xs text-center">{txt("src/app/designer/[id]/page.tsx::093", "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנסי להגרלה החודשית!")}</p>
                 </div>
               </div>
             )}
@@ -662,24 +662,24 @@ export default function DesignerDashboard() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className="card-static text-center">
                     <p className="stat-number">{dealHistory.length}</p>
-                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::095", "\u05E2\u05E1\u05E7\u05D0\u05D5\u05EA")}</p>
+                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::095", "עסקאות")}</p>
                   </div>
                   <div className="card-static text-center">
                     <p className="stat-number text-emerald-600">\u20AA{dealHistory.reduce((s, d) => s + d.amount, 0).toLocaleString()}</p>
-                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::096", "\u05E1\u05D4\u05F4\u05DB")}</p>
+                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::096", "סה״כ")}</p>
                   </div>
                   <div className="card-static text-center">
                     <p className="stat-number text-purple-600">{designerData.lotteryEntries}</p>
-                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::097", "\u05D4\u05D2\u05E8\u05DC\u05D5\u05EA")}</p>
+                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::097", "הגרלות")}</p>
                   </div>
                   <div className="card-static text-center">
                     <p className="stat-number text-blue-600">{designerData.eventsAttended}</p>
-                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::098", "\u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD")}</p>
+                    <p className="text-text-muted text-xs mt-1">{txt("src/app/designer/[id]/page.tsx::098", "אירועים")}</p>
                   </div>
                 </div>
 
                 <div className="card-static">
-                  <h3 className="text-base font-heading text-text-primary mb-4">{txt("src/app/designer/[id]/page.tsx::099", "\u05E2\u05E1\u05E7\u05D0\u05D5\u05EA")}</h3>
+                  <h3 className="text-base font-heading text-text-primary mb-4">{txt("src/app/designer/[id]/page.tsx::099", "עסקאות")}</h3>
                   <div className="space-y-2">
                     {dealHistory.map(deal => (
                       <div key={deal.id} className="flex items-center justify-between p-3 bg-bg-surface rounded-lg hover:bg-bg-surface-2 transition-colors">
@@ -695,8 +695,8 @@ export default function DesignerDashboard() {
                         <div className="text-left flex items-center gap-3">
                           <span className="font-mono font-semibold text-sm">\u20AA{deal.amount.toLocaleString()}</span>
                           {deal.status === "confirmed"
-                            ? <span className="badge-green"><CheckCircle2 className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::100", "\u05DE\u05D0\u05D5\u05E9\u05E8")}</span>
-                            : <span className="badge-yellow"><Clock className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::101", "\u05DE\u05DE\u05EA\u05D9\u05DF")}</span>
+                            ? <span className="badge-green"><CheckCircle2 className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::100", "מאושר")}</span>
+                            : <span className="badge-yellow"><Clock className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::101", "ממתין")}</span>
                           }
                         </div>
                       </div>
@@ -705,7 +705,7 @@ export default function DesignerDashboard() {
                 </div>
 
                 <div className="card-static">
-                  <h3 className="text-base font-heading text-text-primary mb-4">{txt("src/app/designer/[id]/page.tsx::102", "\u05D4\u05D2\u05E8\u05DC\u05D5\u05EA")}</h3>
+                  <h3 className="text-base font-heading text-text-primary mb-4">{txt("src/app/designer/[id]/page.tsx::102", "הגרלות")}</h3>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-3 bg-bg-surface rounded-lg">
                       <div className="flex items-center gap-3">
@@ -713,11 +713,11 @@ export default function DesignerDashboard() {
                           <Trophy className="w-4 h-4 text-purple-600" />
                         </div>
                         <div>
-                          <p className="text-text-primary text-sm font-medium">{txt("src/app/designer/[id]/page.tsx::103", "\u05D4\u05D2\u05E8\u05DC\u05EA \u05DE\u05E8\u05E5 2026")}</p>
-                          <p className="text-text-faint text-xs">{txt("src/app/designer/[id]/page.tsx::104", "\u05E9\u05D5\u05D1\u05E8 \u05E1\u05E4\u05D0 500 \u20AA")}</p>
+                          <p className="text-text-primary text-sm font-medium">{txt("src/app/designer/[id]/page.tsx::103", "הגרלת מרץ 2026")}</p>
+                          <p className="text-text-faint text-xs">{txt("src/app/designer/[id]/page.tsx::104", "שובר ספא 500 ₪")}</p>
                         </div>
                       </div>
-                      <span className="badge-gold">{txt("src/app/designer/[id]/page.tsx::105", "\u05DE\u05E9\u05EA\u05EA\u05E4\u05EA")}</span>
+                      <span className="badge-gold">{txt("src/app/designer/[id]/page.tsx::105", "משתתפת")}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-bg-surface rounded-lg">
                       <div className="flex items-center gap-3">
@@ -725,11 +725,11 @@ export default function DesignerDashboard() {
                           <Star className="w-4 h-4 text-gold" />
                         </div>
                         <div>
-                          <p className="text-text-primary text-sm font-medium">{txt("src/app/designer/[id]/page.tsx::106", "\u05D4\u05D2\u05E8\u05DC\u05EA \u05E4\u05D1\u05E8\u05D5\u05D0\u05E8 2026")}</p>
-                          <p className="text-text-faint text-xs">{txt("src/app/designer/[id]/page.tsx::107", "\u05DB\u05E8\u05D8\u05D9\u05E1 \u05DE\u05EA\u05E0\u05D4 300 \u20AA")}</p>
+                          <p className="text-text-primary text-sm font-medium">{txt("src/app/designer/[id]/page.tsx::106", "הגרלת פברואר 2026")}</p>
+                          <p className="text-text-faint text-xs">{txt("src/app/designer/[id]/page.tsx::107", "כרטיס מתנה 300 ₪")}</p>
                         </div>
                       </div>
-                      <span className="badge bg-gold text-white text-xs font-bold px-3 py-1 rounded-full">{txt("src/app/designer/[id]/page.tsx::108", "\u05D6\u05DB\u05D9\u05EA!")}</span>
+                      <span className="badge bg-gold text-white text-xs font-bold px-3 py-1 rounded-full">{txt("src/app/designer/[id]/page.tsx::108", "זכית!")}</span>
                     </div>
                   </div>
                 </div>
@@ -780,7 +780,7 @@ export default function DesignerDashboard() {
                       </div>
                     )}
                     <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gold text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                      {txt("src/app/designer/[id]/page.tsx::220", "\u05D1\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC \u05D4\u05E6\u05D9\u05D1\u05D5\u05E8\u05D9")}
+                      {txt("src/app/designer/[id]/page.tsx::220", "בפרופיל הציבורי")}
                     </span>
                   </div>
                   <h2 className="text-lg font-heading font-bold text-text-primary mt-5">{designerData.fullName}</h2>
@@ -790,43 +790,43 @@ export default function DesignerDashboard() {
                 <div className="card-static space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::110", "\u05E9\u05DD \u05DE\u05DC\u05D0")}</label>
+                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::110", "שם מלא")}</label>
                       <input type="text" className="input-field" defaultValue={designerData.fullName} />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Phone className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::111", "\u05D8\u05DC\u05E4\u05D5\u05DF")}</label>
+                      <label className="form-label flex items-center gap-1"><Phone className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::111", "טלפון")}</label>
                       <input type="tel" className="input-field" defaultValue={designerData.phone} dir="ltr" />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Mail className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::112", "\u05DE\u05D9\u05D9\u05DC")}</label>
+                      <label className="form-label flex items-center gap-1"><Mail className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::112", "מייל")}</label>
                       <input type="email" className="input-field" defaultValue={designerData.email} dir="ltr" />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><MapPin className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::113", "\u05E2\u05D9\u05E8")}</label>
+                      <label className="form-label flex items-center gap-1"><MapPin className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::113", "עיר")}</label>
                       <input type="text" className="input-field" defaultValue={designerData.city} />
                     </div>
                     <div>
-                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::114", "\u05D4\u05EA\u05DE\u05D7\u05D5\u05EA")}</label>
+                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::114", "התמחות")}</label>
                       <select className="select-field">
-                        {[txt("src/app/designer/[id]/page.tsx::115", "\u05E2\u05D9\u05E6\u05D5\u05D1 \u05E4\u05E0\u05D9\u05DD"), txt("src/app/designer/[id]/page.tsx::116", "\u05D0\u05D3\u05E8\u05D9\u05DB\u05DC\u05D5\u05EA"), txt("src/app/designer/[id]/page.tsx::117", "\u05E0\u05D5\u05E3"), txt("src/app/designer/[id]/page.tsx::118", "\u05D4\u05DB\u05DC")].map(s => <option key={s}>{s}</option>)}
+                        {[txt("src/app/designer/[id]/page.tsx::115", "עיצוב פנים"), txt("src/app/designer/[id]/page.tsx::116", "אדריכלות"), txt("src/app/designer/[id]/page.tsx::117", "נוף"), txt("src/app/designer/[id]/page.tsx::118", "הכל")].map(s => <option key={s}>{s}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::119", "\u05E9\u05E0\u05D5\u05EA \u05E0\u05D9\u05E1\u05D9\u05D5\u05DF")}</label>
+                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::119", "שנות ניסיון")}</label>
                       <input type="number" className="input-field" defaultValue={designerData.yearsExperience} />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Instagram className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::120", "\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD")}</label>
+                      <label className="form-label flex items-center gap-1"><Instagram className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::120", "אינסטגרם")}</label>
                       <input type="text" className="input-field" defaultValue={designerData.instagram} dir="ltr" />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Globe className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::121", "\u05D0\u05EA\u05E8 \u05D0\u05D9\u05E9\u05D9")}</label>
+                      <label className="form-label flex items-center gap-1"><Globe className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::121", "אתר אישי")}</label>
                       <input type="url" className="input-field" placeholder="https://..." dir="ltr" />
                     </div>
                   </div>
 
                   <button className="btn-gold flex items-center justify-center gap-2 w-full sm:w-auto">
-                    <CheckCircle2 className="w-4 h-4" />{txt("src/app/designer/[id]/page.tsx::122", "\u05E9\u05DE\u05D5\u05E8 \u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD")}
+                    <CheckCircle2 className="w-4 h-4" />{txt("src/app/designer/[id]/page.tsx::122", "שמור שינויים")}
                   </button>
                 </div>
               </div>
@@ -846,19 +846,19 @@ export default function DesignerDashboard() {
           <div className="modal-overlay" onClick={() => setShowDealModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-heading text-text-primary">{txt("src/app/designer/[id]/page.tsx::123", "\u05D3\u05D9\u05D5\u05D5\u05D7 \u05E2\u05E1\u05E7\u05D4 \u2014")} {selectedSupplier.name}</h3>
+                <h3 className="text-lg font-heading text-text-primary">{txt("src/app/designer/[id]/page.tsx::123", "דיווח עסקה —")} {selectedSupplier.name}</h3>
                 <button onClick={() => setShowDealModal(false)} className="p-1.5 rounded-lg hover:bg-bg-surface transition-colors">
                   <X className="w-5 h-5 text-text-muted" />
                 </button>
               </div>
               <div className="space-y-3">
-                <input type="number" className="input-field" placeholder="\u05E1\u05DB\u05D5\u05DD \u05D4\u05E2\u05E1\u05E7\u05D4 (\u20AA)" />
-                <input type="text" className="input-field" placeholder="\u05EA\u05D9\u05D0\u05D5\u05E8 \u05E7\u05E6\u05E8" />
+                <input type="number" className="input-field" placeholder="סכום העסקה (₪)" />
+                <input type="text" className="input-field" placeholder="תיאור קצר" />
                 <div>
-                  <p className="text-text-secondary text-sm mb-1.5">{txt("src/app/designer/[id]/page.tsx::126", "\u05D3\u05D9\u05E8\u05D5\u05D2 (\u05D0\u05E0\u05D5\u05E0\u05D9\u05DE\u05D9)")}</p>
+                  <p className="text-text-secondary text-sm mb-1.5">{txt("src/app/designer/[id]/page.tsx::126", "דירוג (אנונימי)")}</p>
                   <StarRating rating={0} interactive onChange={() => { }} size={24} />
                 </div>
-                <button onClick={() => setShowDealModal(false)} className="btn-gold w-full mt-2">{txt("src/app/designer/[id]/page.tsx::127", "\u05E9\u05DC\u05D7 \u05D3\u05D9\u05D5\u05D5\u05D7")}</button>
+                <button onClick={() => setShowDealModal(false)} className="btn-gold w-full mt-2">{txt("src/app/designer/[id]/page.tsx::127", "שלח דיווח")}</button>
               </div>
             </div>
           </div>
@@ -866,19 +866,19 @@ export default function DesignerDashboard() {
 
         {/* ============ FLOATING ACTION BAR ============ */}
         <div className="floating-bar max-md:hidden">
-          <button onClick={() => setActiveTab("deals")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::130", "\u05D3\u05D9\u05D5\u05D5\u05D7 \u05E2\u05E1\u05E7\u05D4")}>
+          <button onClick={() => setActiveTab("deals")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::130", "דיווח עסקה")}>
             <HandCoins className="w-4 h-4" />
           </button>
-          <button onClick={() => setActiveTab("clients")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::131", "\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA")}>
+          <button onClick={() => setActiveTab("clients")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::131", "לקוחות")}>
             <Users className="w-4 h-4" />
           </button>
-          <button onClick={() => setActiveTab("suppliers")} className="floating-bar-btn-primary" title={txt("src/app/designer/[id]/page.tsx::132", "\u05D7\u05D9\u05E4\u05D5\u05E9")}>
+          <button onClick={() => setActiveTab("suppliers")} className="floating-bar-btn-primary" title={txt("src/app/designer/[id]/page.tsx::132", "חיפוש")}>
             <Plus className="w-5 h-5" />
           </button>
           <button onClick={() => setActiveTab("whatsapp")} className="floating-bar-btn" title="WhatsApp">
             <MessageCircle className="w-4 h-4" />
           </button>
-          <button onClick={() => setActiveTab("history")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::133", "\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4")}>
+          <button onClick={() => setActiveTab("history")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::133", "היסטוריה")}>
             <History className="w-4 h-4" />
           </button>
         </div>

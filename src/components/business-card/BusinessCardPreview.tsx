@@ -391,7 +391,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                   }}>
                       <Tag size={14} color={colors.primary} strokeWidth={1.5} />
                       <span style={{ fontSize: "0.8rem", fontWeight: 600, color: colors.text }}>
-                          {"\u05EA\u05D7\u05D5\u05DE\u05D5\u05EA \u05DE\u05D5\u05DE\u05D7\u05D9\u05D5\u05EA"}
+                          {"תחומות מומחיות"}
                       </span>
                   </div>
                   <div style={{
@@ -437,10 +437,10 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                       gap: isMobile ? 6 : 10,
                   }}>
                       {[
-                          { icon: <Briefcase size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.yearsExperience, label: "\u05E9\u05E0\u05D5\u05EA \u05E0\u05D9\u05E1\u05D9\u05D5\u05DF" },
-                          { icon: <Award size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.projectsCompleted, label: "\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8\u05D9\u05DD" },
-                          { icon: <Star size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.averageRating, label: "\u05D3\u05D9\u05E8\u05D5\u05D2" },
-                          { icon: <UsersIcon size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.happyClients, label: "\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA" },
+                          { icon: <Briefcase size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.yearsExperience, label: "שנות ניסיון" },
+                          { icon: <Award size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.projectsCompleted, label: "פרויקטים" },
+                          { icon: <Star size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.averageRating, label: "דירוג" },
+                          { icon: <UsersIcon size={16} color={colors.primary} strokeWidth={1.5} />, value: data.professionalStats.happyClients, label: "לקוחות" },
                       ].map((stat, idx) => (
                           <div key={idx} style={{
                               textAlign: "center",
@@ -483,7 +483,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                   }}>
                       <Clock size={14} color={colors.primary} strokeWidth={1.5} />
                       <span style={{ fontSize: "0.8rem", fontWeight: 600, color: colors.text }}>
-                          {"\u05E9\u05E2\u05D5\u05EA \u05E4\u05E2\u05D9\u05DC\u05D5\u05EA"}
+                          {"שעות פעילות"}
                       </span>
                       {(() => {
                           const open = isCurrentlyOpen(data.businessHours!);
@@ -504,7 +504,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                                       background: open ? "#16a34a" : "#dc2626",
                                       display: "inline-block",
                                   }} />
-                                  {open ? "\u05E4\u05EA\u05D5\u05D7" : "\u05E1\u05D2\u05D5\u05E8"}
+                                  {open ? "פתוח" : "סגור"}
                               </span>
                           );
                       })()}
@@ -550,7 +550,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                                       fontWeight: h.closed ? 600 : 400,
                                       direction: "ltr",
                                   }}>
-                                      {h.closed ? "\u05E1\u05D2\u05D5\u05E8" : `${h.from} - ${h.to}`}
+                                      {h.closed ? "סגור" : `${h.from} - ${h.to}`}
                                   </span>
                               </div>
                           );
@@ -570,7 +570,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                   }}>
                       <ArrowLeftRight size={14} color={colors.primary} strokeWidth={1.5} />
                       <span style={{ fontSize: "0.8rem", fontWeight: 600, color: colors.text }}>
-                          {"\u05DC\u05E4\u05E0\u05D9 / \u05D0\u05D7\u05E8\u05D9"}
+                          {"לפני / אחרי"}
                       </span>
                   </div>
                   <div style={{
@@ -610,7 +610,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                                       borderRadius: "4px",
                                       fontWeight: 600,
                                   }}>
-                                      {"\u05DC\u05E4\u05E0\u05D9"}
+                                      {"לפני"}
                                   </span>
                               </div>
                           </div>
@@ -644,7 +644,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                                       borderRadius: "4px",
                                       fontWeight: 600,
                                   }}>
-                                      {"\u05D0\u05D7\u05E8\u05D9"}
+                                      {"אחרי"}
                                   </span>
                               </div>
                           </div>
@@ -736,7 +736,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                           fontWeight: 600,
                           color: colors.text,
                       }}>
-                          {"\u05E6\u05E4\u05D5 \u05D1\u05E1\u05E8\u05D8\u05D5\u05DF \u05EA\u05D3\u05DE\u05D9\u05EA"}
+                          {"צפו בסרטון תדמית"}
                       </span>
                   </div>
               </div>
@@ -766,7 +766,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                 fontFamily,
             }}>
                 <ImageIcon size={16}/>
-                <span>{"\u05D2\u05DC\u05E8\u05D9\u05D4 ("}{galleryImages.length})</span>
+                <span>{"גלריה ("}{galleryImages.length})</span>
               </button>)}
 
             {/* Testimonials Button */}
@@ -787,7 +787,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                 fontFamily,
             }}>
                 <Quote size={16}/>
-                <span>{"\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA \u05DE\u05DE\u05DC\u05D9\u05E6\u05D9\u05DD ("}{filledTestimonials.length})</span>
+                <span>{"לקוחות ממליצים ("}{filledTestimonials.length})</span>
               </button>)}
           </div>
 
@@ -814,7 +814,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                       }}
                   >
                       <Download size={16} />
-                      <span>{"\u05E9\u05DE\u05D5\u05E8 \u05D0\u05D9\u05E9 \u05E7\u05E9\u05E8"}</span>
+                      <span>{"שמור איש קשר"}</span>
                   </button>
               </div>
           )}
@@ -868,7 +868,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                       }}
                   >
                       <MapPin size={14} />
-                      <span>{"\u05E0\u05D5\u05D5\u05D8 \u05D0\u05DC\u05D9\u05E0\u05D5"}</span>
+                      <span>{"נווט אלינו"}</span>
                   </button>
               </div>
           )}
@@ -913,7 +913,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                       color: colors.textMuted,
                       fontWeight: 500,
                   }}>
-                      {"\u05E1\u05E8\u05D5\u05E7 \u05D0\u05D5\u05EA\u05D9"}
+                      {"סרוק אותי"}
                   </span>
               </div>
           )}
@@ -921,7 +921,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
           {/* Empty state */}
           {filledFields.length === 0 && activeSocials.length === 0 && !hasGallery && filledTestimonials.length === 0 && (<div style={{ textAlign: "center", padding: "20px 0", color: colors.textMuted }}>
               <User size={32} style={{ margin: "0 auto 8px", opacity: 0.3 }}/>
-              <p style={{ fontSize: "0.85rem" }}>{"\u05D4\u05EA\u05D7\u05D9\u05DC\u05D5 \u05DC\u05DE\u05DC\u05D0 \u05E4\u05E8\u05D8\u05D9\u05DD \u05DB\u05D3\u05D9 \u05DC\u05E8\u05D0\u05D5\u05EA \u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4"}</p>
+              <p style={{ fontSize: "0.85rem" }}>{"התחילו למלא פרטים כדי לראות תצוגה מקדימה"}</p>
             </div>)}
         </div>
 
@@ -932,7 +932,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
             textAlign: "center",
             background: colors.cardBg,
         }}>
-          <p style={{ fontSize: "0.65rem", color: colors.textMuted, margin: 0 }}>{"\u05DB\u05E8\u05D8\u05D9\u05E1 \u05D1\u05D9\u05E7\u05D5\u05E8 \u05D3\u05D9\u05D2\u05D9\u05D8\u05DC\u05D9"}</p>
+          <p style={{ fontSize: "0.65rem", color: colors.textMuted, margin: 0 }}>{"כרטיס ביקור דיגיטלי"}</p>
         </div>
       </div>
 
@@ -1018,7 +1018,7 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                 fontFamily,
             }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h3 style={{ fontFamily: headingFamily, fontSize: "1.1rem", fontWeight: 700, color: colors.text, margin: 0 }}>{"\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA \u05DE\u05DE\u05DC\u05D9\u05E6\u05D9\u05DD"}</h3>
+              <h3 style={{ fontFamily: headingFamily, fontSize: "1.1rem", fontWeight: 700, color: colors.text, margin: 0 }}>{"לקוחות ממליצים"}</h3>
               <button onClick={() => setShowTestimonials(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                 <X size={18} color={colors.textMuted}/>
               </button>
