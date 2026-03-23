@@ -30,7 +30,12 @@ function createPrismaClient(): PrismaClient {
       },
     });
   }
-  const pool = new pg.Pool({ connectionString });
+  const pool = new pg.Pool({
+    connectionString,
+    connectionTimeoutMillis: 5000,  // 5s to establish connection
+    idleTimeoutMillis: 10000,       // close idle connections after 10s
+    max: 5,                         // limit pool size for serverless
+  });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }

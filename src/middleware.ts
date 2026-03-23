@@ -6,7 +6,7 @@ import { jwtVerify } from "jose";
 // ==========================================
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "fallback-secret-change-in-production"
+  process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-change-in-production"
 );
 
 const PUBLIC_PATHS = [
@@ -85,7 +85,7 @@ export async function middleware(request: NextRequest) {
   let session = token ? await verifyTokenMiddleware(token) : null;
 
   // backward compat: old admin cookie
-  if (!session && adminToken === process.env.NEXTAUTH_SECRET) {
+  if (!session && adminToken === (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)) {
     session = {
       userId: "admin",
       role: "admin",

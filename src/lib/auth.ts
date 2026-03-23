@@ -32,6 +32,19 @@ const DEMO_USERS: Record<
   ],
 };
 
+/** Race a promise against a timeout; rejects if the timeout fires first. */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`DB query timed out after ${ms}ms`)), ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
+const DB_QUERY_TIMEOUT = 7000; // 7 seconds — must complete before Vercel 10s function limit
+
 function getDemoSession(role: Exclude<UserRole, "admin">, email: string, password: string): SessionPayload | null {
   const demoUser = DEMO_USERS[role].find(
     (user) => user.email.toLowerCase() === email && user.password === password
@@ -54,7 +67,7 @@ function getDemoSession(role: Exclude<UserRole, "admin">, email: string, passwor
 // ==========================================
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "fallback-secret-change-in-production"
+  process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-change-in-production"
 );
 
 const JWT_EXPIRY = "7d"; // תוקף 7 ימים
@@ -121,7 +134,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!token?.value) {
     // backward compat: check old admin_token
     const adminToken = cookieStore.get("admin_token");
-    if (adminToken?.value === process.env.NEXTAUTH_SECRET) {
+    if (adminToken?.value === (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)) {
       return {
         userId: "admin",
         role: "admin",
@@ -184,9 +197,12 @@ export async function loginWithEmail(
 
   if (role === "supplier") {
     try {
-      const supplier = await prisma.supplier.findFirst({
-        where: { email: normalizedEmail, isActive: true },
-      });
+      const supplier = await withTimeout(
+        prisma.supplier.findFirst({
+          where: { email: normalizedEmail, isActive: true },
+        }),
+        DB_QUERY_TIMEOUT,
+      );
 
       if (supplier) {
         if (!supplier.passwordHash) return { success: false, error: "?? ?????? ?????. ?????/? ?????? ?????." };
@@ -204,8 +220,8 @@ export async function loginWithEmail(
           },
         };
       }
-    } catch {
-      // Fallback to built-in demo accounts when DB is unavailable.
+    } catch (err) {
+      console.error("Supplier DB lookup failed, falling back to demo:", err);
     }
 
     const demoSession = getDemoSession("supplier", normalizedEmail, password);
@@ -218,9 +234,12 @@ export async function loginWithEmail(
 
   if (role === "designer") {
     try {
-      const designer = await prisma.designer.findFirst({
-        where: { email: normalizedEmail, isActive: true },
-      });
+      const designer = await withTimeout(
+        prisma.designer.findFirst({
+          where: { email: normalizedEmail, isActive: true },
+        }),
+        DB_QUERY_TIMEOUT,
+      );
 
       if (designer) {
         if (!designer.passwordHash) return { success: false, error: "?? ?????? ?????. ?????/? ?????? ?????." };
@@ -238,8 +257,8 @@ export async function loginWithEmail(
           },
         };
       }
-    } catch {
-      // Fallback to built-in demo accounts when DB is unavailable.
+    } catch (err) {
+      console.error("Designer DB lookup failed, falling back to demo:", err);
     }
 
     const demoSession = getDemoSession("designer", normalizedEmail, password);
