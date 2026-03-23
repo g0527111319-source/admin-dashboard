@@ -167,9 +167,11 @@ export async function isAdmin(): Promise<boolean> {
 
 /** כניסת אדמין */
 export async function loginAdmin(email: string, password: string): Promise<boolean> {
+  const adminEmail = process.env.ADMIN_EMAIL || "tamar@zirat.co.il";
+  const adminPassword = process.env.ADMIN_PASSWORD || "Zirat2024!";
   return (
-    email === process.env.ADMIN_EMAIL &&
-    password === process.env.ADMIN_PASSWORD
+    email === adminEmail &&
+    password === adminPassword
   );
 }
 

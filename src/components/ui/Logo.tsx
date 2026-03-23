@@ -6,11 +6,10 @@ interface LogoProps {
     showText?: boolean;
 }
 export default function Logo({ size = "md", variant = "dark", showText = true }: LogoProps) {
-    // גדלים מותאמים — הלוגו כולל את הטקסט בתוך התמונה
-    const imgSizes = { sm: 100, md: 140, lg: 180, xl: 260 };
+    const imgSizes = { sm: 48, md: 56, lg: 120, xl: 180 };
     void variant;
     void showText;
     return (<div className="flex items-center justify-center">
-      <img src="/logo.png" alt="זירת האדריכלות" width={imgSizes[size]} height={imgSizes[size]} className="flex-shrink-0 object-contain"/>
+      <img src="/logo-sticker.webp" alt="זירת האדריכלות" width={imgSizes[size]} height={imgSizes[size]} className="flex-shrink-0 object-contain" style={{ background: "transparent" }}/>
     </div>);
 }

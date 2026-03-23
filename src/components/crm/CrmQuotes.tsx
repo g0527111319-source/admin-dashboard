@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, FileText, ChevronLeft, Trash2, Send, CheckCircle2, Clock, Edit3 } from "lucide-react";
+import { Plus, FileText, ChevronLeft, Trash2, Send, CheckCircle2, Clock, Edit3, Download } from "lucide-react";
+import PdfExportButton from "@/components/PdfExportButton";
 
 type QuoteService = { name: string; description?: string; quantity: number; unitPrice: number; total: number };
 
@@ -77,6 +78,25 @@ export default function CrmQuotes() {
   useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
 
   const calcTotal = (services: QuoteService[]) => services.reduce((s, sv) => s + sv.total, 0);
+
+  const buildQuoteHtml = (quote: Quote) => {
+    const project = projects.find(p => p.id === quote.projectId);
+    const rows = (quote.services || []).map(s =>
+      `<tr><td>${s.name}</td><td>${s.quantity}</td><td>₪${s.unitPrice.toLocaleString()}</td><td>₪${s.total.toLocaleString()}</td></tr>`
+    ).join("");
+    return `
+      <div class="info-row"><span class="info-label">פרויקט:</span><span class="info-value">${project?.name || ""}</span></div>
+      <div class="info-row"><span class="info-label">לקוח:</span><span class="info-value">${project?.client?.name || ""}</span></div>
+      ${quote.quoteNumber ? `<div class="info-row"><span class="info-label">מספר הצעה:</span><span class="info-value">#${quote.quoteNumber}</span></div>` : ""}
+      ${quote.validUntil ? `<div class="info-row"><span class="info-label">בתוקף עד:</span><span class="info-value">${new Date(quote.validUntil).toLocaleDateString("he-IL")}</span></div>` : ""}
+      ${quote.paymentTerms ? `<div class="info-row"><span class="info-label">תנאי תשלום:</span><span class="info-value">${quote.paymentTerms}</span></div>` : ""}
+      <table>
+        <thead><tr><th>שירות</th><th>כמות</th><th>מחיר ליחידה</th><th>סה״כ</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="total-row"><td colspan="3">סה״כ</td><td>₪${quote.totalAmount.toLocaleString()}</td></tr></tfoot>
+      </table>
+    `;
+  };
 
   const updateService = (index: number, field: string, value: string | number) => {
     const updated = [...formData.services];
@@ -239,6 +259,12 @@ export default function CrmQuotes() {
                 <button onClick={() => { setEditingQuote(quote); setFormData({ title: quote.title, paymentTerms: quote.paymentTerms || "", validUntil: quote.validUntil?.split("T")[0] || "", services: quote.services || [] }); }} className="text-xs px-3 py-1.5 rounded-btn border border-border-subtle text-text-muted hover:text-gold flex items-center gap-1">
                   <Edit3 className="w-3 h-3" /> ערוך
                 </button>
+                <PdfExportButton
+                  title={quote.title}
+                  filename={`quote-${quote.quoteNumber || quote.id}`}
+                  htmlContent={buildQuoteHtml(quote)}
+                  label="ייצוא PDF"
+                />
                 <button onClick={() => deleteQuote(quote.id)} className="text-xs px-3 py-1.5 rounded-btn text-red-400 hover:text-red-600 flex items-center gap-1">
                   <Trash2 className="w-3 h-3" /> מחק
                 </button>

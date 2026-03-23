@@ -22,11 +22,15 @@ import CrmApprovals from "@/components/crm/CrmApprovals";
 import CrmBeforeAfter from "@/components/crm/CrmBeforeAfter";
 import CrmHandoffChecklist from "@/components/crm/CrmHandoffChecklist";
 import CrmOnboarding from "@/components/crm/CrmOnboarding";
+import CrmChat from "@/components/crm/CrmChat";
 import CrmStyleQuiz from "@/components/crm/CrmStyleQuiz";
 import ChatBot from "@/components/crm/ChatBot";
 import type { DesignerContext } from "@/components/crm/ChatBot";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
 import TermsConsentModal from "@/components/TermsConsentModal";
+import PushNotificationManager from "@/components/PushNotificationManager";
+import CrmKanban from "@/components/crm/CrmKanban";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 
 const designerData = {
@@ -65,7 +69,7 @@ const dealHistory = [
     { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "נוף גרין"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
 ];
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz";
+type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat";
 
 interface NavGroup {
   title: string;
@@ -99,6 +103,7 @@ const navGroups: NavGroup[] = [
       { key: "calendar", label: "יומן", icon: CalendarIcon },
       { key: "scheduler", label: "לוח זמנים", icon: CalendarIcon },
       { key: "time-tracking", label: "מעקב שעות", icon: Clock },
+      { key: "chat", label: "צ׳אט", icon: MessageCircle },
     ]
   },
   {
@@ -138,6 +143,7 @@ export default function DesignerDashboard() {
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [showDealModal, setShowDealModal] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState<typeof demoSuppliers[0] | null>(null);
+    const [projectView, setProjectView] = useState<"list" | "kanban">("list");
 
     const filteredSuppliers = demoSuppliers
         .filter((s) => {
@@ -159,6 +165,8 @@ export default function DesignerDashboard() {
       <div className="min-h-screen bg-bg">
         {/* Terms consent modal — shows if not yet accepted */}
         <TermsConsentModal />
+        {/* Push notification permission banner */}
+        <PushNotificationManager />
         {/* ============ SIDEBAR ============ */}
         {/* Mobile overlay */}
         {mobileSidebarOpen && (
@@ -260,6 +268,13 @@ export default function DesignerDashboard() {
               </div>
             ))}
           </nav>
+
+          {/* Language Switcher — sidebar footer */}
+          {sidebarOpen && (
+            <div className="px-4 py-3 mt-auto border-t border-border-subtle">
+              <LanguageSwitcher />
+            </div>
+          )}
         </aside>
 
         {/* ============ HEADER ============ */}
@@ -380,6 +395,89 @@ export default function DesignerDashboard() {
                     <div className="progress-bar-fill" style={{ width: `${Math.min((designerData.totalDeals / 15) * 100, 100)}%` }} />
                   </div>
                   <p className="text-text-faint text-xs mt-2">{txt("src/app/designer/[id]/page.tsx::062", "עוד 3 עסקאות להשגת היעד החודשי!")}</p>
+                </div>
+
+                {/* ===== ANALYTICS DASHBOARD ===== */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-text-muted flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-[#c9a84c]" />
+                    אנליטיקות
+                  </h3>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Monthly Revenue Chart */}
+                    <div className="bg-[#13132b] rounded-2xl border border-white/10 p-5">
+                      <h4 className="text-sm font-bold text-white mb-4">הכנסות חודשיות</h4>
+                      <div className="flex items-end justify-between gap-2 h-40">
+                        {[
+                          { month: "אוק׳", value: 32000 },
+                          { month: "נוב׳", value: 45000 },
+                          { month: "דצמ׳", value: 38000 },
+                          { month: "ינו׳", value: 52000 },
+                          { month: "פבר׳", value: 48000 },
+                          { month: "מרץ", value: 61000 },
+                        ].map((m, i) => {
+                          const maxVal = 65000;
+                          const pct = (m.value / maxVal) * 100;
+                          return (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                              <span className="text-[10px] text-[#c9a84c] font-mono">{(m.value / 1000).toFixed(0)}K</span>
+                              <div className="w-full flex justify-center" style={{ height: "120px" }}>
+                                <div
+                                  className="w-8 rounded-t-lg transition-all duration-500"
+                                  style={{
+                                    height: `${pct}%`,
+                                    background: "linear-gradient(to top, #c9a84c, #e8d48b)",
+                                    boxShadow: "0 0 12px rgba(201,168,76,0.3)",
+                                  }}
+                                />
+                              </div>
+                              <span className="text-[10px] text-white/50">{m.month}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Projects by Status */}
+                    <div className="bg-[#13132b] rounded-2xl border border-white/10 p-5">
+                      <h4 className="text-sm font-bold text-white mb-4">פרויקטים לפי סטטוס</h4>
+                      <div className="flex items-center justify-center mb-4">
+                        {/* CSS pie-like bar visualization */}
+                        <div className="w-full h-6 rounded-full overflow-hidden flex" style={{ direction: "ltr" }}>
+                          <div className="h-full bg-emerald-500 transition-all" style={{ width: "40%" }} />
+                          <div className="h-full bg-[#c9a84c] transition-all" style={{ width: "35%" }} />
+                          <div className="h-full bg-amber-600 transition-all" style={{ width: "25%" }} />
+                        </div>
+                      </div>
+                      <div className="flex justify-center gap-6 text-xs">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          <span className="text-white/70">בתהליך (40%)</span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#c9a84c]" />
+                          <span className="text-white/70">ממתין (35%)</span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
+                          <span className="text-white/70">הושלם (25%)</span>
+                        </span>
+                      </div>
+
+                      {/* Extra Stats */}
+                      <div className="grid grid-cols-2 gap-3 mt-5">
+                        <div className="bg-white/5 rounded-xl p-3 text-center">
+                          <p className="text-lg font-bold text-[#c9a84c]">45</p>
+                          <p className="text-[10px] text-white/50">ימים ממוצע לפרויקט</p>
+                        </div>
+                        <div className="bg-white/5 rounded-xl p-3 text-center">
+                          <p className="text-lg font-bold text-emerald-400">4.8</p>
+                          <p className="text-[10px] text-white/50">שביעות רצון לקוחות</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Quick Actions — Premium with glow */}
@@ -784,7 +882,26 @@ export default function DesignerDashboard() {
             {activeTab === "workflows" && <CrmWorkflowTemplates />}
             {activeTab === "contracts" && <CrmContracts />}
             {activeTab === "calendar" && <CrmCalendar />}
-            {activeTab === "projects" && <CrmProjects />}
+            {activeTab === "projects" && (
+              <div className="space-y-4 animate-in">
+                {/* View toggle: list vs kanban */}
+                <div className="flex items-center gap-2 justify-end">
+                  <button
+                    onClick={() => setProjectView("list")}
+                    className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${projectView === "list" ? "bg-gold/15 text-gold font-semibold" : "text-text-muted hover:text-text-primary"}`}
+                  >
+                    <span className="flex items-center gap-1"><List className="w-3.5 h-3.5" /> רשימה</span>
+                  </button>
+                  <button
+                    onClick={() => setProjectView("kanban")}
+                    className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${projectView === "kanban" ? "bg-gold/15 text-gold font-semibold" : "text-text-muted hover:text-text-primary"}`}
+                  >
+                    <span className="flex items-center gap-1"><Grid3X3 className="w-3.5 h-3.5" /> קנבן</span>
+                  </button>
+                </div>
+                {projectView === "list" ? <CrmProjects /> : <CrmKanban />}
+              </div>
+            )}
             {activeTab === "scheduler" && <CrmScheduler />}
             {activeTab === "quotes" && <CrmQuotes />}
             {activeTab === "time-tracking" && <CrmTimeTracking />}
@@ -794,6 +911,7 @@ export default function DesignerDashboard() {
             {activeTab === "handoff" && <CrmHandoffChecklist />}
             {activeTab === "onboarding" && <CrmOnboarding />}
             {activeTab === "style-quiz" && <CrmStyleQuiz />}
+            {activeTab === "chat" && <CrmChat />}
 
             {/* ===== PROFILE TAB ===== */}
             {activeTab === "profile" && (

@@ -37,22 +37,40 @@ function LoginContent() {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "same-origin",
                 signal: controller.signal,
                 body: JSON.stringify({ email, password, role: selectedRole }),
             });
             window.clearTimeout(timeoutId);
-            const data = await res.json();
+            let data;
+            try {
+                data = await res.json();
+            } catch {
+                setError(siteText.auth.common.networkError);
+                setLoading(false);
+                return;
+            }
             if (!res.ok) {
                 setError(data.error || siteText.auth.common.invalidCredentials);
                 setLoading(false);
                 return;
             }
-            window.location.assign(redirect || data.redirectUrl || "/");
+            // Determine redirect URL based on role
+            const defaultRedirects: Record<string, string> = {
+                admin: "/admin",
+                supplier: "/supplier/demo",
+                designer: "/designer/demo",
+            };
+            const targetUrl = redirect || data.redirectUrl || defaultRedirects[selectedRole] || "/";
+            // Use window.location.href for a full page reload to pick up the new cookie
+            window.location.href = targetUrl;
         }
         catch (error) {
-            setError(error instanceof DOMException && error.name === "AbortError"
-                ? "???????? ??????. ??? ???."
-                : siteText.auth.common.networkError);
+            if (error instanceof DOMException && error.name === "AbortError") {
+                setError("הזמן תם. נסה שוב.");
+            } else {
+                setError(siteText.auth.common.networkError);
+            }
             setLoading(false);
         }
     };

@@ -620,15 +620,24 @@ export default function ClientPortalDashboard() {
             </div>
           )}
 
-          {/* Messages */}
+          {/* Messages / Chat */}
           {activeTab === "messages" && (
             <div className="bg-white border border-border-subtle rounded-card overflow-hidden">
+              <div className="bg-gradient-to-l from-gold/5 to-transparent border-b border-border-subtle px-4 py-3">
+                <h3 className="font-heading font-semibold text-text-primary flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-gold" />
+                  הודעות למעצבת
+                </h3>
+                <p className="text-xs text-text-muted mt-0.5">שלחו הודעה וקבלו מענה מהמעצבת</p>
+              </div>
+
               {/* Messages List */}
-              <div className="h-96 overflow-y-auto p-4 space-y-3">
+              <div className="h-96 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <MessageCircle className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
                     <p className="text-text-muted text-sm">אין הודעות עדיין</p>
+                    <p className="text-text-muted text-xs mt-1">שלחו הודעה ראשונה למעצבת</p>
                   </div>
                 ) : (
                   messages.map((msg) => (
@@ -637,21 +646,29 @@ export default function ClientPortalDashboard() {
                       className={`flex ${msg.senderType === "client" ? "justify-start" : "justify-end"}`}
                     >
                       <div
-                        className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                          msg.senderType === "client"
-                            ? "bg-gold/10 text-text-primary rounded-br-sm"
-                            : "bg-bg-surface text-text-primary rounded-bl-sm"
+                        className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
+                          msg.senderType === "designer"
+                            ? "bg-gold/10 border border-gold/20 text-text-primary rounded-bl-sm"
+                            : "bg-white border border-border-subtle text-text-primary rounded-br-sm shadow-sm"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        <p className="text-[10px] text-text-muted mt-1">
-                          {new Date(msg.createdAt).toLocaleString("he-IL", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            day: "2-digit",
-                            month: "2-digit",
-                          })}
+                        <p className="text-[10px] font-medium mb-1 text-text-muted">
+                          {msg.senderType === "designer" ? "המעצבת" : "אני"}
                         </p>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[10px] text-text-muted">
+                            {new Date(msg.createdAt).toLocaleString("he-IL", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              day: "2-digit",
+                              month: "2-digit",
+                            })}
+                          </p>
+                          {!msg.isRead && msg.senderType === "designer" && (
+                            <span className="w-2 h-2 rounded-full bg-gold animate-pulse"></span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -661,24 +678,34 @@ export default function ClientPortalDashboard() {
               {/* Send Message */}
               <form
                 onSubmit={handleSendMessage}
-                className="border-t border-border-subtle p-3 flex gap-2"
+                className="border-t border-border-subtle p-3 flex gap-2 bg-white"
               >
-                <input
-                  type="text"
-                  className="input-field flex-1"
-                  placeholder="כתבי הודעה..."
+                <textarea
+                  className="input-field flex-1 resize-none h-10 min-h-[40px] max-h-24"
+                  placeholder="כתבו הודעה למעצבת..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (newMessage.trim()) {
+                        handleSendMessage(e as unknown as React.FormEvent);
+                      }
+                    }
+                  }}
                 />
                 <button
                   type="submit"
                   disabled={sendingMessage || !newMessage.trim()}
-                  className="btn-gold flex items-center gap-1 px-4"
+                  className="btn-gold flex items-center gap-1.5 px-4 self-end"
                 >
                   {sendingMessage ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span className="text-sm hidden sm:inline">שלחו</span>
+                    </>
                   )}
                 </button>
               </form>

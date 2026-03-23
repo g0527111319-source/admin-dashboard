@@ -1714,16 +1714,6 @@ export default function CrmContracts() {
                       <span>{new Date(c.createdAt).toLocaleDateString("he-IL")}</span>
                       {c.clientName && <span className="flex items-center gap-1"><User className="w-3 h-3" /> {c.clientName}</span>}
                       {c.clientPhone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.clientPhone}</span>}
-                      {c.designerSignedAt && (
-                        <span className="text-emerald-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> מעצבת חתמה
-                        </span>
-                      )}
-                      {c.clientSignedAt && (
-                        <span className="text-emerald-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> לקוח חתם
-                        </span>
-                      )}
                       {c.clientViewedAt && !c.clientSignedAt && (
                         <span className="text-blue-500 flex items-center gap-1">
                           <Eye className="w-3 h-3" /> לקוח צפה
@@ -1736,8 +1726,65 @@ export default function CrmContracts() {
                       )}
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                {/* Inline Signature Section */}
+                {(c.designerSignedAt || c.clientSignedAt || (!c.designerSignedAt && c.status !== "CANCELLED")) && (
+                    <div className="mt-3 pt-3 border-t border-border-subtle">
+                      <h5 className="text-xs font-semibold text-text-muted mb-2 flex items-center gap-1">
+                        <FileSignature className="w-3.5 h-3.5" /> חתימה דיגיטלית
+                      </h5>
+                      <div className="flex flex-wrap gap-3">
+                        {/* Designer signature status */}
+                        {c.designerSignedAt ? (
+                          <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
+                            {c.designerSignatureData && (
+                              <img src={c.designerSignatureData} alt="חתימת מעצבת" className="h-8 w-auto opacity-80" />
+                            )}
+                            <div>
+                              <span className="text-emerald-700 text-xs font-medium flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> מעצבת חתמה
+                              </span>
+                              <span className="text-emerald-600/70 text-[10px] block">
+                                {new Date(c.designerSignedAt).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          </div>
+                        ) : c.status !== "CANCELLED" ? (
+                          <button
+                            onClick={() => setShowSignature(c.id)}
+                            className="flex items-center gap-2 bg-gold/5 border border-gold/20 rounded-lg px-3 py-2 hover:bg-gold/10 transition-colors"
+                          >
+                            <Pen className="w-4 h-4 text-gold" />
+                            <span className="text-gold text-xs font-medium">חתום על החוזה</span>
+                          </button>
+                        ) : null}
+                        {/* Client signature status */}
+                        {c.clientSignedAt ? (
+                          <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
+                            {c.clientSignatureData && (
+                              <img src={c.clientSignatureData} alt="חתימת לקוח" className="h-8 w-auto opacity-80" />
+                            )}
+                            <div>
+                              <span className="text-emerald-700 text-xs font-medium flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> לקוח חתם
+                              </span>
+                              <span className="text-emerald-600/70 text-[10px] block">
+                                {new Date(c.clientSignedAt).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          </div>
+                        ) : c.status === "SENT_FOR_SIGNATURE" ? (
+                          <div className="flex items-center gap-2 bg-amber-50 rounded-lg px-3 py-2">
+                            <Clock className="w-4 h-4 text-amber-500" />
+                            <span className="text-amber-700 text-xs font-medium">ממתין לחתימת לקוח</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1 shrink-0 mt-3">
                     <button
                       onClick={() => { setPreviewContract(c); setView("contract-preview"); }}
                       className="p-2 rounded-lg text-text-faint hover:text-gold hover:bg-gold/5 transition-colors"
@@ -1816,7 +1863,6 @@ export default function CrmContracts() {
                       </button>
                     )}
                   </div>
-                </div>
               </div>
             );
           })}

@@ -1,0 +1,15 @@
+{
+  "name": "זירת האדריכלות",
+  "short_name": "זירת",
+  "description": "קהילה שהיא בית - מערכת ניהול למעצבות פנים",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#C9A84C",
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "he",
+  "icons": [
+    { "src": "/logo-sticker.webp", "sizes": "512x512", "type": "image/webp" }
+  ]
+}

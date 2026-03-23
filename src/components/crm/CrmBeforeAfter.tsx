@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, X, Image, Eye, EyeOff, Globe, Trash2, Edit3 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, X, Image, Eye, EyeOff, Globe, Trash2, Edit3, ChevronLeft, ChevronRight, Upload, ZoomIn } from "lucide-react";
 
 type BeforeAfterSet = {
   id: string;
@@ -18,6 +18,143 @@ type BeforeAfterSet = {
 
 type Project = { id: string; name: string; clientId: string; client: { name: string } };
 
+// Lightbox component
+function Lightbox({
+  sets,
+  initialIndex,
+  initialSide,
+  onClose,
+}: {
+  sets: BeforeAfterSet[];
+  initialIndex: number;
+  initialSide: "before" | "after";
+  onClose: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [side, setSide] = useState<"before" | "after">(initialSide);
+
+  const currentSet = sets[currentIndex];
+  const imageUrl = side === "before" ? currentSet?.beforeImageUrl : currentSet?.afterImageUrl;
+  const caption = side === "before" ? currentSet?.beforeCaption : currentSet?.afterCaption;
+
+  const goNext = useCallback(() => {
+    if (side === "before" && currentSet?.afterImageUrl) {
+      setSide("after");
+    } else if (currentIndex < sets.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setSide("before");
+    }
+  }, [side, currentIndex, sets.length, currentSet]);
+
+  const goPrev = useCallback(() => {
+    if (side === "after" && currentSet?.beforeImageUrl) {
+      setSide("before");
+    } else if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setSide("after");
+    }
+  }, [side, currentIndex, currentSet]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goPrev(); // RTL
+      if (e.key === "ArrowLeft") goNext(); // RTL
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose, goNext, goPrev]);
+
+  if (!currentSet) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+      >
+        <X className="w-6 h-6" />
+      </button>
+
+      {/* Title and label */}
+      <div className="absolute top-4 right-4 z-10 text-right">
+        <h3 className="text-white font-heading text-lg">{currentSet.title}</h3>
+        <span className={`inline-block px-3 py-1 rounded-full text-sm mt-1 ${
+          side === "before" ? "bg-red-500/20 text-red-300" : "bg-emerald-500/20 text-emerald-300"
+        }`}>
+          {side === "before" ? "לפני" : "אחרי"}
+        </span>
+      </div>
+
+      {/* Navigation arrows */}
+      <button
+        onClick={(e) => { e.stopPropagation(); goPrev(); }}
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+      >
+        <ChevronRight className="w-6 h-6" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); goNext(); }}
+        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </button>
+
+      {/* Image */}
+      <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={caption || currentSet.title}
+            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+          />
+        ) : (
+          <div className="w-96 h-64 bg-gray-800 rounded-lg flex flex-col items-center justify-center text-gray-500">
+            <Image className="w-16 h-16 mb-2" />
+            <span>אין תמונה</span>
+          </div>
+        )}
+      </div>
+
+      {/* Caption */}
+      {caption && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 text-white text-sm px-4 py-2 rounded-full">
+          {caption}
+        </div>
+      )}
+
+      {/* Counter */}
+      <div className="absolute bottom-6 right-6 text-white/50 text-xs">
+        {currentIndex + 1} / {sets.length} &middot; החליקו במובייל לניווט
+      </div>
+
+      {/* Before/After toggle */}
+      <div className="absolute bottom-6 left-6 flex gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); setSide("before"); }}
+          className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
+            side === "before" ? "bg-red-500/30 text-red-300 border border-red-500/50" : "bg-white/10 text-white/60"
+          }`}
+        >
+          לפני
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setSide("after"); }}
+          className={`px-3 py-1.5 rounded-full text-xs transition-colors ${
+            side === "after" ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/50" : "bg-white/10 text-white/60"
+          }`}
+        >
+          אחרי
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CrmBeforeAfter() {
   const [sets, setSets] = useState<BeforeAfterSet[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -25,6 +162,7 @@ export default function CrmBeforeAfter() {
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ index: number; side: "before" | "after" } | null>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -103,10 +241,20 @@ export default function CrmBeforeAfter() {
 
   return (
     <div className="space-y-6 animate-in">
+      {/* Lightbox */}
+      {lightbox !== null && (
+        <Lightbox
+          sets={sets}
+          initialIndex={lightbox.index}
+          initialSide={lightbox.side}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-heading text-text-primary">לפני ואחרי</h2>
-          <p className="text-sm text-text-muted mt-1">גלריית השוואה — הציגי את העבודה שלך</p>
+          <p className="text-sm text-text-muted mt-1">גלריית השוואה -- הציגי את העבודה שלך</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-gold flex items-center gap-2">
           <Plus className="w-4 h-4" /> הוסיפי סט
@@ -129,14 +277,26 @@ export default function CrmBeforeAfter() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">תמונת לפני</label>
+              <label className="text-sm font-medium flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
+                תמונת לפני
+              </label>
               <input value={form.beforeImageUrl} onChange={e => setForm({ ...form, beforeImageUrl: e.target.value })} placeholder="URL תמונה" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
               <input value={form.beforeCaption} onChange={e => setForm({ ...form, beforeCaption: e.target.value })} placeholder="כיתוב (אופציונלי)" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
+              <label className="flex items-center gap-2 text-xs text-gold cursor-pointer hover:underline">
+                <Upload className="w-3 h-3" /> העלאת תמונה (URL)
+              </label>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">תמונת אחרי</label>
+              <label className="text-sm font-medium flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+                תמונת אחרי
+              </label>
               <input value={form.afterImageUrl} onChange={e => setForm({ ...form, afterImageUrl: e.target.value })} placeholder="URL תמונה" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
               <input value={form.afterCaption} onChange={e => setForm({ ...form, afterCaption: e.target.value })} placeholder="כיתוב (אופציונלי)" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
+              <label className="flex items-center gap-2 text-xs text-gold cursor-pointer hover:underline">
+                <Upload className="w-3 h-3" /> העלאת תמונה (URL)
+              </label>
             </div>
           </div>
 
@@ -168,7 +328,7 @@ export default function CrmBeforeAfter() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sets.map(set => (
+          {sets.map((set, setIndex) => (
             <div key={set.id} className="card-static">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold">{set.title}</h3>
@@ -185,18 +345,46 @@ export default function CrmBeforeAfter() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-gray-100 rounded-lg h-36 flex flex-col items-center justify-center text-gray-400">
-                  {set.beforeImageUrl ? (
-                    <div className="w-full h-full bg-cover bg-center rounded-lg" style={{ backgroundImage: `url(${set.beforeImageUrl})` }} />
-                  ) : (
-                    <><Image className="w-8 h-8 mb-1" /><span className="text-xs">לפני</span></>
+                {/* Before image */}
+                <div className="relative group">
+                  <div
+                    className="bg-gray-100 rounded-lg h-36 flex flex-col items-center justify-center text-gray-400 cursor-pointer overflow-hidden"
+                    onClick={() => set.beforeImageUrl && setLightbox({ index: setIndex, side: "before" })}
+                  >
+                    {set.beforeImageUrl ? (
+                      <div className="w-full h-full bg-cover bg-center rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.beforeImageUrl})` }} />
+                    ) : (
+                      <><Image className="w-8 h-8 mb-1" /><span className="text-xs">לפני</span></>
+                    )}
+                  </div>
+                  <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/80 text-white">
+                    לפני
+                  </span>
+                  {set.beforeImageUrl && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center pointer-events-none">
+                      <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-80 transition-opacity" />
+                    </div>
                   )}
                 </div>
-                <div className="bg-gray-100 rounded-lg h-36 flex flex-col items-center justify-center text-gray-400">
-                  {set.afterImageUrl ? (
-                    <div className="w-full h-full bg-cover bg-center rounded-lg" style={{ backgroundImage: `url(${set.afterImageUrl})` }} />
-                  ) : (
-                    <><Image className="w-8 h-8 mb-1" /><span className="text-xs">אחרי</span></>
+                {/* After image */}
+                <div className="relative group">
+                  <div
+                    className="bg-gray-100 rounded-lg h-36 flex flex-col items-center justify-center text-gray-400 cursor-pointer overflow-hidden"
+                    onClick={() => set.afterImageUrl && setLightbox({ index: setIndex, side: "after" })}
+                  >
+                    {set.afterImageUrl ? (
+                      <div className="w-full h-full bg-cover bg-center rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.afterImageUrl})` }} />
+                    ) : (
+                      <><Image className="w-8 h-8 mb-1" /><span className="text-xs">אחרי</span></>
+                    )}
+                  </div>
+                  <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/80 text-white">
+                    אחרי
+                  </span>
+                  {set.afterImageUrl && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center pointer-events-none">
+                      <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-80 transition-opacity" />
+                    </div>
                   )}
                 </div>
               </div>
