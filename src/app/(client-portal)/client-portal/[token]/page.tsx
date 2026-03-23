@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import type { Metadata } from "next";
+import { ClientPortalArchivedMessage, ClientPortalErrorMessage } from "@/components/ClientPortalStatusMessages";
 
 type PageProps = {
   params: Promise<{ token: string }>;
@@ -90,34 +91,11 @@ export default async function ClientPortalEntry({ params }: PageProps) {
 
   // Archived client — show completed message
   if (isArchived) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white">
-        <div className="max-w-md w-full text-center">
-          <div className="text-5xl mb-6">🏠</div>
-          <h1 className="text-2xl font-heading text-text-primary mb-3">הפרויקט הסתיים</h1>
-          <p className="text-text-muted text-lg">תודה שבחרת בנו!</p>
-          <p className="text-text-faint text-sm mt-4">האזור האישי אינו פעיל עוד. לשאלות ניתן ליצור קשר ישירות עם המעצב/ת.</p>
-        </div>
-      </div>
-    );
+    return <ClientPortalArchivedMessage />;
   }
 
   if (!valid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-heading text-text-primary mb-2">שגיאה</h1>
-          <p className="text-text-muted">הקישור אינו תקין או שפג תוקפו</p>
-        </div>
-      </div>
-    );
+    return <ClientPortalErrorMessage />;
   }
 
   // Token is valid — redirect directly to the dashboard

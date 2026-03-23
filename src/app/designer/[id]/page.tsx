@@ -30,7 +30,7 @@ import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder"
 import TermsConsentModal from "@/components/TermsConsentModal";
 import PushNotificationManager from "@/components/PushNotificationManager";
 import CrmKanban from "@/components/crm/CrmKanban";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 
 const designerData = {
@@ -269,12 +269,7 @@ export default function DesignerDashboard() {
             ))}
           </nav>
 
-          {/* Language Switcher — sidebar footer */}
-          {sidebarOpen && (
-            <div className="px-4 py-3 mt-auto border-t border-border-subtle">
-              <LanguageSwitcher />
-            </div>
-          )}
+          {/* sidebar footer spacer */}
         </aside>
 
         {/* ============ HEADER ============ */}

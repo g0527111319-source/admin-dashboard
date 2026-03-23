@@ -8,6 +8,8 @@ import {
   Download, Calendar, MapPin, FolderOpen, Ruler, Maximize2,
   Bell, Mail, Building2, Save,
 } from "lucide-react";
+import { ct, getClientLang, setClientLang, type Lang } from "@/lib/client-portal-i18n";
+import ClientLanguageSwitcher from "@/components/ClientLanguageSwitcher";
 
 type Phase = {
   id: string;
@@ -63,6 +65,7 @@ export default function ClientPortalDashboard() {
   const params = useParams();
   const token = params.token as string;
 
+  const [lang, setLang] = useState<Lang>("he");
   const [clientName, setClientName] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -92,16 +95,30 @@ export default function ClientPortalDashboard() {
   const [intakeSaving, setIntakeSaving] = useState(false);
   const [intakeSaved, setIntakeSaved] = useState(false);
 
+  // Initialize language from localStorage
+  useEffect(() => {
+    const savedLang = getClientLang();
+    setLang(savedLang);
+    setClientLang(savedLang); // ensure dir/lang attrs are set
+  }, []);
+
+  const handleLangChange = (newLang: Lang) => {
+    setLang(newLang);
+  };
+
+  // Helper for locale-aware dates
+  const dateLocale = lang === "ar" ? "ar-EG" : lang === "en" ? "en-US" : "he-IL";
+
   // Fetch project data
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch(`/api/client-portal/${token}/project`);
       if (!res.ok) {
         if (res.status === 404) {
-          setError("הקישור אינו תקין");
+          setError(ct("invalidLink", lang));
           return;
         }
-        setError("שגיאה בטעינת נתונים");
+        setError(ct("dataLoadError", lang));
         return;
       }
       const data = await res.json();
@@ -111,11 +128,11 @@ export default function ClientPortalDashboard() {
         setSelectedProject(data.projects[0]);
       }
     } catch {
-      setError("שגיאת חיבור");
+      setError(ct("connectionError", lang));
     } finally {
       setLoading(false);
     }
-  }, [token, selectedProject]);
+  }, [token, selectedProject, lang]);
 
   // Fetch messages
   const fetchMessages = useCallback(async () => {
@@ -255,9 +272,21 @@ export default function ClientPortalDashboard() {
   };
 
   const projectTypeLabel: Record<string, string> = {
-    RENOVATION: "שיפוץ",
-    CONSTRUCTION: "בנייה",
-    HOME_STYLING: "עיצוב",
+    RENOVATION: ct("renovation", lang),
+    CONSTRUCTION: ct("construction", lang),
+    HOME_STYLING: ct("homeStyling", lang),
+  };
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    electrical: ct("catElectrical", lang),
+    plumbing: ct("catPlumbing", lang),
+    furniture: ct("catFurniture", lang),
+    drywall: ct("catDrywall", lang),
+    hvac: ct("catHvac", lang),
+    sections: ct("catSections", lang),
+    carpentry: ct("catCarpentry", lang),
+    measurements: ct("catMeasurements", lang),
+    general: ct("catGeneral", lang),
   };
 
   if (loading) {
@@ -273,7 +302,7 @@ export default function ClientPortalDashboard() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h1 className="text-xl font-heading text-text-primary mb-2">שגיאה</h1>
+          <h1 className="text-xl font-heading text-text-primary mb-2">{ct("error", lang)}</h1>
           <p className="text-text-muted">{error}</p>
         </div>
       </div>
@@ -287,17 +316,20 @@ export default function ClientPortalDashboard() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-heading text-text-primary mb-1">
-          שלום {clientName} 👋
-        </h1>
-        <p className="text-text-muted text-sm">פורטל הפרויקט שלך</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-heading text-text-primary mb-1">
+            {ct("hello", lang)} {clientName} 👋
+          </h1>
+          <p className="text-text-muted text-sm">{ct("projectPortal", lang)}</p>
+        </div>
+        <ClientLanguageSwitcher onChange={handleLangChange} />
       </div>
 
       {/* Project Selector (if multiple) */}
       {projects.length > 1 && (
         <div className="mb-6">
-          <label className="text-text-secondary text-sm font-medium block mb-1">פרויקט</label>
+          <label className="text-text-secondary text-sm font-medium block mb-1">{ct("project", lang)}</label>
           <select
             className="input-field"
             value={selectedProject?.id || ""}
@@ -316,7 +348,7 @@ export default function ClientPortalDashboard() {
       {!selectedProject ? (
         <div className="card-static text-center py-12">
           <FolderOpen className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
-          <p className="text-text-muted">אין פרויקטים פעילים כרגע</p>
+          <p className="text-text-muted">{ct("noActiveProjects", lang)}</p>
         </div>
       ) : (
         <>
@@ -338,7 +370,7 @@ export default function ClientPortalDashboard() {
                   {selectedProject.startDate && (
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      {new Date(selectedProject.startDate).toLocaleDateString("he-IL")}
+                      {new Date(selectedProject.startDate).toLocaleDateString(dateLocale)}
                     </span>
                   )}
                 </div>
@@ -349,7 +381,7 @@ export default function ClientPortalDashboard() {
             {totalPhases > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-text-secondary text-sm">התקדמות הפרויקט</span>
+                  <span className="text-text-secondary text-sm">{ct("projectProgress", lang)}</span>
                   <span className="text-gold font-bold text-sm">{progressPercent}%</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-3">
@@ -359,7 +391,7 @@ export default function ClientPortalDashboard() {
                   />
                 </div>
                 <p className="text-text-muted text-xs mt-1">
-                  {completedPhases} מתוך {totalPhases} שלבים הושלמו
+                  {completedPhases} {ct("outOf", lang)} {totalPhases} {ct("phasesCompleted", lang)}
                 </p>
               </div>
             )}
@@ -368,11 +400,11 @@ export default function ClientPortalDashboard() {
           {/* Tabs */}
           <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
             {[
-              { key: "overview" as const, label: "סקירה", icon: CheckCircle2 },
-              { key: "plans" as const, label: `תכניות (${selectedProject.documents.filter(d => d.category).length})`, icon: Ruler },
-              { key: "documents" as const, label: `מסמכים (${selectedProject.documents.filter(d => !d.category).length})`, icon: FileText },
-              { key: "photos" as const, label: `תמונות (${selectedProject.photos.length})`, icon: ImageIcon },
-              { key: "messages" as const, label: "הודעות", icon: MessageCircle },
+              { key: "overview" as const, label: ct("overview", lang), icon: CheckCircle2 },
+              { key: "plans" as const, label: `${ct("plans", lang)} (${selectedProject.documents.filter(d => d.category).length})`, icon: Ruler },
+              { key: "documents" as const, label: `${ct("documents", lang)} (${selectedProject.documents.filter(d => !d.category).length})`, icon: FileText },
+              { key: "photos" as const, label: `${ct("photos", lang)} (${selectedProject.photos.length})`, icon: ImageIcon },
+              { key: "messages" as const, label: ct("messages", lang), icon: MessageCircle },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -396,7 +428,7 @@ export default function ClientPortalDashboard() {
             <div className="space-y-3">
               {selectedProject.phases.length === 0 ? (
                 <div className="card-static text-center py-8">
-                  <p className="text-text-muted">טרם הוגדרו שלבים לפרויקט</p>
+                  <p className="text-text-muted">{ct("noPhasesYet", lang)}</p>
                 </div>
               ) : (
                 selectedProject.phases.map((phase, idx) => (
@@ -425,12 +457,12 @@ export default function ClientPortalDashboard() {
                       </p>
                       {phase.completedAt && (
                         <p className="text-text-muted text-xs">
-                          הושלם {new Date(phase.completedAt).toLocaleDateString("he-IL")}
+                          {ct("completedOn", lang)} {new Date(phase.completedAt).toLocaleDateString(dateLocale)}
                         </p>
                       )}
                       {phase.isCurrent && (
                         <span className="inline-block text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full mt-1">
-                          שלב נוכחי
+                          {ct("currentPhase", lang)}
                         </span>
                       )}
                     </div>
@@ -444,11 +476,6 @@ export default function ClientPortalDashboard() {
           {/* Plans */}
           {activeTab === "plans" && (() => {
             const plans = selectedProject.documents.filter(d => d.category);
-            const CATEGORY_LABELS: Record<string, string> = {
-              electrical: "תכנית חשמל", plumbing: "תכנית אינסטלציה", furniture: "תכנית ריהוט",
-              drywall: "גבס ותקרה", hvac: "תכנית מיזוג", sections: "חתכים",
-              carpentry: "פרטי נגרות", measurements: "תכנית מדידות", general: "כללי",
-            };
             const grouped: Record<string, Document[]> = {};
             for (const p of plans) {
               const cat = p.category || "general";
@@ -462,7 +489,7 @@ export default function ClientPortalDashboard() {
                 {plans.length === 0 ? (
                   <div className="bg-white border border-border-subtle rounded-card p-8 text-center">
                     <Ruler className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-text-muted">אין תכניות להצגה</p>
+                    <p className="text-text-muted">{ct("noPlans", lang)}</p>
                   </div>
                 ) : (
                   Object.entries(grouped).map(([cat, catPlans]) => (
@@ -497,7 +524,7 @@ export default function ClientPortalDashboard() {
                               {plan.description && <p className="text-xs text-text-muted truncate mt-0.5">{plan.description}</p>}
                               <div className="flex items-center justify-between mt-2">
                                 <span className="text-xs text-text-faint">
-                                  {new Date(plan.createdAt).toLocaleDateString("he-IL")}
+                                  {new Date(plan.createdAt).toLocaleDateString(dateLocale)}
                                 </span>
                                 {plan.fileUrl && (
                                   <a href={plan.fileUrl} target="_blank" rel="noopener noreferrer" className="p-1 text-gold hover:text-amber-600">
@@ -548,7 +575,7 @@ export default function ClientPortalDashboard() {
               {regularDocs.length === 0 ? (
                 <div className="card-static text-center py-8">
                   <FileText className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
-                  <p className="text-text-muted">אין מסמכים להצגה</p>
+                  <p className="text-text-muted">{ct("noDocuments", lang)}</p>
                 </div>
               ) : (
                 regularDocs.map((doc) => (
@@ -567,7 +594,7 @@ export default function ClientPortalDashboard() {
                         <p className="text-text-muted text-xs truncate">{doc.description}</p>
                       )}
                       <p className="text-text-muted text-xs mt-0.5">
-                        {new Date(doc.createdAt).toLocaleDateString("he-IL")}
+                        {new Date(doc.createdAt).toLocaleDateString(dateLocale)}
                         {doc.fileSize && ` · ${(doc.fileSize / 1024).toFixed(0)} KB`}
                       </p>
                     </div>
@@ -594,7 +621,7 @@ export default function ClientPortalDashboard() {
               {selectedProject.photos.length === 0 ? (
                 <div className="card-static text-center py-8">
                   <ImageIcon className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
-                  <p className="text-text-muted">אין תמונות להצגה</p>
+                  <p className="text-text-muted">{ct("noPhotos", lang)}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -602,7 +629,7 @@ export default function ClientPortalDashboard() {
                     <div key={photo.id} className="group relative rounded-card overflow-hidden border border-border-subtle">
                       <img
                         src={photo.imageUrl}
-                        alt={photo.caption || "תמונת התקדמות"}
+                        alt={photo.caption || ct("progressPhoto", lang)}
                         className="w-full aspect-square object-cover"
                       />
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -626,9 +653,9 @@ export default function ClientPortalDashboard() {
               <div className="bg-gradient-to-l from-gold/5 to-transparent border-b border-border-subtle px-4 py-3">
                 <h3 className="font-heading font-semibold text-text-primary flex items-center gap-2">
                   <MessageCircle className="w-4 h-4 text-gold" />
-                  הודעות למעצבת
+                  {ct("messagesToDesigner", lang)}
                 </h3>
-                <p className="text-xs text-text-muted mt-0.5">שלחו הודעה וקבלו מענה מהמעצבת</p>
+                <p className="text-xs text-text-muted mt-0.5">{ct("sendMessageSubtitle", lang)}</p>
               </div>
 
               {/* Messages List */}
@@ -636,8 +663,8 @@ export default function ClientPortalDashboard() {
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <MessageCircle className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
-                    <p className="text-text-muted text-sm">אין הודעות עדיין</p>
-                    <p className="text-text-muted text-xs mt-1">שלחו הודעה ראשונה למעצבת</p>
+                    <p className="text-text-muted text-sm">{ct("noMessages", lang)}</p>
+                    <p className="text-text-muted text-xs mt-1">{ct("sendFirstMessage", lang)}</p>
                   </div>
                 ) : (
                   messages.map((msg) => (
@@ -653,12 +680,12 @@ export default function ClientPortalDashboard() {
                         }`}
                       >
                         <p className="text-[10px] font-medium mb-1 text-text-muted">
-                          {msg.senderType === "designer" ? "המעצבת" : "אני"}
+                          {msg.senderType === "designer" ? ct("designer", lang) : ct("me", lang)}
                         </p>
                         <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <p className="text-[10px] text-text-muted">
-                            {new Date(msg.createdAt).toLocaleString("he-IL", {
+                            {new Date(msg.createdAt).toLocaleString(dateLocale, {
                               hour: "2-digit",
                               minute: "2-digit",
                               day: "2-digit",
@@ -682,7 +709,7 @@ export default function ClientPortalDashboard() {
               >
                 <textarea
                   className="input-field flex-1 resize-none h-10 min-h-[40px] max-h-24"
-                  placeholder="כתבו הודעה למעצבת..."
+                  placeholder={ct("typeMessage", lang)}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -704,7 +731,7 @@ export default function ClientPortalDashboard() {
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      <span className="text-sm hidden sm:inline">שלחו</span>
+                      <span className="text-sm hidden sm:inline">{ct("send", lang)}</span>
                     </>
                   )}
                 </button>
@@ -713,70 +740,69 @@ export default function ClientPortalDashboard() {
           )}
 
           {/* Project Details Intake Form */}
-          <div className="bg-white border border-border-subtle rounded-card p-6 shadow-sm mt-8" dir="rtl">
+          <div className="bg-white border border-border-subtle rounded-card p-6 shadow-sm mt-8" dir={lang === "en" ? "ltr" : "rtl"}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-heading text-text-primary flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-gold" />
-                פרטי הפרויקט
+                {ct("projectDetails", lang)}
               </h3>
               {intakeSaved && (
-                <span className="text-emerald-600 text-sm">נשמר בהצלחה</span>
+                <span className="text-emerald-600 text-sm">{ct("saved", lang)}</span>
               )}
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-text-secondary text-sm font-medium block mb-1">כתובת הנכס</label>
+                  <label className="text-text-secondary text-sm font-medium block mb-1">{ct("propertyAddress", lang)}</label>
                   <input
                     type="text"
                     className="input-field"
                     value={intakeData.propertyAddress}
                     onChange={(e) => setIntakeData({ ...intakeData, propertyAddress: e.target.value })}
-                    placeholder="רחוב ומספר"
+                    placeholder={ct("streetAndNumber", lang)}
                   />
                 </div>
                 <div>
-                  <label className="text-text-secondary text-sm font-medium block mb-1">עיר</label>
+                  <label className="text-text-secondary text-sm font-medium block mb-1">{ct("city", lang)}</label>
                   <input
                     type="text"
                     className="input-field"
                     value={intakeData.city}
                     onChange={(e) => setIntakeData({ ...intakeData, city: e.target.value })}
-                    placeholder="תל אביב"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-text-secondary text-sm font-medium block mb-1">פרטי השיפוץ</label>
+                <label className="text-text-secondary text-sm font-medium block mb-1">{ct("renovationDetails", lang)}</label>
                 <textarea
                   className="input-field h-24 resize-none"
                   value={intakeData.renovationDetails}
                   onChange={(e) => setIntakeData({ ...intakeData, renovationDetails: e.target.value })}
-                  placeholder="תארו את העבודה הנדרשת..."
+                  placeholder={ct("describeWork", lang)}
                 />
               </div>
               <div>
-                <label className="text-text-secondary text-sm font-medium block mb-1">מטרת השיפוץ</label>
+                <label className="text-text-secondary text-sm font-medium block mb-1">{ct("renovationPurpose", lang)}</label>
                 <select
                   className="input-field"
                   value={intakeData.renovationPurpose}
                   onChange={(e) => setIntakeData({ ...intakeData, renovationPurpose: e.target.value })}
                 >
-                  <option value="">בחרו מטרה...</option>
-                  <option value="דירת מגורים">דירת מגורים</option>
-                  <option value="משרד">משרד</option>
-                  <option value="חנות/עסק">חנות/עסק</option>
-                  <option value="דירת Airbnb">דירת Airbnb</option>
-                  <option value="אחר">אחר</option>
+                  <option value="">{ct("selectPurpose", lang)}</option>
+                  <option value={ct("apartment", "he")}>{ct("apartment", lang)}</option>
+                  <option value={ct("office", "he")}>{ct("office", lang)}</option>
+                  <option value={ct("store", "he")}>{ct("store", lang)}</option>
+                  <option value={ct("airbnb", "he")}>{ct("airbnb", lang)}</option>
+                  <option value={ct("other", "he")}>{ct("other", lang)}</option>
                 </select>
               </div>
               <div>
-                <label className="text-text-secondary text-sm font-medium block mb-1">תקציב משוער</label>
+                <label className="text-text-secondary text-sm font-medium block mb-1">{ct("estimatedBudget", lang)}</label>
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">&#x20AA;</span>
+                  <span className={`absolute ${lang === "en" ? "left-3" : "right-3"} top-1/2 -translate-y-1/2 text-text-muted text-sm`}>&#x20AA;</span>
                   <input
                     type="number"
-                    className="input-field pr-8"
+                    className={`input-field ${lang === "en" ? "pl-8" : "pr-8"}`}
                     value={intakeData.estimatedBudget}
                     onChange={(e) => setIntakeData({ ...intakeData, estimatedBudget: e.target.value })}
                     placeholder="0"
@@ -790,20 +816,20 @@ export default function ClientPortalDashboard() {
                 className="btn-gold w-full flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" />
-                {intakeSaving ? "שומר..." : "שמור פרטי פרויקט"}
+                {intakeSaving ? ct("saving", lang) : ct("saveProjectDetails", lang)}
               </button>
             </div>
           </div>
 
           {/* Notification Preferences */}
-          <div className="bg-white border border-border-subtle rounded-card p-6 shadow-sm mt-6" dir="rtl">
+          <div className="bg-white border border-border-subtle rounded-card p-6 shadow-sm mt-6" dir={lang === "en" ? "ltr" : "rtl"}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-heading text-text-primary flex items-center gap-2">
                 <Bell className="w-5 h-5 text-gold" />
-                העדפות התראות
+                {ct("notificationPrefs", lang)}
               </h3>
               {notifSaved && (
-                <span className="text-emerald-600 text-sm">נשמר בהצלחה</span>
+                <span className="text-emerald-600 text-sm">{ct("saved", lang)}</span>
               )}
             </div>
             <div className="space-y-3">
@@ -814,15 +840,15 @@ export default function ClientPortalDashboard() {
                     <Mail size={18} className="text-blue-500" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-text-primary text-sm">קבלת עדכונים באימייל</h4>
-                    <p className="text-xs text-text-muted mt-0.5">עדכוני פרויקט ותזכורות למייל</p>
+                    <h4 className="font-medium text-text-primary text-sm">{ct("emailUpdates", lang)}</h4>
+                    <p className="text-xs text-text-muted mt-0.5">{ct("emailUpdatesDesc", lang)}</p>
                   </div>
                 </div>
                 <div
                   onClick={() => setNotifyEmail(!notifyEmail)}
                   className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${notifyEmail ? "bg-gold" : "bg-gray-300"}`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${notifyEmail ? "right-0.5" : "right-[22px]"}`} />
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${notifyEmail ? (lang === "en" ? "left-[22px]" : "right-0.5") : (lang === "en" ? "left-0.5" : "right-[22px]")}`} />
                 </div>
               </div>
 
@@ -833,15 +859,15 @@ export default function ClientPortalDashboard() {
                     <MessageCircle size={18} className="text-emerald-500" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-text-primary text-sm">קבלת עדכונים בוואצפ</h4>
-                    <p className="text-xs text-text-muted mt-0.5">התראות מיידיות בוואטסאפ</p>
+                    <h4 className="font-medium text-text-primary text-sm">{ct("whatsappUpdates", lang)}</h4>
+                    <p className="text-xs text-text-muted mt-0.5">{ct("whatsappUpdatesDesc", lang)}</p>
                   </div>
                 </div>
                 <div
                   onClick={() => setNotifyWhatsApp(!notifyWhatsApp)}
                   className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${notifyWhatsApp ? "bg-emerald-500" : "bg-gray-300"}`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${notifyWhatsApp ? "right-0.5" : "right-[22px]"}`} />
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${notifyWhatsApp ? (lang === "en" ? "left-[22px]" : "right-0.5") : (lang === "en" ? "left-0.5" : "right-[22px]")}`} />
                 </div>
               </div>
 
@@ -851,7 +877,7 @@ export default function ClientPortalDashboard() {
                 className="btn-gold w-full flex items-center justify-center gap-2 mt-3"
               >
                 <Save className="w-4 h-4" />
-                {notifSaving ? "שומר..." : "שמור העדפות"}
+                {notifSaving ? ct("saving", lang) : ct("savePreferences", lang)}
               </button>
             </div>
           </div>

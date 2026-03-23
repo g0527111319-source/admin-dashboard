@@ -1,12 +1,12 @@
 /**
  * Simple i18n infrastructure for multi-language support.
  * Hebrew (he) is the default language.
- * Supports: he (Hebrew), ar (Arabic), en (English).
+ * Supports: he (Hebrew), en (English).
  */
 
-export type Lang = "he" | "ar" | "en";
+export type Lang = "he" | "en";
 
-export const RTL_LANGUAGES: Lang[] = ["he", "ar"];
+export const RTL_LANGUAGES: Lang[] = ["he"];
 
 export function isRtl(lang: Lang): boolean {
   return RTL_LANGUAGES.includes(lang);
@@ -57,28 +57,6 @@ const translations: Record<Lang, Record<TranslationKey, string>> = {
     address: "כתובת",
     home: "הבית שלי",
   },
-  ar: {
-    dashboard: "لوحة التحكم",
-    clients: "العملاء",
-    suppliers: "الموردون",
-    projects: "المشاريع",
-    settings: "الإعدادات",
-    login: "تسجيل الدخول",
-    logout: "تسجيل الخروج",
-    save: "حفظ",
-    cancel: "إلغاء",
-    delete: "حذف",
-    search: "بحث",
-    welcome: "مرحباً",
-    loading: "جاري التحميل...",
-    error: "خطأ",
-    success: "نجاح",
-    phone: "هاتف",
-    email: "بريد إلكتروني",
-    name: "الاسم",
-    address: "العنوان",
-    home: "الرئيسية",
-  },
   en: {
     dashboard: "Dashboard",
     clients: "Clients",
@@ -109,7 +87,7 @@ const STORAGE_KEY = "zirat-lang";
 export function getSavedLang(): Lang {
   if (typeof window === "undefined") return "he";
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved && (saved === "he" || saved === "ar" || saved === "en")) {
+  if (saved && (saved === "he" || saved === "en")) {
     return saved as Lang;
   }
   return "he";

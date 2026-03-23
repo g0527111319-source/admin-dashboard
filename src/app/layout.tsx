@@ -19,8 +19,7 @@ export default function RootLayout({ children, }: Readonly<{
         <meta name="theme-color" content="#C9A84C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/logo-sticker.webp" />
-        {/* i18n: sync html lang/dir from localStorage before paint */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var l=localStorage.getItem("zirat-lang");if(l==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr"}else if(l==="ar"){document.documentElement.lang="ar";document.documentElement.dir="rtl"}}catch(e){}})()` }} />
+        {/* i18n: client portal uses its own language switcher via client-portal-lang key */}
       </head>
       <body className="font-body antialiased min-h-screen bg-bg text-text-primary">
         {children}
