@@ -63,6 +63,7 @@ export default async function ClientPortalEntry({ params }: PageProps) {
 
   // Validate token exists and is active
   let valid = false;
+  let isArchived = false;
   try {
     const portalToken = await prisma.clientPortalToken.findUnique({
       where: { token },
@@ -70,16 +71,35 @@ export default async function ClientPortalEntry({ params }: PageProps) {
     });
 
     if (portalToken && portalToken.isActive && !portalToken.client.deletedAt) {
-      valid = true;
+      // Check if client is archived
+      if ((portalToken.client as Record<string, unknown>).isArchived === true) {
+        isArchived = true;
+      } else {
+        valid = true;
 
-      // Update last used timestamp
-      await prisma.clientPortalToken.update({
-        where: { id: portalToken.id },
-        data: { lastUsedAt: new Date() },
-      });
+        // Update last used timestamp
+        await prisma.clientPortalToken.update({
+          where: { id: portalToken.id },
+          data: { lastUsedAt: new Date() },
+        });
+      }
     }
   } catch {
     // Token invalid
+  }
+
+  // Archived client — show completed message
+  if (isArchived) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white">
+        <div className="max-w-md w-full text-center">
+          <div className="text-5xl mb-6">🏠</div>
+          <h1 className="text-2xl font-heading text-text-primary mb-3">הפרויקט הסתיים</h1>
+          <p className="text-text-muted text-lg">תודה שבחרת בנו!</p>
+          <p className="text-text-faint text-sm mt-4">האזור האישי אינו פעיל עוד. לשאלות ניתן ליצור קשר ישירות עם המעצב/ת.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!valid) {

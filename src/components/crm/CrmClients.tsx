@@ -7,7 +7,7 @@ import {
   Calendar, Layout, Package, DollarSign, GitBranch, ArrowLeftRight,
   ThumbsUp, Clock, ClipboardCheck, CalendarClock, UserPlus, Sparkles,
   BarChart3, Lightbulb, ScrollText, Ruler, Link2, Copy, ExternalLink,
-  MessageCircle, Building2
+  MessageCircle, Building2, Archive, RotateCcw
 } from "lucide-react";
 
 // ===== Client-specific CRM components (sub-tabs) =====
@@ -41,6 +41,7 @@ type CrmClient = {
   createdAt: string;
   projects: { id: string; name: string; status: string }[];
   _count: { projects: number };
+  isArchived?: boolean;
 };
 
 type ClientSubTab =
@@ -147,6 +148,7 @@ export default function CrmClients() {
   const [clients, setClients] = useState<CrmClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showArchive, setShowArchive] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingClient, setEditingClient] = useState<CrmClient | null>(null);
   const [selectedClient, setSelectedClient] = useState<CrmClient | null>(null);
@@ -338,6 +340,25 @@ export default function CrmClients() {
     window.open(whatsappUrl, "_blank");
   };
 
+  // Archive helpers
+  const toggleArchive = (clientId: string) => {
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id === clientId ? { ...c, isArchived: !c.isArchived } : c
+      )
+    );
+    // If the selected client is being archived, deselect
+    if (selectedClient?.id === clientId) {
+      setSelectedClient(null);
+    }
+  };
+
+  const allProjectsCompleted = (client: CrmClient) =>
+    client.projects.length > 0 && client.projects.every((p) => p.status === "COMPLETED");
+
+  const activeClients = clients.filter((c) => !c.isArchived);
+  const archivedClients = clients.filter((c) => c.isArchived);
+
   const statusLabel: Record<string, string> = {
     ACTIVE: "פעיל",
     ON_HOLD: "בהמתנה",
@@ -478,6 +499,11 @@ export default function CrmClients() {
                   <Link2 className="w-4 h-4 text-gold" />
                   לינק לאזור אישי
                 </h3>
+                {selectedClient.isArchived ? (
+                  <div className="text-center py-4">
+                    <p className="text-text-muted text-sm">הפרויקט הסתיים — הלינק לאזור האישי אינו פעיל</p>
+                  </div>
+                ) : (
                 <div className="space-y-3">
                   <button
                     onClick={() => generatePortalLink(selectedClient.id)}
@@ -527,6 +553,7 @@ export default function CrmClients() {
                     </div>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Projects summary — Premium */}
@@ -561,6 +588,24 @@ export default function CrmClients() {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Archive button — show if all projects completed */}
+          {activeSubTab === "details" && allProjectsCompleted(selectedClient) && !selectedClient.isArchived && (
+            <div className="card-glass border border-gold/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-text-primary">כל הפרויקטים הושלמו</p>
+                  <p className="text-xs text-text-muted mt-0.5">ניתן להעביר את הלקוח לארכיון</p>
+                </div>
+                <button
+                  onClick={() => toggleArchive(selectedClient.id)}
+                  className="btn-outline text-sm flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/30 hover:bg-gold/10 hover:text-gold transition-all"
+                >
+                  <Archive className="w-4 h-4" /> העבר לארכיון
+                </button>
               </div>
             </div>
           )}
@@ -753,6 +798,31 @@ export default function CrmClients() {
         </button>
       </div>
 
+      {/* Archive toggle tabs */}
+      <div className="flex gap-1 p-1 bg-bg-surface/50 rounded-xl w-fit">
+        <button
+          onClick={() => setShowArchive(false)}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+            !showArchive
+              ? "bg-gradient-to-br from-gold/15 to-gold/5 text-gold shadow-sm"
+              : "text-text-muted hover:text-text-primary"
+          }`}
+        >
+          לקוחות פעילים ({activeClients.length})
+        </button>
+        <button
+          onClick={() => setShowArchive(true)}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+            showArchive
+              ? "bg-gradient-to-br from-gold/15 to-gold/5 text-gold shadow-sm"
+              : "text-text-muted hover:text-text-primary"
+          }`}
+        >
+          <Archive className="w-3.5 h-3.5" />
+          ארכיון ({archivedClients.length})
+        </button>
+      </div>
+
       {/* Search — Premium */}
       <div className="relative">
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-faint" />
@@ -770,70 +840,141 @@ export default function CrmClients() {
           <div className="w-10 h-10 border-2 border-gold/40 border-t-gold rounded-full animate-spin mx-auto mb-3" />
           <p className="text-text-muted text-sm">טוען לקוחות...</p>
         </div>
-      ) : clients.length === 0 ? (
-        <div className="empty-state-premium card-glass text-center py-16">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold/15 to-gold/5 flex items-center justify-center mx-auto mb-4 animate-float-subtle">
-            <User className="w-7 h-7 text-gold/50" />
+      ) : !showArchive ? (
+        /* ===== ACTIVE CLIENTS ===== */
+        activeClients.length === 0 ? (
+          <div className="empty-state-premium card-glass text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold/15 to-gold/5 flex items-center justify-center mx-auto mb-4 animate-float-subtle">
+              <User className="w-7 h-7 text-gold/50" />
+            </div>
+            <p className="text-text-muted mb-1 font-medium">
+              {search ? "לא נמצאו לקוחות" : "עדיין אין לקוחות"}
+            </p>
+            <p className="text-text-faint text-sm mb-5">
+              {search ? "נסי לחפש עם מילה אחרת" : "הוסיפי את הלקוח הראשון כדי להתחיל!"}
+            </p>
+            {!search && (
+              <button
+                onClick={() => { setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" }); setEditingClient(null); setShowAddForm(true); }}
+                className="btn-gold text-sm flex items-center gap-1.5 mx-auto"
+              >
+                <Plus className="w-4 h-4" /> לקוח חדש
+              </button>
+            )}
           </div>
-          <p className="text-text-muted mb-1 font-medium">
-            {search ? "לא נמצאו לקוחות" : "עדיין אין לקוחות"}
-          </p>
-          <p className="text-text-faint text-sm mb-5">
-            {search ? "נסי לחפש עם מילה אחרת" : "הוסיפי את הלקוח הראשון כדי להתחיל!"}
-          </p>
-          {!search && (
-            <button
-              onClick={() => { setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" }); setEditingClient(null); setShowAddForm(true); }}
-              className="btn-gold text-sm flex items-center gap-1.5 mx-auto"
-            >
-              <Plus className="w-4 h-4" /> לקוח חדש
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {clients.map((client, i) => (
-            <div
-              key={client.id}
-              className={`list-item-premium card-glass hover:shadow-gold cursor-pointer transition-all duration-200 stagger-${Math.min(i + 1, 8)} animate-in`}
-              onClick={() => setSelectedClient(client)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="avatar-gold flex-shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center">
-                      <span className="text-gold font-bold text-lg">{client.name[0]}</span>
+        ) : (
+          <div className="space-y-3">
+            {activeClients.map((client, i) => (
+              <div
+                key={client.id}
+                className={`list-item-premium card-glass hover:shadow-gold cursor-pointer transition-all duration-200 stagger-${Math.min(i + 1, 8)} animate-in`}
+                onClick={() => setSelectedClient(client)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="avatar-gold flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center">
+                        <span className="text-gold font-bold text-lg">{client.name[0]}</span>
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-text-primary font-semibold truncate">{client.name}</p>
+                      <div className="flex items-center gap-3 text-xs text-text-muted mt-1">
+                        {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+                        <span className="flex items-center gap-1">
+                          <FolderOpen className="w-3 h-3" />
+                          {client._count.projects} פרויקטים
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-text-primary font-semibold truncate">{client.name}</p>
-                    <div className="flex items-center gap-3 text-xs text-text-muted mt-1">
-                      {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
-                      <span className="flex items-center gap-1">
-                        <FolderOpen className="w-3 h-3" />
-                        {client._count.projects} פרויקטים
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-1 mr-2">
+                    {allProjectsCompleted(client) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleArchive(client.id); }}
+                        className="p-2 rounded-lg text-text-muted hover:text-gold hover:bg-gold/5 transition-all duration-200"
+                        title="העבר לארכיון"
+                      >
+                        <Archive className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); startEdit(client); }}
+                      className="p-2 rounded-lg text-text-muted hover:text-gold hover:bg-gold/5 transition-all duration-200"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
+                      className="p-2 rounded-lg text-text-muted hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 mr-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); startEdit(client); }}
-                    className="p-2 rounded-lg text-text-muted hover:text-gold hover:bg-gold/5 transition-all duration-200"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
-                    className="p-2 rounded-lg text-text-muted hover:text-red-500 hover:bg-red-50 transition-all duration-200"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
                 </div>
               </div>
+            ))}
+          </div>
+        )
+      ) : (
+        /* ===== ARCHIVED CLIENTS ===== */
+        archivedClients.length === 0 ? (
+          <div className="empty-state-premium card-glass text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mx-auto mb-4">
+              <Archive className="w-7 h-7 text-gray-300" />
             </div>
-          ))}
-        </div>
+            <p className="text-text-muted mb-1 font-medium">אין לקוחות בארכיון</p>
+            <p className="text-text-faint text-sm">לקוחות שכל הפרויקטים שלהם הושלמו יופיעו כאן</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {archivedClients.map((client, i) => (
+              <div
+                key={client.id}
+                className={`list-item-premium card-glass cursor-pointer transition-all duration-200 opacity-70 hover:opacity-100 stagger-${Math.min(i + 1, 8)} animate-in`}
+                onClick={() => setSelectedClient(client)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
+                        <span className="text-gray-400 font-bold text-lg">{client.name[0]}</span>
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-text-muted font-semibold truncate">{client.name}</p>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">ארכיון</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-text-faint mt-1">
+                        {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+                        <span className="flex items-center gap-1">
+                          <FolderOpen className="w-3 h-3" />
+                          {client._count.projects} פרויקטים
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 mr-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleArchive(client.id); }}
+                      className="p-2 rounded-lg text-text-muted hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200 flex items-center gap-1"
+                      title="שחזר מארכיון"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
+                      className="p-2 rounded-lg text-text-muted hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       )}
     </div>
   );

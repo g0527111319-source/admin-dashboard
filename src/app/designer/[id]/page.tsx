@@ -14,21 +14,14 @@ import CrmWorkflowTemplates from "@/components/crm/CrmWorkflowTemplates";
 import CrmContracts from "@/components/crm/CrmContracts";
 import CrmCalendar from "@/components/crm/CrmCalendar";
 import CrmProjects from "@/components/crm/CrmProjects";
-import CrmBudgetTracker from "@/components/crm/CrmBudgetTracker";
 import CrmScheduler from "@/components/crm/CrmScheduler";
-import CrmMoodboards from "@/components/crm/CrmMoodboards";
-import CrmMaterials from "@/components/crm/CrmMaterials";
 import CrmQuotes from "@/components/crm/CrmQuotes";
-import CrmTasks from "@/components/crm/CrmTasks";
-import CrmTimeline from "@/components/crm/CrmTimeline";
 import CrmTimeTracking from "@/components/crm/CrmTimeTracking";
 import CrmSurveys from "@/components/crm/CrmSurveys";
 import CrmApprovals from "@/components/crm/CrmApprovals";
 import CrmBeforeAfter from "@/components/crm/CrmBeforeAfter";
 import CrmHandoffChecklist from "@/components/crm/CrmHandoffChecklist";
-import CrmInspirationLibrary from "@/components/crm/CrmInspirationLibrary";
 import CrmOnboarding from "@/components/crm/CrmOnboarding";
-import CrmPlans from "@/components/crm/CrmPlans";
 import CrmStyleQuiz from "@/components/crm/CrmStyleQuiz";
 import ChatBot from "@/components/crm/ChatBot";
 import type { DesignerContext } from "@/components/crm/ChatBot";
@@ -72,7 +65,7 @@ const dealHistory = [
     { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "נוף גרין"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
 ];
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "budget" | "scheduler" | "moodboards" | "materials" | "quotes" | "tasks" | "timeline" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "inspiration" | "onboarding" | "plans" | "style-quiz";
+type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz";
 
 interface NavGroup {
   title: string;
@@ -104,21 +97,14 @@ const navGroups: NavGroup[] = [
       { key: "contracts", label: "חוזים", icon: FileText },
       { key: "quotes", label: "הצעות מחיר", icon: CreditCard },
       { key: "calendar", label: "יומן", icon: CalendarIcon },
-      { key: "tasks", label: "משימות", icon: CheckCircle2 },
-      { key: "budget", label: "תקציב", icon: TrendingUp },
       { key: "scheduler", label: "לוח זמנים", icon: CalendarIcon },
-      { key: "timeline", label: "ציר זמן", icon: Activity },
       { key: "time-tracking", label: "מעקב שעות", icon: Clock },
     ]
   },
   {
     title: "עיצוב",
     items: [
-      { key: "moodboards", label: "מודבורדים", icon: Grid3X3 },
-      { key: "materials", label: "חומרים", icon: List },
-      { key: "inspiration", label: "השראה", icon: Heart },
       { key: "before-after", label: "לפני/אחרי", icon: Grid3X3 },
-      { key: "plans", label: "תוכניות", icon: FileText },
       { key: "style-quiz", label: "שאלון סגנון", icon: Star },
       { key: "crm-suppliers", label: "ספקים שלי", icon: Building2 },
     ]
@@ -799,21 +785,14 @@ export default function DesignerDashboard() {
             {activeTab === "contracts" && <CrmContracts />}
             {activeTab === "calendar" && <CrmCalendar />}
             {activeTab === "projects" && <CrmProjects />}
-            {activeTab === "budget" && <CrmBudgetTracker />}
             {activeTab === "scheduler" && <CrmScheduler />}
-            {activeTab === "moodboards" && <CrmMoodboards />}
-            {activeTab === "materials" && <CrmMaterials />}
             {activeTab === "quotes" && <CrmQuotes />}
-            {activeTab === "tasks" && <CrmTasks />}
-            {activeTab === "timeline" && <CrmTimeline />}
             {activeTab === "time-tracking" && <CrmTimeTracking />}
             {activeTab === "surveys" && <CrmSurveys />}
             {activeTab === "approvals" && <CrmApprovals />}
             {activeTab === "before-after" && <CrmBeforeAfter />}
             {activeTab === "handoff" && <CrmHandoffChecklist />}
-            {activeTab === "inspiration" && <CrmInspirationLibrary />}
             {activeTab === "onboarding" && <CrmOnboarding />}
-            {activeTab === "plans" && <CrmPlans />}
             {activeTab === "style-quiz" && <CrmStyleQuiz />}
 
             {/* ===== PROFILE TAB ===== */}

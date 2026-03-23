@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, Link2, Download } from "lucide-react";
 
 type CalendarEvent = {
   id: string;
@@ -83,6 +83,48 @@ export default function CrmCalendar() {
     } catch { /* */ }
   };
 
+  // Generate ICS file content for a single event
+  const generateIcs = (evt: CalendarEvent): string => {
+    const formatIcsDate = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    };
+    const now = formatIcsDate(new Date().toISOString());
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Zirat//CRM Calendar//HE",
+      "BEGIN:VEVENT",
+      `UID:${evt.id}@zirat-crm`,
+      `DTSTAMP:${now}`,
+      `DTSTART:${formatIcsDate(evt.startAt)}`,
+      `DTEND:${formatIcsDate(evt.endAt)}`,
+      `SUMMARY:${evt.title}`,
+      ...(evt.description ? [`DESCRIPTION:${evt.description}`] : []),
+      ...(evt.location ? [`LOCATION:${evt.location}`] : []),
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ];
+    return lines.join("\r\n");
+  };
+
+  const downloadIcs = (evt: CalendarEvent) => {
+    const icsContent = generateIcs(evt);
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${evt.title.replace(/\s+/g, "_")}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleGoogleSync = () => {
+    alert("לסנכרון עם Google Calendar יש להגדיר GOOGLE_CLIENT_ID בהגדרות המערכת");
+  };
+
   const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
@@ -97,13 +139,18 @@ export default function CrmCalendar() {
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-heading text-text-primary flex items-center gap-2">
           <Calendar className="w-5 h-5 text-gold" /> יומן
         </h2>
-        <button onClick={() => setShowAdd(!showAdd)} className="btn-gold text-sm flex items-center gap-1">
-          <Plus className="w-4 h-4" /> אירוע חדש
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={handleGoogleSync} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-subtle hover:border-gold hover:text-gold transition-all">
+            <Link2 className="w-3.5 h-3.5" /> סנכרון עם Google Calendar
+          </button>
+          <button onClick={() => setShowAdd(!showAdd)} className="btn-gold text-sm flex items-center gap-1">
+            <Plus className="w-4 h-4" /> אירוע חדש
+          </button>
+        </div>
       </div>
 
       {/* Month navigation */}
@@ -167,9 +214,14 @@ export default function CrmCalendar() {
                         {evt.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{evt.location}</span>}
                       </div>
                     </div>
-                    <button onClick={() => deleteEvent(evt.id)} className="text-text-muted hover:text-red-500 flex-shrink-0">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button onClick={() => downloadIcs(evt)} className="text-text-muted hover:text-gold transition-colors" title="ייצוא ל-Google Calendar">
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => deleteEvent(evt.id)} className="text-text-muted hover:text-red-500 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
