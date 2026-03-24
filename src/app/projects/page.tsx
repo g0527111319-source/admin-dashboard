@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
-import { Filter, ArrowLeft } from "lucide-react";
+import { Filter, ArrowLeft, Loader2 } from "lucide-react";
 
 type ProjectImage = {
   id: string;
@@ -65,6 +65,14 @@ function proxyImageUrl(url: string): string {
 }
 
 export default function ProjectsGalleryPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#050505] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#C9A84C]" /></div>}>
+      <ProjectsContent />
+    </Suspense>
+  );
+}
+
+function ProjectsContent() {
   const searchParams = useSearchParams();
   const designerParam = searchParams.get("designer");
   const [projects, setProjects] = useState<PublicProject[]>([]);
