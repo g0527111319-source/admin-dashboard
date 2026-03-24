@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/public/projects — List all PUBLIC projects with designer info
 // Supports ?category= and ?style= query filters
 export async function GET(req: NextRequest) {
