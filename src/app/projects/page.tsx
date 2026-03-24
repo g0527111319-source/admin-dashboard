@@ -226,6 +226,15 @@ export default function ProjectsGalleryPage() {
                         {project.designer.fullName}
                         {project.designer.city && ` \u00B7 ${project.designer.city}`}
                       </p>
+                      {project.styleTags && project.styleTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {project.styleTags.slice(0, 3).map((tag: string) => (
+                            <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-[#C9A84C]/20 text-[#C9A84C] border border-[#C9A84C]/30">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Category badge */}
