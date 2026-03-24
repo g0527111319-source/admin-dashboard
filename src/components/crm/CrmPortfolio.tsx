@@ -406,12 +406,11 @@ export default function CrmPortfolio() {
       return;
     }
 
-    // Auto-convert URL (proxy handles Google Drive, Instagram, Google Photos)
-    const converted = trimmed ? convertImageUrl(trimmed) : "";
-    setNewImageUrl(converted);
+    // Store the original URL (don't convert yet - convert only when displaying/saving)
+    setNewImageUrl(trimmed);
     setImagePreviewError(false);
     setImagePreviewValid(false);
-    if (converted && (isValidUrl(converted) || converted.startsWith("/api/"))) {
+    if (trimmed && (isValidUrl(trimmed) || trimmed.includes("drive.google.com") || trimmed.includes("instagram.com") || trimmed.includes("photos.google.com") || trimmed.includes("photos.app.goo.gl"))) {
       setImagePreviewValid(true);
     }
   };
