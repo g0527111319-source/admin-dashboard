@@ -698,8 +698,8 @@ export default function CrmPortfolio() {
                   <div className="flex gap-3 items-start">
                     <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
                     <div>
-                      <p className="font-medium text-white/90">imgbb.com (הכי קל)</p>
-                      <p className="text-xs text-white/50 mt-0.5">היכנסי ל-imgbb.com → העלי תמונה → העתיקי "Direct Link" → הדביקי כאן</p>
+                      <p className="font-medium text-white/90">postimages.org (הכי קל — ללא הגבלת גודל)</p>
+                      <p className="text-xs text-white/50 mt-0.5">היכנסי ל-postimages.org → העלי תמונה → העתיקי "Direct Link" → הדביקי כאן</p>
                     </div>
                   </div>
                   <div className="flex gap-3 items-start">
@@ -717,10 +717,10 @@ export default function CrmPortfolio() {
                     </div>
                   </div>
                 </div>
-                <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer"
+                <a href="https://postimages.org/he" target="_blank" rel="noopener noreferrer"
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#C9A84C] text-black text-sm font-semibold rounded-xl hover:bg-[#e0c068] transition-colors">
                   <Upload className="w-4 h-4" />
-                  פתח את imgbb.com
+                  פתח את postimages.org
                 </a>
               </div>
             </div>
