@@ -75,6 +75,52 @@ function isValidUrl(url: string): boolean {
   }
 }
 
+function isGooglePhotosShareLink(url: string): boolean {
+  return url.includes("photos.app.goo.gl") || url.includes("photos.google.com/share");
+}
+
+function convertImageUrl(url: string): string {
+  // Google Photos shared album/photo links - can't be converted directly
+  // (handled separately with a warning message)
+
+  // Google Drive links
+  // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch) {
+    return `https://drive.google.com/uc?export=view&id=${driveFileMatch[1]}`;
+  }
+  // https://drive.google.com/open?id=FILE_ID
+  const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (driveOpenMatch) {
+    return `https://drive.google.com/uc?export=view&id=${driveOpenMatch[1]}`;
+  }
+
+  // Google Photos direct lh3 links - already work
+  if (url.includes("lh3.googleusercontent.com")) {
+    return url;
+  }
+
+  // Dropbox links - convert to direct download
+  // https://www.dropbox.com/s/xxx/file.jpg?dl=0
+  if (url.includes("dropbox.com")) {
+    return url.replace("dl=0", "dl=1").replace("www.dropbox.com", "dl.dropboxusercontent.com");
+  }
+
+  // OneDrive links - can't easily convert, return as-is
+  if (url.includes("1drv.ms") || url.includes("onedrive.live.com")) {
+    return url;
+  }
+
+  return url;
+}
+
+function extractUrls(text: string): string[] {
+  return text
+    .split(/[\n\r]+/)
+    .map((line) => line.trim())
+    .filter((line) => line && isValidUrl(line));
+}
+
 // ===== COMPONENT =====
 export default function CrmPortfolio() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -96,6 +142,9 @@ export default function CrmPortfolio() {
   const [projectImages, setProjectImages] = useState<ProjectImage[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [googlePhotosWarning, setGooglePhotosWarning] = useState(false);
+  const [multiAddCount, setMultiAddCount] = useState<number | null>(null);
+  const [coverImageWarning, setCoverImageWarning] = useState(false);
 
   // ===== FETCH =====
   const fetchProjects = useCallback(async () => {
@@ -158,6 +207,8 @@ export default function CrmPortfolio() {
     setNewImageUrl("");
     setImagePreviewError(false);
     setImagePreviewValid(false);
+    setGooglePhotosWarning(false);
+    setMultiAddCount(null);
     setView("images");
   };
 
@@ -179,6 +230,10 @@ export default function CrmPortfolio() {
         : "/api/designer/projects";
       const method = editingProject ? "PATCH" : "POST";
 
+      const convertedCoverUrl = form.coverImageUrl
+        ? convertImageUrl(form.coverImageUrl)
+        : null;
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -187,7 +242,7 @@ export default function CrmPortfolio() {
           description: form.description || null,
           category: form.category,
           styleTags: form.styleTags,
-          coverImageUrl: form.coverImageUrl || null,
+          coverImageUrl: convertedCoverUrl,
           status: form.status,
           suppliers: form.suppliers,
         }),
@@ -220,8 +275,13 @@ export default function CrmPortfolio() {
   // ===== IMAGE ACTIONS =====
   const handleAddImage = async () => {
     if (!selectedProject) return;
-    if (!newImageUrl.trim() || !isValidUrl(newImageUrl.trim())) {
+    const convertedUrl = convertImageUrl(newImageUrl.trim());
+    if (!convertedUrl || !isValidUrl(convertedUrl)) {
       setImagePreviewError(true);
+      return;
+    }
+    if (isGooglePhotosShareLink(newImageUrl.trim())) {
+      setGooglePhotosWarning(true);
       return;
     }
 
@@ -230,7 +290,7 @@ export default function CrmPortfolio() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageUrl: newImageUrl.trim(),
+          imageUrl: convertedUrl,
           sortOrder: projectImages.length,
         }),
       });
@@ -332,12 +392,82 @@ export default function CrmPortfolio() {
 
   // URL preview handler
   const handleImageUrlChange = (url: string) => {
-    setNewImageUrl(url);
+    setGooglePhotosWarning(false);
+    setMultiAddCount(null);
+
+    const trimmed = url.trim();
+
+    // Check for multiple URLs (pasted with newlines)
+    const urls = extractUrls(trimmed);
+    if (urls.length > 1) {
+      handleMultipleUrls(urls);
+      return;
+    }
+
+    // Check for Google Photos share links
+    if (trimmed && isGooglePhotosShareLink(trimmed)) {
+      setGooglePhotosWarning(true);
+      setNewImageUrl(trimmed);
+      setImagePreviewError(false);
+      setImagePreviewValid(false);
+      return;
+    }
+
+    // Auto-convert URL
+    const converted = trimmed ? convertImageUrl(trimmed) : "";
+    setNewImageUrl(converted);
     setImagePreviewError(false);
     setImagePreviewValid(false);
-    if (url.trim() && isValidUrl(url.trim())) {
-      // Will validate on img load/error
+    if (converted && isValidUrl(converted)) {
       setImagePreviewValid(true);
+    }
+  };
+
+  // Handle pasting multiple URLs at once
+  const handleMultipleUrls = async (urls: string[]) => {
+    if (!selectedProject) return;
+
+    // Check for Google Photos links in the batch
+    const validUrls: string[] = [];
+    for (const rawUrl of urls) {
+      if (isGooglePhotosShareLink(rawUrl)) {
+        continue; // Skip Google Photos share links
+      }
+      const converted = convertImageUrl(rawUrl);
+      if (isValidUrl(converted)) {
+        validUrls.push(converted);
+      }
+    }
+
+    if (validUrls.length === 0) return;
+
+    let addedCount = 0;
+    for (let i = 0; i < validUrls.length; i++) {
+      try {
+        const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: validUrls[i],
+            sortOrder: projectImages.length + i,
+          }),
+        });
+        if (res.ok) {
+          const image = await res.json();
+          setProjectImages((prev) => [...prev, image]);
+          addedCount++;
+        }
+      } catch (e) {
+        console.error("Add image error", e);
+      }
+    }
+
+    if (addedCount > 0) {
+      setMultiAddCount(addedCount);
+      setNewImageUrl("");
+      setImagePreviewError(false);
+      setImagePreviewValid(false);
+      await fetchProjects();
     }
   };
 
@@ -412,6 +542,21 @@ export default function CrmPortfolio() {
                   הלינק לא תקין
                 </p>
               )}
+              {googlePhotosWarning && (
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 text-orange-400 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    לינק שיתוף של Google Photos לא נתמך ישירות. לחצי ימני על
+                    התמונה → &apos;העתק כתובת תמונה&apos; לקבלת לינק ישיר, או
+                    העלי ל-Google Drive ושתפי משם.
+                  </span>
+                </div>
+              )}
+              {multiAddCount !== null && multiAddCount > 0 && (
+                <p className="text-emerald-400 text-xs flex items-center gap-1">
+                  נוספו {multiAddCount} תמונות
+                </p>
+              )}
             </div>
             <button
               onClick={handleAddImage}
@@ -422,10 +567,10 @@ export default function CrmPortfolio() {
           </div>
 
           {/* URL Preview */}
-          {newImageUrl.trim() && imagePreviewValid && (
+          {newImageUrl.trim() && imagePreviewValid && !googlePhotosWarning && (
             <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
               <img
-                src={newImageUrl.trim()}
+                src={convertImageUrl(newImageUrl.trim())}
                 alt="תצוגה מקדימה"
                 className="w-full h-40 object-cover"
                 loading="lazy"
@@ -629,12 +774,32 @@ export default function CrmPortfolio() {
             <input
               type="url"
               value={form.coverImageUrl}
-              onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })}
+              onChange={(e) => {
+                const raw = e.target.value;
+                setCoverImageWarning(false);
+                if (raw.trim() && isGooglePhotosShareLink(raw.trim())) {
+                  setCoverImageWarning(true);
+                  setForm({ ...form, coverImageUrl: raw });
+                } else {
+                  const converted = raw.trim() ? convertImageUrl(raw.trim()) : raw;
+                  setForm({ ...form, coverImageUrl: converted });
+                }
+              }}
               placeholder="https://example.com/image.jpg"
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
               dir="ltr"
             />
-            {form.coverImageUrl && isValidUrl(form.coverImageUrl) && (
+            {coverImageWarning && (
+              <div className="mt-2 bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 text-orange-400 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  לינק שיתוף של Google Photos לא נתמך ישירות. לחצי ימני על התמונה
+                  → &apos;העתק כתובת תמונה&apos; לקבלת לינק ישיר, או העלי ל-Google
+                  Drive ושתפי משם.
+                </span>
+              </div>
+            )}
+            {form.coverImageUrl && !coverImageWarning && isValidUrl(form.coverImageUrl) && (
               <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
                 <img
                   src={form.coverImageUrl}
