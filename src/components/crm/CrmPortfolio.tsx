@@ -722,6 +722,7 @@ export default function CrmPortfolio() {
                   <Upload className="w-4 h-4" />
                   פתח את imgbb.com
                 </a>
+              </div>
             </div>
           )}
         </div>
