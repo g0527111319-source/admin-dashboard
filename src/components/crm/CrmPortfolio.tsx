@@ -5,6 +5,7 @@ import {
   Plus, X, Trash2, Edit3, Star, GripVertical,
   Eye, EyeOff, Filter, SortDesc, ImagePlus, Save,
   ChevronLeft, AlertCircle, FolderKanban, Link2,
+  Upload, Loader2,
 } from "lucide-react";
 
 // ===== TYPES =====
@@ -146,6 +147,13 @@ export default function CrmPortfolio() {
   const [multiAddCount, setMultiAddCount] = useState<number | null>(null);
   const [coverImageWarning, setCoverImageWarning] = useState(false);
 
+  // Image upload state
+  const [imageAddMode, setImageAddMode] = useState<"url" | "upload">("url");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
+
   // ===== FETCH =====
   const fetchProjects = useCallback(async () => {
     try {
@@ -209,6 +217,10 @@ export default function CrmPortfolio() {
     setImagePreviewValid(false);
     setGooglePhotosWarning(false);
     setMultiAddCount(null);
+    setImageAddMode("url");
+    setUploadError("");
+    setUploading(false);
+    setBrokenImages(new Set());
     setView("images");
   };
 
@@ -423,6 +435,64 @@ export default function CrmPortfolio() {
     }
   };
 
+  // Handle file upload - convert to base64 data URL
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedProject) return;
+
+    // Reset file input so the same file can be re-selected
+    e.target.value = "";
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setUploadError("הקובץ חייב להיות תמונה (jpg, png, webp)");
+      return;
+    }
+
+    // Validate file size (2MB max)
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setUploadError("גודל הקובץ מוגבל ל-2MB. נסי לכווץ את התמונה.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+
+    try {
+      // Convert to base64 data URL
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("שגיאה בקריאת הקובץ"));
+        reader.readAsDataURL(file);
+      });
+
+      // Save to server
+      const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: dataUrl,
+          sortOrder: projectImages.length,
+        }),
+      });
+
+      if (res.ok) {
+        const image = await res.json();
+        setProjectImages((prev) => [...prev, image]);
+        await fetchProjects();
+        setUploadError("");
+      } else {
+        throw new Error("שגיאה בשמירת התמונה");
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "שגיאה בהעלאת התמונה");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // Handle pasting multiple URLs at once
   const handleMultipleUrls = async (urls: string[]) => {
     if (!selectedProject) return;
@@ -526,62 +596,132 @@ export default function CrmPortfolio() {
             <ImagePlus className="w-4 h-4 text-[#C9A84C]" />
             הוסף תמונה
           </h3>
-          <div className="flex gap-3 items-start">
-            <div className="flex-1 space-y-2">
-              <input
-                type="url"
-                placeholder="הכנסי כתובת URL של תמונה..."
-                value={newImageUrl}
-                onChange={(e) => handleImageUrlChange(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
-                dir="ltr"
-              />
-              {imagePreviewError && (
-                <p className="text-red-400 text-xs flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  הלינק לא תקין
-                </p>
-              )}
-              {googlePhotosWarning && (
-                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 text-orange-400 text-xs flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>
-                    לינק שיתוף של Google Photos לא נתמך ישירות. לחצי ימני על
-                    התמונה → &apos;העתק כתובת תמונה&apos; לקבלת לינק ישיר, או
-                    העלי ל-Google Drive ושתפי משם.
-                  </span>
-                </div>
-              )}
-              {multiAddCount !== null && multiAddCount > 0 && (
-                <p className="text-emerald-400 text-xs flex items-center gap-1">
-                  נוספו {multiAddCount} תמונות
-                </p>
-              )}
-            </div>
+
+          {/* Tab toggle: URL / Upload */}
+          <div className="flex gap-2 mb-4">
             <button
-              onClick={handleAddImage}
-              className="px-5 py-3 bg-[#C9A84C] text-black text-sm font-semibold rounded-xl hover:bg-[#e0c068] transition-colors flex-shrink-0"
+              type="button"
+              onClick={() => { setImageAddMode("url"); setUploadError(""); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+                imageAddMode === "url"
+                  ? "bg-[#C9A84C]/15 border-[#C9A84C] text-[#C9A84C]"
+                  : "bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
+              }`}
             >
-              הוסף תמונה
+              <Link2 className="w-4 h-4" />
+              הדבק לינק
+            </button>
+            <button
+              type="button"
+              onClick={() => { setImageAddMode("upload"); setImagePreviewError(false); setGooglePhotosWarning(false); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+                imageAddMode === "upload"
+                  ? "bg-[#C9A84C]/15 border-[#C9A84C] text-[#C9A84C]"
+                  : "bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              העלה מהמחשב
             </button>
           </div>
 
-          {/* URL Preview */}
-          {newImageUrl.trim() && imagePreviewValid && !googlePhotosWarning && (
-            <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
-              <img
-                src={convertImageUrl(newImageUrl.trim())}
-                alt="תצוגה מקדימה"
-                className="w-full h-40 object-cover"
-                loading="lazy"
-                onError={() => {
-                  setImagePreviewError(true);
-                  setImagePreviewValid(false);
-                }}
-                onLoad={() => {
-                  setImagePreviewError(false);
-                }}
-              />
+          {/* URL mode */}
+          {imageAddMode === "url" && (
+            <>
+              <div className="flex gap-3 items-start">
+                <div className="flex-1 space-y-2">
+                  <input
+                    type="url"
+                    placeholder="הכנסי כתובת URL של תמונה..."
+                    value={newImageUrl}
+                    onChange={(e) => handleImageUrlChange(e.target.value)}
+                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
+                    dir="ltr"
+                  />
+                  {imagePreviewError && (
+                    <p className="text-red-400 text-xs flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      הלינק לא תקין
+                    </p>
+                  )}
+                  {googlePhotosWarning && (
+                    <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 text-orange-400 text-xs flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <span>
+                        לינק שיתוף של Google Photos לא נתמך ישירות. לחצי ימני על
+                        התמונה &rarr; &apos;העתק כתובת תמונה&apos; לקבלת לינק ישיר, או
+                        העלי ל-Google Drive ושתפי משם.
+                      </span>
+                    </div>
+                  )}
+                  {multiAddCount !== null && multiAddCount > 0 && (
+                    <p className="text-emerald-400 text-xs flex items-center gap-1">
+                      נוספו {multiAddCount} תמונות
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={handleAddImage}
+                  className="px-5 py-3 bg-[#C9A84C] text-black text-sm font-semibold rounded-xl hover:bg-[#e0c068] transition-colors flex-shrink-0"
+                >
+                  הוסף תמונה
+                </button>
+              </div>
+
+              {/* URL Preview */}
+              {newImageUrl.trim() && imagePreviewValid && !googlePhotosWarning && (
+                <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
+                  <img
+                    src={convertImageUrl(newImageUrl.trim())}
+                    alt="תצוגה מקדימה"
+                    className="w-full h-40 object-cover"
+                    loading="lazy"
+                    onError={() => {
+                      setImagePreviewError(true);
+                      setImagePreviewValid(false);
+                    }}
+                    onLoad={() => {
+                      setImagePreviewError(false);
+                    }}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Upload guide mode */}
+          {imageAddMode === "upload" && (
+            <div className="space-y-4">
+              <div className="bg-[#0a0a0a] rounded-xl border border-[#C9A84C]/20 p-5">
+                <h4 className="text-sm font-bold text-[#C9A84C] mb-3">📸 איך להעלות תמונות?</h4>
+                <div className="space-y-3 text-sm text-white/70">
+                  <div className="flex gap-3 items-start">
+                    <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <div>
+                      <p className="font-medium text-white/90">imgbb.com (הכי קל)</p>
+                      <p className="text-xs text-white/50 mt-0.5">היכנסי ל-imgbb.com → העלי תמונה → העתיקי "Direct Link" → הדביקי כאן</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <div>
+                      <p className="font-medium text-white/90">Google Drive</p>
+                      <p className="text-xs text-white/50 mt-0.5">העלי ל-Drive → שתפי → העתיקי לינק → הדביקי כאן (המערכת ממירה אוטומטית)</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <div>
+                      <p className="font-medium text-white/90">Google Photos</p>
+                      <p className="text-xs text-white/50 mt-0.5">פתחי תמונה → לחצי ימני → "העתק כתובת תמונה" → הדביקי כאן</p>
+                    </div>
+                  </div>
+                </div>
+                <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#C9A84C] text-black text-sm font-semibold rounded-xl hover:bg-[#e0c068] transition-colors">
+                  <Upload className="w-4 h-4" />
+                  פתח את imgbb.com
+                </a>
             </div>
           )}
         </div>
@@ -612,12 +752,28 @@ export default function CrmPortfolio() {
                 >
                   {/* Image */}
                   <div className="relative aspect-[4/3]">
+                    {brokenImages.has(image.id) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-[#0a0a0a] border-2 border-red-500/40 rounded-t-xl gap-2">
+                        <span className="text-2xl">&#10060;</span>
+                        <span className="text-red-400 text-xs font-medium">הלינק לא תקין</span>
+                        <button
+                          onClick={() => handleDeleteImage(image.id)}
+                          className="mt-1 px-3 py-1 bg-red-500/20 border border-red-500/40 text-red-400 text-xs rounded-lg hover:bg-red-500/30 transition-colors"
+                        >
+                          מחק
+                        </button>
+                      </div>
+                    ) : (
                     <img
                       src={image.imageUrl}
                       alt={image.caption || ""}
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      onError={() => {
+                        setBrokenImages((prev) => new Set(prev).add(image.id));
+                      }}
                     />
+                    )}
 
                     {/* Overlay controls */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-start justify-between p-2 opacity-0 group-hover:opacity-100">
