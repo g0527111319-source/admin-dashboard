@@ -8,12 +8,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const style = searchParams.get("style");
+    const designerId = searchParams.get("designer");
 
     const projects = await prisma.designerProject.findMany({
       where: {
         status: "public",
         ...(category && { category }),
         ...(style && { styleTags: { has: style } }),
+        ...(designerId && { designerId }),
       },
       include: {
         designer: {

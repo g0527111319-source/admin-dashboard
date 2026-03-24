@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import { Filter, ArrowLeft } from "lucide-react";
@@ -64,10 +65,13 @@ function proxyImageUrl(url: string): string {
 }
 
 export default function ProjectsGalleryPage() {
+  const searchParams = useSearchParams();
+  const designerParam = searchParams.get("designer");
   const [projects, setProjects] = useState<PublicProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [styleFilter, setStyleFilter] = useState("all");
+  const [designerName, setDesignerName] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -75,9 +79,15 @@ export default function ProjectsGalleryPage() {
         const params = new URLSearchParams();
         if (categoryFilter !== "all") params.set("category", categoryFilter);
         if (styleFilter !== "all") params.set("style", styleFilter);
+        if (designerParam) params.set("designer", designerParam);
         const res = await fetch(`/api/public/projects?${params.toString()}`);
         if (res.ok) {
-          setProjects(await res.json());
+          const data = await res.json();
+          setProjects(data);
+          // Extract designer name when filtered by designer
+          if (designerParam && data.length > 0 && data[0].designer?.fullName) {
+            setDesignerName(data[0].designer.fullName);
+          }
         }
       } catch (e) {
         console.error("Failed to load projects", e);
@@ -87,7 +97,7 @@ export default function ProjectsGalleryPage() {
     }
     setLoading(true);
     load();
-  }, [categoryFilter, styleFilter]);
+  }, [categoryFilter, styleFilter, designerParam]);
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -110,12 +120,25 @@ export default function ProjectsGalleryPage() {
       {/* Hero */}
       <section className="py-12 sm:py-16 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-5xl font-heading font-bold mb-4">
-            גלריית <span className="text-[#C9A84C]">פרויקטים</span>
-          </h1>
-          <p className="text-white/50 text-sm sm:text-base max-w-xl mx-auto">
-            גלו עבודות עיצוב מרהיבות של מעצבות הפנים בקהילת זירת האדריכלות
-          </p>
+          {designerParam && designerName ? (
+            <>
+              <h1 className="text-3xl sm:text-5xl font-heading font-bold mb-4">
+                תיק העבודות של <span className="text-[#C9A84C]">{designerName}</span>
+              </h1>
+              <p className="text-white/50 text-sm sm:text-base max-w-xl mx-auto">
+                עבודות עיצוב נבחרות
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl sm:text-5xl font-heading font-bold mb-4">
+                גלריית <span className="text-[#C9A84C]">פרויקטים</span>
+              </h1>
+              <p className="text-white/50 text-sm sm:text-base max-w-xl mx-auto">
+                גלו עבודות עיצוב מרהיבות של מעצבות הפנים בקהילת זירת האדריכלות
+              </p>
+            </>
+          )}
         </div>
       </section>
 

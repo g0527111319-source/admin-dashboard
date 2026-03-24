@@ -76,7 +76,7 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
     }[] = [
         { key: "fields", label: txt("src/components/business-card/BusinessCardEditor.tsx::006", "פרטים אישיים"), icon: <Type className="w-4 h-4"/>, count: data.fields.length },
         { key: "social", label: txt("src/components/business-card/BusinessCardEditor.tsx::007", "קישורים חברתיים"), icon: <Share2 className="w-4 h-4"/>, count: data.socialLinks.length },
-        { key: "gallery", label: txt("src/components/business-card/BusinessCardEditor.tsx::008", "גלריה"), icon: <ImageIcon className="w-4 h-4"/>, count: data.galleryImages.filter(g => g).length },
+        { key: "gallery", label: txt("src/components/business-card/BusinessCardEditor.tsx::008", "תיק עבודות"), icon: <ImageIcon className="w-4 h-4"/>, count: data.galleryImages.filter(g => g).length },
         { key: "testimonials", label: txt("src/components/business-card/BusinessCardEditor.tsx::009", "לקוחות ממליצים"), icon: <Users className="w-4 h-4"/>, count: data.testimonials.length },
         { key: "theme", label: txt("src/components/business-card/BusinessCardEditor.tsx::010", "ערכת נושא"), icon: <Sparkles className="w-4 h-4"/> },
         { key: "fonts", label: txt("src/components/business-card/BusinessCardEditor.tsx::011", "גופנים"), icon: <ALargeSmall className="w-4 h-4"/> },
@@ -84,7 +84,7 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
         { key: "colors", label: txt("src/components/business-card/BusinessCardEditor.tsx::013", "פלטת צבעים"), icon: <Palette className="w-4 h-4"/> },
         { key: "hours", label: txt("src/components/business-card/BusinessCardEditor.tsx::100", "שעות פעילות"), icon: <Clock className="w-4 h-4"/> },
         { key: "expertise", label: txt("src/components/business-card/BusinessCardEditor.tsx::101", "תחומי מומחיות"), icon: <Tag className="w-4 h-4"/>, count: (data.expertiseTags || []).length },
-        { key: "beforeafter", label: txt("src/components/business-card/BusinessCardEditor.tsx::102", "לפני/אחרי"), icon: <ArrowLeftRight className="w-4 h-4"/>, count: (data.beforeAfterItems || []).length },
+        { key: "beforeafter", label: txt("src/components/business-card/BusinessCardEditor.tsx::102", "תיק עבודות - לפני/אחרי"), icon: <ArrowLeftRight className="w-4 h-4"/>, count: (data.beforeAfterItems || []).length },
         { key: "stats", label: txt("src/components/business-card/BusinessCardEditor.tsx::103", "סטטיסטיקות"), icon: <BarChart3 className="w-4 h-4"/> },
         { key: "animations", label: txt("src/components/business-card/BusinessCardEditor.tsx::104", "אנימציות"), icon: <Sparkles className="w-4 h-4"/> },
     ];
@@ -347,13 +347,25 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
                 <Plus className="w-4 h-4"/>{txt("src/components/business-card/BusinessCardEditor.tsx::040", "הוסף קישור")}</button>))}
         </div>)}
 
-      {/* ===== GALLERY ===== */}
+      {/* ===== GALLERY / PORTFOLIO ===== */}
       {activeSection === "gallery" && (<div className="card-static space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-heading text-text-primary">{txt("src/components/business-card/BusinessCardEditor.tsx::041", "גלריה")}</h3>
+            <h3 className="text-base font-heading text-text-primary">{txt("src/components/business-card/BusinessCardEditor.tsx::041", "תיק עבודות")}</h3>
             <span className="text-text-muted text-xs">{data.galleryImages.filter(g => g).length}{txt("src/components/business-card/BusinessCardEditor.tsx::042", "/4 תמונות")}</span>
           </div>
-          <p className="text-text-muted text-xs">{txt("src/components/business-card/BusinessCardEditor.tsx::043", "העלו עד 4 תמונות לגלריה שתוצג בכרטיס הביקור. מקסימום 5MB לתמונה.")}</p>
+          <p className="text-text-muted text-xs">{txt("src/components/business-card/BusinessCardEditor.tsx::043", "העלו עד 4 תמונות לתיק העבודות שיוצג בכרטיס הביקור. מקסימום 5MB לתמונה.")}</p>
+
+          {/* Portfolio URL */}
+          <div>
+            <label className="text-text-muted text-xs block mb-1">קישור לתיק עבודות</label>
+            <input
+              type="text"
+              value="/projects"
+              readOnly
+              className="w-full bg-bg-surface border border-border-subtle rounded-btn px-3 py-2 text-text-muted text-xs"
+              dir="ltr"
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             {data.galleryImages.map((url, index) => (<div key={index} className="relative group">

@@ -5,7 +5,8 @@ import {
   Plus, X, Trash2, Edit3, Star, GripVertical,
   Eye, EyeOff, Filter, SortDesc, ImagePlus, Save,
   ChevronLeft, AlertCircle, FolderKanban, Link2,
-  Upload, Loader2,
+  Upload, Loader2, Share2, Copy, ExternalLink, CreditCard,
+  MessageCircle,
 } from "lucide-react";
 
 // ===== TYPES =====
@@ -117,9 +118,15 @@ function extractUrls(text: string): string[] {
 }
 
 // ===== COMPONENT =====
-export default function CrmPortfolio() {
+interface CrmPortfolioProps {
+  onSwitchToCard?: () => void;
+}
+
+export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {}) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [suppliers, setSuppliers] = useState<CrmSupplier[]>([]);
+  const [designerId, setDesignerId] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "form" | "images">("list");
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -155,6 +162,9 @@ export default function CrmPortfolio() {
       if (res.ok) {
         const data = await res.json();
         setProjects(data);
+        if (data.length > 0 && data[0].designerId) {
+          setDesignerId(data[0].designerId);
+        }
       }
     } catch (e) {
       console.error("Failed to load projects", e);
@@ -303,6 +313,21 @@ export default function CrmPortfolio() {
         setNewImageUrl("");
         setImagePreviewError(false);
         setImagePreviewValid(false);
+
+        // Auto-set as cover if project has no cover image
+        if (!selectedProject.coverImageUrl) {
+          try {
+            await fetch(`/api/designer/projects/${selectedProject.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ coverImageUrl: convertedUrl }),
+            });
+            setSelectedProject({ ...selectedProject, coverImageUrl: convertedUrl });
+          } catch (coverErr) {
+            console.error("Auto-set cover error", coverErr);
+          }
+        }
+
         // Refresh project data
         await fetchProjects();
       }
@@ -461,6 +486,21 @@ export default function CrmPortfolio() {
       if (res.ok) {
         const image = await res.json();
         setProjectImages((prev) => [...prev, image]);
+
+        // Auto-set as cover if project has no cover image
+        if (!selectedProject.coverImageUrl) {
+          try {
+            await fetch(`/api/designer/projects/${selectedProject.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ coverImageUrl: image.imageUrl }),
+            });
+            setSelectedProject({ ...selectedProject, coverImageUrl: image.imageUrl });
+          } catch (coverErr) {
+            console.error("Auto-set cover error", coverErr);
+          }
+        }
+
         await fetchProjects();
         setUploadError("");
       } else {
@@ -692,6 +732,14 @@ export default function CrmPortfolio() {
             </div>
           )}
         </div>
+
+        {/* No cover image notice */}
+        {!selectedProject.coverImageUrl && projectImages.length > 0 && (
+          <div className="bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-xl px-4 py-3 text-[#C9A84C] text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            לא נבחרה תמונה ראשית — התמונה הראשונה תוצג כשער
+          </div>
+        )}
 
         {/* Image Grid */}
         {projectImages.length === 0 ? (
@@ -1028,6 +1076,59 @@ export default function CrmPortfolio() {
           הוסף פרויקט
         </button>
       </div>
+
+      {/* Cross-link to business card */}
+      {onSwitchToCard && (
+        <button
+          onClick={onSwitchToCard}
+          className="flex items-center gap-2 text-sm text-[#C9A84C] hover:text-[#e0c068] transition-colors"
+        >
+          <CreditCard className="w-4 h-4" />
+          צפה בכרטיס הביקור שלי
+        </button>
+      )}
+
+      {/* Public Portfolio Link */}
+      {designerId && projects.some((p) => p.status === "public") && (
+        <div className="bg-[#1a1a2e] rounded-xl border border-[#C9A84C]/30 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <ExternalLink className="w-4 h-4 text-[#C9A84C]" />
+            <h3 className="text-sm font-semibold text-[#C9A84C]">לינק ציבורי</h3>
+          </div>
+          <div className="flex items-center gap-2 bg-[#0a0a0a] rounded-lg px-3 py-2 border border-white/10">
+            <span className="text-xs text-white/60 truncate flex-1" dir="ltr">
+              {typeof window !== "undefined"
+                ? `${window.location.origin}/projects?designer=${designerId}`
+                : `/projects?designer=${designerId}`}
+            </span>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/projects?designer=${designerId}`;
+                navigator.clipboard.writeText(url);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#C9A84C]/15 border border-[#C9A84C]/40 text-[#C9A84C] text-xs font-medium rounded-lg hover:bg-[#C9A84C]/25 transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              {linkCopied ? "הועתק!" : "העתק לינק"}
+            </button>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/projects?designer=${designerId}`;
+                const text = encodeURIComponent(`צפו בתיק העבודות שלי: ${url}`);
+                window.open(`https://wa.me/?text=${text}`, "_blank");
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/25 transition-colors"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              שתף בוואצפ
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">

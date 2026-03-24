@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
-import { Phone, Mail, Globe, MapPin, User, Briefcase, Star, Clock, Building2, Facebook, Instagram, Linkedin, Youtube, MessageCircle, Image as ImageIcon, Quote, ChevronLeft, ChevronRight, X, QrCode, Play, Tag, ArrowLeftRight, BarChart3, Download, Navigation, Sun, Moon, Award, Users as UsersIcon, } from "lucide-react";
+import { Phone, Mail, Globe, MapPin, User, Briefcase, Star, Clock, Building2, Facebook, Instagram, Linkedin, Youtube, MessageCircle, Image as ImageIcon, Quote, ChevronLeft, ChevronRight, X, QrCode, Play, Tag, ArrowLeftRight, BarChart3, Download, Navigation, Sun, Moon, Award, Users as UsersIcon, FolderKanban, } from "lucide-react";
 import type { BusinessCardData, CardColors, CardTheme, BeforeAfterItem, BusinessHours, ProfessionalStats, EntryAnimation, } from "@/lib/businessCardThemes";
 import { getThemeById, getMergedColors, getFontById } from "@/lib/businessCardThemes";
 
@@ -698,6 +698,71 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                   </div>
               </div>
           )}
+
+          {/* Portfolio Section */}
+          <div style={{ marginBottom: 20 }}>
+              <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 10,
+              }}>
+                  <FolderKanban size={14} color={colors.primary} strokeWidth={1.5} />
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: colors.text }}>
+                      {"תיק עבודות"}
+                  </span>
+              </div>
+              <div style={{
+                  background: colors.socialBg,
+                  borderRadius: theme.cardStyle === "sharp" ? "4px" : "12px",
+                  border: `1px solid ${colors.border}`,
+                  padding: 16,
+                  textAlign: "center",
+              }}>
+                  <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, 1fr)",
+                      gap: 8,
+                      marginBottom: 12,
+                  }}>
+                      {[1, 2, 3, 4].map((i) => (
+                          <div key={i} style={{
+                              aspectRatio: "4/3",
+                              borderRadius: theme.cardStyle === "sharp" ? "2px" : "8px",
+                              background: `linear-gradient(135deg, ${colors.primary}15, ${colors.secondary}25)`,
+                              border: `1px solid ${colors.border}`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                          }}>
+                              <ImageIcon size={16} color={colors.textMuted} strokeWidth={1} style={{ opacity: 0.4 }} />
+                          </div>
+                      ))}
+                  </div>
+                  <button
+                      onClick={() => window.open("/projects", "_blank")}
+                      style={{
+                          width: "100%",
+                          padding: "8px 14px",
+                          borderRadius: theme.cardStyle === "sharp" ? "4px" : "8px",
+                          background: colors.buttonBg,
+                          color: colors.buttonText,
+                          border: "none",
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                          fontFamily,
+                      }}
+                  >
+                      <FolderKanban size={14} />
+                      <span>{"צפה בתיק העבודות המלא \u2192"}</span>
+                  </button>
+              </div>
+          </div>
 
           {/* Video Embed */}
           {data.videoUrl && (

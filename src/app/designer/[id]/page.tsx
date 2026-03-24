@@ -909,7 +909,11 @@ export default function DesignerDashboard() {
             {activeTab === "onboarding" && <CrmOnboarding />}
             {activeTab === "style-quiz" && <CrmStyleQuiz />}
             {activeTab === "chat" && <CrmChat />}
-            {activeTab === "portfolio" && <CrmPortfolio />}
+            {activeTab === "portfolio" && (
+              <div>
+                <CrmPortfolio onSwitchToCard={() => setActiveTab("card")} />
+              </div>
+            )}
 
             {/* ===== PROFILE TAB ===== */}
             {activeTab === "profile" && (
@@ -982,6 +986,15 @@ export default function DesignerDashboard() {
             {/* ===== BUSINESS CARD TAB ===== */}
             {activeTab === "card" && (
               <div className="animate-in">
+                <div className="mb-4">
+                  <button
+                    onClick={() => setActiveTab("portfolio")}
+                    className="flex items-center gap-2 text-sm text-gold hover:text-gold/80 transition-colors"
+                  >
+                    <FolderKanban className="w-4 h-4" />
+                    {"תיק עבודות \u2190"}
+                  </button>
+                </div>
                 <BusinessCardBuilder userName={designerData.fullName} userRole={designerData.specialization} userPhone={designerData.phone} userEmail={designerData.email} />
               </div>
             )}
