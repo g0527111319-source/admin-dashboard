@@ -299,6 +299,28 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Projects Gallery CTA */}
+      <section className="bg-[#050505] py-12 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="rounded-[28px] border border-gold/20 bg-gradient-to-br from-gold/5 to-transparent p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-heading font-bold text-white mb-2">
+                צפו בפרויקטים של המעצבות שלנו
+              </h3>
+              <p className="text-sm text-white/50">
+                גלריה מרהיבה של עבודות עיצוב פנים מהקהילה
+              </p>
+            </div>
+            <Link
+              href="/projects"
+              className="px-6 py-3 bg-[#C9A84C] text-black font-bold rounded-xl hover:bg-[#e0c068] transition-colors whitespace-nowrap text-sm"
+            >
+              צפה בפרויקטים
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <footer className="bg-[#050505] py-8 px-4 border-t border-white/5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">

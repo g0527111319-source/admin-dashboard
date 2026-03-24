@@ -3,7 +3,7 @@ import { txt } from "@/content/siteText";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
 import Image from "next/image";
-import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck } from "lucide-react";
+import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban } from "lucide-react";
 import CrmClients from "@/components/crm/CrmClients";
 import CrmSettings from "@/components/crm/CrmSettings";
 import CrmSuppliers from "@/components/crm/CrmSuppliers";
@@ -30,6 +30,7 @@ import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder"
 import TermsConsentModal from "@/components/TermsConsentModal";
 import PushNotificationManager from "@/components/PushNotificationManager";
 import CrmKanban from "@/components/crm/CrmKanban";
+import CrmPortfolio from "@/components/crm/CrmPortfolio";
 
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 
@@ -69,7 +70,7 @@ const dealHistory = [
     { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "נוף גרין"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
 ];
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat";
+type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio";
 
 interface NavGroup {
   title: string;
@@ -109,6 +110,7 @@ const navGroups: NavGroup[] = [
   {
     title: "עיצוב",
     items: [
+      { key: "portfolio", label: "תיק עבודות", icon: FolderKanban },
       { key: "before-after", label: "לפני/אחרי", icon: Grid3X3 },
       { key: "style-quiz", label: "שאלון סגנון", icon: Star },
       { key: "crm-suppliers", label: "ספקים שלי", icon: Building2 },
@@ -907,6 +909,7 @@ export default function DesignerDashboard() {
             {activeTab === "onboarding" && <CrmOnboarding />}
             {activeTab === "style-quiz" && <CrmStyleQuiz />}
             {activeTab === "chat" && <CrmChat />}
+            {activeTab === "portfolio" && <CrmPortfolio />}
 
             {/* ===== PROFILE TAB ===== */}
             {activeTab === "profile" && (

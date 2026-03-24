@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/suppliers-directory",
   "/events",
   "/terms",
+  "/projects",
 ];
 
 const API_PUBLIC_PATHS = [
@@ -35,6 +36,7 @@ const API_PUBLIC_PATHS = [
 const API_PUBLIC_PREFIXES = [
   "/api/client-portal/", // Client portal — own auth mechanism
   "/client-portal/",     // Client portal pages — own OTP auth
+  "/api/public/",        // Public API endpoints (projects gallery, etc.)
 ];
 
 async function verifyTokenMiddleware(token: string) {

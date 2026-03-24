@@ -144,6 +144,9 @@ model Designer {
   budgetItems          CrmBudgetItem[]
   scheduleBlocks       CrmScheduleBlock[]
   handoffChecklists    CrmHandoffChecklist[]
+
+  // Projects — פורטפוליו
+  designerProjects     DesignerProject[]
 }
 
 // ==========================================
@@ -1690,4 +1693,37 @@ model CrmWorkflowTemplate {
   updatedAt       DateTime           @updatedAt
 
   @@index([designerId])
+}
+
+// ==========================================
+// פרויקטים של מעצבות — Designer Projects (Portfolio)
+// ==========================================
+model DesignerProject {
+  id             String   @id @default(cuid())
+  designerId     String
+  designer       Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  category       String   @default("apartment") // apartment, house, office, commercial, other
+  styleTags      String[] @default([])
+  coverImageUrl  String?
+  status         String   @default("private") // public, private
+  suppliers      String[] @default([]) // supplier IDs linked to this project
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  images         DesignerProjectImage[]
+
+  @@index([designerId])
+  @@index([status])
+}
+
+model DesignerProjectImage {
+  id        String  @id @default(cuid())
+  projectId String
+  project   DesignerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  caption   String?
+  sortOrder Int     @default(0)
+
+  @@index([projectId])
 }
