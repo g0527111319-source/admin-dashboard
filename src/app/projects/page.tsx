@@ -50,6 +50,19 @@ function getCategoryLabel(value: string) {
   return CATEGORIES.find((c) => c.value === value)?.label ?? value;
 }
 
+function proxyImageUrl(url: string): string {
+  if (
+    url.includes("drive.google.com") ||
+    url.includes("instagram.com") ||
+    url.includes("cdninstagram.com") ||
+    url.includes("photos.app.goo.gl") ||
+    url.includes("photos.google.com")
+  ) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 export default function ProjectsGalleryPage() {
   const [projects, setProjects] = useState<PublicProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -196,14 +209,14 @@ export default function ProjectsGalleryPage() {
                   <div className="relative h-64 bg-[#1a1a2e]">
                     {project.coverImageUrl ? (
                       <img
-                        src={project.coverImageUrl}
+                        src={proxyImageUrl(project.coverImageUrl)}
                         alt={project.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         loading="lazy"
                       />
                     ) : project.images[0] ? (
                       <img
-                        src={project.images[0].imageUrl}
+                        src={proxyImageUrl(project.images[0].imageUrl)}
                         alt={project.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         loading="lazy"

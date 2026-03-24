@@ -81,37 +81,31 @@ function isGooglePhotosShareLink(url: string): boolean {
 }
 
 function convertImageUrl(url: string): string {
-  // Google Photos shared album/photo links - can't be converted directly
-  // (handled separately with a warning message)
-
-  // Google Drive links
-  // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-  const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (driveFileMatch) {
-    return `https://drive.google.com/uc?export=view&id=${driveFileMatch[1]}`;
+  // Google Drive - use proxy
+  if (url.includes("drive.google.com")) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
   }
-  // https://drive.google.com/open?id=FILE_ID
-  const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (driveOpenMatch) {
-    return `https://drive.google.com/uc?export=view&id=${driveOpenMatch[1]}`;
+  // Instagram - use proxy
+  if (url.includes("instagram.com") || url.includes("cdninstagram.com")) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
   }
-
+  // Google Photos share links - use proxy
+  if (url.includes("photos.app.goo.gl") || url.includes("photos.google.com")) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  }
   // Google Photos direct lh3 links - already work
   if (url.includes("lh3.googleusercontent.com")) {
     return url;
   }
-
   // Dropbox links - convert to direct download
-  // https://www.dropbox.com/s/xxx/file.jpg?dl=0
   if (url.includes("dropbox.com")) {
     return url.replace("dl=0", "dl=1").replace("www.dropbox.com", "dl.dropboxusercontent.com");
   }
-
   // OneDrive links - can't easily convert, return as-is
   if (url.includes("1drv.ms") || url.includes("onedrive.live.com")) {
     return url;
   }
-
+  // Direct image URLs - use as-is
   return url;
 }
 
@@ -288,12 +282,8 @@ export default function CrmPortfolio() {
   const handleAddImage = async () => {
     if (!selectedProject) return;
     const convertedUrl = convertImageUrl(newImageUrl.trim());
-    if (!convertedUrl || !isValidUrl(convertedUrl)) {
+    if (!convertedUrl || (!isValidUrl(convertedUrl) && !convertedUrl.startsWith("/api/"))) {
       setImagePreviewError(true);
-      return;
-    }
-    if (isGooglePhotosShareLink(newImageUrl.trim())) {
-      setGooglePhotosWarning(true);
       return;
     }
 
@@ -416,21 +406,12 @@ export default function CrmPortfolio() {
       return;
     }
 
-    // Check for Google Photos share links
-    if (trimmed && isGooglePhotosShareLink(trimmed)) {
-      setGooglePhotosWarning(true);
-      setNewImageUrl(trimmed);
-      setImagePreviewError(false);
-      setImagePreviewValid(false);
-      return;
-    }
-
-    // Auto-convert URL
+    // Auto-convert URL (proxy handles Google Drive, Instagram, Google Photos)
     const converted = trimmed ? convertImageUrl(trimmed) : "";
     setNewImageUrl(converted);
     setImagePreviewError(false);
     setImagePreviewValid(false);
-    if (converted && isValidUrl(converted)) {
+    if (converted && (isValidUrl(converted) || converted.startsWith("/api/"))) {
       setImagePreviewValid(true);
     }
   };
@@ -644,16 +625,7 @@ export default function CrmPortfolio() {
                       הלינק לא תקין
                     </p>
                   )}
-                  {googlePhotosWarning && (
-                    <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 text-orange-400 text-xs flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span>
-                        לינק שיתוף של Google Photos לא נתמך ישירות. לחצי ימני על
-                        התמונה &rarr; &apos;העתק כתובת תמונה&apos; לקבלת לינק ישיר, או
-                        העלי ל-Google Drive ושתפי משם.
-                      </span>
-                    </div>
-                  )}
+                  {/* Google Photos warning removed - proxy handles these URLs */}
                   {multiAddCount !== null && multiAddCount > 0 && (
                     <p className="text-emerald-400 text-xs flex items-center gap-1">
                       נוספו {multiAddCount} תמונות
@@ -693,35 +665,30 @@ export default function CrmPortfolio() {
           {imageAddMode === "upload" && (
             <div className="space-y-4">
               <div className="bg-[#0a0a0a] rounded-xl border border-[#C9A84C]/20 p-5">
-                <h4 className="text-sm font-bold text-[#C9A84C] mb-3">📸 איך להעלות תמונות?</h4>
+                <h4 className="text-sm font-bold text-[#C9A84C] mb-3">איך להעלות תמונות?</h4>
                 <div className="space-y-3 text-sm text-white/70">
                   <div className="flex gap-3 items-start">
                     <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
                     <div>
-                      <p className="font-medium text-white/90">postimages.org (הכי קל — ללא הגבלת גודל)</p>
-                      <p className="text-xs text-white/50 mt-0.5">היכנסי ל-postimages.org → העלי תמונה → העתיקי "Direct Link" → הדביקי כאן</p>
+                      <p className="font-medium text-white/90">Google Drive</p>
+                      <p className="text-xs text-white/50 mt-0.5">{`העלי תמונה ל-Drive \u2192 שתפי "כל מי שיש לו קישור" \u2192 העתיקי לינק \u2192 הדביקי כאן`}</p>
                     </div>
                   </div>
                   <div className="flex gap-3 items-start">
                     <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
                     <div>
-                      <p className="font-medium text-white/90">Google Drive</p>
-                      <p className="text-xs text-white/50 mt-0.5">העלי ל-Drive → שתפי → העתיקי לינק → הדביקי כאן (המערכת ממירה אוטומטית)</p>
+                      <p className="font-medium text-white/90">Instagram</p>
+                      <p className="text-xs text-white/50 mt-0.5">{`העתיקי את הלינק של הפוסט \u2192 הדביקי כאן`}</p>
                     </div>
                   </div>
                   <div className="flex gap-3 items-start">
                     <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
                     <div>
-                      <p className="font-medium text-white/90">Google Photos</p>
-                      <p className="text-xs text-white/50 mt-0.5">פתחי תמונה → לחצי ימני → "העתק כתובת תמונה" → הדביקי כאן</p>
+                      <p className="font-medium text-white/90">כל לינק ישיר לתמונה</p>
+                      <p className="text-xs text-white/50 mt-0.5">הדביקי כל כתובת URL שמובילה ישירות לתמונה</p>
                     </div>
                   </div>
                 </div>
-                <a href="https://postimages.org/he" target="_blank" rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#C9A84C] text-black text-sm font-semibold rounded-xl hover:bg-[#e0c068] transition-colors">
-                  <Upload className="w-4 h-4" />
-                  פתח את postimages.org
-                </a>
               </div>
             </div>
           )}
@@ -934,29 +901,15 @@ export default function CrmPortfolio() {
               onChange={(e) => {
                 const raw = e.target.value;
                 setCoverImageWarning(false);
-                if (raw.trim() && isGooglePhotosShareLink(raw.trim())) {
-                  setCoverImageWarning(true);
-                  setForm({ ...form, coverImageUrl: raw });
-                } else {
-                  const converted = raw.trim() ? convertImageUrl(raw.trim()) : raw;
-                  setForm({ ...form, coverImageUrl: converted });
-                }
+                const converted = raw.trim() ? convertImageUrl(raw.trim()) : raw;
+                setForm({ ...form, coverImageUrl: converted });
               }}
               placeholder="https://example.com/image.jpg"
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
               dir="ltr"
             />
-            {coverImageWarning && (
-              <div className="mt-2 bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-3 text-orange-400 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>
-                  לינק שיתוף של Google Photos לא נתמך ישירות. לחצי ימני על התמונה
-                  → &apos;העתק כתובת תמונה&apos; לקבלת לינק ישיר, או העלי ל-Google
-                  Drive ושתפי משם.
-                </span>
-              </div>
-            )}
-            {form.coverImageUrl && !coverImageWarning && isValidUrl(form.coverImageUrl) && (
+            {/* Google Photos warning removed - proxy handles these URLs */}
+            {form.coverImageUrl && !coverImageWarning && (isValidUrl(form.coverImageUrl) || form.coverImageUrl.startsWith("/api/")) && (
               <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
                 <img
                   src={form.coverImageUrl}

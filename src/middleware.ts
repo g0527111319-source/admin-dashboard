@@ -37,6 +37,7 @@ const API_PUBLIC_PREFIXES = [
   "/api/client-portal/", // Client portal — own auth mechanism
   "/client-portal/",     // Client portal pages — own OTP auth
   "/api/public/",        // Public API endpoints (projects gallery, etc.)
+  "/api/image-proxy",    // Image proxy — public, fetches images server-side
 ];
 
 async function verifyTokenMiddleware(token: string) {
