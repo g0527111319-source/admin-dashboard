@@ -1727,3 +1727,43 @@ model DesignerProjectImage {
 
   @@index([projectId])
 }
+
+// ==========================================
+// בוט וואטסאפ — WhatsApp Bot (AI)
+// ==========================================
+model WhatsAppConversation {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  userType  String   // designer, supplier, admin
+  userId    String?
+  messages  Json     @default("[]") // last 10 messages for AI context
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model WhatsAppAuditLog {
+  id        String   @id @default(cuid())
+  phone     String
+  userType  String
+  userId    String?
+  direction String   // inbound, outbound
+  message   String
+  toolUsed  String?
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([createdAt])
+}
+
+model WhatsAppScheduledTask {
+  id          String   @id @default(cuid())
+  createdBy   String   // phone of admin who created it
+  description String
+  cronExpr    String?  // e.g. "0 9 * * *"
+  nextRunAt   DateTime?
+  lastRunAt   DateTime?
+  prompt      String   // what Claude should do
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

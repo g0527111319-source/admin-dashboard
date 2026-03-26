@@ -38,6 +38,7 @@ const API_PUBLIC_PREFIXES = [
   "/client-portal/",     // Client portal pages — own OTP auth
   "/api/public/",        // Public API endpoints (projects gallery, etc.)
   "/api/image-proxy",    // Image proxy — public, fetches images server-side
+  "/api/whatsapp/webhook", // WhatsApp bot webhook — Green API sends here
 ];
 
 async function verifyTokenMiddleware(token: string) {
