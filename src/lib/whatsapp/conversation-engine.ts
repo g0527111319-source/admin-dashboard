@@ -20,6 +20,95 @@ const MAX_TOKENS = 1024;
 const MAX_HISTORY_MESSAGES = 10;
 
 // ==========================================
+// Admin Bot Settings (cached from DB)
+// ==========================================
+interface AdminBotSettings {
+  generalInstructions: string;
+  roleInstructions: {
+    designer: string;
+    supplier: string;
+    admin: string;
+  };
+  preparedResponses: Array<{
+    id: string;
+    trigger: string;
+    response: string;
+  }>;
+  blockedWords: string;
+  general: {
+    botActive: boolean;
+    maxMessagesPerDay: number;
+    responseLanguage: string;
+    botName: string;
+  };
+}
+
+let cachedBotSettings: AdminBotSettings | null = null;
+let settingsCacheTime = 0;
+const SETTINGS_CACHE_TTL = 60_000; // 1 minute cache
+
+/**
+ * Fetch admin bot settings from DB with caching.
+ */
+async function getAdminBotSettings(): Promise<AdminBotSettings | null> {
+  const now = Date.now();
+  if (cachedBotSettings && now - settingsCacheTime < SETTINGS_CACHE_TTL) {
+    return cachedBotSettings;
+  }
+
+  try {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "whatsapp_bot_config" },
+    });
+
+    if (setting) {
+      cachedBotSettings = setting.value as unknown as AdminBotSettings;
+      settingsCacheTime = now;
+      return cachedBotSettings;
+    }
+  } catch (error) {
+    console.error("[ConversationEngine] Failed to load bot settings:", error);
+  }
+
+  return null;
+}
+
+/**
+ * Check if message contains blocked words.
+ */
+function containsBlockedWords(
+  message: string,
+  blockedWords: string
+): boolean {
+  if (!blockedWords.trim()) return false;
+  const words = blockedWords
+    .split(",")
+    .map((w) => w.trim().toLowerCase())
+    .filter(Boolean);
+  const lowerMsg = message.toLowerCase();
+  return words.some((word) => lowerMsg.includes(word));
+}
+
+/**
+ * Check if message matches a prepared response trigger.
+ * Returns the response text if matched, null otherwise.
+ */
+function matchPreparedResponse(
+  message: string,
+  preparedResponses: AdminBotSettings["preparedResponses"]
+): string | null {
+  if (!preparedResponses || preparedResponses.length === 0) return null;
+  const lowerMsg = message.toLowerCase().trim();
+  for (const pair of preparedResponses) {
+    if (!pair.trigger.trim()) continue;
+    if (lowerMsg.includes(pair.trigger.toLowerCase().trim())) {
+      return pair.response;
+    }
+  }
+  return null;
+}
+
+// ==========================================
 // Conversation History (in-memory + DB)
 // ==========================================
 interface ConversationMessage {
@@ -97,10 +186,15 @@ async function saveHistory(
 // System Prompts (role-based)
 // ==========================================
 
-function getSystemPrompt(user: WhatsAppUser): string {
+function getSystemPrompt(
+  user: WhatsAppUser,
+  adminSettings?: AdminBotSettings | null
+): string {
+  // Build the base prompt per role
+  let basePrompt: string;
   switch (user.type) {
     case "designer":
-      return `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם ${user.name}, מעצבת פנים.
+      basePrompt = `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם ${user.name}, מעצבת פנים.
 את יכולה לעזור ב:
 - שאלות על השימוש באתר ובאזור האישי
 - דיווח על עסקה חדשה (שם ספק, סכום, תיאור) — השתמשי בכלי report_deal
@@ -115,9 +209,10 @@ function getSystemPrompt(user: WhatsAppUser): string {
 - כשמדווחים על עסקה, וודא שיש שם ספק וסכום
 - אם המשתמש שואל משהו שאינך יודעת, הפנה למנהלת הקהילה
 - הודעות קצרות ותמציתיות — זה וואטסאפ, לא מייל`;
+      break;
 
     case "supplier":
-      return `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם ${user.name}, ספק בקהילה.
+      basePrompt = `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם ${user.name}, ספק בקהילה.
 את יכולה לעזור ב:
 - אישור/דחייה של עסקה שדווחה — השתמשי בכלי confirm_deal
 - תיאום פרסום (בדיקת לוגו, קרדיט למעצבת, לוגו קהילה) — השתמשי בכלי check_post_requirements
@@ -128,9 +223,10 @@ function getSystemPrompt(user: WhatsAppUser): string {
 - אסור לך לחשוף מידע על ספקים אחרים, מעצבות (חוץ משמות בעסקאות), או דירוגים
 - ענה תמיד בעברית, בצורה מקצועית ואדיבה
 - הודעות קצרות ותמציתיות`;
+      break;
 
     case "admin":
-      return `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם מנהלת הקהילה.
+      basePrompt = `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם מנהלת הקהילה.
 יש לך גישה מלאה לכל המידע:
 - כל המעצבות, ספקים, עסקאות, דירוגים, אירועים
 - ביצוע פקודות: יצירת אירוע — admin_create_event
@@ -140,10 +236,34 @@ function getSystemPrompt(user: WhatsAppUser): string {
 - צפייה בעסקאות — get_my_deals (מראה הכל עבור אדמין)
 
 ענה בצורה מקצועית ותמציתית. את יכולה לבצע כל פעולה שמנהלת הקהילה מבקשת.`;
+      break;
 
     default:
-      return "את עוזרת דיגיטלית של זירת האדריכלות. ענה בעברית.";
+      basePrompt = "את עוזרת דיגיטלית של זירת האדריכלות. ענה בעברית.";
   }
+
+  // Prepend admin-configured instructions if available
+  if (adminSettings) {
+    const parts: string[] = [];
+
+    // General instructions from admin
+    if (adminSettings.generalInstructions?.trim()) {
+      parts.push(`הנחיות כלליות:\n${adminSettings.generalInstructions.trim()}`);
+    }
+
+    // Role-specific instructions from admin
+    const roleKey = user.type as keyof AdminBotSettings["roleInstructions"];
+    const roleInstructions = adminSettings.roleInstructions?.[roleKey];
+    if (roleInstructions?.trim()) {
+      parts.push(`הנחיות נוספות לתפקיד:\n${roleInstructions.trim()}`);
+    }
+
+    if (parts.length > 0) {
+      return parts.join("\n\n") + "\n\n---\n\n" + basePrompt;
+    }
+  }
+
+  return basePrompt;
 }
 
 // ==========================================
@@ -236,6 +356,32 @@ export async function processMessage(
   message: string,
   messageType: "text" | "audio" | "image" = "text"
 ): Promise<{ response: string; toolUsed?: string }> {
+  // Fetch admin bot settings
+  const adminSettings = await getAdminBotSettings();
+
+  // Check if bot is disabled by admin
+  if (adminSettings?.general?.botActive === false) {
+    return { response: "" }; // Silent — bot is disabled
+  }
+
+  // Check for blocked words
+  if (adminSettings && containsBlockedWords(message, adminSettings.blockedWords)) {
+    console.log(`[ConversationEngine] Blocked word detected from ${user.phone}`);
+    return { response: "לא ניתן לענות על שאלה זו" };
+  }
+
+  // Check for prepared responses (exact match overrides AI)
+  if (adminSettings) {
+    const preparedResponse = matchPreparedResponse(
+      message,
+      adminSettings.preparedResponses
+    );
+    if (preparedResponse) {
+      console.log(`[ConversationEngine] Prepared response matched for ${user.phone}`);
+      return { response: preparedResponse };
+    }
+  }
+
   // Mock mode
   if (IS_MOCK_AI) {
     console.log(`[ConversationEngine MOCK] Processing message from ${user.name} (${user.type}): ${message.substring(0, 50)}`);
@@ -247,8 +393,8 @@ export async function processMessage(
     // Get conversation history
     const history = await getHistory(user.phone);
 
-    // Build system prompt
-    const systemPrompt = getSystemPrompt(user);
+    // Build system prompt with admin customizations
+    const systemPrompt = getSystemPrompt(user, adminSettings);
 
     // Get available tools for this user's role
     const tools = getAnthropicTools(user.type);

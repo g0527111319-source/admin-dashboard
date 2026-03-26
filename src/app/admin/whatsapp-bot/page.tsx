@@ -3,8 +3,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Bot, Wifi, WifiOff, RefreshCw, MessageCircle, Users,
   Shield, Clock, Activity, AlertTriangle, Search,
-  Pause, Play, BarChart3, Send, Eye,
+  Pause, Play, BarChart3, Send, Eye, Settings,
 } from "lucide-react";
+import Link from "next/link";
 
 // ==========================================
 // Types
@@ -115,14 +116,23 @@ export default function WhatsAppBotPage() {
             {"בוט חכם מבוסס Claude AI — עונה למעצבות וספקים אוטומטית"}
           </p>
         </div>
-        <button
-          onClick={() => { setLoading(true); fetchStatus(); }}
-          disabled={loading}
-          className="btn-outline text-sm flex items-center gap-1.5"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          {"רענן"}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/whatsapp-bot/settings"
+            className="btn-gold text-sm flex items-center gap-1.5"
+          >
+            <Settings className="w-4 h-4" />
+            {"הגדרות בוט"}
+          </Link>
+          <button
+            onClick={() => { setLoading(true); fetchStatus(); }}
+            disabled={loading}
+            className="btn-outline text-sm flex items-center gap-1.5"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            {"רענן"}
+          </button>
+        </div>
       </div>
 
       {/* Error Banner */}
