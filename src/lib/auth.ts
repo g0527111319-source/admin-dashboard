@@ -66,11 +66,21 @@ function getDemoSession(role: Exclude<UserRole, "admin">, email: string, passwor
 // JWT — ניהול טוקנים
 // ==========================================
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-change-in-production"
-);
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (secret) {
+    return new TextEncoder().encode(secret);
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET environment variable is required in production");
+  }
+  // Deterministic non-trivial fallback for development only
+  return new TextEncoder().encode("zirat-dev-only-jwt-secret-not-for-production-use-2024");
+}
 
-const JWT_EXPIRY = "7d"; // תוקף 7 ימים
+const JWT_SECRET = getJwtSecret();
+
+const JWT_EXPIRY = "24h"; // תוקף 24 שעות
 
 /** יצירת JWT טוקן */
 export async function createToken(payload: SessionPayload): Promise<string> {
@@ -120,8 +130,8 @@ export async function setSessionCookie(payload: SessionPayload): Promise<void> {
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7 ימים
+    sameSite: "strict",
+    maxAge: 60 * 60 * 24, // 24 שעות
     path: "/",
   });
 }
@@ -132,16 +142,6 @@ export async function getSession(): Promise<SessionPayload | null> {
   const token = cookieStore.get(COOKIE_NAME);
 
   if (!token?.value) {
-    // backward compat: check old admin_token
-    const adminToken = cookieStore.get("admin_token");
-    if (adminToken?.value === (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)) {
-      return {
-        userId: "admin",
-        role: "admin",
-        email: process.env.ADMIN_EMAIL || "admin@zirat.co.il",
-        name: "תמר",
-      };
-    }
     return null;
   }
 
@@ -152,7 +152,6 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
-  cookieStore.delete("admin_token"); // backward compat
 }
 
 // ==========================================

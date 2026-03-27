@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { logAuditEvent } from "@/lib/audit-logger";
 
 const SETTINGS_KEY = "whatsapp_bot_config";
 
@@ -124,6 +125,15 @@ export async function PATCH(request: NextRequest) {
         value: updated as unknown as Record<string, unknown>,
       },
     });
+
+    const userId = request.headers.get("x-user-id") || "unknown";
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || request.headers.get("x-real-ip")
+      || "unknown";
+    logAuditEvent("ADMIN_SETTINGS_CHANGE", userId, {
+      setting: SETTINGS_KEY,
+      changedFields: Object.keys(body),
+    }, ip);
 
     return NextResponse.json({ success: true, settings: updated });
   } catch (error) {

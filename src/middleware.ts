@@ -5,9 +5,18 @@ import { jwtVerify } from "jose";
 // Middleware — הגנה על נתיבים
 // ==========================================
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-change-in-production"
-);
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (secret) {
+    return new TextEncoder().encode(secret);
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET environment variable is required in production");
+  }
+  return new TextEncoder().encode("zirat-dev-only-jwt-secret-not-for-production-use-2024");
+}
+
+const JWT_SECRET = getJwtSecret();
 
 const PUBLIC_PATHS = [
   "/",
@@ -59,17 +68,17 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/cron") ||
     pathname.includes(".") // static files
   ) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   // נתיבים ציבוריים
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   // API ציבוריים (prefix)
   if (API_PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   // API ציבוריים
@@ -78,25 +87,14 @@ export async function middleware(request: NextRequest) {
     if (pathname === "/api/suppliers" && request.method !== "GET") {
       // continue to auth check below
     } else {
-      return NextResponse.next();
+      return withSecurityHeaders(NextResponse.next());
     }
   }
 
   // בדיקת session token
   const token = request.cookies.get("session_token")?.value;
-  const adminToken = request.cookies.get("admin_token")?.value;
 
-  let session = token ? await verifyTokenMiddleware(token) : null;
-
-  // backward compat: old admin cookie
-  if (!session && adminToken === (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)) {
-    session = {
-      userId: "admin",
-      role: "admin",
-      email: process.env.ADMIN_EMAIL || "",
-      name: "תמר",
-    };
-  }
+  const session = token ? await verifyTokenMiddleware(token) : null;
 
   // אם אין session — הפנה ל-login
   if (!session) {
@@ -154,6 +152,16 @@ export async function middleware(request: NextRequest) {
   response.headers.set("x-user-email", session.email);
   response.headers.set("x-user-name", encodeURIComponent(session.name));
 
+  return withSecurityHeaders(response);
+}
+
+/** Apply security headers to a response and return it */
+function withSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   return response;
 }
 

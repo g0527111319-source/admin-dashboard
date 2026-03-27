@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { logAuditEvent } from "@/lib/audit-logger";
 
 // GET /api/contract/sign/[token] — public: client views the contract
 export async function GET(
@@ -169,6 +170,12 @@ export async function POST(
 
     // TODO: Integrate with transactional email service (e.g., SendGrid/Resend)
     // Emails to send are logged in emailsSent array above
+
+    logAuditEvent("CONTRACT_SIGNED", contract.clientEmail || "unknown-client", {
+      contractId: contract.id,
+      contractNumber: contract.contractNumber,
+      bothSigned,
+    }, clientIp);
 
     return NextResponse.json({
       success: true,
