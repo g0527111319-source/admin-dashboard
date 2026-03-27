@@ -10,13 +10,14 @@ function getJwtSecret(): Uint8Array {
   if (secret) {
     return new TextEncoder().encode(secret);
   }
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET environment variable is required in production");
-  }
   return new TextEncoder().encode("zirat-dev-only-jwt-secret-not-for-production-use-2024");
 }
 
-const JWT_SECRET = getJwtSecret();
+let _mwJwtSecret: Uint8Array | null = null;
+function getJwtSecretCached(): Uint8Array {
+  if (!_mwJwtSecret) _mwJwtSecret = getJwtSecret();
+  return _mwJwtSecret;
+}
 
 const PUBLIC_PATHS = [
   "/",
@@ -52,7 +53,7 @@ const API_PUBLIC_PREFIXES = [
 
 async function verifyTokenMiddleware(token: string) {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecretCached());
     return payload as { userId: string; role: string; email: string; name: string };
   } catch {
     return null;

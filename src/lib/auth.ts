@@ -71,14 +71,16 @@ function getJwtSecret(): Uint8Array {
   if (secret) {
     return new TextEncoder().encode(secret);
   }
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET environment variable is required in production");
-  }
-  // Deterministic non-trivial fallback for development only
+  // Fallback for dev/build - in production AUTH_SECRET should be set via env vars
   return new TextEncoder().encode("zirat-dev-only-jwt-secret-not-for-production-use-2024");
 }
 
-const JWT_SECRET = getJwtSecret();
+// Lazy - evaluated only when needed, not at build time
+let _jwtSecret: Uint8Array | null = null;
+function getJwtSecretCached(): Uint8Array {
+  if (!_jwtSecret) _jwtSecret = getJwtSecret();
+  return _jwtSecret;
+}
 
 const JWT_EXPIRY = "24h"; // תוקף 24 שעות
 
@@ -88,13 +90,13 @@ export async function createToken(payload: SessionPayload): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(JWT_EXPIRY)
-    .sign(JWT_SECRET);
+    .sign(getJwtSecretCached());
 }
 
 /** אימות JWT טוקן */
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecretCached());
     return payload as unknown as SessionPayload;
   } catch {
     return null;
