@@ -40,6 +40,7 @@ interface BotSettings {
     maxMessagesPerDay: number;
     responseLanguage: string;
     botName: string;
+    dailyCostLimit: number;
   };
 }
 
@@ -660,6 +661,35 @@ export default function WhatsAppBotSettingsPage() {
                 }
                 className="input-dark w-full text-sm"
                 dir="rtl"
+              />
+            </label>
+          </div>
+
+          {/* Daily Cost Limit */}
+          <div className="bg-bg-surface rounded-lg p-4 border border-gold/10">
+            <label className="block">
+              <p className="text-sm font-bold text-text-primary mb-1">
+                {"מגבלת עלות יומית ($)"}
+              </p>
+              <p className="text-xs text-text-muted mb-2">
+                {"מגבלת עלות יומית לשימוש ב-AI. כשהמגבלה נחצית, הבוט עובר למצב תשובות מוכנות."}
+              </p>
+              <input
+                type="number"
+                value={settings.general.dailyCostLimit ?? 5}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    general: {
+                      ...settings.general,
+                      dailyCostLimit: parseFloat(e.target.value) || 5,
+                    },
+                  })
+                }
+                className="input-dark w-full text-sm"
+                min={0.5}
+                max={100}
+                step={0.5}
               />
             </label>
           </div>

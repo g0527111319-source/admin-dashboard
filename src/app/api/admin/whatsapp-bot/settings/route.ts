@@ -27,6 +27,7 @@ export interface WhatsAppBotSettings {
     maxMessagesPerDay: number;
     responseLanguage: string;
     botName: string;
+    dailyCostLimit: number;
   };
 }
 
@@ -48,6 +49,7 @@ const DEFAULT_SETTINGS: WhatsAppBotSettings = {
     maxMessagesPerDay: 100,
     responseLanguage: "עברית",
     botName: "זירת האדריכלות",
+    dailyCostLimit: 5,
   },
 };
 

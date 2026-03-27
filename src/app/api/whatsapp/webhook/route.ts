@@ -5,7 +5,7 @@
 // processes them through the AI engine, and responds.
 
 import { NextRequest, NextResponse } from "next/server";
-import { validateWebhookSignature, isRateLimited, sanitizeMessage, logInteraction, isBlocked } from "@/lib/whatsapp/security";
+import { validateWebhookSignature, isRateLimited, sanitizeMessage, logInteraction, isBlocked, detectInjection, recordInjectionAttempt, logSecurityEvent, notifyAdminOfBlock, INJECTION_REJECTION_MESSAGE } from "@/lib/whatsapp/security";
 import { resolveUser, UNKNOWN_USER_MESSAGE, normalizePhone } from "@/lib/whatsapp/user-resolver";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 import { sendMessage, incrementMessageCounter } from "@/lib/whatsapp/green-api";
@@ -92,13 +92,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "ok", reason: "rate_limited" });
     }
 
-    // 6. Sanitize message
+    // 6. Detect prompt injection attempts (before sanitizing)
+    const injectionResult = detectInjection(text);
+    if (injectionResult.isInjection) {
+      // Log the security event
+      logSecurityEvent({
+        phone: normalizedPhone,
+        severity: injectionResult.severity!,
+        category: injectionResult.category!,
+        matchedPattern: injectionResult.matchedPattern!,
+        originalMessage: text,
+      }).catch((err) => console.error("[Webhook] Security log error:", err));
+
+      // Record attempt and check if should be temporarily blocked
+      const shouldBlock = recordInjectionAttempt(normalizedPhone);
+      if (shouldBlock) {
+        // Notify admin about temporary block
+        notifyAdminOfBlock(
+          normalizedPhone,
+          `ניסיונות הזרקה חוזרים (${injectionResult.category})`
+        ).catch((err) => console.error("[Webhook] Admin notify error:", err));
+      }
+
+      // Send rejection message
+      await sendMessage(senderPhone, INJECTION_REJECTION_MESSAGE);
+      return NextResponse.json({ status: "ok", reason: "injection_blocked" });
+    }
+
+    // 7. Sanitize message
     const sanitizedText = sanitizeMessage(text);
     if (!sanitizedText) {
       return NextResponse.json({ status: "ok", reason: "empty_after_sanitize" });
     }
 
-    // 7. Resolve user
+    // 8. Resolve user
     const user = await resolveUser(normalizedPhone);
 
     if (!user) {
@@ -119,7 +146,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "ok", userType: "unknown" });
     }
 
-    // 8. Log incoming message
+    // 9. Log incoming message
     await logInteraction({
       phone: normalizedPhone,
       userType: user.type,
@@ -130,18 +157,18 @@ export async function POST(request: NextRequest) {
 
     incrementMessageCounter();
 
-    // 9. Process message through AI engine
+    // 10. Process message through AI engine
     const { response, toolUsed } = await processMessage(
       user,
       sanitizedText,
       messageType
     );
 
-    // 10. Send response back
+    // 11. Send response back
     await sendMessage(senderPhone, response);
     incrementMessageCounter();
 
-    // 11. Log outgoing message
+    // 12. Log outgoing message
     await logInteraction({
       phone: normalizedPhone,
       userType: user.type,
