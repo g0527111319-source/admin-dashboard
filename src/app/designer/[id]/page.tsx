@@ -31,6 +31,8 @@ import TermsConsentModal from "@/components/TermsConsentModal";
 import PushNotificationManager from "@/components/PushNotificationManager";
 import CrmKanban from "@/components/crm/CrmKanban";
 import CrmPortfolio from "@/components/crm/CrmPortfolio";
+import FeatureGate from "@/components/FeatureGate";
+import { useParams } from "next/navigation";
 
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 
@@ -135,6 +137,8 @@ const navGroups: NavGroup[] = [
 const ALL_DESIGNER_FILTER = "__ALL__";
 
 export default function DesignerDashboard() {
+    const routeParams = useParams<{ id: string }>();
+    const designerIdForGate = routeParams?.id || undefined;
     const [activeTab, setActiveTab] = useState<TabKey>("home");
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -870,16 +874,35 @@ export default function DesignerDashboard() {
             )}
 
             {/* ===== CRM TABS ===== */}
-            {activeTab === "clients" && <CrmClients />}
-            {activeTab === "crm-suppliers" && <CrmSuppliers />}
-            {activeTab === "whatsapp" && <CrmWhatsApp />}
-            {activeTab === "webhooks" && <CrmWebhooks />}
-            {activeTab === "templates" && <CrmTemplates />}
-            {activeTab === "crm-settings" && <CrmSettings />}
-            {activeTab === "workflows" && <CrmWorkflowTemplates />}
-            {activeTab === "contracts" && <CrmContracts />}
-            {activeTab === "calendar" && <CrmCalendar />}
+            {activeTab === "clients" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmClients /></FeatureGate>
+            )}
+            {activeTab === "crm-suppliers" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSuppliers /></FeatureGate>
+            )}
+            {activeTab === "whatsapp" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWhatsApp /></FeatureGate>
+            )}
+            {activeTab === "webhooks" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWebhooks /></FeatureGate>
+            )}
+            {activeTab === "templates" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTemplates /></FeatureGate>
+            )}
+            {activeTab === "crm-settings" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSettings /></FeatureGate>
+            )}
+            {activeTab === "workflows" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWorkflowTemplates /></FeatureGate>
+            )}
+            {activeTab === "contracts" && (
+              <FeatureGate feature="contracts" designerId={designerIdForGate}><CrmContracts /></FeatureGate>
+            )}
+            {activeTab === "calendar" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmCalendar /></FeatureGate>
+            )}
             {activeTab === "projects" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}>
               <div className="space-y-4 animate-in">
                 {/* View toggle: list vs kanban */}
                 <div className="flex items-center gap-2 justify-end">
@@ -898,21 +921,44 @@ export default function DesignerDashboard() {
                 </div>
                 {projectView === "list" ? <CrmProjects /> : <CrmKanban />}
               </div>
+              </FeatureGate>
             )}
-            {activeTab === "scheduler" && <CrmScheduler />}
-            {activeTab === "quotes" && <CrmQuotes />}
-            {activeTab === "time-tracking" && <CrmTimeTracking />}
-            {activeTab === "surveys" && <CrmSurveys />}
-            {activeTab === "approvals" && <CrmApprovals />}
-            {activeTab === "before-after" && <CrmBeforeAfter />}
-            {activeTab === "handoff" && <CrmHandoffChecklist />}
-            {activeTab === "onboarding" && <CrmOnboarding />}
-            {activeTab === "style-quiz" && <CrmStyleQuiz />}
-            {activeTab === "chat" && <CrmChat />}
+            {activeTab === "scheduler" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmScheduler /></FeatureGate>
+            )}
+            {activeTab === "quotes" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmQuotes /></FeatureGate>
+            )}
+            {activeTab === "time-tracking" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTimeTracking /></FeatureGate>
+            )}
+            {activeTab === "surveys" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSurveys /></FeatureGate>
+            )}
+            {activeTab === "approvals" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmApprovals /></FeatureGate>
+            )}
+            {activeTab === "before-after" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmBeforeAfter /></FeatureGate>
+            )}
+            {activeTab === "handoff" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmHandoffChecklist /></FeatureGate>
+            )}
+            {activeTab === "onboarding" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmOnboarding /></FeatureGate>
+            )}
+            {activeTab === "style-quiz" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmStyleQuiz /></FeatureGate>
+            )}
+            {activeTab === "chat" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmChat /></FeatureGate>
+            )}
             {activeTab === "portfolio" && (
-              <div>
-                <CrmPortfolio onSwitchToCard={() => setActiveTab("card")} />
-              </div>
+              <FeatureGate feature="portfolio" designerId={designerIdForGate}>
+                <div>
+                  <CrmPortfolio onSwitchToCard={() => setActiveTab("card")} />
+                </div>
+              </FeatureGate>
             )}
 
             {/* ===== PROFILE TAB ===== */}
@@ -985,6 +1031,7 @@ export default function DesignerDashboard() {
 
             {/* ===== BUSINESS CARD TAB ===== */}
             {activeTab === "card" && (
+              <FeatureGate feature="businessCard" designerId={designerIdForGate}>
               <div className="animate-in">
                 <div className="mb-4">
                   <button
@@ -997,6 +1044,7 @@ export default function DesignerDashboard() {
                 </div>
                 <BusinessCardBuilder userName={designerData.fullName} userRole={designerData.specialization} userPhone={designerData.phone} userEmail={designerData.email} />
               </div>
+              </FeatureGate>
             )}
           </div>
         </main>

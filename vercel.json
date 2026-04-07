@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/whatsapp-tasks",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/check-promotions",
+      "schedule": "0 3 * * *"
     }
   ]
 }

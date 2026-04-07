@@ -147,6 +147,9 @@ model Designer {
 
   // Projects — פורטפוליו
   designerProjects     DesignerProject[]
+
+  // Subscription / Membership
+  subscription         DesignerSubscription?
 }
 
 // ==========================================
@@ -1777,4 +1780,75 @@ model SystemSetting {
   value     Json
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+}
+
+// ==========================================
+// מנויים — Subscriptions / Membership
+// ==========================================
+model SubscriptionPlan {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  price         Decimal  @default(0) @db.Decimal(10, 2)
+  currency      String   @default("ILS")
+  billingCycle  String   @default("monthly")
+  features      Json
+  description   String?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  subscriptions DesignerSubscription[]
+}
+
+model DesignerSubscription {
+  id                       String   @id @default(cuid())
+  designerId               String   @unique
+  designer                 Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
+  planId                   String
+  plan                     SubscriptionPlan @relation(fields: [planId], references: [id])
+  status                   String   @default("active")
+  startedAt                DateTime @default(now())
+  trialEndsAt              DateTime?
+  currentPeriodStart       DateTime @default(now())
+  currentPeriodEnd         DateTime
+  cancelledAt              DateTime?
+  cancelReason             String?
+  autoRenew                Boolean  @default(true)
+  icountCustomerId         String?
+  icountSubscriptionId     String?
+  lastPaymentAt            DateTime?
+  lastPaymentAmount        Decimal? @db.Decimal(10, 2)
+  supplierCooperationCount Int      @default(0)
+  promotionCheckedAt       DateTime?
+  notes                    String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  payments                 SubscriptionPayment[]
+}
+
+model SubscriptionPayment {
+  id              String   @id @default(cuid())
+  subscriptionId  String
+  subscription    DesignerSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  amount          Decimal  @db.Decimal(10, 2)
+  currency        String   @default("ILS")
+  status          String
+  paymentMethod   String?
+  icountInvoiceId String?
+  icountReceiptId String?
+  failureReason   String?
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+}
+
+model SubscriptionRule {
+  id               String   @id @default(cuid())
+  name             String
+  minSupplierCount Int      @default(0)
+  timeWindowDays   Int      @default(30)
+  targetPlanId     String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
