@@ -2,6 +2,7 @@ import { txt } from "@/content/siteText";
 import { NextRequest, NextResponse } from "next/server";
 import { loginWithEmail, setSessionCookie, type UserRole } from "@/lib/auth";
 import { logAuditEvent } from "@/lib/audit-logger";
+import prisma from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 // ==========================================
@@ -95,6 +96,14 @@ export async function POST(req: NextRequest) {
         await setSessionCookie(result.session);
         clearFailedAttempts(ip);
         logAuditEvent("LOGIN_SUCCESS", result.session.userId, { email: result.session.email, role: result.session.role }, ip);
+
+        // Track lastLoginAt for churn detection (item 20)
+        if (result.session.role === "designer") {
+            prisma.designer.update({
+                where: { id: result.session.userId },
+                data: { lastLoginAt: new Date(), lastActivityAt: new Date() },
+            }).catch(err => console.error("[login] lastLoginAt update failed:", err));
+        }
 
         // redirect URL based on role
         let redirectUrl = "/";

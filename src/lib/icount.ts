@@ -153,6 +153,43 @@ export async function chargeRecurring(subscriptionId: string) {
   });
 }
 
+export type CreatePaymentTokenInput = {
+  customerId: string;
+  /** card details are collected by iCount's hosted form — we only persist the token */
+  cardToken: string;
+};
+
+/**
+ * Persist a saved payment method (card token) for future recurring charges.
+ */
+export async function savePaymentToken(data: CreatePaymentTokenInput) {
+  if (isMockMode()) {
+    console.log("[iCount] Mock mode - would save token:", data.customerId);
+    return { token_id: "mock-token-" + Date.now(), status: true };
+  }
+  return icountPost("/client/save_token", {
+    client_id: data.customerId,
+    card_token: data.cardToken,
+  });
+}
+
+/**
+ * Return URL for iCount's hosted card-entry iframe.
+ * Designer enters card details on iCount's side — we never touch the PAN.
+ */
+export function getHostedCardFormUrl(customerId: string, returnUrl: string): string {
+  const cid = process.env.ICOUNT_COMPANY_ID || "demo";
+  if (isMockMode()) {
+    return `${returnUrl}?mock=1&token=mock-${Date.now()}`;
+  }
+  const params = new URLSearchParams({
+    cid,
+    client_id: customerId,
+    return_url: returnUrl,
+  });
+  return `https://app.icount.co.il/card-vault?${params.toString()}`;
+}
+
 /**
  * Validates an iCount webhook signature.
  * If ICOUNT_WEBHOOK_SECRET is not set, accepts all requests (dev mode).

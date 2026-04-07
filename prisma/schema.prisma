@@ -105,6 +105,10 @@ model Designer {
   termsAcceptedIp      String?   // כתובת IP בזמן ההסכמה
   termsAcceptedAgent   String?   // User-Agent בזמן ההסכמה
 
+  // Churn prediction (item 20)
+  lastLoginAt          DateTime?
+  lastActivityAt       DateTime?
+
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -1807,6 +1811,7 @@ model DesignerSubscription {
   designer                 Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
   planId                   String
   plan                     SubscriptionPlan @relation(fields: [planId], references: [id])
+  // Status values: active, trialing, past_due, grace, paused, read_only, cancelled, expired
   status                   String   @default("active")
   startedAt                DateTime @default(now())
   trialEndsAt              DateTime?
@@ -1815,16 +1820,44 @@ model DesignerSubscription {
   cancelledAt              DateTime?
   cancelReason             String?
   autoRenew                Boolean  @default(true)
+  // Recurring billing - defaults to true, charged monthly until user cancels
+  recurringEnabled         Boolean  @default(true)
   icountCustomerId         String?
   icountSubscriptionId     String?
+  icountPaymentToken       String?  // Encrypted - saved card token for recurring
   lastPaymentAt            DateTime?
   lastPaymentAmount        Decimal? @db.Decimal(10, 2)
+  // Dunning / grace period (item 3)
+  failedPaymentCount       Int      @default(0)
+  lastFailedPaymentAt      DateTime?
+  gracePeriodEndsAt        DateTime?
+  nextRetryAt              DateTime?
+  // Downgrade grace: 1 month read-only access to download data (item 8)
+  readOnlyUntil            DateTime?
+  scheduledDowngradeAt     DateTime?
+  scheduledDowngradePlanId String?
+  // Pause subscription (item 9)
+  pausedAt                 DateTime?
+  pauseEndsAt              DateTime?
+  pauseReason              String?
+  // Coupon applied (item 7)
+  appliedCouponId          String?
+  couponDiscountPercent    Int?
+  couponEndsAt             DateTime?
+  // Auto-promotion
   supplierCooperationCount Int      @default(0)
   promotionCheckedAt       DateTime?
+  promotionNotifiedAt      DateTime?
+  // Soft delete (item 17)
+  deletedAt                DateTime?
   notes                    String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
   payments                 SubscriptionPayment[]
+  auditLogs                SubscriptionAuditLog[]
+
+  @@index([status, currentPeriodEnd])
+  @@index([deletedAt])
 }
 
 model SubscriptionPayment {
@@ -1833,13 +1866,18 @@ model SubscriptionPayment {
   subscription    DesignerSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   amount          Decimal  @db.Decimal(10, 2)
   currency        String   @default("ILS")
-  status          String
+  status          String   // pending, succeeded, failed, refunded
   paymentMethod   String?
   icountInvoiceId String?
   icountReceiptId String?
+  // Idempotency (item 2) - unique event ID from iCount webhook
+  icountEventId   String?  @unique
+  attemptNumber   Int      @default(1)
   failureReason   String?
   paidAt          DateTime?
   createdAt       DateTime @default(now())
+
+  @@index([subscriptionId, createdAt])
 }
 
 model SubscriptionRule {
@@ -1851,4 +1889,101 @@ model SubscriptionRule {
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+// --- Subscription audit log (item 4) ---
+model SubscriptionAuditLog {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  subscription   DesignerSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  designerId     String
+  action         String   // created, plan_changed, status_changed, cancelled, paused, resumed, payment_succeeded, payment_failed, trial_granted, coupon_applied, downgraded, promoted
+  actorType      String   // designer, admin, system, webhook
+  actorId        String?
+  actorName      String?
+  fromValue      String?
+  toValue        String?
+  metadata       Json?
+  reason         String?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  @@index([subscriptionId, createdAt])
+  @@index([designerId, createdAt])
+}
+
+// --- Coupons (item 7) ---
+model Coupon {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  description      String?
+  discountType     String   @default("percent") // percent, fixed, free_months
+  discountValue    Decimal  @db.Decimal(10, 2)
+  durationMonths   Int      @default(1) // how many billing cycles the discount applies
+  maxRedemptions   Int?
+  redemptionCount  Int      @default(0)
+  validFrom        DateTime @default(now())
+  validUntil       DateTime?
+  applicablePlanIds String[] // empty = all plans
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  redemptions      CouponRedemption[]
+
+  @@index([code, isActive])
+}
+
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponId   String
+  coupon     Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  designerId String
+  redeemedAt DateTime @default(now())
+
+  @@unique([couponId, designerId])
+}
+
+// --- In-app notifications (item 13) ---
+model InAppNotification {
+  id         String   @id @default(cuid())
+  userId     String   // designer ID or admin user ID
+  userType   String   @default("designer") // designer, admin
+  type       String   // trial_ending, renewal_reminder, payment_failed, payment_success, subscription_cancelled, feature_locked, promotion_near, promotion_granted, pause_ending, downgrade_reminder
+  title      String
+  body       String
+  linkUrl    String?
+  icon       String?
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, userType, readAt])
+  @@index([userId, createdAt])
+}
+
+// --- Admin 2FA (item 18) ---
+model AdminTwoFactorCode {
+  id         String   @id @default(cuid())
+  adminEmail String
+  code       String   // hashed
+  purpose    String   // subscription_edit, plan_delete, bulk_action
+  contextId  String?  // e.g. subscription ID being edited
+  expiresAt  DateTime
+  usedAt     DateTime?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminEmail, purpose])
+  @@index([expiresAt])
+}
+
+// --- Rate limit tracking (item 15) ---
+model RateLimitEntry {
+  id        String   @id @default(cuid())
+  key       String   // e.g. "webhook:icount:<ip>" or "designer:sub:<id>"
+  count     Int      @default(1)
+  windowStart DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([key])
+  @@index([expiresAt])
 }

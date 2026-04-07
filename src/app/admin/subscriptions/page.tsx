@@ -248,9 +248,35 @@ export default function SubscriptionsAdminPage() {
           </div>
         </div>
 
+        {/* Top nav cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+          <a
+            href="#plans"
+            className="block bg-[#0e0e0e] border border-[#C9A84C]/40 rounded-xl p-4 hover:bg-[#C9A84C]/10 transition"
+          >
+            <div className="text-[#C9A84C] font-bold">מנויים</div>
+            <div className="text-white/60 text-xs mt-1">תוכניות, מעצבות, חוקים</div>
+          </a>
+          <a
+            href="/admin/coupons"
+            className="block bg-[#0e0e0e] border border-white/10 rounded-xl p-4 hover:bg-[#C9A84C]/10 hover:border-[#C9A84C]/40 transition"
+          >
+            <div className="text-[#C9A84C] font-bold">קופונים</div>
+            <div className="text-white/60 text-xs mt-1">ניהול קופוני הנחה</div>
+          </a>
+          <a
+            href="/admin/subscriptions/analytics"
+            className="block bg-[#0e0e0e] border border-white/10 rounded-xl p-4 hover:bg-[#C9A84C]/10 hover:border-[#C9A84C]/40 transition"
+          >
+            <div className="text-[#C9A84C] font-bold">דשבורד הכנסות</div>
+            <div className="text-white/60 text-xs mt-1">נתוני MRR והכנסות</div>
+          </a>
+        </div>
+
         {loading && <p className="text-white/60 mb-4">טוען...</p>}
 
         {/* Section 1 — Plans */}
+        <div id="plans" />
         <section className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-[#C9A84C]">תוכניות מנוי</h2>

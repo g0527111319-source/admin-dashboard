@@ -13,6 +13,8 @@ import {
   Receipt,
   AlertCircle,
 } from "lucide-react";
+import PlanComparisonTable from "@/components/subscription/PlanComparisonTable";
+import SavingsBadge from "@/components/subscription/SavingsBadge";
 
 type Plan = {
   id: string;
@@ -42,6 +44,9 @@ type Subscription = {
   icountSubscriptionId: string | null;
   lastPaymentAt: string | null;
   lastPaymentAmount: string | number | null;
+  supplierCooperationCount?: number | null;
+  supplierCooperationNeeded?: number | null;
+  discountSavings?: number | null;
 } | null;
 
 type Payment = {
@@ -199,9 +204,6 @@ export default function DesignerSubscriptionPage() {
         )
       : 0;
 
-  // Identify "recommended" plan — the first active paid plan with slug 'pro'
-  const recommendedPlanId = plans.find((p) => p.slug === "pro")?.id;
-
   if (loading) {
     return (
       <div dir="rtl" className="min-h-screen bg-[#0f0f1e] text-white flex items-center justify-center">
@@ -233,6 +235,18 @@ export default function DesignerSubscriptionPage() {
             <p className="text-red-300 text-sm">{error}</p>
           </div>
         )}
+
+        {subscription &&
+          (subscription.supplierCooperationCount ?? 0) > 0 && (
+            <div className="mb-6">
+              <SavingsBadge
+                supplierCount={subscription.supplierCooperationCount ?? 0}
+                needed={subscription.supplierCooperationNeeded ?? 5}
+                savedAmount={Number(subscription.discountSavings ?? 0)}
+                planName={subscription.plan.name}
+              />
+            </div>
+          )}
 
         {/* ==================== Current Plan Card ==================== */}
         <section className="mb-10">
@@ -319,69 +333,12 @@ export default function DesignerSubscriptionPage() {
         {/* ==================== Available Plans ==================== */}
         <section className="mb-10">
           <h2 className="text-xl text-[#C9A84C] mb-4">תוכניות זמינות</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {plans.map((plan) => {
-              const isCurrent = subscription?.planId === plan.id;
-              const isRecommended = plan.id === recommendedPlanId;
-              return (
-                <div
-                  key={plan.id}
-                  className={`relative bg-[#1a1a2e] border rounded-2xl p-6 flex flex-col ${
-                    isCurrent
-                      ? "border-[#C9A84C] shadow-lg shadow-[#C9A84C]/20"
-                      : "border-white/10"
-                  }`}
-                >
-                  {isRecommended && !isCurrent && (
-                    <span className="absolute -top-3 right-4 bg-[#C9A84C] text-black text-xs font-bold px-3 py-1 rounded-full">
-                      מומלץ
-                    </span>
-                  )}
-                  {isCurrent && (
-                    <span className="absolute -top-3 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      תוכנית נוכחית
-                    </span>
-                  )}
-                  <h3 className="text-xl font-bold text-white mb-1">{plan.name}</h3>
-                  <p className="text-white/50 text-xs mb-4 min-h-[2.5rem]">
-                    {plan.description || ""}
-                  </p>
-                  <p className="text-3xl font-bold text-[#C9A84C] mb-4">
-                    {formatPrice(plan.price, plan.currency)}
-                    <span className="text-xs text-white/50 font-normal mr-1">/ חודש</span>
-                  </p>
-                  <ul className="space-y-2 mb-6 flex-1">
-                    {Object.entries(plan.features || {}).map(([key, enabled]) => (
-                      <li
-                        key={key}
-                        className={`flex items-center gap-2 text-sm ${
-                          enabled ? "text-white/80" : "text-white/30 line-through"
-                        }`}
-                      >
-                        {enabled ? (
-                          <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
-                        ) : (
-                          <X className="w-4 h-4 text-white/30 flex-shrink-0" />
-                        )}
-                        {FEATURE_LABELS[key] || key}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={actionLoading || isCurrent}
-                    className={`w-full py-3 rounded-xl font-semibold transition-colors ${
-                      isCurrent
-                        ? "bg-white/5 text-white/40 cursor-not-allowed"
-                        : "bg-[#C9A84C] text-black hover:bg-[#e0c068]"
-                    }`}
-                  >
-                    {isCurrent ? "התוכנית שלך" : "בחרי תוכנית"}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          <PlanComparisonTable
+            plans={plans}
+            currentPlanId={subscription?.planId}
+            highlightedPlanSlug="pro"
+            onSelect={(planId) => handleSubscribe(planId)}
+          />
         </section>
 
         {/* ==================== Payment Method ==================== */}

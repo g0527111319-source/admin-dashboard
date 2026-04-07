@@ -2,10 +2,17 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyWebhookSignature } from "@/lib/icount";
+import { handlePaymentSuccess, handlePaymentFailure } from "@/lib/subscription-dunning";
+import { logSubscriptionAudit } from "@/lib/subscription-audit";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { sendEmail, subscriptionCancelledEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 
 type IcountWebhookEvent = {
   event?: string;
   type?: string;
+  event_id?: string;
+  id?: string;
   subscription_id?: string;
   client_id?: string;
   doc_id?: string;
@@ -17,9 +24,16 @@ type IcountWebhookEvent = {
   paid_at?: string;
 };
 
-// POST /api/webhooks/icount
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate limit (item 15) — 60 requests/min per IP
+    const ip = getClientIp(req);
+    const rl = await rateLimit(`webhook:icount:${ip}`, 60, 60);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: "rate limited" }, { status: 429 });
+    }
+
+    // 2. Verify signature
     const rawBody = await req.text();
     const signature =
       req.headers.get("x-icount-signature") ||
@@ -38,17 +52,31 @@ export async function POST(req: NextRequest) {
     }
 
     const eventType = (event.event || event.type || "").toLowerCase();
+    const eventId = event.event_id || event.id || null;
+
+    // 3. Idempotency check (item 2)
+    if (eventId) {
+      const existing = await prisma.subscriptionPayment.findUnique({
+        where: { icountEventId: eventId },
+      });
+      if (existing) {
+        console.log("[iCount webhook] duplicate event", eventId);
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+    }
+
     const subscriptionId = event.subscription_id || null;
     const clientId = event.client_id || null;
 
-    // Find subscription by icount ids
     const subscription = subscriptionId
       ? await prisma.designerSubscription.findFirst({
           where: { icountSubscriptionId: subscriptionId },
+          include: { designer: true },
         })
       : clientId
       ? await prisma.designerSubscription.findFirst({
           where: { icountCustomerId: clientId },
+          include: { designer: true },
         })
       : null;
 
@@ -62,73 +90,63 @@ export async function POST(req: NextRequest) {
     }
 
     const amount = event.amount ? Number(event.amount) : 0;
-    const currency = event.currency || "ILS";
 
     switch (eventType) {
       case "payment.succeeded":
       case "payment_success":
-      case "invoice.paid": {
-        const now = new Date();
-        const nextPeriodEnd = new Date(now);
-        nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1);
-
-        await prisma.subscriptionPayment.create({
-          data: {
-            subscriptionId: subscription.id,
-            amount,
-            currency,
-            status: "succeeded",
-            paymentMethod: event.payment_method || null,
-            icountInvoiceId: event.doc_id || null,
-            icountReceiptId: event.receipt_id || null,
-            paidAt: event.paid_at ? new Date(event.paid_at) : now,
-          },
-        });
-
-        await prisma.designerSubscription.update({
-          where: { id: subscription.id },
-          data: {
-            status: "active",
-            lastPaymentAt: now,
-            lastPaymentAmount: amount,
-            currentPeriodStart: now,
-            currentPeriodEnd: nextPeriodEnd,
-          },
-        });
+      case "invoice.paid":
+        await handlePaymentSuccess(
+          subscription.id,
+          amount,
+          event.doc_id || undefined,
+          event.receipt_id || undefined,
+          eventId || undefined
+        );
         break;
-      }
 
       case "payment.failed":
-      case "payment_failed": {
-        await prisma.subscriptionPayment.create({
-          data: {
-            subscriptionId: subscription.id,
-            amount,
-            currency,
-            status: "failed",
-            paymentMethod: event.payment_method || null,
-            failureReason: event.failure_reason || null,
-          },
-        });
-
-        await prisma.designerSubscription.update({
-          where: { id: subscription.id },
-          data: { status: "past_due" },
-        });
+      case "payment_failed":
+        await handlePaymentFailure(
+          subscription.id,
+          event.failure_reason || "Unknown",
+          eventId || undefined
+        );
         break;
-      }
 
       case "subscription.cancelled":
       case "subscription_cancelled":
       case "subscription.canceled": {
+        const now = new Date();
+        const readOnlyUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         await prisma.designerSubscription.update({
           where: { id: subscription.id },
           data: {
-            status: "cancelled",
-            cancelledAt: new Date(),
+            status: "read_only",
+            cancelledAt: now,
             autoRenew: false,
+            recurringEnabled: false,
+            readOnlyUntil,
           },
         });
+        await logSubscriptionAudit({
+          subscriptionId: subscription.id,
+          designerId: subscription.designerId,
+          action: "cancelled",
+          actorType: "webhook",
+          reason: "Cancelled at iCount",
+          metadata: { eventId },
+        });
+        await createNotification({
+          userId: subscription.designerId,
+          type: "subscription_cancelled",
+          title: "המנוי שלך בוטל",
+          body: `יש לך ${30} ימים להוריד את המידע שלך.`,
+          linkUrl: `/designer/${subscription.designerId}/subscription`,
+        });
+        if (subscription.designer.email) {
+          const em = subscriptionCancelledEmail(subscription.designer.fullName, now, readOnlyUntil);
+          await sendEmail({ to: subscription.designer.email, subject: em.subject, html: em.html });
+        }
         break;
       }
 

@@ -948,7 +948,7 @@ export default function DesignerDashboard() {
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmOnboarding /></FeatureGate>
             )}
             {activeTab === "style-quiz" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmStyleQuiz /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmStyleQuiz designerId={designerIdForGate || ""} /></FeatureGate>
             )}
             {activeTab === "chat" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmChat /></FeatureGate>
