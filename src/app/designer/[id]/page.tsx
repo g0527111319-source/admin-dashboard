@@ -32,6 +32,7 @@ import PushNotificationManager from "@/components/PushNotificationManager";
 import CrmKanban from "@/components/crm/CrmKanban";
 import CrmPortfolio from "@/components/crm/CrmPortfolio";
 import FeatureGate from "@/components/FeatureGate";
+import NotificationBell from "@/components/NotificationBell";
 import { useParams } from "next/navigation";
 
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
@@ -316,11 +317,14 @@ export default function DesignerDashboard() {
                 className="search-global"
               />
             </div>
-            {/* Notification Bell */}
-            <button className="relative p-2 rounded-lg hover:bg-bg-surface transition-colors text-text-muted hover:text-text-primary">
-              <Bell className="w-5 h-5" />
-              <span className="notification-dot-gold" />
-            </button>
+            {/* Notification Bell — מתחבר ל־/api/notifications, polling כל 60 שניות */}
+            {designerIdForGate ? (
+              <NotificationBell userId={designerIdForGate} userType="designer" />
+            ) : (
+              <button className="relative p-2 rounded-lg hover:bg-bg-surface transition-colors text-text-muted hover:text-text-primary" aria-label="התראות">
+                <Bell className="w-5 h-5" />
+              </button>
+            )}
             {/* User Badge */}
             <div className="hidden sm:flex items-center gap-2 text-xs text-text-muted bg-bg-surface/80 rounded-xl px-3 py-2 backdrop-blur-sm">
               {designerData.designerLogo ? (
