@@ -40,6 +40,9 @@ const API_PUBLIC_PATHS = [
   "/api/auth/google",
   "/api/auth/google/callback",
   "/api/suppliers", // GET only — public directory
+  "/api/admin/migrate-subscriptions", // Header-secret protected, one-time DDL
+  "/api/admin/2fa/request",  // Pre-login admin 2FA flow
+  "/api/admin/2fa/verify",   // Pre-login admin 2FA flow
 ];
 
 // Prefix-based public paths (starts with)
@@ -49,6 +52,7 @@ const API_PUBLIC_PREFIXES = [
   "/api/public/",        // Public API endpoints (projects gallery, etc.)
   "/api/image-proxy",    // Image proxy — public, fetches images server-side
   "/api/whatsapp/webhook", // WhatsApp bot webhook — Green API sends here
+  "/api/webhooks/",      // Third-party webhooks (iCount, etc.) — own HMAC verification
 ];
 
 async function verifyTokenMiddleware(token: string) {
