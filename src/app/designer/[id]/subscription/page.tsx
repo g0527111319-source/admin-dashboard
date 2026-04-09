@@ -153,24 +153,41 @@ export default function DesignerSubscriptionPage() {
     setActionLoading(true);
     setError(null);
     try {
-      // If the designer already has a subscription → use change-plan (with proration)
-      // Otherwise → use the initial subscribe route
-      const hasExisting = subscription && subscription.status !== "cancelled";
-      const url = hasExisting
-        ? `/api/designer/subscription/change-plan`
-        : `/api/designer/subscription`;
-      const payload = hasExisting
-        ? { designerId, newPlanId: planId }
-        : { planId, designerId };
+      const headers: HeadersInit = { "Content-Type": "application/json", "x-user-id": designerId };
+      let res: Response;
+      let d: Record<string, unknown>;
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-id": designerId },
-        body: JSON.stringify(payload),
-      });
-      const d = await res.json().catch(() => ({}));
+      // If designer has existing active subscription → try change-plan (proration)
+      const hasExisting = subscription && subscription.status !== "cancelled";
+      if (hasExisting) {
+        res = await fetch(`/api/designer/subscription/change-plan`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ designerId, newPlanId: planId }),
+        });
+        d = await res.json().catch(() => ({}));
+
+        // If change-plan says "no subscription found" → fall back to initial subscribe
+        if (res.status === 404) {
+          res = await fetch(`/api/designer/subscription`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ planId, designerId }),
+          });
+          d = await res.json().catch(() => ({}));
+        }
+      } else {
+        // No existing subscription → initial subscribe
+        res = await fetch(`/api/designer/subscription`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ planId, designerId }),
+        });
+        d = await res.json().catch(() => ({}));
+      }
+
       if (!res.ok) {
-        throw new Error(d.error || "שגיאה בשינוי המנוי");
+        throw new Error((d.error as string) || "שגיאה בשינוי המנוי");
       }
       await loadData();
     } catch (e) {
