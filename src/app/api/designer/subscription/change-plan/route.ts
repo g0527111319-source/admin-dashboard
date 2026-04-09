@@ -21,11 +21,15 @@ import { createInvoice, createCustomer } from "@/lib/icount";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { designerId, newPlanId, couponCode } = body as {
+    const { designerId, newPlanId, couponCode, paymentMethod } = body as {
       designerId?: string;
       newPlanId?: string;
       couponCode?: string;
+      paymentMethod?: string;
     };
+
+    // If payment was already completed via iCount PayPage, skip charging again
+    const paidViaPayPage = paymentMethod === "paypage";
 
     if (!designerId || !newPlanId) {
       return NextResponse.json(
@@ -146,7 +150,8 @@ export async function POST(req: NextRequest) {
       );
 
       // --- Payment-first: charge BEFORE switching the plan ---
-      if (proration.netDueNow > 0) {
+      // Skip if payment was already completed via iCount PayPage
+      if (proration.netDueNow > 0 && !paidViaPayPage) {
         // Ensure iCount customer exists — create one if missing
         let customerId = subscription.icountCustomerId;
         if (!customerId && designer) {

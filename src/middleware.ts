@@ -111,9 +111,10 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // Page routes redirect to login
+    // Page routes redirect to login — preserve full path + query params
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    const fullPath = pathname + (request.nextUrl.search || "");
+    loginUrl.searchParams.set("redirect", fullPath);
     return NextResponse.redirect(loginUrl);
   }
 

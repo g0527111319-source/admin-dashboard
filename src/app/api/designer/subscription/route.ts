@@ -49,10 +49,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId } = body as { planId?: string };
+    const { planId, paymentMethod } = body as { planId?: string; paymentMethod?: string };
     if (!planId) {
       return NextResponse.json({ error: "חסר מזהה תוכנית" }, { status: 400 });
     }
+
+    // If payment was already completed via iCount PayPage, skip charging again
+    const paidViaPayPage = paymentMethod === "paypage";
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
     if (!plan || !plan.isActive) {
@@ -103,8 +106,9 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Payment-first: for paid plans, charge BEFORE activating ---
+    // Skip if payment was already completed via iCount PayPage
     const now = new Date();
-    if (price > 0) {
+    if (price > 0 && !paidViaPayPage) {
       if (!icountCustomerId) {
         return NextResponse.json(
           { error: "לא הוגדר אמצעי תשלום — יש לעדכן פרטי כרטיס אשראי" },
@@ -150,6 +154,8 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+    } else if (price > 0 && paidViaPayPage) {
+      console.log("[subscription] Skipping charge — payment already completed via PayPage");
     }
 
     const nextPeriodEnd = new Date(now);

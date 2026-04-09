@@ -165,7 +165,8 @@ export default function DesignerSubscriptionPage() {
     const paymentStatus = searchParams?.get("payment");
     const planId = searchParams?.get("planId");
     if (paymentStatus === "callback" && planId && designerId) {
-      handleSubscribe(planId);
+      // Payment was already completed on iCount PayPage — skip re-charging
+      handleSubscribe(planId, "paypage");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -252,7 +253,7 @@ export default function DesignerSubscriptionPage() {
     }
   }
 
-  async function handleSubscribe(planId: string) {
+  async function handleSubscribe(planId: string, paymentMethod?: string) {
     setActionLoading(true);
     setError(null);
     try {
@@ -265,7 +266,7 @@ export default function DesignerSubscriptionPage() {
         res = await fetch(`/api/designer/subscription/change-plan`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ designerId, newPlanId: planId }),
+          body: JSON.stringify({ designerId, newPlanId: planId, paymentMethod }),
         });
         d = await res.json().catch(() => ({}));
 
@@ -273,7 +274,7 @@ export default function DesignerSubscriptionPage() {
           res = await fetch(`/api/designer/subscription`, {
             method: "POST",
             headers,
-            body: JSON.stringify({ planId, designerId }),
+            body: JSON.stringify({ planId, designerId, paymentMethod }),
           });
           d = await res.json().catch(() => ({}));
         }
@@ -281,7 +282,7 @@ export default function DesignerSubscriptionPage() {
         res = await fetch(`/api/designer/subscription`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ planId, designerId }),
+          body: JSON.stringify({ planId, designerId, paymentMethod }),
         });
         d = await res.json().catch(() => ({}));
       }
