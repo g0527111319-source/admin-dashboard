@@ -16,6 +16,7 @@ type Props = {
   currentPlanId?: string;
   highlightedPlanSlug?: string;
   onSelect?: (planId: string) => void;
+  loading?: boolean;
 };
 
 const GOLD = "#C9A84C";
@@ -47,6 +48,7 @@ export default function PlanComparisonTable({
   currentPlanId,
   highlightedPlanSlug,
   onSelect,
+  loading = false,
 }: Props) {
   const visiblePlans = useMemo(() => plans.slice(0, 4), [plans]);
 
@@ -231,7 +233,7 @@ export default function PlanComparisonTable({
 
               <button
                 onClick={() => onSelect?.(plan.id)}
-                disabled={isCurrent}
+                disabled={isCurrent || loading}
                 className={isCurrent ? "" : "pct-btn"}
                 style={{
                   width: "100%",
@@ -240,18 +242,21 @@ export default function PlanComparisonTable({
                   border: "none",
                   fontWeight: 700,
                   fontSize: 14,
-                  cursor: isCurrent ? "not-allowed" : "pointer",
+                  cursor: isCurrent || loading ? "not-allowed" : "pointer",
+                  opacity: loading && !isCurrent ? 0.7 : 1,
                   background: isCurrent
                     ? "rgba(255,255,255,0.05)"
                     : isHighlighted
                     ? GOLD
                     : GOLD,
                   color: isCurrent ? "rgba(255,255,255,0.4)" : "#000",
-                  transition: "background 0.2s",
+                  transition: "background 0.2s, opacity 0.2s",
                 }}
               >
                 {isCurrent
                   ? "תוכנית נוכחית"
+                  : loading
+                  ? "מעבד..."
                   : isHighlighted
                   ? "שדרגי"
                   : "בחרי תוכנית"}

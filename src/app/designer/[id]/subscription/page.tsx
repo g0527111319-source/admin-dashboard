@@ -343,11 +343,20 @@ export default function DesignerSubscriptionPage() {
         {/* ==================== Available Plans ==================== */}
         <section className="mb-10">
           <h2 className="text-xl text-[#C9A84C] mb-4">תוכניות זמינות</h2>
+
+          {error && (
+            <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <p className="text-red-300 text-sm">{error}</p>
+            </div>
+          )}
+
           <PlanComparisonTable
             plans={plans}
             currentPlanId={subscription?.planId}
             highlightedPlanSlug="pro"
             onSelect={(planId) => handleSubscribe(planId)}
+            loading={actionLoading}
           />
         </section>
 

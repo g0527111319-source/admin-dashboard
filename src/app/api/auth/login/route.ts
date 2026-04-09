@@ -105,14 +105,14 @@ export async function POST(req: NextRequest) {
             }).catch(err => console.error("[login] lastLoginAt update failed:", err));
         }
 
-        // redirect URL based on role
+        // redirect URL based on role — use actual user ID
         let redirectUrl = "/";
         if (result.session.role === "admin")
             redirectUrl = "/admin";
         else if (result.session.role === "supplier")
-            redirectUrl = "/supplier/demo";
+            redirectUrl = `/supplier/${result.session.userId}`;
         else if (result.session.role === "designer")
-            redirectUrl = "/designer/demo";
+            redirectUrl = `/designer/${result.session.userId}`;
         return NextResponse.json({
             success: true,
             user: {
