@@ -86,6 +86,18 @@ export async function POST(req: NextRequest) {
           autoRenew: autoRenew ?? true,
           cancelledAt: null,
           cancelReason: null,
+          // Clear any scheduled downgrade / paused state
+          scheduledDowngradeAt: null,
+          scheduledDowngradePlanId: null,
+          pausedAt: null,
+          pauseEndsAt: null,
+          pauseReason: null,
+          // Reset dunning state
+          failedPaymentCount: 0,
+          lastFailedPaymentAt: null,
+          gracePeriodEndsAt: null,
+          nextRetryAt: null,
+          readOnlyUntil: null,
         },
         include: { plan: true },
       });

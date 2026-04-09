@@ -16,7 +16,7 @@ import { calculateProration, prorationDescription } from "@/lib/subscription-pro
 import { validateCoupon, redeemCoupon } from "@/lib/coupons";
 import { createNotification } from "@/lib/notifications";
 import { sendEmail, subscriptionPausedEmail } from "@/lib/email";
-import { createInvoice } from "@/lib/icount";
+import { createInvoice, createCustomer } from "@/lib/icount";
 
 export async function POST(req: NextRequest) {
   try {
@@ -77,11 +77,66 @@ export async function POST(req: NextRequest) {
 
     const designer = await prisma.designer.findUnique({
       where: { id: designerId },
-      select: { fullName: true, email: true },
+      select: { fullName: true, email: true, phone: true },
     });
 
+    // ═══════════════════════════════════════════════════════
+    // FLOW 1: Switch to FREE plan → immediate, no payment
+    // ═══════════════════════════════════════════════════════
+    if (newPrice === 0) {
+      const periodEnd = new Date(now);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+      const updated = await prisma.designerSubscription.update({
+        where: { id: subscription.id },
+        data: {
+          planId: newPlan.id,
+          status: "active",
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          scheduledDowngradeAt: null,
+          scheduledDowngradePlanId: null,
+        },
+        include: { plan: true },
+      });
+
+      if (couponInfo) {
+        await redeemCoupon(couponInfo.couponId, designerId, subscription.id);
+      }
+
+      await logSubscriptionAudit({
+        subscriptionId: subscription.id,
+        designerId,
+        action: "plan_changed",
+        actorType: "designer",
+        fromValue: subscription.plan.name,
+        toValue: newPlan.name,
+        metadata: { immediate: true, couponApplied: couponInfo?.couponId || null },
+        reason: "Switched to free plan",
+      });
+
+      const message = `עברת לתוכנית ${newPlan.name}. השדרוג לתוכנית בתשלום זמין בכל עת.`;
+
+      await createNotification({
+        userId: designerId,
+        type: "payment_success",
+        title: "התוכנית שונתה",
+        body: message,
+        linkUrl: "/designer",
+      });
+
+      return NextResponse.json({
+        success: true,
+        type: "switch_to_free",
+        message,
+        subscription: updated,
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // FLOW 2: UPGRADE to more expensive plan → charge first
+    // ═══════════════════════════════════════════════════════
     if (isUpgrade) {
-      // Calculate proration on the upgrade
       const proration = calculateProration(
         currentPrice,
         newPrice,
@@ -92,8 +147,28 @@ export async function POST(req: NextRequest) {
 
       // --- Payment-first: charge BEFORE switching the plan ---
       if (proration.netDueNow > 0) {
-        // Verify designer has an iCount customer for charging
-        if (!subscription.icountCustomerId) {
+        // Ensure iCount customer exists — create one if missing
+        let customerId = subscription.icountCustomerId;
+        if (!customerId && designer) {
+          try {
+            const cust = await createCustomer({
+              name: designer.fullName || designer.email || "Designer",
+              email: designer.email || "",
+              phone: designer.phone || undefined,
+            });
+            customerId = (cust as { client_id?: string }).client_id || null;
+            if (customerId) {
+              await prisma.designerSubscription.update({
+                where: { id: subscription.id },
+                data: { icountCustomerId: customerId },
+              });
+            }
+          } catch (err) {
+            console.error("[change-plan] iCount create customer error:", err);
+          }
+        }
+
+        if (!customerId) {
           return NextResponse.json(
             { error: "לא הוגדר אמצעי תשלום — יש לעדכן פרטי כרטיס אשראי לפני שדרוג" },
             { status: 400 }
@@ -104,14 +179,13 @@ export async function POST(req: NextRequest) {
         let invoiceResult: { status?: boolean; doc_id?: string; receipt_id?: string; doc_number?: string };
         try {
           invoiceResult = await createInvoice({
-            customerId: subscription.icountCustomerId,
+            customerId,
             amount: proration.netDueNow,
             description: `שדרוג מנוי מ-${subscription.plan.name} ל-${newPlan.name} (חיוב יחסי)`,
             currency: newPlan.currency,
           }) as typeof invoiceResult;
         } catch (err) {
           console.error("[change-plan] iCount invoice error:", err);
-          // Record failed payment
           await prisma.subscriptionPayment.create({
             data: {
               subscriptionId: subscription.id,
@@ -129,7 +203,6 @@ export async function POST(req: NextRequest) {
         }
 
         if (!invoiceResult.status) {
-          // Charge was rejected by iCount
           await prisma.subscriptionPayment.create({
             data: {
               subscriptionId: subscription.id,
@@ -166,9 +239,12 @@ export async function POST(req: NextRequest) {
         where: { id: subscription.id },
         data: {
           planId: newPlan.id,
+          status: "active",
           currentPeriodStart: now,
           lastPaymentAt: proration.netDueNow > 0 ? now : undefined,
           lastPaymentAmount: proration.netDueNow > 0 ? proration.netDueNow : undefined,
+          scheduledDowngradeAt: null,
+          scheduledDowngradePlanId: null,
         },
         include: { plan: true },
       });
@@ -223,7 +299,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Downgrade — schedule for end of period
+    // ═══════════════════════════════════════════════════════
+    // FLOW 3: DOWNGRADE to cheaper paid plan → schedule
+    // ═══════════════════════════════════════════════════════
     const updated = await prisma.designerSubscription.update({
       where: { id: subscription.id },
       data: {
@@ -266,7 +344,6 @@ export async function POST(req: NextRequest) {
         designer.fullName || "",
         subscription.currentPeriodEnd
       );
-      // reuse the simple paused-style template wrapper, but with a downgrade subject
       await sendEmail({
         to: designer.email,
         subject: `שינמוך תוכנית מתוזמן ל־${subscription.currentPeriodEnd.toLocaleDateString("he-IL")}`,
