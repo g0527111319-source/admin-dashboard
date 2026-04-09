@@ -80,7 +80,7 @@ model Designer {
   yearsAsIndependent   Int?     // שנות וותק כעצמאית
 
   // סטטוס אישור (רשימת המתנה)
-  approvalStatus       ApprovalStatus @default(APPROVED) // מאושרת / ממתינה / נדחתה
+  approvalStatus       ApprovalStatus @default(PENDING) // ממתינה / מאושרת / נדחתה
 
   joinDate             DateTime @default(now())
 

@@ -310,17 +310,58 @@ export async function registerDesigner(data: {
   specialization?: string;
   employmentType?: "FREELANCE" | "SALARIED";
   yearsAsIndependent?: number;
-}): Promise<{ success: boolean; designerId?: string; error?: string }> {
+}): Promise<{ success: boolean; designerId?: string; status?: string; error?: string }> {
+  const passwordHash = await hashPassword(data.password);
+  const loginToken = crypto.randomUUID();
+
   // בדיקה אם האימייל כבר קיים
   const existing = await prisma.designer.findFirst({
     where: { email: data.email },
   });
-  if (existing) {
-    return { success: false, error: "כתובת אימייל כבר רשומה במערכת" };
-  }
 
-  const passwordHash = await hashPassword(data.password);
-  const loginToken = crypto.randomUUID();
+  if (existing) {
+    // כבר ממתינה לאישור
+    if (existing.approvalStatus === "PENDING") {
+      return { success: true, designerId: existing.id, status: "already_pending" };
+    }
+    // נדחתה — מאפשרים הגשה מחדש
+    if (existing.approvalStatus === "REJECTED") {
+      const updated = await prisma.designer.update({
+        where: { id: existing.id },
+        data: {
+          fullName: data.fullName,
+          phone: data.phone,
+          city: data.city || null,
+          specialization: data.specialization || null,
+          employmentType: data.employmentType || "FREELANCE",
+          yearsAsIndependent: data.yearsAsIndependent ?? null,
+          approvalStatus: "PENDING",
+          passwordHash,
+          loginToken,
+        },
+      });
+      return { success: true, designerId: updated.id, status: "reapplied" };
+    }
+    // כבר אושרה — רשומה קיימת שהייתה APPROVED אוטומטית (לפני התיקון)
+    // מאפסים ל-PENDING כדי שתעבור אישור מנהלת
+    if (existing.approvalStatus === "APPROVED") {
+      const updated = await prisma.designer.update({
+        where: { id: existing.id },
+        data: {
+          fullName: data.fullName,
+          phone: data.phone,
+          city: data.city || null,
+          specialization: data.specialization || null,
+          employmentType: data.employmentType || "FREELANCE",
+          yearsAsIndependent: data.yearsAsIndependent ?? null,
+          approvalStatus: "PENDING",
+          passwordHash,
+          loginToken,
+        },
+      });
+      return { success: true, designerId: updated.id, status: "pending" };
+    }
+  }
 
   const designer = await prisma.designer.create({
     data: {
@@ -337,7 +378,7 @@ export async function registerDesigner(data: {
     },
   });
 
-  return { success: true, designerId: designer.id };
+  return { success: true, designerId: designer.id, status: "pending" };
 }
 
 // ==========================================

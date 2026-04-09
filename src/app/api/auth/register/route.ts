@@ -39,10 +39,16 @@ export async function POST(req: NextRequest) {
         }
 
         // לא עושים כניסה אוטומטית — ממתינה לאישור מנהלת
+        const messages: Record<string, string> = {
+            pending: "הבקשה נשלחה בהצלחה! מנהלת הקהילה תאשר את הבקשה בהקדם.",
+            already_pending: "הבקשה שלך כבר בטיפול. מנהלת הקהילה תאשר בהקדם.",
+            reapplied: "הבקשה נשלחה מחדש! מנהלת הקהילה תבדוק שוב בהקדם.",
+        };
+
         return NextResponse.json({
             success: true,
-            status: "pending",
-            message: "הבקשה נשלחה בהצלחה! מנהלת הקהילה תאשר את הבקשה בהקדם.",
+            status: result.status || "pending",
+            message: messages[result.status || "pending"] || messages.pending,
         }, { status: 201 });
     }
     catch (error) {
