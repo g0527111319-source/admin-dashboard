@@ -245,10 +245,18 @@ export async function loginWithEmail(
       );
 
       if (designer) {
-        if (!designer.passwordHash) return { success: false, error: "?? ?????? ?????. ?????/? ?????? ?????." };
+        if (!designer.passwordHash) return { success: false, error: "לא הוגדרה סיסמה. יש ליצור סיסמה חדשה." };
 
         const isValid = await verifyPassword(password, designer.passwordHash);
-        if (!isValid) return { success: false, error: "????? ?????" };
+        if (!isValid) return { success: false, error: "פרטי כניסה שגויים" };
+
+        // בדיקת סטטוס אישור — רשימת המתנה
+        if (designer.approvalStatus === "PENDING") {
+          return { success: false, error: "הבקשה שלך עדיין ממתינה לאישור מנהלת הקהילה. נעדכן אותך ברגע שתאושר!" };
+        }
+        if (designer.approvalStatus === "REJECTED") {
+          return { success: false, error: "הבקשה שלך נדחתה. ניתן לפנות למנהלת הקהילה לפרטים נוספים." };
+        }
 
         return {
           success: true,
@@ -292,7 +300,7 @@ export async function getDesigner(token: string) {
 // רישום — Registration
 // ==========================================
 
-/** רישום מעצבת חדשה */
+/** רישום מעצבת חדשה — סטטוס PENDING עד אישור מנהלת */
 export async function registerDesigner(data: {
   fullName: string;
   email: string;
@@ -300,6 +308,8 @@ export async function registerDesigner(data: {
   password: string;
   city?: string;
   specialization?: string;
+  employmentType?: "FREELANCE" | "SALARIED";
+  yearsAsIndependent?: number;
 }): Promise<{ success: boolean; designerId?: string; error?: string }> {
   // בדיקה אם האימייל כבר קיים
   const existing = await prisma.designer.findFirst({
@@ -319,6 +329,9 @@ export async function registerDesigner(data: {
       phone: data.phone,
       city: data.city || null,
       specialization: data.specialization || null,
+      employmentType: data.employmentType || "FREELANCE",
+      yearsAsIndependent: data.yearsAsIndependent ?? null,
+      approvalStatus: "PENDING",
       passwordHash,
       loginToken,
     },

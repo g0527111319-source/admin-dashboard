@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import KPICard from "@/components/ui/KPICard";
 import dynamic from "next/dynamic";
 const RevenueBarChart = dynamic(() => import("@/components/charts/LuxuryCharts").then((mod) => mod.RevenueBarChart), { ssr: false, loading: () => <div className="h-[280px] flex items-center justify-center text-text-muted">טוען גרף...</div> });
@@ -223,9 +223,39 @@ export default function AdminDashboard() {
     newDesignersThisMonth: 38,
   });
 
-  const [alerts] = useState<Alert[]>(demoAlerts);
+  const [alerts, setAlerts] = useState<Alert[]>(demoAlerts);
   const [snoozed, setSnoozed] = useState<Set<string>>(new Set());
   const [handled, setHandled] = useState<Set<string>>(new Set());
+  const [pendingWaitlistCount, setPendingWaitlistCount] = useState(0);
+
+  // Fetch real pending waitlist count
+  useEffect(() => {
+    fetch("/api/admin/waitlist?status=PENDING")
+      .then((r) => r.json())
+      .then((data) => {
+        const count = data.designers?.length || 0;
+        setPendingWaitlistCount(count);
+        if (count > 0) {
+          // Replace the demo "new_designer" alert with real data
+          setAlerts((prev) => {
+            const withoutDemoDesigner = prev.filter((a) => a.type !== "new_designer");
+            return [
+              {
+                id: "real-waitlist",
+                type: "new_designer" as const,
+                title: `${count} מעצבות ממתינות לאישור`,
+                description: "יש בקשות הצטרפות חדשות ברשימת המתנה — לחצי לסקירה",
+                priority: "warning" as const,
+                time: "עכשיו",
+                link: "/admin/waitlist",
+              },
+              ...withoutDemoDesigner,
+            ];
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [alertFilter, setAlertFilter] = useState<"all" | "critical" | "warning" | "info" | "success">("all");
 
   const filteredAlerts = useMemo(() => {
