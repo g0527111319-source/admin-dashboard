@@ -301,6 +301,7 @@ export async function generatePaymentUrl(data: {
   currency: string;
   description: string;
   successUrl: string;
+  cancelUrl?: string;
   ipnUrl: string;
 }): Promise<string> {
   const cfg = await getIcountConfig();
@@ -308,13 +309,24 @@ export async function generatePaymentUrl(data: {
     return `${data.successUrl}?mock=1&token=mock-${Date.now()}`;
   }
 
+  // Split customer name into first / last for iCount
+  const nameParts = (data.customerName || "").trim().split(/\s+/);
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ") || "";
+
   const result = await icountPost(
     "/paypage/generate_sale",
     {
       paypage_id: parseInt(data.paypageId),
       lang: "he",
+      doc_type: "invrec",           // Invoice-receipt — required for payment pages
       ipn_url: data.ipnUrl,
+      success_url: data.successUrl,
+      cancel_url: data.cancelUrl || data.successUrl,
+      fail_url: data.cancelUrl || data.successUrl,
       client_name: data.customerName,
+      first_name: firstName,
+      last_name: lastName,
       email: data.email,
       phone: data.phone || "",
       currency_code: data.currency || "ILS",
@@ -326,13 +338,13 @@ export async function generatePaymentUrl(data: {
         },
       ],
       is_iframe: 0,
-      success_url: data.successUrl,
     },
     cfg
   );
 
   const saleUrl = result?.sale_url ? String(result.sale_url) : "";
   if (!saleUrl) {
+    console.error("[iCount] generate_sale response:", JSON.stringify(result));
     throw new Error("iCount לא החזיר קישור תשלום");
   }
 

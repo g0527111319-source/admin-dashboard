@@ -114,9 +114,25 @@ export async function POST(req: NextRequest) {
     }
 
     // ─── Generate unique payment URL ────────────────────
-    const baseUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL || "";
+    const baseUrl =
+      process.env.AUTH_URL ||
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "";
+
+    if (!baseUrl) {
+      console.error("[payment-url] No base URL configured (AUTH_URL / NEXTAUTH_URL / NEXT_PUBLIC_APP_URL)");
+      return NextResponse.json(
+        { error: "לא הוגדרה כתובת בסיס לאתר — יש להגדיר AUTH_URL בסביבה" },
+        { status: 500 }
+      );
+    }
+
     const successUrl = `${baseUrl}/designer/${designerId}/subscription?payment=callback&planId=${planId}`;
+    const cancelUrl = `${baseUrl}/designer/${designerId}/subscription?payment=cancelled`;
     const ipnUrl = `${baseUrl}/api/webhooks/icount`;
+
+    console.log("[payment-url] URLs:", { successUrl, cancelUrl, ipnUrl });
 
     const paymentUrl = await generatePaymentUrl({
       paypageId,
@@ -127,6 +143,7 @@ export async function POST(req: NextRequest) {
       currency: plan.currency,
       description: `מנוי ${plan.name} — זירת האדריכלות`,
       successUrl,
+      cancelUrl,
       ipnUrl,
     });
 
