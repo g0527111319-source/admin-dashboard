@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit-logger";
+import { clearIcountConfigCache } from "@/lib/icount-config";
 
 const SETTINGS_KEY = "admin_settings";
 
@@ -17,6 +18,8 @@ export interface AdminSettings {
   icount: {
     apiKey: string;
     companyId: string;
+    user: string;
+    pass: string;
   };
   security: {
     adminEmail: string;
@@ -54,6 +57,8 @@ const DEFAULT_SETTINGS: AdminSettings = {
   icount: {
     apiKey: "",
     companyId: "",
+    user: "",
+    pass: "",
   },
   security: {
     adminEmail: "tamar@zirat.co.il",
@@ -97,15 +102,19 @@ export async function GET() {
       },
     };
 
-    // Mask the API key for GET — show last 8 chars only
+    // Mask secrets for GET — show last 4 chars only
     const maskedKey = merged.icount.apiKey
-      ? "••••••••" + merged.icount.apiKey.slice(-8)
+      ? "••••••••" + merged.icount.apiKey.slice(-4)
+      : "";
+    const maskedPass = merged.icount.pass
+      ? "••••••••" + merged.icount.pass.slice(-4)
       : "";
 
     return NextResponse.json({
       ...merged,
-      icount: { ...merged.icount, apiKey: maskedKey },
+      icount: { ...merged.icount, apiKey: maskedKey, pass: maskedPass },
       _hasApiKey: !!merged.icount.apiKey,
+      _hasAllIcount: !!(merged.icount.apiKey && merged.icount.companyId && merged.icount.user && merged.icount.pass),
     });
   } catch (error) {
     console.error("[Admin Settings API] GET error:", error);
@@ -143,9 +152,12 @@ export async function PATCH(request: NextRequest) {
       },
     };
 
-    // If the client sent the masked key, keep the existing one
+    // If the client sent masked values, keep the existing ones
     if (updated.icount.apiKey && updated.icount.apiKey.startsWith("••••")) {
       updated.icount.apiKey = currentSettings.icount.apiKey;
+    }
+    if (updated.icount.pass && updated.icount.pass.startsWith("••••")) {
+      updated.icount.pass = currentSettings.icount.pass;
     }
 
     // Upsert into DB
@@ -160,6 +172,11 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
+    // Clear iCount config cache so new credentials take effect immediately
+    if (body.icount) {
+      clearIcountConfigCache();
+    }
+
     // Audit log
     const userId =
       request.headers.get("x-user-id") || "unknown";
@@ -172,17 +189,21 @@ export async function PATCH(request: NextRequest) {
       changedFields: Object.keys(body),
     }, ip);
 
-    // Mask API key in response
+    // Mask secrets in response
     const maskedKey = updated.icount.apiKey
-      ? "••••••••" + updated.icount.apiKey.slice(-8)
+      ? "••••••••" + updated.icount.apiKey.slice(-4)
+      : "";
+    const maskedPass = updated.icount.pass
+      ? "••••••••" + updated.icount.pass.slice(-4)
       : "";
 
     return NextResponse.json({
       success: true,
       settings: {
         ...updated,
-        icount: { ...updated.icount, apiKey: maskedKey },
+        icount: { ...updated.icount, apiKey: maskedKey, pass: maskedPass },
         _hasApiKey: !!updated.icount.apiKey,
+        _hasAllIcount: !!(updated.icount.apiKey && updated.icount.companyId && updated.icount.user && updated.icount.pass),
       },
     });
   } catch (error) {

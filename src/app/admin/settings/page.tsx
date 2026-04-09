@@ -134,8 +134,12 @@ export default function SettingsPage() {
   // iCount state
   const [icountApiKey, setIcountApiKey] = useState("");
   const [icountCompanyId, setIcountCompanyId] = useState("");
+  const [icountUser, setIcountUser] = useState("");
+  const [icountPass, setIcountPass] = useState("");
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [hasAllIcount, setHasAllIcount] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   // Security state
   const [adminEmail, setAdminEmail] = useState("tamar@zirat.co.il");
@@ -171,8 +175,11 @@ export default function SettingsPage() {
           if (data.icount) {
             setIcountApiKey(data.icount.apiKey || "");
             setIcountCompanyId(data.icount.companyId || "");
+            setIcountUser(data.icount.user || "");
+            setIcountPass(data.icount.pass || "");
           }
           if (data._hasApiKey) setHasApiKey(true);
+          if (data._hasAllIcount) setHasAllIcount(true);
           if (data.security?.adminEmail) setAdminEmail(data.security.adminEmail);
           if (data.permissions && Object.keys(data.permissions).length > 0) {
             setPermMatrix(data.permissions);
@@ -202,6 +209,8 @@ export default function SettingsPage() {
         icount: {
           apiKey: icountApiKey,
           companyId: icountCompanyId,
+          user: icountUser,
+          pass: icountPass,
         },
         security: {
           adminEmail,
@@ -222,7 +231,11 @@ export default function SettingsPage() {
         // Update masked key from response
         if (data.settings?.icount) {
           setIcountApiKey(data.settings.icount.apiKey || "");
+          setIcountCompanyId(data.settings.icount.companyId || "");
+          setIcountUser(data.settings.icount.user || "");
+          setIcountPass(data.settings.icount.pass || "");
           setHasApiKey(!!data.settings._hasApiKey);
+          setHasAllIcount(!!data.settings._hasAllIcount);
         }
       } else {
         setSaveStatus("error");
@@ -235,7 +248,7 @@ export default function SettingsPage() {
       setSaving(false);
       setTimeout(() => setSaveStatus("idle"), 4000);
     }
-  }, [categories, daySlots, reminderDays, icountApiKey, icountCompanyId, adminEmail, permMatrix, banners, tips]);
+  }, [categories, daySlots, reminderDays, icountApiKey, icountCompanyId, icountUser, icountPass, adminEmail, permMatrix, banners, tips]);
 
   // --- General handlers ---
   const handleAddCategory = () => {
@@ -419,19 +432,64 @@ export default function SettingsPage() {
           </div>
 
           {/* iCount */}
-          <div className="card-static">
+          <div className="card-static lg:col-span-2">
             <h2 className="text-lg font-heading text-text-primary flex items-center gap-2 mb-4">
-              <CreditCard className="w-5 h-5" />{"חיבור iCount"}
+              <CreditCard className="w-5 h-5" />{"חיבור iCount — סליקה וחשבוניות"}
             </h2>
-            <div className="space-y-3">
+            <p className="text-text-muted text-sm mb-4">
+              {"יש למלא את כל 4 השדות כדי לחבר את מערכת הסליקה. הפרטים נמצאים בהגדרות חשבון iCount שלך."}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-text-muted text-sm block mb-1">API Key</label>
+                <label className="text-text-muted text-sm block mb-1">{"מזהה חברה (Company ID)"}</label>
+                <input
+                  type="text"
+                  value={icountCompanyId}
+                  onChange={(e) => setIcountCompanyId(e.target.value)}
+                  placeholder="לדוגמה: 12345"
+                  className="input-dark w-full"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-text-muted text-sm block mb-1">{"שם משתמש iCount"}</label>
+                <input
+                  type="text"
+                  value={icountUser}
+                  onChange={(e) => setIcountUser(e.target.value)}
+                  placeholder="לדוגמה: user@company.co.il"
+                  className="input-dark w-full"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-text-muted text-sm block mb-1">{"סיסמת iCount"}</label>
+                <div className="relative">
+                  <input
+                    type={showPass ? "text" : "password"}
+                    value={icountPass}
+                    onChange={(e) => setIcountPass(e.target.value)}
+                    placeholder="סיסמת החשבון ב-iCount"
+                    className="input-dark w-full pl-10"
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-gold transition-colors"
+                  >
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-text-muted text-sm block mb-1">{"API Key / Token"}</label>
                 <div className="relative">
                   <input
                     type={showApiKey ? "text" : "password"}
                     value={icountApiKey}
                     onChange={(e) => setIcountApiKey(e.target.value)}
-                    placeholder="הזיני מפתח API של iCount"
+                    placeholder="מפתח API מתוך הגדרות iCount"
                     className="input-dark w-full pl-10"
                     dir="ltr"
                   />
@@ -444,26 +502,22 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-              <div>
-                <label className="text-text-muted text-sm block mb-1">{"מזהה חברה"}</label>
-                <input
-                  type="text"
-                  value={icountCompanyId}
-                  onChange={(e) => setIcountCompanyId(e.target.value)}
-                  placeholder="Company ID"
-                  className="input-dark w-full"
-                  dir="ltr"
-                />
-              </div>
-              {hasApiKey ? (
-                <p className="text-emerald-600 text-xs flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {"מפתח API שמור — חיבור פעיל"}
+            </div>
+            <div className="mt-4">
+              {hasAllIcount ? (
+                <p className="text-emerald-600 text-sm flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {"כל פרטי iCount מוגדרים — מערכת הסליקה מחוברת"}
+                </p>
+              ) : hasApiKey ? (
+                <p className="text-amber-500 text-sm flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {"חלק מהפרטים חסרים — מלאי את כל 4 השדות כדי להפעיל סליקה אמיתית"}
                 </p>
               ) : (
-                <p className="text-amber-500 text-xs flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  {"לא הוגדר מפתח API — הזיני מפתח ולחצי שמור"}
+                <p className="text-red-500 text-sm flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {"לא הוגדרו פרטי iCount — המערכת רצה במצב בדיקה (ללא סליקה אמיתית)"}
                 </p>
               )}
             </div>

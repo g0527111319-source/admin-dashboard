@@ -2,46 +2,57 @@
  * iCount API integration
  * https://api.icount.co.il/api/v3.php
  *
- * All functions gracefully fall back to mock mode when env vars are missing.
- * Required env vars:
- *   ICOUNT_COMPANY_ID
- *   ICOUNT_USER
- *   ICOUNT_PASS
- *   ICOUNT_API_KEY (optional — presence toggles live vs mock mode)
- *   ICOUNT_WEBHOOK_SECRET (optional — used for webhook signature validation)
+ * Credentials are loaded from:
+ *   1. Vercel env vars (ICOUNT_API_KEY, ICOUNT_COMPANY_ID, ICOUNT_USER, ICOUNT_PASS)
+ *   2. DB SystemSetting (admin settings page → icount section)
+ *
+ * When neither source has credentials, all functions fall back to mock mode.
  */
+
+import { getIcountConfig, type IcountConfig } from "@/lib/icount-config";
 
 const ICOUNT_API_BASE = "https://api.icount.co.il/api/v3.php";
 
-function isMockMode(): boolean {
-  return (
-    !process.env.ICOUNT_API_KEY ||
-    !process.env.ICOUNT_COMPANY_ID ||
-    !process.env.ICOUNT_USER ||
-    !process.env.ICOUNT_PASS
-  );
+function configIsMock(cfg: IcountConfig): boolean {
+  return !cfg.apiKey || !cfg.companyId || !cfg.user || !cfg.pass;
 }
 
-function authPayload() {
+function authPayloadFromConfig(cfg: IcountConfig) {
   return {
-    cid: process.env.ICOUNT_COMPANY_ID,
-    user: process.env.ICOUNT_USER,
-    pass: process.env.ICOUNT_PASS,
+    cid: cfg.companyId,
+    user: cfg.user,
+    pass: cfg.pass,
   };
 }
 
-async function icountPost(path: string, body: Record<string, unknown>) {
+async function icountPost(
+  path: string,
+  body: Record<string, unknown>,
+  cfg: IcountConfig
+) {
   const res = await fetch(`${ICOUNT_API_BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...authPayload(), ...body }),
+    body: JSON.stringify({ ...authPayloadFromConfig(cfg), ...body }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(`[iCount] ${path} failed: ${res.status} ${JSON.stringify(data)}`);
+    throw new Error(
+      `[iCount] ${path} failed: ${res.status} ${JSON.stringify(data)}`
+    );
   }
   return data;
 }
+
+// ─── Public helpers ─────────────────────────────────────
+
+/** Check if iCount is in mock mode (no credentials configured) */
+export async function isMockMode(): Promise<boolean> {
+  const cfg = await getIcountConfig();
+  return configIsMock(cfg);
+}
+
+// ─── Customer ───────────────────────────────────────────
 
 export type CreateCustomerInput = {
   name: string;
@@ -50,45 +61,60 @@ export type CreateCustomerInput = {
 };
 
 export async function createCustomer(data: CreateCustomerInput) {
-  if (isMockMode()) {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) {
     console.log("[iCount] Mock mode - would create customer:", data);
     return { client_id: "mock-cust-" + Date.now(), status: true };
   }
 
-  return icountPost("/client/create_update", {
-    client_name: data.name,
-    email: data.email,
-    hp: data.phone,
-  });
+  return icountPost(
+    "/client/create_update",
+    {
+      client_name: data.name,
+      email: data.email,
+      hp: data.phone,
+    },
+    cfg
+  );
 }
+
+// ─── Subscription ───────────────────────────────────────
 
 export type CreateSubscriptionInput = {
   customerId: string;
   amount: number;
   currency: string;
   description: string;
-  /** Monthly by default */
   frequency?: "monthly" | "yearly";
 };
 
 export async function createSubscription(data: CreateSubscriptionInput) {
-  if (isMockMode()) {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) {
     console.log("[iCount] Mock mode - would create subscription:", data);
     return {
       subscription_id: "mock-sub-" + Date.now(),
       status: true,
-      next_charge_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      next_charge_date: new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      ).toISOString(),
     };
   }
 
-  return icountPost("/subscription/create", {
-    client_id: data.customerId,
-    sum: data.amount,
-    currency_code: data.currency,
-    description: data.description,
-    frequency: data.frequency || "monthly",
-  });
+  return icountPost(
+    "/subscription/create",
+    {
+      client_id: data.customerId,
+      sum: data.amount,
+      currency_code: data.currency,
+      description: data.description,
+      frequency: data.frequency || "monthly",
+    },
+    cfg
+  );
 }
+
+// ─── Invoice ────────────────────────────────────────────
 
 export type CreateInvoiceInput = {
   customerId: string;
@@ -99,7 +125,8 @@ export type CreateInvoiceInput = {
 };
 
 export async function createInvoice(data: CreateInvoiceInput) {
-  if (isMockMode()) {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) {
     console.log("[iCount] Mock mode - would create invoice:", data);
     return {
       doc_id: "mock-doc-" + Date.now(),
@@ -109,36 +136,41 @@ export async function createInvoice(data: CreateInvoiceInput) {
     };
   }
 
-  return icountPost("/doc/create", {
-    doctype: "invrec",
-    client_id: data.customerId,
-    currency_code: data.currency || "ILS",
-    items: [
-      {
-        description: data.description,
-        unitprice_incvat: data.amount,
-        quantity: 1,
-      },
-    ],
-    payment: data.paymentMethod
-      ? [{ payment_type: data.paymentMethod, sum: data.amount }]
-      : undefined,
-  });
+  return icountPost(
+    "/doc/create",
+    {
+      doctype: "invrec",
+      client_id: data.customerId,
+      currency_code: data.currency || "ILS",
+      items: [
+        {
+          description: data.description,
+          unitprice_incvat: data.amount,
+          quantity: 1,
+        },
+      ],
+      payment: data.paymentMethod
+        ? [{ payment_type: data.paymentMethod, sum: data.amount }]
+        : undefined,
+    },
+    cfg
+  );
 }
 
+// ─── Cancel / Charge ────────────────────────────────────
+
 export async function cancelSubscription(subscriptionId: string) {
-  if (isMockMode()) {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) {
     console.log("[iCount] Mock mode - would cancel subscription:", subscriptionId);
     return { status: true, cancelled: true };
   }
-
-  return icountPost("/subscription/cancel", {
-    subscription_id: subscriptionId,
-  });
+  return icountPost("/subscription/cancel", { subscription_id: subscriptionId }, cfg);
 }
 
 export async function chargeRecurring(subscriptionId: string) {
-  if (isMockMode()) {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) {
     console.log("[iCount] Mock mode - would charge recurring:", subscriptionId);
     return {
       status: true,
@@ -147,54 +179,58 @@ export async function chargeRecurring(subscriptionId: string) {
       receipt_id: "mock-rcpt-" + Date.now(),
     };
   }
-
-  return icountPost("/subscription/charge", {
-    subscription_id: subscriptionId,
-  });
+  return icountPost("/subscription/charge", { subscription_id: subscriptionId }, cfg);
 }
+
+// ─── Payment Token ──────────────────────────────────────
 
 export type CreatePaymentTokenInput = {
   customerId: string;
-  /** card details are collected by iCount's hosted form — we only persist the token */
   cardToken: string;
 };
 
-/**
- * Persist a saved payment method (card token) for future recurring charges.
- */
 export async function savePaymentToken(data: CreatePaymentTokenInput) {
-  if (isMockMode()) {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) {
     console.log("[iCount] Mock mode - would save token:", data.customerId);
     return { token_id: "mock-token-" + Date.now(), status: true };
   }
-  return icountPost("/client/save_token", {
-    client_id: data.customerId,
-    card_token: data.cardToken,
-  });
+  return icountPost(
+    "/client/save_token",
+    { client_id: data.customerId, card_token: data.cardToken },
+    cfg
+  );
 }
 
+// ─── Hosted Card Form ───────────────────────────────────
+
 /**
- * Return URL for iCount's hosted card-entry iframe.
+ * Return URL for iCount's hosted card-entry page.
  * Designer enters card details on iCount's side — we never touch the PAN.
+ * Now async because it loads config from DB.
  */
-export function getHostedCardFormUrl(customerId: string, returnUrl: string): string {
-  const cid = process.env.ICOUNT_COMPANY_ID || "demo";
-  if (isMockMode()) {
+export async function getHostedCardFormUrl(
+  customerId: string,
+  returnUrl: string
+): Promise<string> {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) {
     return `${returnUrl}?mock=1&token=mock-${Date.now()}`;
   }
   const params = new URLSearchParams({
-    cid,
+    cid: cfg.companyId,
     client_id: customerId,
     return_url: returnUrl,
   });
   return `https://app.icount.co.il/card-vault?${params.toString()}`;
 }
 
-/**
- * Validates an iCount webhook signature.
- * If ICOUNT_WEBHOOK_SECRET is not set, accepts all requests (dev mode).
- */
-export function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
+// ─── Webhook ────────────────────────────────────────────
+
+export function verifyWebhookSignature(
+  rawBody: string,
+  signature: string | null
+): boolean {
   const secret = process.env.ICOUNT_WEBHOOK_SECRET;
   if (!secret) {
     console.log("[iCount] No webhook secret configured — accepting webhook (dev mode)");
@@ -204,8 +240,14 @@ export function verifyWebhookSignature(rawBody: string, signature: string | null
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const crypto = require("crypto") as typeof import("crypto");
-    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(rawBody)
+      .digest("hex");
+    return crypto.timingSafeEqual(
+      Buffer.from(expected),
+      Buffer.from(signature)
+    );
   } catch {
     return false;
   }
