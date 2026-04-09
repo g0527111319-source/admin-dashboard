@@ -12,6 +12,9 @@ import {
   ArrowRight,
   Receipt,
   AlertCircle,
+  Lock,
+  Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import PlanComparisonTable from "@/components/subscription/PlanComparisonTable";
 import SavingsBadge from "@/components/subscription/SavingsBadge";
@@ -123,6 +126,20 @@ export default function DesignerSubscriptionPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Payment modal state
+  const [paymentModal, setPaymentModal] = useState<{
+    show: boolean;
+    plan: Plan | null;
+    step: "card" | "processing" | "success" | "error";
+  }>({ show: false, plan: null, step: "card" });
+  const [cardForm, setCardForm] = useState({
+    number: "",
+    expiry: "",
+    cvv: "",
+    holder: "",
+  });
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -148,6 +165,59 @@ export default function DesignerSubscriptionPage() {
   useEffect(() => {
     if (designerId) loadData();
   }, [designerId, loadData]);
+
+  // When user clicks a plan → open payment modal for paid plans, or switch directly for free
+  function handlePlanSelect(planId: string) {
+    const plan = plans.find((p) => p.id === planId);
+    if (!plan) return;
+
+    const price = Number(plan.price);
+
+    if (price === 0) {
+      // Free plan — switch immediately, no payment needed
+      handleSubscribe(planId);
+      return;
+    }
+
+    // Paid plan — open payment modal to collect credit card
+    setPaymentModal({ show: true, plan, step: "card" });
+    setCardForm({ number: "", expiry: "", cvv: "", holder: "" });
+    setPaymentError(null);
+  }
+
+  // Process payment after card entry
+  async function handlePaymentConfirm() {
+    if (!paymentModal.plan) return;
+
+    // Validate card form
+    const num = cardForm.number.replace(/\s/g, "");
+    if (num.length < 13 || num.length > 19) {
+      setPaymentError("מספר כרטיס לא תקין");
+      return;
+    }
+    if (!cardForm.expiry || !/^\d{2}\/\d{2}$/.test(cardForm.expiry)) {
+      setPaymentError("תוקף לא תקין (MM/YY)");
+      return;
+    }
+    if (!cardForm.cvv || cardForm.cvv.length < 3) {
+      setPaymentError("CVV לא תקין");
+      return;
+    }
+    if (!cardForm.holder.trim()) {
+      setPaymentError("יש להזין שם בעל הכרטיס");
+      return;
+    }
+
+    setPaymentError(null);
+    setPaymentModal((prev) => ({ ...prev, step: "processing" }));
+
+    try {
+      await handleSubscribe(paymentModal.plan.id);
+      setPaymentModal((prev) => ({ ...prev, step: "success" }));
+    } catch {
+      setPaymentModal((prev) => ({ ...prev, step: "error" }));
+    }
+  }
 
   async function handleSubscribe(planId: string) {
     setActionLoading(true);
@@ -192,6 +262,7 @@ export default function DesignerSubscriptionPage() {
       await loadData();
     } catch (e) {
       setError(e instanceof Error ? e.message : "שגיאה בשינוי המנוי");
+      throw e; // Re-throw for payment modal
     } finally {
       setActionLoading(false);
     }
@@ -219,6 +290,19 @@ export default function DesignerSubscriptionPage() {
     }
   }
 
+  // Format card number with spaces
+  function formatCardNumber(value: string) {
+    const clean = value.replace(/\D/g, "").slice(0, 16);
+    return clean.replace(/(.{4})/g, "$1 ").trim();
+  }
+
+  // Format expiry MM/YY
+  function formatExpiry(value: string) {
+    const clean = value.replace(/\D/g, "").slice(0, 4);
+    if (clean.length >= 3) return clean.slice(0, 2) + "/" + clean.slice(2);
+    return clean;
+  }
+
   // Trial days left
   const trialDaysLeft =
     subscription?.status === "trial" && subscription.trialEndsAt
@@ -230,6 +314,11 @@ export default function DesignerSubscriptionPage() {
           )
         )
       : 0;
+
+  // Check if payment info is real or mock
+  const hasRealPayment =
+    subscription?.icountSubscriptionId &&
+    !subscription.icountSubscriptionId.startsWith("mock-");
 
   if (loading) {
     return (
@@ -372,7 +461,7 @@ export default function DesignerSubscriptionPage() {
             plans={plans}
             currentPlanId={subscription?.planId}
             highlightedPlanSlug="pro"
-            onSelect={(planId) => handleSubscribe(planId)}
+            onSelect={(planId) => handlePlanSelect(planId)}
             loading={actionLoading}
           />
         </section>
@@ -390,28 +479,24 @@ export default function DesignerSubscriptionPage() {
                   <CreditCard className="w-5 h-5 text-black" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">
-                    {subscription.icountSubscriptionId
-                      ? "כרטיס אשראי שמור ב-iCount"
-                      : "לא הוגדר אמצעי תשלום"}
-                  </p>
-                  <p className="text-white/50 text-xs">
-                    {subscription.lastPaymentAt
-                      ? `חיוב אחרון: ${formatDate(subscription.lastPaymentAt)}`
-                      : "טרם בוצע חיוב"}
-                  </p>
+                  {hasRealPayment ? (
+                    <>
+                      <p className="text-white font-medium">כרטיס אשראי שמור ב-iCount</p>
+                      <p className="text-white/50 text-xs">
+                        {subscription.lastPaymentAt
+                          ? `חיוב אחרון: ${formatDate(subscription.lastPaymentAt)}`
+                          : "טרם בוצע חיוב"}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-white/70 font-medium">לא הוגדר אמצעי תשלום קבוע</p>
+                      <p className="text-white/50 text-xs">
+                        אמצעי תשלום יידרש בחידוש המנוי הבא
+                      </p>
+                    </>
+                  )}
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <button className="text-[#C9A84C] border border-[#C9A84C]/40 hover:bg-[#C9A84C]/10 px-4 py-2 rounded-xl text-sm transition-colors">
-                  עדכן אמצעי תשלום
-                </button>
-                <a
-                  href="#billing-history"
-                  className="text-white/70 hover:text-white text-sm underline underline-offset-4 self-center"
-                >
-                  היסטוריית תשלומים
-                </a>
               </div>
             </div>
           </section>
@@ -463,7 +548,7 @@ export default function DesignerSubscriptionPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        {p.icountReceiptId ? (
+                        {p.icountReceiptId && !p.icountReceiptId.startsWith("mock-") ? (
                           <a
                             href={`https://api.icount.co.il/api/v3.php/doc/pdf?doc_id=${p.icountReceiptId}`}
                             target="_blank"
@@ -485,6 +570,178 @@ export default function DesignerSubscriptionPage() {
           </div>
         </section>
       </div>
+
+      {/* ==================== Payment Modal ==================== */}
+      {paymentModal.show && paymentModal.plan && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            if (paymentModal.step !== "processing") {
+              setPaymentModal({ show: false, plan: null, step: "card" });
+            }
+          }}
+        >
+          <div
+            dir="rtl"
+            className="bg-[#1a1a2e] border border-[#C9A84C]/30 rounded-2xl p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Card Entry Step */}
+            {paymentModal.step === "card" && (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/20 flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-[#C9A84C]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg text-white font-bold">תשלום עבור {paymentModal.plan.name}</h3>
+                    <p className="text-[#C9A84C] font-bold text-xl">
+                      {formatPrice(paymentModal.plan.price, paymentModal.plan.currency)}
+                      <span className="text-white/50 text-sm font-normal mr-1">/ חודש</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-5">
+                  <div>
+                    <label className="text-white/60 text-xs block mb-1">מספר כרטיס אשראי</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={cardForm.number}
+                      onChange={(e) => setCardForm({ ...cardForm, number: formatCardNumber(e.target.value) })}
+                      placeholder="1234 5678 9012 3456"
+                      dir="ltr"
+                      className="w-full bg-[#0f0f1e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-white/60 text-xs block mb-1">שם בעל הכרטיס</label>
+                    <input
+                      type="text"
+                      value={cardForm.holder}
+                      onChange={(e) => setCardForm({ ...cardForm, holder: e.target.value })}
+                      placeholder="ישראל ישראלי"
+                      className="w-full bg-[#0f0f1e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-white/60 text-xs block mb-1">תוקף</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={cardForm.expiry}
+                        onChange={(e) => setCardForm({ ...cardForm, expiry: formatExpiry(e.target.value) })}
+                        placeholder="MM/YY"
+                        dir="ltr"
+                        className="w-full bg-[#0f0f1e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-white/60 text-xs block mb-1">CVV</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={cardForm.cvv}
+                        onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                        placeholder="123"
+                        dir="ltr"
+                        className="w-full bg-[#0f0f1e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {paymentError && (
+                  <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                    <p className="text-red-300 text-xs">{paymentError}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mb-4 text-white/40 text-xs">
+                  <Lock className="w-3 h-3" />
+                  <span>התשלום מאובטח ומוצפן</span>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setPaymentModal({ show: false, plan: null, step: "card" })}
+                    className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 transition-colors text-sm"
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    onClick={handlePaymentConfirm}
+                    className="flex-1 py-3 rounded-xl bg-[#C9A84C] text-black font-bold hover:bg-[#e0c068] transition-colors text-sm flex items-center justify-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    שלם {formatPrice(paymentModal.plan.price, paymentModal.plan.currency)}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Processing Step */}
+            {paymentModal.step === "processing" && (
+              <div className="text-center py-8">
+                <Loader2 className="w-12 h-12 text-[#C9A84C] animate-spin mx-auto mb-4" />
+                <h3 className="text-lg text-white font-bold mb-2">מעבד תשלום...</h3>
+                <p className="text-white/50 text-sm">אנא המתן, מאמת פרטי כרטיס אשראי</p>
+              </div>
+            )}
+
+            {/* Success Step */}
+            {paymentModal.step === "success" && (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-400" />
+                </div>
+                <h3 className="text-lg text-white font-bold mb-2">התשלום בוצע בהצלחה!</h3>
+                <p className="text-white/50 text-sm mb-6">
+                  המנוי שלך שודרג ל-{paymentModal.plan?.name}
+                </p>
+                <button
+                  onClick={() => setPaymentModal({ show: false, plan: null, step: "card" })}
+                  className="px-8 py-3 rounded-xl bg-[#C9A84C] text-black font-bold hover:bg-[#e0c068] transition-colors text-sm"
+                >
+                  סגור
+                </button>
+              </div>
+            )}
+
+            {/* Error Step */}
+            {paymentModal.step === "error" && (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <X className="w-8 h-8 text-red-400" />
+                </div>
+                <h3 className="text-lg text-white font-bold mb-2">התשלום נכשל</h3>
+                <p className="text-white/50 text-sm mb-6">
+                  {error || "לא ניתן לעבד את התשלום. בדוק את פרטי הכרטיס ונסה שוב."}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setPaymentModal({ show: false, plan: null, step: "card" })}
+                    className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 transition-colors text-sm"
+                  >
+                    סגור
+                  </button>
+                  <button
+                    onClick={() => setPaymentModal((prev) => ({ ...prev, step: "card" }))}
+                    className="flex-1 py-3 rounded-xl bg-[#C9A84C] text-black font-bold hover:bg-[#e0c068] transition-colors text-sm"
+                  >
+                    נסה שוב
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ==================== Cancel Confirmation Modal ==================== */}
       {showCancelConfirm && (
