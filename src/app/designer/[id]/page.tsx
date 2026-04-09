@@ -33,6 +33,7 @@ import CrmKanban from "@/components/crm/CrmKanban";
 import CrmPortfolio from "@/components/crm/CrmPortfolio";
 import FeatureGate from "@/components/FeatureGate";
 import NotificationBell from "@/components/NotificationBell";
+import AccountSettings from "@/components/designer/AccountSettings";
 import { useParams } from "next/navigation";
 
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
@@ -73,7 +74,7 @@ const dealHistory = [
     { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "נוף גרין"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
 ];
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio";
+type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio";
 
 interface NavGroup {
   title: string;
@@ -87,6 +88,7 @@ const navGroups: NavGroup[] = [
       { key: "home", label: "הבית שלי", icon: Home },
       { key: "profile", label: "פרופיל", icon: User },
       { key: "card", label: "כרטיס ביקור", icon: CreditCard },
+      { key: "account-settings", label: "הגדרות חשבון", icon: Settings },
     ]
   },
   {
@@ -963,6 +965,11 @@ export default function DesignerDashboard() {
                   <CrmPortfolio onSwitchToCard={() => setActiveTab("card")} />
                 </div>
               </FeatureGate>
+            )}
+
+            {/* ===== ACCOUNT SETTINGS TAB ===== */}
+            {activeTab === "account-settings" && (
+              <AccountSettings designerId={designerIdForGate || ""} />
             )}
 
             {/* ===== PROFILE TAB ===== */}
