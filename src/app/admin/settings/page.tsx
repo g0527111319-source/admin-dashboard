@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Settings, Save, Clock, MessageCircle, CreditCard, Shield, Plus, X, Tag,
   GripVertical, Users, CheckSquare, Eye, EyeOff, Bell, FileText, Megaphone,
-  ChevronDown, ChevronUp, Edit3, Trash2, AlertTriangle,
+  ChevronDown, ChevronUp, Edit3, Trash2, AlertTriangle, Loader2, CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 const defaultCategories = [
@@ -130,6 +131,22 @@ export default function SettingsPage() {
   const [daySlots, setDaySlots] = useState(defaultDaySlots);
   const [reminderDays, setReminderDays] = useState([7, 14, 21]);
 
+  // iCount state
+  const [icountApiKey, setIcountApiKey] = useState("");
+  const [icountCompanyId, setIcountCompanyId] = useState("");
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  // Security state
+  const [adminEmail, setAdminEmail] = useState("tamar@zirat.co.il");
+  const [newPassword, setNewPassword] = useState("");
+
+  // Loading / saving state
+  const [pageLoading, setPageLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
+
   // Feature 17 state
   const [permMatrix, setPermMatrix] = useState<PermissionMatrix>(defaultPermissions);
 
@@ -140,6 +157,85 @@ export default function SettingsPage() {
   const [bannerForm, setBannerForm] = useState<Omit<Banner, "id">>({
     title: "", body: "", type: "info", scheduleFrom: "", scheduleTo: "", audience: "all", active: true,
   });
+
+  // Load settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await fetch("/api/admin/settings");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.categories?.length) setCategories(data.categories);
+          if (data.daySlots?.length) setDaySlots(data.daySlots);
+          if (data.reminderDays?.length) setReminderDays(data.reminderDays);
+          if (data.icount) {
+            setIcountApiKey(data.icount.apiKey || "");
+            setIcountCompanyId(data.icount.companyId || "");
+          }
+          if (data._hasApiKey) setHasApiKey(true);
+          if (data.security?.adminEmail) setAdminEmail(data.security.adminEmail);
+          if (data.permissions && Object.keys(data.permissions).length > 0) {
+            setPermMatrix(data.permissions);
+          }
+          if (data.banners?.length) setBanners(data.banners);
+          if (data.tips?.length) setTips(data.tips);
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // Save all settings
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    setSaveStatus("idle");
+    setSaveMessage("");
+    try {
+      const payload: Record<string, unknown> = {
+        categories,
+        daySlots,
+        reminderDays,
+        icount: {
+          apiKey: icountApiKey,
+          companyId: icountCompanyId,
+        },
+        security: {
+          adminEmail,
+        },
+        permissions: permMatrix,
+        banners,
+        tips,
+      };
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSaveStatus("success");
+        setSaveMessage("ההגדרות נשמרו בהצלחה!");
+        // Update masked key from response
+        if (data.settings?.icount) {
+          setIcountApiKey(data.settings.icount.apiKey || "");
+          setHasApiKey(!!data.settings._hasApiKey);
+        }
+      } else {
+        setSaveStatus("error");
+        setSaveMessage(data.error || "שגיאה בשמירת הגדרות");
+      }
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("שגיאת רשת — נסי שוב");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setSaveStatus("idle"), 4000);
+    }
+  }, [categories, daySlots, reminderDays, icountApiKey, icountCompanyId, adminEmail, permMatrix, banners, tips]);
 
   // --- General handlers ---
   const handleAddCategory = () => {
@@ -201,6 +297,17 @@ export default function SettingsPage() {
     { key: "roles", label: "תפקידים והרשאות", icon: Users },
     { key: "banners", label: "באנרים וטיפים", icon: Megaphone },
   ];
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-gold mx-auto" />
+          <p className="text-text-muted text-sm">{"טוענת הגדרות..."}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in">
@@ -319,13 +426,46 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-text-muted text-sm block mb-1">API Key</label>
-                <input type="password" defaultValue="••••••••••" className="input-dark" />
+                <div className="relative">
+                  <input
+                    type={showApiKey ? "text" : "password"}
+                    value={icountApiKey}
+                    onChange={(e) => setIcountApiKey(e.target.value)}
+                    placeholder="הזיני מפתח API של iCount"
+                    className="input-dark w-full pl-10"
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-gold transition-colors"
+                  >
+                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="text-text-muted text-sm block mb-1">{"מזהה חברה"}</label>
-                <input type="text" className="input-dark" placeholder="Company ID" />
+                <input
+                  type="text"
+                  value={icountCompanyId}
+                  onChange={(e) => setIcountCompanyId(e.target.value)}
+                  placeholder="Company ID"
+                  className="input-dark w-full"
+                  dir="ltr"
+                />
               </div>
-              <p className="text-emerald-600 text-xs flex items-center gap-1">{"✅ מחובר — חשבוניות פעילות"}</p>
+              {hasApiKey ? (
+                <p className="text-emerald-600 text-xs flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {"מפתח API שמור — חיבור פעיל"}
+                </p>
+              ) : (
+                <p className="text-amber-500 text-xs flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {"לא הוגדר מפתח API — הזיני מפתח ולחצי שמור"}
+                </p>
+              )}
             </div>
           </div>
 
@@ -337,11 +477,23 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-text-muted text-sm block mb-1">{"מייל אדמין"}</label>
-                <input type="email" defaultValue="tamar@zirat.co.il" className="input-dark" />
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className="input-dark w-full"
+                  dir="ltr"
+                />
               </div>
               <div>
                 <label className="text-text-muted text-sm block mb-1">{"שינוי סיסמה"}</label>
-                <input type="password" placeholder="סיסמה חדשה" className="input-dark" />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="סיסמה חדשה"
+                  className="input-dark w-full"
+                />
               </div>
               <button className="btn-outline text-sm">{"עדכן סיסמה"}</button>
             </div>
@@ -580,9 +732,30 @@ export default function SettingsPage() {
       )}
 
       {/* Save */}
-      <div className="flex justify-end">
-        <button className="btn-gold flex items-center gap-2">
-          <Save className="w-4 h-4" />{"שמור הגדרות"}
+      <div className="flex items-center justify-end gap-3">
+        {saveStatus === "success" && (
+          <span className="text-emerald-600 text-sm flex items-center gap-1 animate-in">
+            <CheckCircle2 className="w-4 h-4" />
+            {saveMessage}
+          </span>
+        )}
+        {saveStatus === "error" && (
+          <span className="text-red-500 text-sm flex items-center gap-1 animate-in">
+            <AlertCircle className="w-4 h-4" />
+            {saveMessage}
+          </span>
+        )}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-gold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+          {saving ? "שומרת..." : "שמור הגדרות"}
         </button>
       </div>
     </div>
