@@ -80,29 +80,39 @@ export async function POST(req: NextRequest) {
 
     let icountCustomerId = existing?.icountCustomerId || null;
     if (!icountCustomerId) {
-      const customer = await createCustomer({
-        name: designer.fullName || designer.email || "Designer",
-        email: designer.email || "",
-        phone: designer.phone || undefined,
-      });
-      // iCount returns client_id as number — convert to string
-      const rawId = (customer as { client_id?: string | number }).client_id;
-      icountCustomerId = rawId != null ? String(rawId) : null;
+      try {
+        const customer = await createCustomer({
+          name: designer.fullName || designer.email || "Designer",
+          email: designer.email || "",
+          phone: designer.phone || undefined,
+        });
+        // iCount returns client_id as number — convert to string
+        const rawId = (customer as { client_id?: string | number }).client_id;
+        icountCustomerId = rawId != null ? String(rawId) : null;
+      } catch (err) {
+        console.error("[subscription] iCount customer create error:", err);
+        // Continue — subscription can be created without iCount customer
+      }
     }
 
-    // Create iCount subscription (skipped for free plans)
+    // Create iCount subscription (skipped for free plans and PayPage payments)
     let icountSubscriptionId: string | null = existing?.icountSubscriptionId || null;
     const price = Number(plan.price);
-    if (price > 0 && icountCustomerId) {
-      const sub = await createSubscription({
-        customerId: icountCustomerId,
-        amount: price,
-        currency: plan.currency,
-        description: `מנוי ${plan.name}`,
-      });
-      icountSubscriptionId =
-        (sub as { subscription_id?: string }).subscription_id ||
-        icountSubscriptionId;
+    if (price > 0 && icountCustomerId && !paidViaPayPage) {
+      try {
+        const sub = await createSubscription({
+          customerId: icountCustomerId,
+          amount: price,
+          currency: plan.currency,
+          description: `מנוי ${plan.name}`,
+        });
+        icountSubscriptionId =
+          (sub as { subscription_id?: string }).subscription_id ||
+          icountSubscriptionId;
+      } catch (err) {
+        console.error("[subscription] iCount subscription create error (non-fatal):", err);
+        // Continue — subscription record will be created without iCount subscription ID
+      }
     }
 
     // --- Payment-first: for paid plans, charge BEFORE activating ---
