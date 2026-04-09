@@ -101,6 +101,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ─── Check if already paid in current billing period ─
+    // If the designer already paid within the last 30 days for an amount
+    // that covers this plan price, skip re-charging (downgrade + re-upgrade scenario)
+    if (existing?.lastPaymentAt) {
+      const lastPayment = new Date(existing.lastPaymentAt);
+      const daysSincePayment = (Date.now() - lastPayment.getTime()) / (1000 * 60 * 60 * 24);
+      const lastAmount = Number(existing.lastPaymentAmount || 0);
+      const planPrice = Number(plan.price);
+
+      if (daysSincePayment < 30 && lastAmount >= planPrice && planPrice > 0) {
+        console.log(
+          `[payment-url] Designer ${designerId} already paid ${lastAmount} on ${lastPayment.toISOString()} — skipping PayPage for plan ${plan.name} (${planPrice})`
+        );
+        return NextResponse.json({
+          success: true,
+          alreadyPaid: true,
+          planName: plan.name,
+          price: planPrice,
+          currency: plan.currency,
+          message: "כבר שולם עבור תקופה זו — ניתן לשדרג ללא חיוב נוסף",
+        });
+      }
+    }
+
     // ─── Get or create payment page ─────────────────────
     const paypageId = await getOrCreatePayPage();
     if (!paypageId) {

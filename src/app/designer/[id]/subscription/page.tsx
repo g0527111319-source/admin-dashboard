@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Check,
   CreditCard,
-  Download,
   Crown,
   Sparkles,
   X,
@@ -122,6 +121,8 @@ export default function DesignerSubscriptionPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
+  const [pendingDowngradePlanId, setPendingDowngradePlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -179,7 +180,13 @@ export default function DesignerSubscriptionPage() {
     const price = Number(plan.price);
 
     if (price === 0) {
-      // Free plan → switch immediately
+      // If currently on a paid plan, show downgrade confirmation first
+      if (subscription && Number(subscription.plan.price) > 0 && subscription.status !== "cancelled") {
+        setPendingDowngradePlanId(planId);
+        setShowDowngradeConfirm(true);
+        return;
+      }
+      // Free plan → switch immediately (no paid plan to downgrade from)
       setActionLoading(true);
       try {
         await handleSubscribe(planId);
@@ -203,6 +210,18 @@ export default function DesignerSubscriptionPage() {
 
       if (!res.ok) {
         setError(data.error || "שגיאה");
+        setActionLoading(false);
+        return;
+      }
+
+      // Already paid for this billing period — switch without re-charging
+      if (data.alreadyPaid) {
+        try {
+          await handleSubscribe(planId, "already_paid");
+          setSuccessMsg("המנוי שודרג בהצלחה — ללא חיוב נוסף (כבר שולם עבור תקופה זו)");
+        } catch {
+          // error already set by handleSubscribe
+        }
         setActionLoading(false);
         return;
       }
@@ -327,8 +346,8 @@ export default function DesignerSubscriptionPage() {
       : 0;
 
   const hasRealPayment =
-    subscription?.icountSubscriptionId &&
-    !subscription.icountSubscriptionId.startsWith("mock-");
+    subscription?.icountCustomerId &&
+    !subscription.icountCustomerId.startsWith("mock-");
 
   if (loading) {
     return (
@@ -520,7 +539,6 @@ export default function DesignerSubscriptionPage() {
                     <th className="text-right px-5 py-3 text-white/70 font-medium">תאריך</th>
                     <th className="text-right px-5 py-3 text-white/70 font-medium">סכום</th>
                     <th className="text-right px-5 py-3 text-white/70 font-medium">סטטוס</th>
-                    <th className="text-right px-5 py-3 text-white/70 font-medium">קבלה</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -536,21 +554,6 @@ export default function DesignerSubscriptionPage() {
                         }`}>
                           {p.status === "succeeded" ? "שולם" : p.status === "failed" ? "נכשל" : p.status}
                         </span>
-                      </td>
-                      <td className="px-5 py-3">
-                        {p.icountReceiptId && !p.icountReceiptId.startsWith("mock-") ? (
-                          <a
-                            href={`https://api.icount.co.il/api/v3.php/doc/pdf?doc_id=${p.icountReceiptId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#C9A84C] hover:text-[#e0c068] flex items-center gap-1 text-xs"
-                          >
-                            <Download className="w-3 h-3" />
-                            הורדה
-                          </a>
-                        ) : (
-                          <span className="text-white/30 text-xs">-</span>
-                        )}
                       </td>
                     </tr>
                   ))}
@@ -717,6 +720,73 @@ export default function DesignerSubscriptionPage() {
                 className="flex-1 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
               >
                 {actionLoading ? "מבטל..." : "כן, בטלי"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== Downgrade Confirmation Modal ==================== */}
+      {showDowngradeConfirm && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowDowngradeConfirm(false)}
+        >
+          <div
+            dir="rtl"
+            className="bg-[#1a1a2e] border border-[#C9A84C]/30 rounded-2xl p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
+              <h3 className="text-xl text-white font-bold">שינמוך לתוכנית חינמית</h3>
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-5">
+              <ul className="space-y-2 text-sm text-amber-200/80">
+                <li className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <span>החיוב החודשי המתחדש יבוטל</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <span>תאבדי גישה לפיצ׳רים מתקדמים</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <span>השינוי ייכנס לתוקף מיד</span>
+                </li>
+              </ul>
+            </div>
+            <p className="text-white/50 text-xs mb-5">
+              לאחר המעבר, לא יתבצע חיוב נוסף. ניתן לשדרג חזרה בכל עת.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDowngradeConfirm(false)}
+                disabled={actionLoading}
+                className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 transition-colors text-sm"
+              >
+                חזרה
+              </button>
+              <button
+                onClick={async () => {
+                  if (!pendingDowngradePlanId) return;
+                  setActionLoading(true);
+                  try {
+                    await handleSubscribe(pendingDowngradePlanId);
+                    setSuccessMsg("עברת לתוכנית החינמית. החיוב המתחדש בוטל.");
+                    setShowDowngradeConfirm(false);
+                  } catch {
+                    // error already set by handleSubscribe
+                  }
+                  setActionLoading(false);
+                }}
+                disabled={actionLoading}
+                className="flex-1 py-3 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors text-sm disabled:opacity-50"
+              >
+                {actionLoading ? "מעבד..." : "אשר שינמוך"}
               </button>
             </div>
           </div>

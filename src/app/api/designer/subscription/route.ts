@@ -54,8 +54,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "חסר מזהה תוכנית" }, { status: 400 });
     }
 
-    // If payment was already completed via iCount PayPage, skip charging again
-    const paidViaPayPage = paymentMethod === "paypage";
+    // If payment was already completed via iCount PayPage, or user already paid
+    // for this billing period (downgrade + re-upgrade scenario), skip charging again
+    const paidViaPayPage = paymentMethod === "paypage" || paymentMethod === "already_paid";
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
     if (!plan || !plan.isActive) {

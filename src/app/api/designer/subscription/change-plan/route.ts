@@ -28,8 +28,9 @@ export async function POST(req: NextRequest) {
       paymentMethod?: string;
     };
 
-    // If payment was already completed via iCount PayPage, skip charging again
-    const paidViaPayPage = paymentMethod === "paypage";
+    // If payment was already completed via iCount PayPage, or user already paid
+    // for this billing period (downgrade + re-upgrade scenario), skip charging again
+    const paidViaPayPage = paymentMethod === "paypage" || paymentMethod === "already_paid";
 
     if (!designerId || !newPlanId) {
       return NextResponse.json(
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
           currentPeriodEnd: periodEnd,
           scheduledDowngradeAt: null,
           scheduledDowngradePlanId: null,
+          autoRenew: false, // Free plan — no recurring billing
         },
         include: { plan: true },
       });
