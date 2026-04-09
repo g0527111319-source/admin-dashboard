@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
@@ -22,7 +22,7 @@ const entryCards = [
     href: "/login",
     accent: "#C9A84C",
     image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
     icon: Shield,
     text: siteText.home.entries.admin,
   },
@@ -30,7 +30,7 @@ const entryCards = [
     href: "/login",
     accent: "#E8C97A",
     image:
-      "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
     icon: Building2,
     text: siteText.home.entries.supplier,
   },
@@ -38,7 +38,7 @@ const entryCards = [
     href: "/login",
     accent: "#F4E5BE",
     image:
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80",
     icon: Palette,
     text: siteText.home.entries.designer,
   },
@@ -47,17 +47,20 @@ const entryCards = [
 const featureCards = [
   {
     icon: MessageCircle,
-    tone: "from-amber-50 to-white",
+    tone: "from-amber-50 via-orange-50/40 to-white",
+    image: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80",
     text: siteText.home.features[0],
   },
   {
     icon: TrendingUp,
-    tone: "from-stone-100 to-white",
+    tone: "from-stone-100 via-amber-50/30 to-white",
+    image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80",
     text: siteText.home.features[1],
   },
   {
     icon: Users,
-    tone: "from-zinc-100 to-white",
+    tone: "from-zinc-100 via-stone-50 to-white",
+    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80",
     text: siteText.home.features[2],
   },
 ] as const;
@@ -68,21 +71,33 @@ const communityHighlights = [
   { icon: Palette, text: siteText.home.highlights[2] },
 ] as const;
 
+/* Gallery images for the new showcase strip */
+const galleryImages = [
+  { src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80", label: "בית פרטי" },
+  { src: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=600&q=80", label: "מטבח מודרני" },
+  { src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80", label: "סלון יוקרתי" },
+  { src: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=600&q=80", label: "בית עם בריכה" },
+  { src: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=600&q=80", label: "בית מודרני" },
+  { src: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=600&q=80", label: "חדר אמבט" },
+];
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-bg text-text-primary overflow-hidden">
+      {/* ─── HERO ─── */}
       <section className="relative isolate min-h-screen bg-[#050505] text-white">
+        {/* Background with parallax-style image */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-30 scale-105"
+          className="absolute inset-0 bg-cover bg-center bg-fixed opacity-25 scale-105"
           style={{
             backgroundImage:
-              "url('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=2000&q=80')",
+              "url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=2400&q=80')",
           }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,168,76,0.24),transparent_28%),linear-gradient(135deg,rgba(5,5,5,0.9),rgba(5,5,5,0.72)_45%,rgba(15,15,15,0.92))]" />
-        <div className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.2)_1px,transparent_1px)] [background-size:90px_90px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,168,76,0.28),transparent_32%),linear-gradient(135deg,rgba(5,5,5,0.92),rgba(5,5,5,0.65)_45%,rgba(15,15,15,0.88))]" />
+        <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:90px_90px]" />
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[82vw] h-[82vw] max-w-[860px] max-h-[860px] rounded-full border border-gold/15" />
-        <div className="absolute top-20 right-[8%] hidden xl:block opacity-[0.08] saturate-0">
+        <div className="absolute top-20 right-[8%] hidden xl:block opacity-[0.06] saturate-0">
           <Logo size="xl" variant="dark" />
         </div>
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-gold-gradient" />
@@ -205,8 +220,45 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── IMAGE GALLERY STRIP ─── */}
+      <section className="relative bg-bg py-14 sm:py-16 px-4 sm:px-6 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(201,168,76,0.06),transparent)]" />
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-white px-4 py-2 text-sm text-gold-700 shadow-soft mb-4">
+              <Palette className="w-4 h-4" />
+              השראה לעיצוב
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-heading font-bold text-text-primary">
+              חללים שמספרים סיפור
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {galleryImages.map((img, i) => (
+              <div
+                key={i}
+                className="group relative aspect-[4/5] rounded-[20px] overflow-hidden border border-border-subtle shadow-card hover:shadow-gold hover:-translate-y-1 transition-all duration-500 cursor-pointer"
+              >
+                <div
+                  className="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-700"
+                  style={{ backgroundImage: `url(${img.src})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                  <span className="text-white text-xs font-medium">{img.label}</span>
+                </div>
+                {/* Gold corner accent */}
+                <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gold/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                  <Star className="w-3 h-3 text-white" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURES SECTION ─── */}
       <section className="relative py-20 sm:py-24 px-4 sm:px-6 bg-bg">
-        <div className="absolute inset-x-0 top-0 h-32 bg-[linear-gradient(180deg,rgba(201,168,76,0.08),transparent)]" />
         <div className="relative max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start mb-14">
             <div>
@@ -237,29 +289,41 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Feature cards with background images */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {featureCards.map((feature) => (
               <div
                 key={feature.text.title}
-                className={`group rounded-[28px] border border-border-subtle bg-gradient-to-br ${feature.tone} p-7 shadow-card hover:shadow-[0_24px_60px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300`}
+                className="group relative rounded-[28px] border border-border-subtle overflow-hidden shadow-card hover:shadow-[0_24px_60px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-12 h-12 rounded-2xl bg-black text-gold flex items-center justify-center mb-5 shadow-gold">
-                  <feature.icon className="w-5 h-5" />
+                {/* Background image peek */}
+                <div className="h-36 relative overflow-hidden">
+                  <div
+                    className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700"
+                    style={{ backgroundImage: `url(${feature.image})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
+                  <div className="absolute top-4 right-4 w-12 h-12 rounded-2xl bg-black text-gold flex items-center justify-center shadow-gold">
+                    <feature.icon className="w-5 h-5" />
+                  </div>
                 </div>
-                <h3 className="font-heading text-2xl text-text-primary mb-3">{feature.text.title}</h3>
-                <p className="text-text-muted leading-relaxed text-sm sm:text-base">{feature.text.desc}</p>
+                <div className={`p-7 bg-gradient-to-br ${feature.tone}`}>
+                  <h3 className="font-heading text-2xl text-text-primary mb-3">{feature.text.title}</h3>
+                  <p className="text-text-muted leading-relaxed text-sm sm:text-base">{feature.text.desc}</p>
+                </div>
               </div>
             ))}
           </div>
 
+          {/* Lobby showcase with full-bleed image */}
           <div className="mt-14 rounded-[20px] sm:rounded-[34px] overflow-hidden border border-border-gold bg-[#0A0A0A] text-white shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
             <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr]">
-              <div className="relative min-h-[320px]">
+              <div className="relative min-h-[320px] lg:min-h-[420px]">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{
                     backgroundImage:
-                      "linear-gradient(135deg, rgba(10,10,10,0.2), rgba(10,10,10,0.78)), url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80')",
+                      "linear-gradient(135deg, rgba(10,10,10,0.15), rgba(10,10,10,0.75)), url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1400&q=80')",
                   }}
                 />
                 <div className="relative h-full p-8 sm:p-10 flex flex-col justify-end">
@@ -275,7 +339,7 @@ export default function HomePage() {
                   {communityHighlights.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <div key={item.text.title} className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-5 backdrop-blur-sm">
+                      <div key={item.text.title} className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-5 backdrop-blur-sm hover:border-gold/30 transition-colors duration-300">
                         <Icon className="w-5 h-5 text-gold mb-4" />
                         <h4 className="font-heading text-xl mb-2">{item.text.title}</h4>
                         <p className="text-sm text-white/65 leading-relaxed">{item.text.text}</p>
@@ -299,10 +363,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Projects Gallery CTA */}
-      <section className="bg-[#050505] py-12 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="rounded-[28px] border border-gold/20 bg-gradient-to-br from-gold/5 to-transparent p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+      {/* ─── PROJECTS GALLERY CTA ─── */}
+      <section className="relative py-16 px-4 sm:px-6 overflow-hidden">
+        {/* Full-bleed background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-fixed"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=2400&q=80')",
+          }}
+        />
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+
+        <div className="relative max-w-7xl mx-auto">
+          <div className="rounded-[28px] border border-gold/25 bg-white/5 backdrop-blur-md p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
               <h3 className="text-xl sm:text-2xl font-heading font-bold text-white mb-2">
                 צפו בפרויקטים של המעצבות שלנו
@@ -313,7 +387,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/projects"
-              className="px-6 py-3 bg-[#C9A84C] text-black font-bold rounded-xl hover:bg-[#e0c068] transition-colors whitespace-nowrap text-sm"
+              className="px-6 py-3 bg-gold text-black font-bold rounded-xl hover:bg-gold-light transition-colors whitespace-nowrap text-sm shadow-gold"
             >
               צפה בפרויקטים
             </Link>
@@ -321,6 +395,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── FOOTER ─── */}
       <footer className="bg-[#050505] py-8 px-4 border-t border-white/5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -333,5 +408,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-

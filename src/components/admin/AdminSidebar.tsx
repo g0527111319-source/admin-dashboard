@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/ui/Logo";
-import { LayoutDashboard, Users, Palette, FileText, Trophy, Calendar, BarChart3, Settings, MessageCircle, Star, ChevronRight, Menu, X, LogOut, UserPlus, CalendarClock, MapPin, Zap, CheckSquare, } from "lucide-react";
+import { LayoutDashboard, Users, Palette, FileText, Trophy, Calendar, BarChart3, Settings, MessageCircle, Star, ChevronRight, Menu, X, LogOut, UserPlus, CalendarClock, MapPin, Zap, CheckSquare, CreditCard, Tag, } from "lucide-react";
 const menuItems = [
     { href: "/admin", label: "סקירה כללית", icon: LayoutDashboard },
     { href: "/admin/suppliers", label: "ניהול ספקים", icon: Users },
@@ -14,6 +14,8 @@ const menuItems = [
     { href: "/admin/lottery", label: "הגרלות", icon: Trophy },
     { href: "/admin/events", label: "אירועים", icon: Calendar },
     { href: "/admin/reservations", label: "שריונים", icon: CalendarClock },
+    { href: "/admin/subscriptions", label: "מנויים ומחירים", icon: CreditCard },
+    { href: "/admin/coupons", label: "קופונים והנחות", icon: Tag },
     { href: "/admin/reports", label: "דוחות ואנליטיקה", icon: BarChart3 },
     { href: "/admin/whatsapp", label: "וואטסאפ", icon: MessageCircle },
     { href: "/admin/map", label: "מפת קהילה", icon: MapPin },

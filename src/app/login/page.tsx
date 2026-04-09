@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
@@ -11,6 +11,13 @@ const roleMeta = {
     designer: { icon: <Palette className="w-6 h-6"/>, text: siteText.auth.roles.designer },
 } as const;
 const roles: UserRole[] = ["admin", "supplier", "designer"];
+
+const bgImages = [
+  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=2000&q=80",
+  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=2000&q=80",
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80",
+];
+
 export default function LoginPage() {
     return (<Suspense fallback={<div className="min-h-screen bg-bg flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-gold"/></div>}>
       <LoginContent />
@@ -55,14 +62,12 @@ function LoginContent() {
                 setLoading(false);
                 return;
             }
-            // Determine redirect URL based on role
             const defaultRedirects: Record<string, string> = {
                 admin: "/admin",
                 supplier: "/supplier/demo",
                 designer: "/designer/demo",
             };
             const targetUrl = redirect || data.redirectUrl || defaultRedirects[selectedRole] || "/";
-            // Use window.location.href for a full page reload to pick up the new cookie
             window.location.href = targetUrl;
         }
         catch (error) {
@@ -74,25 +79,82 @@ function LoginContent() {
             setLoading(false);
         }
     };
-    return (<div className="min-h-screen bg-bg flex" dir="rtl">
-      <div className="hidden lg:flex lg:w-1/2 bg-bg-dark relative overflow-hidden items-center justify-center">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-72 h-72 bg-gold/30 rounded-full blur-3xl"/>
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-gold/20 rounded-full blur-3xl"/>
+    return (<div className="min-h-screen flex" dir="rtl">
+      {/* Left side — Luxury image collage */}
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden">
+        {/* Background image grid */}
+        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+          <div className="relative overflow-hidden">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-[15s] hover:scale-110"
+              style={{ backgroundImage: `url(${bgImages[0]})` }}
+            />
+          </div>
+          <div className="relative overflow-hidden row-span-2">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-[15s] hover:scale-110"
+              style={{ backgroundImage: `url(${bgImages[1]})` }}
+            />
+          </div>
+          <div className="relative overflow-hidden">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-[15s] hover:scale-110"
+              style={{ backgroundImage: `url(${bgImages[2]})` }}
+            />
+          </div>
         </div>
-        <div className="relative z-10 text-center px-12">
-          <Logo size="xl" variant="dark"/>
+
+        {/* Dark overlay with gradient */}
+        <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/50 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40" />
+
+        {/* Gold accent glow */}
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gold/20 rounded-full blur-[120px] -translate-y-1/3 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gold/15 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
+
+        {/* Gold line top */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gold-gradient" />
+
+        {/* Content over images */}
+        <div className="relative z-10 flex flex-col justify-between p-10 w-full">
+          <div>
+            <Logo size="xl" variant="dark"/>
+          </div>
+          <div className="max-w-lg">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-black/40 backdrop-blur-md px-4 py-2 text-xs text-gold-light tracking-widest uppercase mb-6">
+              Interior Design Community
+            </div>
+            <h2 className="text-4xl xl:text-5xl font-heading font-bold text-white leading-tight mb-4">
+              המקום שבו
+              <span className="block text-gold mt-2">עיצוב פוגש קהילה</span>
+            </h2>
+            <p className="text-white/60 text-base leading-relaxed max-w-md">
+              חללים מעוצבים, מטבחים יוקרתיים, בתים מרהיבים — הכל מתחיל כאן, בקהילה שמחברת מעצבות וספקים ברמה אחרת.
+            </p>
+          </div>
+          <div className="flex items-center gap-6">
+            {["סלונים", "מטבחים", "חדרי אמבט", "גינות"].map((tag) => (
+              <span key={tag} className="text-white/40 text-xs tracking-wider uppercase border-b border-white/10 pb-1">
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-6 sm:p-12">
-        <div className="w-full max-w-md mx-auto">
+      {/* Right side — Login form */}
+      <div className="flex-1 flex items-center justify-center px-4 py-6 sm:p-12 bg-gradient-to-br from-[#FDFCFA] via-white to-[#FBF7ED] relative">
+        {/* Subtle pattern */}
+        <div className="absolute inset-0 opacity-[0.03] [background-image:radial-gradient(circle_at_1px_1px,#C9A84C_1px,transparent_0)] [background-size:32px_32px]" />
+
+        <div className="w-full max-w-md mx-auto relative z-10">
           <div className="lg:hidden mb-8 text-center">
             <Logo size="lg" variant="light"/>
+            <p className="text-text-muted text-sm mt-2">עיצוב פוגש קהילה</p>
           </div>
 
           {!selectedRole ? (<div className="animate-fade-in">
-              <h1 className="text-2xl sm:text-3xl font-bold text-text-primary text-center mb-2">
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold text-text-primary text-center mb-2">
                 {siteText.auth.login.welcomeTitle}
               </h1>
               <p className="text-text-muted text-center mb-8">
@@ -101,10 +163,10 @@ function LoginContent() {
 
               <div className="space-y-3">
                 {roles.map((roleKey) => (<button key={roleKey} onClick={() => setSelectedRole(roleKey)} className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-card border border-border-subtle
-                             hover:border-gold hover:shadow-card-hover transition-all duration-300
-                             bg-white group text-right min-h-[44px]">
-                    <div className="w-12 h-12 rounded-xl bg-amber-50 group-hover:bg-gold/20
-                                  flex items-center justify-center text-gold transition-colors">
+                             hover:border-gold hover:shadow-gold transition-all duration-300
+                             bg-white/80 backdrop-blur-sm group text-right min-h-[44px]">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-50 to-amber-50 group-hover:from-gold/20 group-hover:to-gold/10
+                                  flex items-center justify-center text-gold transition-all duration-300 shadow-sm">
                       {roleMeta[roleKey].icon}
                     </div>
                     <div className="flex-1">
@@ -131,11 +193,11 @@ function LoginContent() {
               </button>
 
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gold/10 flex items-center justify-center text-gold">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold/15 to-gold/5 flex items-center justify-center text-gold shadow-sm">
                   {roleMeta[selectedRole].icon}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-text-primary">
+                  <h1 className="text-2xl font-heading font-bold text-text-primary">
                     {siteText.auth.login.roleTitlePrefix} - {roleMeta[selectedRole].text.label}
                   </h1>
                 </div>
@@ -181,7 +243,7 @@ function LoginContent() {
                       <div className="w-full border-t border-border-subtle"/>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-bg text-text-muted">{siteText.auth.common.or}</span>
+                      <span className="px-4 bg-[#FDFCFA] text-text-muted">{siteText.auth.common.or}</span>
                     </div>
                   </div>
 
@@ -218,5 +280,3 @@ function LoginContent() {
       </div>
     </div>);
 }
-
-
