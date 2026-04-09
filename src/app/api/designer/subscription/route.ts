@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import {
   createCustomer,
   createSubscription,
+  createInvoice,
   cancelSubscription as icountCancel,
 } from "@/lib/icount";
 
@@ -100,7 +101,56 @@ export async function POST(req: NextRequest) {
         icountSubscriptionId;
     }
 
+    // --- Payment-first: for paid plans, charge BEFORE activating ---
     const now = new Date();
+    if (price > 0) {
+      if (!icountCustomerId) {
+        return NextResponse.json(
+          { error: "לא הוגדר אמצעי תשלום — יש לעדכן פרטי כרטיס אשראי" },
+          { status: 400 }
+        );
+      }
+
+      let invoiceResult: { status?: boolean; doc_id?: string; receipt_id?: string };
+      try {
+        invoiceResult = await createInvoice({
+          customerId: icountCustomerId,
+          amount: price,
+          description: `מנוי ${plan.name} — חיוב ראשון`,
+          currency: plan.currency,
+        }) as typeof invoiceResult;
+      } catch (err) {
+        console.error("[subscription] iCount invoice error:", err);
+        return NextResponse.json(
+          { error: "החיוב נכשל — לא ניתן להפעיל מנוי ללא תשלום מאושר" },
+          { status: 402 }
+        );
+      }
+
+      if (!invoiceResult.status) {
+        return NextResponse.json(
+          { error: "החיוב נדחה — בדקי את פרטי כרטיס האשראי ונסי שוב" },
+          { status: 402 }
+        );
+      }
+
+      // Record successful first payment (for existing subscription records)
+      if (existing) {
+        await prisma.subscriptionPayment.create({
+          data: {
+            subscriptionId: existing.id,
+            amount: price,
+            currency: plan.currency,
+            status: "succeeded",
+            paymentMethod: "first_charge",
+            icountInvoiceId: invoiceResult.doc_id || null,
+            icountReceiptId: invoiceResult.receipt_id || null,
+            paidAt: now,
+          },
+        });
+      }
+    }
+
     const nextPeriodEnd = new Date(now);
     nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1);
 
@@ -116,6 +166,8 @@ export async function POST(req: NextRequest) {
         autoRenew: true,
         icountCustomerId,
         icountSubscriptionId,
+        lastPaymentAt: price > 0 ? now : undefined,
+        lastPaymentAmount: price > 0 ? price : undefined,
       },
       update: {
         planId: plan.id,
@@ -127,9 +179,25 @@ export async function POST(req: NextRequest) {
         autoRenew: true,
         icountCustomerId,
         icountSubscriptionId,
+        lastPaymentAt: price > 0 ? now : undefined,
+        lastPaymentAmount: price > 0 ? price : undefined,
       },
       include: { plan: true },
     });
+
+    // Record first payment for new subscriptions (no existing record)
+    if (price > 0 && !existing) {
+      await prisma.subscriptionPayment.create({
+        data: {
+          subscriptionId: saved.id,
+          amount: price,
+          currency: plan.currency,
+          status: "succeeded",
+          paymentMethod: "first_charge",
+          paidAt: now,
+        },
+      });
+    }
 
     return NextResponse.json({ success: true, subscription: saved });
   } catch (error) {

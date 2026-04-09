@@ -16,6 +16,7 @@ import { calculateProration, prorationDescription } from "@/lib/subscription-pro
 import { validateCoupon, redeemCoupon } from "@/lib/coupons";
 import { createNotification } from "@/lib/notifications";
 import { sendEmail, subscriptionPausedEmail } from "@/lib/email";
+import { createInvoice } from "@/lib/icount";
 
 export async function POST(req: NextRequest) {
   try {
@@ -89,26 +90,85 @@ export async function POST(req: NextRequest) {
         now
       );
 
-      // Record pending charge for net due now
+      // --- Payment-first: charge BEFORE switching the plan ---
       if (proration.netDueNow > 0) {
+        // Verify designer has an iCount customer for charging
+        if (!subscription.icountCustomerId) {
+          return NextResponse.json(
+            { error: "לא הוגדר אמצעי תשלום — יש לעדכן פרטי כרטיס אשראי לפני שדרוג" },
+            { status: 400 }
+          );
+        }
+
+        // Charge the prorated amount via iCount
+        let invoiceResult: { status?: boolean; doc_id?: string; receipt_id?: string; doc_number?: string };
+        try {
+          invoiceResult = await createInvoice({
+            customerId: subscription.icountCustomerId,
+            amount: proration.netDueNow,
+            description: `שדרוג מנוי מ-${subscription.plan.name} ל-${newPlan.name} (חיוב יחסי)`,
+            currency: newPlan.currency,
+          }) as typeof invoiceResult;
+        } catch (err) {
+          console.error("[change-plan] iCount invoice error:", err);
+          // Record failed payment
+          await prisma.subscriptionPayment.create({
+            data: {
+              subscriptionId: subscription.id,
+              amount: proration.netDueNow,
+              currency: newPlan.currency,
+              status: "failed",
+              failureReason: err instanceof Error ? err.message : "שגיאה בחיוב",
+              paymentMethod: "proration",
+            },
+          });
+          return NextResponse.json(
+            { error: "החיוב נכשל — לא ניתן לשדרג ללא תשלום מאושר. אנא ודאי שפרטי התשלום מעודכנים." },
+            { status: 402 }
+          );
+        }
+
+        if (!invoiceResult.status) {
+          // Charge was rejected by iCount
+          await prisma.subscriptionPayment.create({
+            data: {
+              subscriptionId: subscription.id,
+              amount: proration.netDueNow,
+              currency: newPlan.currency,
+              status: "failed",
+              failureReason: "החיוב נדחה על ידי ספק הסליקה",
+              paymentMethod: "proration",
+            },
+          });
+          return NextResponse.json(
+            { error: "החיוב נדחה — לא ניתן לשדרג ללא תשלום מאושר. בדקי את פרטי כרטיס האשראי." },
+            { status: 402 }
+          );
+        }
+
+        // Payment succeeded — record it
         await prisma.subscriptionPayment.create({
           data: {
             subscriptionId: subscription.id,
             amount: proration.netDueNow,
             currency: newPlan.currency,
-            status: "pending",
-            failureReason: null,
+            status: "succeeded",
             paymentMethod: "proration",
+            icountInvoiceId: invoiceResult.doc_id || null,
+            icountReceiptId: invoiceResult.receipt_id || null,
+            paidAt: now,
           },
         });
       }
 
+      // Payment confirmed (or no charge needed) — NOW switch the plan
       const updated = await prisma.designerSubscription.update({
         where: { id: subscription.id },
         data: {
           planId: newPlan.id,
           currentPeriodStart: now,
-          // keep same period end
+          lastPaymentAt: proration.netDueNow > 0 ? now : undefined,
+          lastPaymentAmount: proration.netDueNow > 0 ? proration.netDueNow : undefined,
         },
         include: { plan: true },
       });
@@ -126,9 +186,10 @@ export async function POST(req: NextRequest) {
         toValue: newPlan.name,
         metadata: {
           proration,
+          paymentVerified: true,
           couponApplied: couponInfo?.couponId || null,
         },
-        reason: "Mid-cycle upgrade",
+        reason: "Mid-cycle upgrade — payment verified",
       });
 
       const description = prorationDescription(

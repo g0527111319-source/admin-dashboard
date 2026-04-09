@@ -153,18 +153,28 @@ export default function DesignerSubscriptionPage() {
     setActionLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/designer/subscription`, {
+      // If the designer already has a subscription → use change-plan (with proration)
+      // Otherwise → use the initial subscribe route
+      const hasExisting = subscription && subscription.status !== "cancelled";
+      const url = hasExisting
+        ? `/api/designer/subscription/change-plan`
+        : `/api/designer/subscription`;
+      const payload = hasExisting
+        ? { designerId, newPlanId: planId }
+        : { planId, designerId };
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-user-id": designerId },
-        body: JSON.stringify({ planId, designerId }),
+        body: JSON.stringify(payload),
       });
+      const d = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "שגיאה ביצירת המנוי");
+        throw new Error(d.error || "שגיאה בשינוי המנוי");
       }
       await loadData();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "שגיאה ביצירת המנוי");
+      setError(e instanceof Error ? e.message : "שגיאה בשינוי המנוי");
     } finally {
       setActionLoading(false);
     }
