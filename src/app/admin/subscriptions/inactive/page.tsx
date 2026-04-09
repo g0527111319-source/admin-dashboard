@@ -3,13 +3,6 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A84C";
-const BG = "#050505";
-const CARD_BG = "#0f0f0f";
-const BORDER = "rgba(255,255,255,0.08)";
-const MUTED = "rgba(255,255,255,0.55)";
-const TEXT = "#ffffff";
-
 async function loadInactive() {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -67,107 +60,68 @@ async function loadInactive() {
 export default async function InactivePaidPage() {
   const rows = await loadInactive();
 
-  const cardStyle: React.CSSProperties = {
-    background: CARD_BG,
-    border: `1px solid ${BORDER}`,
-    borderRadius: 12,
-    padding: 20,
-  };
-  const thStyle: React.CSSProperties = {
-    textAlign: "right",
-    padding: 12,
-    color: GOLD,
-    fontWeight: 600,
-    borderBottom: `1px solid ${BORDER}`,
-    fontSize: 13,
-  };
-  const tdStyle: React.CSSProperties = {
-    padding: 12,
-    borderBottom: `1px solid ${BORDER}`,
-    fontSize: 14,
-    color: TEXT,
-  };
-
   return (
-    <div style={{ minHeight: "100vh", background: BG, color: TEXT, padding: 24 }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}>
+    <div className="min-h-screen bg-bg-dark text-white p-6">
+      <div className="max-w-[1280px] mx-auto">
+        <div className="mb-6">
           <Link
             href="/admin/subscriptions/analytics"
-            style={{
-              color: MUTED,
-              fontSize: 13,
-              textDecoration: "none",
-              marginBottom: 8,
-              display: "inline-block",
-            }}
+            className="text-white/55 text-[13px] no-underline mb-2 inline-block"
           >
             &larr; חזרה לדשבורד
           </Link>
-          <h1 style={{ color: GOLD, fontSize: 30, fontWeight: 700, margin: 0 }}>
+          <h1 className="text-gold text-[30px] font-bold m-0">
             מעצבות משלמות לא פעילות
           </h1>
-          <p style={{ color: MUTED, fontSize: 14, marginTop: 8 }}>
+          <p className="text-white/55 text-sm mt-2">
             מעצבות עם מנוי בתשלום שלא נכנסו למערכת מעל 30 ימים — להתקשר אליהן ולברר
           </p>
         </div>
 
-        <div style={cardStyle}>
-          <div style={{ marginBottom: 12, color: MUTED, fontSize: 14 }}>
+        <div className="bg-[#0f0f0f] border border-white/[0.08] rounded-card p-5">
+          <div className="mb-3 text-white/55 text-sm">
             סה"כ {rows.length.toLocaleString("he-IL")} מעצבות
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th style={thStyle}>שם</th>
-                  <th style={thStyle}>אימייל</th>
-                  <th style={thStyle}>טלפון</th>
-                  <th style={thStyle}>תוכנית</th>
-                  <th style={thStyle}>הצטרפות</th>
-                  <th style={thStyle}>התחברות אחרונה</th>
-                  <th style={thStyle}>ימים ללא כניסה</th>
-                  <th style={thStyle}>פעולה</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">שם</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">אימייל</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">טלפון</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">תוכנית</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">הצטרפות</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">התחברות אחרונה</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">ימים ללא כניסה</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">פעולה</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <td style={tdStyle}>{r.fullName}</td>
-                    <td style={tdStyle}>{r.email || "—"}</td>
-                    <td style={tdStyle}>{r.phone}</td>
-                    <td style={tdStyle}>{r.planName}</td>
-                    <td style={tdStyle}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.fullName}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.email || "—"}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.phone}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.planName}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       {new Date(r.joinDate).toLocaleDateString("he-IL")}
                     </td>
-                    <td style={tdStyle}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       {r.lastLoginAt
                         ? new Date(r.lastLoginAt).toLocaleDateString("he-IL")
                         : "מעולם לא"}
                     </td>
-                    <td style={tdStyle}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       <span
-                        style={{
-                          color: r.daysSinceLogin > 60 ? "#f88" : GOLD,
-                          fontWeight: 600,
-                        }}
+                        className={`font-semibold ${r.daysSinceLogin > 60 ? "text-[#f88]" : "text-gold"}`}
                       >
                         {r.daysSinceLogin >= 999 ? "—" : r.daysSinceLogin.toLocaleString("he-IL")}
                       </span>
                     </td>
-                    <td style={tdStyle}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       <a
                         href={`tel:${r.phone}`}
-                        style={{
-                          padding: "6px 14px",
-                          background: GOLD,
-                          color: "#000",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          textDecoration: "none",
-                          display: "inline-block",
-                        }}
+                        className="px-3.5 py-1.5 bg-gold text-black rounded-btn text-[13px] font-bold no-underline inline-block"
                       >
                         התקשרי אליה
                       </a>
@@ -176,7 +130,7 @@ export default async function InactivePaidPage() {
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={8} style={{ ...tdStyle, color: MUTED, textAlign: "center", padding: 24 }}>
+                    <td colSpan={8} className="p-6 border-b border-white/[0.08] text-sm text-white/55 text-center">
                       אין מעצבות לא פעילות
                     </td>
                   </tr>

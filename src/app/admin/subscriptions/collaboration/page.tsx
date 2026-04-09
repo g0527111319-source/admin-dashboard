@@ -3,13 +3,6 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A84C";
-const BG = "#050505";
-const CARD_BG = "#0f0f0f";
-const BORDER = "rgba(255,255,255,0.08)";
-const MUTED = "rgba(255,255,255,0.55)";
-const TEXT = "#ffffff";
-
 function fmtIls(n: number): string {
   return `₪${n.toLocaleString("he-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -92,94 +85,43 @@ export default async function CollaborationReportPage({
       )
     : allRows;
 
-  const cardStyle: React.CSSProperties = {
-    background: CARD_BG,
-    border: `1px solid ${BORDER}`,
-    borderRadius: 12,
-    padding: 20,
-  };
-  const thStyle: React.CSSProperties = {
-    textAlign: "right",
-    padding: 12,
-    color: GOLD,
-    fontWeight: 600,
-    borderBottom: `1px solid ${BORDER}`,
-    fontSize: 13,
-  };
-  const tdStyle: React.CSSProperties = {
-    padding: 12,
-    borderBottom: `1px solid ${BORDER}`,
-    fontSize: 14,
-    color: TEXT,
-  };
-
   return (
-    <div style={{ minHeight: "100vh", background: BG, color: TEXT, padding: 24 }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}>
+    <div className="min-h-screen bg-bg-dark text-white p-6">
+      <div className="max-w-[1280px] mx-auto">
+        <div className="mb-6">
           <Link
             href="/admin/subscriptions/analytics"
-            style={{
-              color: MUTED,
-              fontSize: 13,
-              textDecoration: "none",
-              marginBottom: 8,
-              display: "inline-block",
-            }}
+            className="text-white/55 text-[13px] no-underline mb-2 inline-block"
           >
             &larr; חזרה לדשבורד
           </Link>
-          <h1 style={{ color: GOLD, fontSize: 30, fontWeight: 700, margin: 0 }}>
+          <h1 className="text-gold text-[30px] font-bold m-0">
             דוח שיתופי פעולה
           </h1>
-          <p style={{ color: MUTED, fontSize: 14, marginTop: 8 }}>
+          <p className="text-white/55 text-sm mt-2">
             ספקים ייחודיים, סכומי עסקאות וזכאות להנחה לכל מעצבת
           </p>
         </div>
 
-        <div style={{ ...cardStyle, marginBottom: 16 }}>
-          <form method="GET" style={{ display: "flex", gap: 8 }}>
+        <div className="bg-[#0f0f0f] border border-white/[0.08] rounded-card p-5 mb-4">
+          <form method="GET" className="flex gap-2">
             <input
               type="text"
               name="q"
               defaultValue={q}
               placeholder="חיפוש לפי שם או אימייל..."
-              style={{
-                flex: 1,
-                background: BG,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 8,
-                padding: "10px 14px",
-                color: TEXT,
-                fontSize: 14,
-              }}
+              className="flex-1 bg-bg-dark border border-white/[0.08] rounded-btn px-3.5 py-2.5 text-white text-sm"
             />
             <button
               type="submit"
-              style={{
-                padding: "10px 20px",
-                background: GOLD,
-                color: "#000",
-                border: "none",
-                borderRadius: 8,
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
+              className="px-5 py-2.5 bg-gold text-black border-none rounded-btn font-bold cursor-pointer"
             >
               חפש
             </button>
             {q && (
               <Link
                 href="/admin/subscriptions/collaboration"
-                style={{
-                  padding: "10px 20px",
-                  background: CARD_BG,
-                  color: TEXT,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 8,
-                  textDecoration: "none",
-                  fontSize: 14,
-                }}
+                className="px-5 py-2.5 bg-[#0f0f0f] text-white border border-white/[0.08] rounded-btn no-underline text-sm"
               >
                 נקה
               </Link>
@@ -187,60 +129,43 @@ export default async function CollaborationReportPage({
           </form>
         </div>
 
-        <div style={cardStyle}>
-          <div style={{ marginBottom: 12, color: MUTED, fontSize: 14 }}>
+        <div className="bg-[#0f0f0f] border border-white/[0.08] rounded-card p-5">
+          <div className="mb-3 text-white/55 text-sm">
             סה"כ {rows.length.toLocaleString("he-IL")} מעצבות
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th style={thStyle}>שם</th>
-                  <th style={thStyle}>אימייל</th>
-                  <th style={thStyle}>טלפון</th>
-                  <th style={thStyle}>תוכנית נוכחית</th>
-                  <th style={thStyle}>ספקים (30 ימים)</th>
-                  <th style={thStyle}>ספקים (כל הזמן)</th>
-                  <th style={thStyle}>סכום עסקאות</th>
-                  <th style={thStyle}>זכאית להנחה</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">שם</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">אימייל</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">טלפון</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">תוכנית נוכחית</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">ספקים (30 ימים)</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">ספקים (כל הזמן)</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">סכום עסקאות</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">זכאית להנחה</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <td style={tdStyle}>{r.fullName}</td>
-                    <td style={tdStyle}>{r.email || "—"}</td>
-                    <td style={tdStyle}>{r.phone}</td>
-                    <td style={tdStyle}>{r.planName}</td>
-                    <td style={{ ...tdStyle, color: r.suppliers30d > 0 ? GOLD : MUTED, fontWeight: 600 }}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.fullName}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.email || "—"}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.phone}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.planName}</td>
+                    <td className={`p-3 border-b border-white/[0.08] text-sm font-semibold ${r.suppliers30d > 0 ? "text-gold" : "text-white/55"}`}>
                       {r.suppliers30d}
                     </td>
-                    <td style={tdStyle}>{r.suppliersAllTime}</td>
-                    <td style={tdStyle}>{fmtIls(r.totalVolume)}</td>
-                    <td style={tdStyle}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{r.suppliersAllTime}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{fmtIls(r.totalVolume)}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       {r.eligibleForDiscount ? (
-                        <span
-                          style={{
-                            padding: "3px 10px",
-                            background: "rgba(201,168,76,0.18)",
-                            color: GOLD,
-                            borderRadius: 6,
-                            fontSize: 13,
-                            fontWeight: 700,
-                          }}
-                        >
+                        <span className="px-2.5 py-[3px] bg-gold/[0.18] text-gold rounded-[6px] text-[13px] font-bold">
                           ✓
                         </span>
                       ) : (
-                        <span
-                          style={{
-                            padding: "3px 10px",
-                            background: "rgba(255,255,255,0.05)",
-                            color: MUTED,
-                            borderRadius: 6,
-                            fontSize: 13,
-                          }}
-                        >
+                        <span className="px-2.5 py-[3px] bg-white/5 text-white/55 rounded-[6px] text-[13px]">
                           ✗
                         </span>
                       )}
@@ -249,7 +174,7 @@ export default async function CollaborationReportPage({
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={8} style={{ ...tdStyle, color: MUTED, textAlign: "center", padding: 24 }}>
+                    <td colSpan={8} className="p-6 border-b border-white/[0.08] text-sm text-white/55 text-center">
                       אין תוצאות
                     </td>
                   </tr>

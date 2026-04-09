@@ -1,6 +1,8 @@
 "use client";
 
 import { ReactNode, useRef, useState } from "react";
+import { cn } from "@/lib/cn";
+import { Button } from "@/components/ui/Button";
 
 type Props = {
   adminEmail: string;
@@ -9,12 +11,6 @@ type Props = {
   onVerified: () => void;
   children: ReactNode;
 };
-
-const GOLD = "#C9A84C";
-const PANEL = "#141414";
-const BORDER = "#2a2a2a";
-const TEXT = "#e5e5e5";
-const MUTED = "#888";
 
 export default function TwoFactorGate({
   adminEmail,
@@ -112,87 +108,33 @@ export default function TwoFactorGate({
   return (
     <div
       dir="rtl"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.75)",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
+      className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm"
     >
-      <div
-        style={{
-          background: PANEL,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 16,
-          padding: 32,
-          width: "100%",
-          maxWidth: 440,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-        }}
-      >
-        <div
-          style={{
-            color: GOLD,
-            fontWeight: 700,
-            fontSize: 18,
-            marginBottom: 8,
-            textAlign: "center",
-          }}
-        >
-          אימות דו-שלבי
-        </div>
-        <div
-          style={{
-            color: TEXT,
-            fontSize: 13,
-            textAlign: "center",
-            marginBottom: 20,
-            lineHeight: 1.6,
-          }}
-        >
+      <div className="bg-bg-dark-surface border border-white/10 rounded-xl p-8 w-full max-w-[440px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] animate-modal-enter">
+        <div className="text-gold font-bold text-lg mb-2 text-center">אימות דו-שלבי</div>
+        <div className="text-white/80 text-[13px] text-center mb-5 leading-relaxed">
           לאימות הפעולה נשלח קוד לאימייל שלך
         </div>
 
         {!sent && (
-          <button
-            type="button"
+          <Button
+            variant="gold"
+            size="lg"
+            fullWidth
+            loading={sending}
             onClick={handleSend}
-            disabled={sending}
-            style={{
-              width: "100%",
-              background: GOLD,
-              color: "#0a0a0a",
-              border: "none",
-              padding: "12px 16px",
-              borderRadius: 10,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: sending ? "not-allowed" : "pointer",
-              opacity: sending ? 0.6 : 1,
-            }}
           >
             {sending ? "שולחת..." : "שלחי קוד"}
-          </button>
+          </Button>
         )}
 
         {sent && (
           <>
-            <div style={{ color: MUTED, fontSize: 12, textAlign: "center", marginBottom: 12 }}>
+            <div className="text-white/50 text-xs text-center mb-3">
               קוד נשלח אל {adminEmail}
             </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                justifyContent: "center",
-                marginBottom: 16,
-                direction: "ltr",
-              }}
-            >
+            {/* OTP inputs — LTR for digit order */}
+            <div className="flex gap-2 justify-center mb-4" dir="ltr">
               {digits.map((d, i) => (
                 <input
                   key={i}
@@ -206,55 +148,30 @@ export default function TwoFactorGate({
                   onKeyDown={(e) => handleKey(i, e)}
                   onPaste={handlePaste}
                   maxLength={1}
-                  style={{
-                    width: 44,
-                    height: 52,
-                    background: "#0a0a0a",
-                    border: `1px solid ${BORDER}`,
-                    borderRadius: 8,
-                    color: GOLD,
-                    fontSize: 22,
-                    fontWeight: 700,
-                    textAlign: "center",
-                    outline: "none",
-                  }}
+                  className={cn(
+                    "w-11 h-[52px] bg-bg-dark border border-white/10 rounded-btn",
+                    "text-gold text-[22px] font-bold text-center",
+                    "outline-none transition-all duration-200",
+                    "focus:border-gold focus:shadow-[0_0_0_3px_rgba(201,168,76,0.2)]"
+                  )}
                 />
               ))}
             </div>
-            <button
-              type="button"
+            <Button
+              variant="gold"
+              size="lg"
+              fullWidth
+              loading={verifying}
               onClick={handleVerify}
-              disabled={verifying}
-              style={{
-                width: "100%",
-                background: GOLD,
-                color: "#0a0a0a",
-                border: "none",
-                padding: "12px 16px",
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: verifying ? "not-allowed" : "pointer",
-                opacity: verifying ? 0.6 : 1,
-                marginBottom: 8,
-              }}
+              className="mb-2"
             >
               {verifying ? "מאמתת..." : "אמתי"}
-            </button>
+            </Button>
             <button
               type="button"
               onClick={handleSend}
               disabled={sending}
-              style={{
-                width: "100%",
-                background: "transparent",
-                color: MUTED,
-                border: "none",
-                padding: "8px",
-                fontSize: 12,
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
+              className="w-full bg-transparent text-white/50 border-none p-2 text-xs cursor-pointer underline hover:text-gold transition-colors disabled:opacity-50"
             >
               שלחי קוד חדש
             </button>
@@ -262,18 +179,7 @@ export default function TwoFactorGate({
         )}
 
         {error && (
-          <div
-            style={{
-              marginTop: 12,
-              padding: "8px 12px",
-              background: "rgba(229,57,53,0.15)",
-              border: "1px solid rgba(229,57,53,0.4)",
-              borderRadius: 8,
-              color: "#ff6b6b",
-              fontSize: 12,
-              textAlign: "center",
-            }}
-          >
+          <div className="mt-3 px-3 py-2 bg-red-500/15 border border-red-500/40 rounded-btn text-red-400 text-xs text-center">
             {error}
           </div>
         )}

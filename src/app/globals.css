@@ -1,66 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Montserrat:wght@400;500;600;700&display=swap');
+/*
+ * Fonts are loaded via next/font/google in src/app/layout.tsx.
+ * CSS variables available: --font-heebo, --font-assistant, --font-frank-ruhl.
+ * Playfair Display was removed — it has NO Hebrew glyphs and caused fallback to system serif.
+ */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@font-face {
-  font-family: 'Ashur B';
-  src: url('/fonts/hebrew-custom/AshurB.otf') format('opentype');
-}
-
-@font-face {
-  font-family: 'Aviv Regular';
-  src: url('/fonts/hebrew-custom/Aviv-Regular_qeknqm.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'David Libre Local';
-  src: url('/fonts/hebrew-custom/DavidLibre-Bold.ttf') format('truetype');
-  font-weight: 700;
-}
-
-@font-face {
-  font-family: 'Happiness Regular';
-  src: url('/fonts/hebrew-custom/happiness-Regular.otf') format('opentype');
-}
-
-@font-face {
-  font-family: 'Italki Atik';
-  src: url('/fonts/hebrew-custom/ItalkiAtikThird.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Mark Hand';
-  src: url('/fonts/hebrew-custom/Mark_hand-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Mekorot Vilna';
-  src: url('/fonts/hebrew-custom/Mekorot-Vilna-Bold-Italic.ttf') format('truetype');
-  font-weight: 700;
-  font-style: italic;
-}
-
-@font-face {
-  font-family: 'SBL Hebrew';
-  src: url('/fonts/hebrew-custom/SBL_Hbrw.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'SF Hebrew';
-  src: url('/fonts/hebrew-custom/SF-Hebrew.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Shlomo';
-  src: url('/fonts/hebrew-custom/Shlomo.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'SN Megila';
-  src: url('/fonts/hebrew-custom/SN_megila.otf') format('opentype');
-}
 
 /* ============================
    PREMIUM DESIGN SYSTEM v2.0
@@ -153,21 +99,23 @@ html {
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'Heebo', 'Assistant', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-heebo), 'Heebo', 'Assistant', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
   letter-spacing: -0.01em;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv11", "kern";
 }
 
 h1, h2, h3, h4, h5 {
-  font-family: 'Playfair Display', 'Frank Ruhl Libre', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   color: var(--text);
   font-weight: 700;
   line-height: 1.2;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern", "liga";
 }
 h1 {
   font-size: 2.25rem;
@@ -222,7 +170,7 @@ p {
 
 /* Premium headings — dramatic, high-impact display text */
 .text-luxury {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -230,7 +178,7 @@ p {
   -webkit-font-smoothing: antialiased;
 }
 .text-luxury-lg {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 800;
   font-size: 2.5rem;
   letter-spacing: -0.03em;
@@ -238,7 +186,7 @@ p {
   text-rendering: optimizeLegibility;
 }
 .text-luxury-xl {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 900;
   font-size: 3.25rem;
   letter-spacing: -0.03em;
@@ -248,14 +196,14 @@ p {
 
 /* Elegant subtitles — refined serif for secondary headings */
 .text-elegant {
-  font-family: 'Frank Ruhl Libre', 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 500;
   letter-spacing: -0.01em;
   line-height: 1.35;
   text-rendering: optimizeLegibility;
 }
 .text-elegant-light {
-  font-family: 'Frank Ruhl Libre', 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 300;
   letter-spacing: 0em;
   line-height: 1.4;
@@ -263,14 +211,14 @@ p {
 
 /* Gold accent text — for labels, numbers, and highlighted content */
 .text-accent {
-  font-family: 'Frank Ruhl Libre', 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 700;
   color: var(--gold);
   letter-spacing: 0.02em;
   line-height: 1.3;
 }
 .text-accent-subtle {
-  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 500;
   color: var(--gold);
   letter-spacing: 0.01em;
@@ -278,7 +226,7 @@ p {
 
 /* Display numbers — elegant numerals for stats and counters */
 .text-number {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -286,7 +234,7 @@ p {
 
 /* Uppercase label — spaced-out small caps for categories and labels */
 .text-label {
-  font-family: 'Heebo', 'Assistant', sans-serif;
+  font-family: var(--font-heebo), 'Heebo', 'Assistant', sans-serif;
   font-weight: 600;
   font-size: 0.75rem;
   letter-spacing: 0.1em;
@@ -296,7 +244,7 @@ p {
 
 /* Italic display — for quotes and decorative text */
 .text-luxury-italic {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-frank-ruhl), 'Frank Ruhl Libre', Georgia, serif;
   font-style: italic;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -1698,4 +1646,90 @@ textarea.input-field {
 }
 .chat-messages-area::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================
+   v3.1 — Premium Polish Layer
+   (Oct 2026 design upgrade)
+   ============================ */
+
+/* Accessible, beautiful focus rings — gold, visible on dark + light */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+  transition: outline-offset 150ms var(--ease-out);
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.15);
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+}
+
+/* Global custom scrollbar — luxurious but unobtrusive */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.25);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 200ms var(--ease-out);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.45);
+  background-clip: padding-box;
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 168, 76, 0.3) transparent;
+}
+
+/* Smoother text selection on gold accent surfaces */
+::selection {
+  background: rgba(201, 168, 76, 0.25);
+  color: var(--text);
+  text-shadow: none;
+}
+::-moz-selection {
+  background: rgba(201, 168, 76, 0.25);
+  color: var(--text);
+}
+
+/* Reduced-motion accessibility — respect user OS setting */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Better image defaults */
+img {
+  max-width: 100%;
+  height: auto;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Sharpen SVG icon rendering */
+svg {
+  shape-rendering: geometricPrecision;
 }

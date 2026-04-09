@@ -48,11 +48,14 @@ const config: Config = {
         },
       },
       fontFamily: {
-        heading: ['"Playfair Display"', '"Frank Ruhl Libre"', "Georgia", "serif"],
-        body: ['"Heebo"', '"Assistant"', "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        display: ['"Playfair Display"', "Georgia", "serif"],
-        accent: ['"Frank Ruhl Libre"', '"Playfair Display"', "Georgia", "serif"],
-        mono: ['"Montserrat"', "system-ui", "sans-serif"],
+        // next/font CSS variables injected on <html> in layout.tsx
+        heading: ["var(--font-frank-ruhl)", '"Frank Ruhl Libre"', "Georgia", "serif"],
+        body: ["var(--font-heebo)", '"Heebo"', "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        display: ["var(--font-frank-ruhl)", '"Frank Ruhl Libre"', "Georgia", "serif"],
+        accent: ["var(--font-frank-ruhl)", '"Frank Ruhl Libre"', "Georgia", "serif"],
+        sans: ["var(--font-heebo)", '"Heebo"', "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        assistant: ["var(--font-assistant)", '"Assistant"', "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "monospace"],
       },
       fontSize: {
         "2xs": ["0.65rem", { lineHeight: "1rem" }],

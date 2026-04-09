@@ -3,13 +3,6 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A84C";
-const BG = "#050505";
-const CARD_BG = "#0f0f0f";
-const BORDER = "rgba(255,255,255,0.08)";
-const MUTED = "rgba(255,255,255,0.55)";
-const TEXT = "#ffffff";
-
 function fmtIls(n: number): string {
   return `₪${n.toLocaleString("he-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -174,182 +167,91 @@ export default async function AnalyticsPage() {
 
   const maxRevenue = Math.max(1, ...data.revenueByMonth.map((m) => m.revenue));
 
-  const cardStyle: React.CSSProperties = {
-    background: CARD_BG,
-    border: `1px solid ${BORDER}`,
-    borderRadius: 12,
-    padding: 20,
-  };
-  const sectionTitle: React.CSSProperties = {
-    color: GOLD,
-    fontSize: 20,
-    fontWeight: 700,
-    marginBottom: 16,
-  };
-  const thStyle: React.CSSProperties = {
-    textAlign: "right",
-    padding: 12,
-    color: GOLD,
-    fontWeight: 600,
-    borderBottom: `1px solid ${BORDER}`,
-    fontSize: 13,
-  };
-  const tdStyle: React.CSSProperties = {
-    padding: 12,
-    borderBottom: `1px solid ${BORDER}`,
-    fontSize: 14,
-    color: TEXT,
-  };
-
   return (
-    <div style={{ minHeight: "100vh", background: BG, color: TEXT, padding: 24 }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+    <div className="min-h-screen bg-bg-dark text-white p-6">
+      <div className="max-w-[1280px] mx-auto">
         {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ color: GOLD, fontSize: 32, fontWeight: 700, margin: 0 }}>
+        <div className="mb-8">
+          <h1 className="text-gold text-[32px] font-bold m-0">
             דשבורד הכנסות ומנויים
           </h1>
-          <p style={{ color: MUTED, fontSize: 14, marginTop: 8 }}>
+          <p className="text-white/55 text-sm mt-2">
             עודכן: {data.generatedAt.toLocaleString("he-IL")}
           </p>
         </div>
 
         {/* Quick links */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        <div className="flex gap-3 mb-6 flex-wrap">
           <Link
             href="/admin/subscriptions"
-            style={{
-              padding: "8px 16px",
-              background: CARD_BG,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 8,
-              color: TEXT,
-              fontSize: 14,
-              textDecoration: "none",
-            }}
+            className="px-4 py-2 bg-bg-dark-surface border border-white/[0.08] rounded-btn text-white text-sm no-underline"
           >
             ניהול מנויים
           </Link>
           <Link
             href="/admin/subscriptions/collaboration"
-            style={{
-              padding: "8px 16px",
-              background: CARD_BG,
-              border: `1px solid ${GOLD}`,
-              borderRadius: 8,
-              color: GOLD,
-              fontSize: 14,
-              textDecoration: "none",
-            }}
+            className="px-4 py-2 bg-bg-dark-surface border border-gold rounded-btn text-gold text-sm no-underline"
           >
             דוח שיתופי פעולה
           </Link>
           <Link
             href="/admin/subscriptions/inactive"
-            style={{
-              padding: "8px 16px",
-              background: CARD_BG,
-              border: `1px solid ${GOLD}`,
-              borderRadius: 8,
-              color: GOLD,
-              fontSize: 14,
-              textDecoration: "none",
-            }}
+            className="px-4 py-2 bg-bg-dark-surface border border-gold rounded-btn text-gold text-sm no-underline"
           >
             מעצבות לא פעילות
           </Link>
         </div>
 
         {/* KPI Cards */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            marginBottom: 32,
-          }}
-        >
-          <div style={cardStyle}>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 8 }}>הכנסה חודשית (MRR)</div>
-            <div style={{ color: GOLD, fontSize: 32, fontWeight: 700 }}>{fmtIls(data.mrr)}</div>
-            <div style={{ color: MUTED, fontSize: 12, marginTop: 6 }}>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4 mb-8">
+          <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5">
+            <div className="text-white/55 text-[13px] mb-2">הכנסה חודשית (MRR)</div>
+            <div className="text-gold text-[32px] font-bold">{fmtIls(data.mrr)}</div>
+            <div className="text-white/55 text-xs mt-1.5">
               חדשים החודש: {fmtInt(data.newThisMonth)}
             </div>
           </div>
-          <div style={cardStyle}>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 8 }}>הכנסה שנתית (ARR)</div>
-            <div style={{ color: GOLD, fontSize: 32, fontWeight: 700 }}>{fmtIls(data.arr)}</div>
-            <div style={{ color: MUTED, fontSize: 12, marginTop: 6 }}>צפי על בסיס MRR נוכחי</div>
+          <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5">
+            <div className="text-white/55 text-[13px] mb-2">הכנסה שנתית (ARR)</div>
+            <div className="text-gold text-[32px] font-bold">{fmtIls(data.arr)}</div>
+            <div className="text-white/55 text-xs mt-1.5">צפי על בסיס MRR נוכחי</div>
           </div>
-          <div style={cardStyle}>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 8 }}>מנויים פעילים</div>
-            <div style={{ color: GOLD, fontSize: 32, fontWeight: 700 }}>{fmtInt(data.activeCount)}</div>
-            <div style={{ color: MUTED, fontSize: 12, marginTop: 6 }}>
+          <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5">
+            <div className="text-white/55 text-[13px] mb-2">מנויים פעילים</div>
+            <div className="text-gold text-[32px] font-bold">{fmtInt(data.activeCount)}</div>
+            <div className="text-white/55 text-xs mt-1.5">
               מתוכם בניסיון: {fmtInt(data.trialCount)}
             </div>
           </div>
-          <div style={cardStyle}>
-            <div style={{ color: MUTED, fontSize: 13, marginBottom: 8 }}>אחוז נטישה (30 ימים)</div>
-            <div style={{ color: GOLD, fontSize: 32, fontWeight: 700 }}>{fmtPct(data.churnRate)}</div>
-            <div style={{ color: MUTED, fontSize: 12, marginTop: 6 }}>
+          <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5">
+            <div className="text-white/55 text-[13px] mb-2">אחוז נטישה (30 ימים)</div>
+            <div className="text-gold text-[32px] font-bold">{fmtPct(data.churnRate)}</div>
+            <div className="text-white/55 text-xs mt-1.5">
               בוטלו החודש: {fmtInt(data.churnedThisMonth)}
             </div>
           </div>
         </div>
 
         {/* Revenue Chart */}
-        <div style={{ ...cardStyle, marginBottom: 32 }}>
-          <h2 style={sectionTitle}>הכנסות 12 חודשים אחרונים</h2>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              gap: 8,
-              height: 220,
-              padding: "16px 0",
-            }}
-          >
+        <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5 mb-8">
+          <h2 className="text-gold text-[20px] font-bold mb-4">הכנסות 12 חודשים אחרונים</h2>
+          <div className="flex items-end gap-2 h-[220px] py-4">
             {data.revenueByMonth.map((m) => {
               const heightPct = (m.revenue / maxRevenue) * 100;
               return (
                 <div
                   key={m.month}
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 6,
-                    minWidth: 0,
-                  }}
+                  className="flex-1 flex flex-col items-center gap-1.5 min-w-0"
                   title={`${monthLabel(m.month)}: ${fmtIls(m.revenue)} (${m.count} תשלומים)`}
                 >
-                  <div
-                    style={{
-                      color: GOLD,
-                      fontSize: 10,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                    }}
-                  >
+                  <div className="text-gold text-[10px] whitespace-nowrap overflow-hidden">
                     {m.revenue > 0 ? `₪${Math.round(m.revenue).toLocaleString("he-IL")}` : ""}
                   </div>
                   <div
-                    style={{
-                      width: "100%",
-                      height: `${Math.max(heightPct, 1)}%`,
-                      background: `linear-gradient(180deg, ${GOLD} 0%, rgba(201,168,76,0.4) 100%)`,
-                      borderRadius: "6px 6px 0 0",
-                      minHeight: 2,
-                    }}
+                    className="w-full rounded-t-[6px] min-h-[2px] bg-gradient-to-b from-gold to-gold/40"
+                    style={{ height: `${Math.max(heightPct, 1)}%` }}
                   />
-                  <div
-                    style={{
-                      color: MUTED,
-                      fontSize: 11,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <div className="text-white/55 text-[11px] whitespace-nowrap">
                     {monthLabel(m.month)}
                   </div>
                 </div>
@@ -359,31 +261,31 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* Plan Breakdown */}
-        <div style={{ ...cardStyle, marginBottom: 32 }}>
-          <h2 style={sectionTitle}>פילוח לפי תוכנית</h2>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5 mb-8">
+          <h2 className="text-gold text-[20px] font-bold mb-4">פילוח לפי תוכנית</h2>
+          <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th style={thStyle}>תוכנית</th>
-                <th style={thStyle}>מנויים</th>
-                <th style={thStyle}>MRR</th>
-                <th style={thStyle}>חלק מהכנסה</th>
+                <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">תוכנית</th>
+                <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">מנויים</th>
+                <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">MRR</th>
+                <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">חלק מהכנסה</th>
               </tr>
             </thead>
             <tbody>
               {data.planBreakdown.map((p) => (
                 <tr key={p.planName}>
-                  <td style={tdStyle}>{p.planName}</td>
-                  <td style={tdStyle}>{fmtInt(p.count)}</td>
-                  <td style={tdStyle}>{fmtIls(p.mrr)}</td>
-                  <td style={tdStyle}>
+                  <td className="p-3 border-b border-white/[0.08] text-sm text-white">{p.planName}</td>
+                  <td className="p-3 border-b border-white/[0.08] text-sm text-white">{fmtInt(p.count)}</td>
+                  <td className="p-3 border-b border-white/[0.08] text-sm text-white">{fmtIls(p.mrr)}</td>
+                  <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                     {data.mrr > 0 ? fmtPct((p.mrr / data.mrr) * 100) : "—"}
                   </td>
                 </tr>
               ))}
               {data.planBreakdown.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ ...tdStyle, color: MUTED, textAlign: "center" }}>
+                  <td colSpan={4} className="p-3 border-b border-white/[0.08] text-sm text-white/55 text-center">
                     אין נתונים
                   </td>
                 </tr>
@@ -393,26 +295,26 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* Upcoming Renewals */}
-        <div style={{ ...cardStyle, marginBottom: 32 }}>
-          <h2 style={sectionTitle}>חידושים קרובים (7 ימים)</h2>
-          <div style={{ marginBottom: 12, color: MUTED, fontSize: 14 }}>
+        <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5 mb-8">
+          <h2 className="text-gold text-[20px] font-bold mb-4">חידושים קרובים (7 ימים)</h2>
+          <div className="mb-3 text-white/55 text-sm">
             סה"כ {fmtInt(data.upcomingRenewals.count)} חידושים בסכום {fmtIls(data.upcomingRenewals.sum)}
           </div>
           {data.upcomingRenewals.list.length > 0 && (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th style={thStyle}>שם</th>
-                  <th style={thStyle}>תוכנית</th>
-                  <th style={thStyle}>תאריך חידוש</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">שם</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">תוכנית</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">תאריך חידוש</th>
                 </tr>
               </thead>
               <tbody>
                 {data.upcomingRenewals.list.map((s) => (
                   <tr key={s.id}>
-                    <td style={tdStyle}>{s.designer.fullName}</td>
-                    <td style={tdStyle}>{s.plan.name}</td>
-                    <td style={tdStyle}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{s.designer.fullName}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{s.plan.name}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       {new Date(s.currentPeriodEnd).toLocaleDateString("he-IL")}
                     </td>
                   </tr>
@@ -423,43 +325,35 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* At Risk Payments */}
-        <div style={{ ...cardStyle, marginBottom: 32 }}>
-          <h2 style={sectionTitle}>בסיכון — תשלומים שנכשלו</h2>
+        <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5 mb-8">
+          <h2 className="text-gold text-[20px] font-bold mb-4">בסיכון — תשלומים שנכשלו</h2>
           {data.atRisk.length === 0 ? (
-            <p style={{ color: MUTED }}>אין מנויים בסיכון</p>
+            <p className="text-white/55">אין מנויים בסיכון</p>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th style={thStyle}>שם</th>
-                  <th style={thStyle}>אימייל</th>
-                  <th style={thStyle}>תוכנית</th>
-                  <th style={thStyle}>סטטוס</th>
-                  <th style={thStyle}>כשלים</th>
-                  <th style={thStyle}>סוף תקופת חסד</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">שם</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">אימייל</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">תוכנית</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">סטטוס</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">כשלים</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">סוף תקופת חסד</th>
                 </tr>
               </thead>
               <tbody>
                 {data.atRisk.map((s) => (
                   <tr key={s.id}>
-                    <td style={tdStyle}>{s.designer.fullName}</td>
-                    <td style={tdStyle}>{s.designer.email || "—"}</td>
-                    <td style={tdStyle}>{s.plan.name}</td>
-                    <td style={tdStyle}>
-                      <span
-                        style={{
-                          padding: "3px 8px",
-                          background: "rgba(220,80,80,0.15)",
-                          color: "#f88",
-                          borderRadius: 6,
-                          fontSize: 12,
-                        }}
-                      >
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{s.designer.fullName}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{s.designer.email || "—"}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{s.plan.name}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
+                      <span className="px-2 py-[3px] bg-red-500/15 text-[#f88] rounded-[6px] text-xs">
                         {s.status}
                       </span>
                     </td>
-                    <td style={tdStyle}>{s.failedPaymentCount}</td>
-                    <td style={tdStyle}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{s.failedPaymentCount}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       {s.gracePeriodEndsAt
                         ? new Date(s.gracePeriodEndsAt).toLocaleDateString("he-IL")
                         : "—"}
@@ -472,30 +366,30 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* Churn at Risk — inactive 14d+ */}
-        <div style={{ ...cardStyle, marginBottom: 32 }}>
-          <h2 style={sectionTitle}>מעצבות בסיכון נטישה (לא נכנסו 14+ ימים)</h2>
+        <div className="bg-bg-dark-surface border border-white/[0.08] rounded-card p-5 mb-8">
+          <h2 className="text-gold text-[20px] font-bold mb-4">מעצבות בסיכון נטישה (לא נכנסו 14+ ימים)</h2>
           {data.churnAtRisk.length === 0 ? (
-            <p style={{ color: MUTED }}>אין מעצבות בסיכון נטישה</p>
+            <p className="text-white/55">אין מעצבות בסיכון נטישה</p>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th style={thStyle}>שם</th>
-                  <th style={thStyle}>אימייל</th>
-                  <th style={thStyle}>טלפון</th>
-                  <th style={thStyle}>תוכנית</th>
-                  <th style={thStyle}>ימים ללא כניסה</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">שם</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">אימייל</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">טלפון</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">תוכנית</th>
+                  <th className="text-right p-3 text-gold font-semibold border-b border-white/[0.08] text-[13px]">ימים ללא כניסה</th>
                 </tr>
               </thead>
               <tbody>
                 {data.churnAtRisk.map((row) => (
                   <tr key={row.sub.id}>
-                    <td style={tdStyle}>{row.sub.designer.fullName}</td>
-                    <td style={tdStyle}>{row.sub.designer.email || "—"}</td>
-                    <td style={tdStyle}>{row.sub.designer.phone}</td>
-                    <td style={tdStyle}>{row.sub.plan.name}</td>
-                    <td style={tdStyle}>
-                      <span style={{ color: row.daysSinceLogin > 30 ? "#f88" : GOLD }}>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{row.sub.designer.fullName}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{row.sub.designer.email || "—"}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{row.sub.designer.phone}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">{row.sub.plan.name}</td>
+                    <td className="p-3 border-b border-white/[0.08] text-sm text-white">
+                      <span className={row.daysSinceLogin > 30 ? "text-[#f88]" : "text-gold"}>
                         {row.daysSinceLogin >= 999 ? "מעולם לא" : fmtInt(row.daysSinceLogin)}
                       </span>
                     </td>

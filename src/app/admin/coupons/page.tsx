@@ -3,8 +3,6 @@ import CouponsManager from "@/components/admin/CouponsManager";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A84C";
-
 export default async function AdminCouponsPage() {
   let plans: { id: string; name: string; slug: string; price: string }[] = [];
   try {
@@ -24,27 +22,16 @@ export default async function AdminCouponsPage() {
   }
 
   return (
-    <div
-      dir="rtl"
-      style={{
-        minHeight: "100vh",
-        background: "#050505",
-        color: "white",
-        padding: 24,
-      }}
-    >
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <header style={{ marginBottom: 24 }}>
-          <h1 style={{ color: GOLD, fontSize: 28, fontWeight: 700, margin: 0 }}>
-            ניהול קופונים והנחות
-          </h1>
-          <p
-            style={{
-              color: "rgba(255,255,255,0.6)",
-              fontSize: 14,
-              marginTop: 6,
-            }}
-          >
+    <div dir="rtl" className="min-h-screen bg-bg py-8 px-6">
+      <div className="max-w-[1280px] mx-auto">
+        <header className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold-light rounded-full" />
+            <h1 className="font-heading text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
+              ניהול קופונים והנחות
+            </h1>
+          </div>
+          <p className="text-text-muted text-sm md:text-base leading-relaxed max-w-2xl">
             יצירה, ניהול והשבתה של קופוני הנחה למעצבות
           </p>
         </header>

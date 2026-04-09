@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
+import { Check, Copy, Power, Trash2, Ticket, Calendar, Hash } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { cn } from "@/lib/cn";
 
 type Plan = {
   id: string;
@@ -28,56 +37,6 @@ type Coupon = {
 
 type Props = {
   plans: Plan[];
-};
-
-const GOLD = "#C9A84C";
-const BG = "#0e0e0e";
-const BG_DEEP = "#050505";
-const BORDER = "rgba(255,255,255,0.1)";
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  background: BG_DEEP,
-  border: `1px solid ${BORDER}`,
-  borderRadius: 8,
-  padding: "8px 12px",
-  color: "white",
-  fontSize: 14,
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 13,
-  color: "rgba(255,255,255,0.7)",
-  marginBottom: 6,
-};
-
-const buttonPrimary: React.CSSProperties = {
-  background: GOLD,
-  color: "#000",
-  border: "none",
-  borderRadius: 8,
-  padding: "10px 18px",
-  fontWeight: 700,
-  cursor: "pointer",
-  fontSize: 14,
-};
-
-const buttonSecondary: React.CSSProperties = {
-  background: "rgba(255,255,255,0.05)",
-  color: "white",
-  border: `1px solid ${BORDER}`,
-  borderRadius: 6,
-  padding: "6px 12px",
-  cursor: "pointer",
-  fontSize: 12,
-};
-
-const buttonDanger: React.CSSProperties = {
-  ...buttonSecondary,
-  background: "rgba(239,68,68,0.15)",
-  color: "#fca5a5",
-  border: "1px solid rgba(239,68,68,0.3)",
 };
 
 const DISCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -227,272 +186,261 @@ export default function CouponsManager({ plans }: Props) {
   };
 
   return (
-    <div dir="rtl" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div dir="rtl" className="flex flex-col gap-8">
       {/* Create form */}
-      <section
-        style={{
-          background: BG,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 12,
-          padding: 24,
-        }}
-      >
-        <h2 style={{ color: GOLD, fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
-          יצירת קופון חדש
-        </h2>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 14,
-            }}
-          >
-            <div>
-              <label style={labelStyle}>קוד</label>
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="WELCOME10"
-                style={inputStyle}
-              />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gold-50 text-gold">
+              <Ticket className="w-5 h-5" />
+            </span>
+            יצירת קופון חדש
+          </CardTitle>
+          <CardDescription>צרי קופון הנחה חדש לשימוש המעצבות</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="code" required>קוד</Label>
+                <Input
+                  id="code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  placeholder="WELCOME10"
+                  className="font-mono tracking-wider uppercase"
+                />
+              </div>
+              <div>
+                <Label htmlFor="description" optional>תיאור</Label>
+                <Input
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="הנחת ברוכים הבאים"
+                />
+              </div>
+              <div>
+                <Label htmlFor="discountValue" required>ערך הנחה</Label>
+                <Input
+                  id="discountValue"
+                  type="number"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="durationMonths" required>משך (חודשים)</Label>
+                <Input
+                  id="durationMonths"
+                  type="number"
+                  min={1}
+                  value={durationMonths}
+                  onChange={(e) => setDurationMonths(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="maxRedemptions" optional>מקסימום מימושים</Label>
+                <Input
+                  id="maxRedemptions"
+                  type="number"
+                  value={maxRedemptions}
+                  onChange={(e) => setMaxRedemptions(e.target.value)}
+                  placeholder="ללא הגבלה"
+                />
+              </div>
+              <div>
+                <Label htmlFor="validUntil" optional>תוקף עד</Label>
+                <Input
+                  id="validUntil"
+                  type="date"
+                  value={validUntil}
+                  onChange={(e) => setValidUntil(e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>תיאור</label>
-              <input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="הנחת ברוכים הבאים"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>ערך הנחה</label>
-              <input
-                type="number"
-                value={discountValue}
-                onChange={(e) => setDiscountValue(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>משך (חודשים)</label>
-              <input
-                type="number"
-                min={1}
-                value={durationMonths}
-                onChange={(e) => setDurationMonths(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>מקסימום מימושים (אופציונלי)</label>
-              <input
-                type="number"
-                value={maxRedemptions}
-                onChange={(e) => setMaxRedemptions(e.target.value)}
-                placeholder="ללא הגבלה"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>תוקף עד</label>
-              <input
-                type="date"
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-          </div>
 
-          <div>
-            <label style={labelStyle}>סוג הנחה</label>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-              {(["percent", "fixed", "free_months"] as const).map((t) => (
-                <label
-                  key={t}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 14,
-                    color: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="discountType"
-                    checked={discountType === t}
-                    onChange={() => setDiscountType(t)}
-                  />
-                  {DISCOUNT_TYPE_LABELS[t]}
-                </label>
-              ))}
+            <div>
+              <Label>סוג הנחה</Label>
+              <div className="flex gap-3 flex-wrap">
+                {(["percent", "fixed", "free_months"] as const).map((t) => {
+                  const selected = discountType === t;
+                  return (
+                    <button
+                      type="button"
+                      key={t}
+                      onClick={() => setDiscountType(t)}
+                      className={cn(
+                        "px-4 py-2 rounded-btn text-sm font-medium transition-all duration-200 border",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1",
+                        selected
+                          ? "bg-gold text-white border-gold shadow-gold"
+                          : "bg-white text-text-secondary border-border-subtle hover:border-gold/50 hover:text-gold"
+                      )}
+                    >
+                      {DISCOUNT_TYPE_LABELS[t]}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label style={labelStyle}>תוכניות רלוונטיות (ריק = כל התוכניות)</label>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                background: BG_DEEP,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 8,
-                padding: 10,
-              }}
-            >
-              {plans.length === 0 && (
-                <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-                  אין תוכניות זמינות
-                </span>
-              )}
-              {plans.map((p) => {
-                const selected = applicablePlanIds.includes(p.id);
-                return (
-                  <button
-                    type="button"
-                    key={p.id}
-                    onClick={() => togglePlanInForm(p.id)}
-                    style={{
-                      background: selected ? GOLD : "rgba(255,255,255,0.05)",
-                      color: selected ? "#000" : "white",
-                      border: selected ? `1px solid ${GOLD}` : `1px solid ${BORDER}`,
-                      borderRadius: 999,
-                      padding: "6px 14px",
-                      fontSize: 12,
-                      cursor: "pointer",
-                      fontWeight: selected ? 700 : 400,
-                    }}
-                  >
-                    {p.name}
-                  </button>
-                );
-              })}
+            <div>
+              <Label>תוכניות רלוונטיות <span className="font-normal text-xs text-text-faint">(ריק = כל התוכניות)</span></Label>
+              <div className="flex flex-wrap gap-2 p-3 rounded-btn bg-bg-surface border border-border-subtle">
+                {plans.length === 0 && (
+                  <span className="text-text-faint text-sm">אין תוכניות זמינות</span>
+                )}
+                {plans.map((p) => {
+                  const selected = applicablePlanIds.includes(p.id);
+                  return (
+                    <button
+                      type="button"
+                      key={p.id}
+                      onClick={() => togglePlanInForm(p.id)}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1",
+                        selected
+                          ? "bg-gold text-white border-gold shadow-gold"
+                          : "bg-white text-text-secondary border-border-subtle hover:border-gold/40"
+                      )}
+                    >
+                      {p.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {errorMsg && (
-            <div style={{ color: "#fca5a5", fontSize: 13 }}>{errorMsg}</div>
-          )}
+            {errorMsg && (
+              <div className="rounded-btn bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                {errorMsg}
+              </div>
+            )}
 
-          <div>
-            <button type="submit" disabled={submitting} style={buttonPrimary}>
-              {submitting ? "שומר..." : "צור קופון"}
-            </button>
-          </div>
-        </form>
-      </section>
+            <div className="flex items-center gap-3">
+              <Button type="submit" loading={submitting} size="lg">
+                {submitting ? "שומר..." : "צור קופון"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-      {/* Coupons table */}
+      {/* Coupons list */}
       <section>
-        <h2 style={{ color: GOLD, fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
-          קופונים קיימים
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading text-xl font-bold text-text-primary tracking-tight">
+            קופונים קיימים
+          </h2>
+          {!loading && coupons.length > 0 && (
+            <Badge variant="outline" size="sm">
+              {coupons.length} קופונים
+            </Badge>
+          )}
+        </div>
+
         {loading ? (
-          <p style={{ color: "rgba(255,255,255,0.6)" }}>טוען...</p>
+          <div className="grid gap-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} padding="md">
+                <div className="flex items-center gap-4">
+                  <Skeleton variant="circle" className="w-10 h-10" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         ) : coupons.length === 0 ? (
-          <p style={{ color: "rgba(255,255,255,0.5)" }}>אין קופונים עדיין</p>
+          <Card padding="lg">
+            <EmptyState
+              icon={<Ticket />}
+              title="אין קופונים עדיין"
+              description="צרי קופון ראשון בטופס למעלה."
+            />
+          </Card>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="grid gap-3">
             {coupons.map((c) => {
               const active = c.isActive;
               const used = c._count?.redemptions ?? c.redemptionCount ?? 0;
               return (
-                <div
+                <Card
                   key={c.id}
-                  style={{
-                    background: BG,
-                    border: active ? `1px solid ${GOLD}` : `1px solid ${BORDER}`,
-                    borderRadius: 12,
-                    padding: 16,
-                    opacity: active ? 1 : 0.55,
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                    gap: 12,
-                    alignItems: "center",
-                  }}
+                  padding="md"
+                  variant={active ? "gold" : "static"}
+                  className={cn("transition-opacity", !active && "opacity-60")}
                 >
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>קוד</div>
-                    <div
-                      style={{
-                        fontFamily: "monospace",
-                        fontSize: 16,
-                        color: GOLD,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {c.code}
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-center">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-faint mb-1 flex items-center gap-1">
+                        <Hash className="w-3 h-3" /> קוד
+                      </div>
+                      <div className="font-mono text-base text-gold font-bold tracking-wider">
+                        {c.code}
+                      </div>
+                    </div>
+                    <div className="col-span-1 md:col-span-1 lg:col-span-1">
+                      <div className="text-[10px] uppercase tracking-wider text-text-faint mb-1">תיאור</div>
+                      <div className="text-sm text-text-primary truncate">{c.description || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-faint mb-1">הנחה</div>
+                      <div className="text-sm font-semibold text-text-primary">{formatDiscount(c)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-faint mb-1">מומשו</div>
+                      <div className="text-sm text-text-primary">
+                        {used}
+                        {c.maxRedemptions && (
+                          <span className="text-text-faint">/{c.maxRedemptions}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-faint mb-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> תוקף עד
+                      </div>
+                      <div className="text-sm text-text-primary">{formatDate(c.validUntil)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-text-faint mb-1">סטטוס</div>
+                      <Badge variant={active ? "green" : "gray"} size="sm" dot>
+                        {active ? "פעיל" : "לא פעיל"}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2 flex-wrap justify-end col-span-2 md:col-span-4 lg:col-span-1">
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => copyCode(c)}
+                        iconLeft={copiedId === c.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      >
+                        {copiedId === c.id ? "הועתק" : "העתק"}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => toggleActive(c)}
+                        iconLeft={<Power className="w-3.5 h-3.5" />}
+                      >
+                        {active ? "השבת" : "הפעל"}
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="xs"
+                        onClick={() => deleteCoupon(c)}
+                        iconLeft={<Trash2 className="w-3.5 h-3.5" />}
+                      >
+                        מחק
+                      </Button>
                     </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>תיאור</div>
-                    <div style={{ fontSize: 13, color: "white" }}>
-                      {c.description || "—"}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>הנחה</div>
-                    <div style={{ fontSize: 13, color: "white" }}>{formatDiscount(c)}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>מומשו</div>
-                    <div style={{ fontSize: 13, color: "white" }}>{used}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>מקסימום</div>
-                    <div style={{ fontSize: 13, color: "white" }}>
-                      {c.maxRedemptions ?? "∞"}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>תוקף עד</div>
-                    <div style={{ fontSize: 13, color: "white" }}>
-                      {formatDate(c.validUntil)}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>סטטוס</div>
-                    <div
-                      style={{
-                        display: "inline-block",
-                        background: active
-                          ? "rgba(34,197,94,0.15)"
-                          : "rgba(255,255,255,0.08)",
-                        color: active ? "#86efac" : "rgba(255,255,255,0.6)",
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {active ? "פעיל" : "לא פעיל"}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 6,
-                      flexWrap: "wrap",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <button onClick={() => copyCode(c)} style={buttonSecondary}>
-                      {copiedId === c.id ? "הועתק!" : "העתק"}
-                    </button>
-                    <button onClick={() => toggleActive(c)} style={buttonSecondary}>
-                      {active ? "השבת" : "הפעל"}
-                    </button>
-                    <button onClick={() => deleteCoupon(c)} style={buttonDanger}>
-                      מחק
-                    </button>
-                  </div>
-                </div>
+                </Card>
               );
             })}
           </div>

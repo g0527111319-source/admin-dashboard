@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 
 type AuditEntry = {
   id: string;
@@ -16,12 +17,6 @@ type AuditEntry = {
 type Props = {
   subscriptionId: string;
 };
-
-const GOLD = "#C9A84C";
-const PANEL = "#141414";
-const BORDER = "#2a2a2a";
-const TEXT = "#e5e5e5";
-const MUTED = "#888";
 
 const ACTION_LABELS: Record<string, string> = {
   created: "נוצר",
@@ -99,101 +94,53 @@ export default function SubscriptionAuditTimeline({ subscriptionId }: Props) {
 
   if (loading) {
     return (
-      <div dir="rtl" style={{ color: MUTED, padding: 16, fontSize: 13 }}>
-        טוען היסטוריה...
-      </div>
+      <div dir="rtl" className="text-white/50 p-4 text-[13px]">טוען היסטוריה...</div>
     );
   }
 
   if (error) {
     return (
-      <div dir="rtl" style={{ color: "#e53935", padding: 16, fontSize: 13 }}>
-        {error}
-      </div>
+      <div dir="rtl" className="text-red-500 p-4 text-[13px]">{error}</div>
     );
   }
 
   if (entries.length === 0) {
     return (
-      <div dir="rtl" style={{ color: MUTED, padding: 16, fontSize: 13, textAlign: "center" }}>
-        אין עדיין היסטוריה
-      </div>
+      <div dir="rtl" className="text-white/50 p-4 text-[13px] text-center">אין עדיין היסטוריה</div>
     );
   }
 
   return (
-    <div
-      dir="rtl"
-      style={{
-        background: PANEL,
-        border: `1px solid ${BORDER}`,
-        borderRadius: 12,
-        padding: 20,
-      }}
-    >
-      <div
-        style={{
-          color: GOLD,
-          fontWeight: 700,
-          fontSize: 16,
-          marginBottom: 16,
-        }}
-      >
-        יומן ביקורת
-      </div>
-      <div style={{ position: "relative", paddingRight: 24 }}>
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            right: 8,
-            width: 2,
-            background: BORDER,
-          }}
-        />
+    <div dir="rtl" className="bg-bg-dark-surface border border-white/10 rounded-card p-5">
+      <div className="text-gold font-bold text-base mb-4">יומן ביקורת</div>
+      <div className="relative pr-6">
+        {/* Timeline line */}
+        <div className="absolute top-0 bottom-0 right-2 w-0.5 bg-white/10" />
+
         {entries.map((e) => {
           const label = ACTION_LABELS[e.action] || e.action;
           const actor = ACTOR_LABELS[e.actorType] || e.actorType;
           return (
-            <div
-              key={e.id}
-              style={{
-                position: "relative",
-                paddingBottom: 18,
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  right: -20,
-                  top: 4,
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  background: GOLD,
-                  border: `2px solid ${PANEL}`,
-                  boxShadow: `0 0 0 2px ${GOLD}`,
-                }}
-              />
-              <div style={{ color: TEXT, fontWeight: 700, fontSize: 14, marginBottom: 2 }}>
-                {label}
-              </div>
-              <div style={{ color: MUTED, fontSize: 12, marginBottom: 2 }}>
+            <div key={e.id} className="relative pb-[18px]">
+              {/* Timeline dot */}
+              <div className={cn(
+                "absolute -right-5 top-1 w-3 h-3 rounded-full bg-gold",
+                "border-2 border-bg-dark-surface shadow-[0_0_0_2px_#C9A84C]"
+              )} />
+              <div className="text-white font-bold text-sm mb-0.5">{label}</div>
+              <div className="text-white/50 text-xs mb-0.5">
                 {actor}
                 {e.actorName ? ` · ${e.actorName}` : ""}
                 {" · "}
                 {formatDate(e.createdAt)}
               </div>
               {(e.fromValue || e.toValue) && (
-                <div style={{ color: "#aaa", fontSize: 12, marginBottom: 2 }}>
+                <div className="text-white/40 text-xs mb-0.5">
                   {e.fromValue || "—"} ← {e.toValue || "—"}
                 </div>
               )}
               {e.reason && (
-                <div style={{ color: "#aaa", fontSize: 12, fontStyle: "italic" }}>
-                  סיבה: {e.reason}
-                </div>
+                <div className="text-white/40 text-xs italic">סיבה: {e.reason}</div>
               )}
             </div>
           );
