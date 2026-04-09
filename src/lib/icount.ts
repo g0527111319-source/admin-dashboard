@@ -7,9 +7,16 @@
  *   2. DB SystemSetting (admin settings page → icount section)
  *
  * When neither source has credentials, all functions fall back to mock mode.
+ *
+ * Payment page flow (PCI compliant):
+ *   1. getOrCreatePayPage()  — creates a hosted payment page in iCount (once)
+ *   2. generatePaymentUrl()  — generates a unique sale URL for each transaction
+ *   3. Customer enters card details on iCount's hosted page
+ *   4. iCount sends IPN callback + redirects to success_url
  */
 
 import { getIcountConfig, type IcountConfig } from "@/lib/icount-config";
+import prisma from "@/lib/prisma";
 
 const ICOUNT_API_BASE = "https://api.icount.co.il/api/v3.php";
 
@@ -25,23 +32,70 @@ function authPayloadFromConfig(cfg: IcountConfig) {
   };
 }
 
+/** POST to iCount with cid/user/pass auth in body */
 async function icountPost(
   path: string,
   body: Record<string, unknown>,
   cfg: IcountConfig
 ) {
-  const res = await fetch(`${ICOUNT_API_BASE}${path}`, {
+  const url = `${ICOUNT_API_BASE}${path}`;
+  console.log(`[iCount] POST ${path}`);
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...authPayloadFromConfig(cfg), ...body }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
+  if (!res.ok || data.status === false) {
     throw new Error(
       `[iCount] ${path} failed: ${res.status} ${JSON.stringify(data)}`
     );
   }
   return data;
+}
+
+/** POST to iCount with Bearer token auth in header */
+async function icountBearerPost(
+  path: string,
+  body: Record<string, unknown>,
+  token: string
+) {
+  const url = `${ICOUNT_API_BASE}${path}`;
+  console.log(`[iCount] POST ${path} (Bearer)`);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.status === false) {
+    throw new Error(
+      `[iCount] ${path} failed: ${res.status} ${JSON.stringify(data)}`
+    );
+  }
+  return data;
+}
+
+/**
+ * Try an iCount API call with multiple auth methods.
+ * Returns the first successful result.
+ */
+async function icountPostMultiAuth(
+  path: string,
+  body: Record<string, unknown>,
+  cfg: IcountConfig
+): Promise<Record<string, unknown>> {
+  // Try Bearer token first (used by ecommerce plugins)
+  try {
+    return await icountBearerPost(path, body, cfg.apiKey);
+  } catch (e) {
+    console.warn(`[iCount] ${path} Bearer auth failed:`, e);
+  }
+  // Fallback to cid/user/pass in body
+  return await icountPost(path, body, cfg);
 }
 
 // ─── Public helpers ─────────────────────────────────────
@@ -202,27 +256,130 @@ export async function savePaymentToken(data: CreatePaymentTokenInput) {
   );
 }
 
-// ─── Hosted Card Form ───────────────────────────────────
+// ─── Payment Page (Hosted Form — PCI Compliant) ─────────
+
+const PAYPAGE_SETTING_KEY = "icount_paypage_id";
 
 /**
- * Return URL for iCount's hosted card-entry page.
- * Designer enters card details on iCount's side — we never touch the PAN.
- * Now async because it loads config from DB.
+ * Get or create a hosted payment page in iCount.
+ * Returns paypage_id — cached in SystemSetting for reuse.
+ *
+ * iCount PayPage API:
+ *   POST /paypage/create → { paypage_id: number }
  */
-export async function getHostedCardFormUrl(
-  customerId: string,
-  returnUrl: string
-): Promise<string> {
+export async function getOrCreatePayPage(): Promise<string | null> {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) return null;
+
+  // Check cache in DB
+  try {
+    const row = await prisma.systemSetting.findUnique({
+      where: { key: PAYPAGE_SETTING_KEY },
+    });
+    const val = row?.value as Record<string, unknown> | null;
+    if (val?.paypage_id) return String(val.paypage_id);
+  } catch (e) {
+    console.warn("[iCount] Error reading paypage cache:", e);
+  }
+
+  // Create new payment page
+  try {
+    const result = await icountPostMultiAuth(
+      "/paypage/create",
+      {
+        page_name: "זירת האדריכלות - מנויים",
+        currency_id: 5, // ILS
+      },
+      cfg
+    );
+
+    const paypageId = result?.paypage_id?.toString() || null;
+    if (paypageId) {
+      // Cache in DB
+      const jsonVal = JSON.parse(JSON.stringify({ paypage_id: paypageId }));
+      await prisma.systemSetting.upsert({
+        where: { key: PAYPAGE_SETTING_KEY },
+        update: { value: jsonVal },
+        create: { key: PAYPAGE_SETTING_KEY, value: jsonVal },
+      });
+      console.log(`[iCount] Created payment page: ${paypageId}`);
+    }
+    return paypageId;
+  } catch (e) {
+    console.error("[iCount] Failed to create payment page:", e);
+    return null;
+  }
+}
+
+/**
+ * Generate a unique hosted payment URL for a specific transaction.
+ *
+ * Customer is redirected to this URL to enter credit card details
+ * on iCount's hosted page (PCI compliant — we never touch card data).
+ *
+ * iCount API:
+ *   POST /paypage/generate_sale → { sale_url: string }
+ *
+ * After payment:
+ *   - iCount sends IPN callback to ipnUrl
+ *   - Customer is redirected to successUrl
+ */
+export async function generatePaymentUrl(data: {
+  paypageId: string;
+  customerName: string;
+  email: string;
+  phone?: string;
+  amount: number;
+  currency: string;
+  description: string;
+  successUrl: string;
+  ipnUrl: string;
+}): Promise<string> {
   const cfg = await getIcountConfig();
   if (configIsMock(cfg)) {
-    return `${returnUrl}?mock=1&token=mock-${Date.now()}`;
+    return `${data.successUrl}?mock=1&token=mock-${Date.now()}`;
   }
-  const params = new URLSearchParams({
-    cid: cfg.companyId,
-    client_id: customerId,
-    return_url: returnUrl,
-  });
-  return `https://app.icount.co.il/card-vault?${params.toString()}`;
+
+  const payload = {
+    paypage_id: parseInt(data.paypageId),
+    lang: "he",
+    ipn_url: data.ipnUrl,
+    client_name: data.customerName,
+    email: data.email,
+    phone: data.phone || "",
+    currency_code: data.currency || "ILS",
+    items: [
+      {
+        description: data.description,
+        unitprice_incl: data.amount,
+        quantity: 1,
+      },
+    ],
+    is_iframe: 0,
+    success_url: data.successUrl,
+  };
+
+  // Try endpoints in order of preference
+  const endpoints = [
+    "/paypage/generate_sale",
+    "/woocommerce/generate_sale",
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const result = await icountPostMultiAuth(endpoint, payload, cfg);
+      if (result?.sale_url) {
+        console.log(`[iCount] Generated sale URL via ${endpoint}`);
+        return String(result.sale_url);
+      }
+    } catch (e) {
+      console.warn(`[iCount] ${endpoint} failed:`, e);
+    }
+  }
+
+  throw new Error(
+    "לא ניתן ליצור דף תשלום ב-iCount. יש לוודא שפרטי החיבור נכונים בהגדרות מערכת."
+  );
 }
 
 // ─── Webhook ────────────────────────────────────────────
