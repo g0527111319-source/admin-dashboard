@@ -88,8 +88,9 @@ export async function POST(req: NextRequest) {
         email: designer.email || "",
         phone: designer.phone || undefined,
       });
-      icountCustomerId =
-        (customer as { client_id?: string }).client_id || null;
+      // iCount returns client_id as a number — convert to string
+      const rawId = (customer as { client_id?: string | number }).client_id;
+      icountCustomerId = rawId != null ? String(rawId) : null;
 
       // Save the real customer ID
       if (existing && icountCustomerId) {

@@ -156,7 +156,9 @@ export async function POST(req: NextRequest) {
               email: designer.email || "",
               phone: designer.phone || undefined,
             });
-            customerId = (cust as { client_id?: string }).client_id || null;
+            // iCount returns client_id as number — convert to string
+            const rawCustId = (cust as { client_id?: string | number }).client_id;
+            customerId = rawCustId != null ? String(rawCustId) : null;
             if (customerId) {
               await prisma.designerSubscription.update({
                 where: { id: subscription.id },

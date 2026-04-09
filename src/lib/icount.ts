@@ -2,8 +2,8 @@
  * iCount API v3 integration
  * https://api.icount.co.il/api/v3.php
  *
- * Authentication: Bearer token (API Key) in Authorization header.
- * The API key is loaded from DB (admin settings) or env vars.
+ * Authentication: cid / user / pass in the request body.
+ * Credentials loaded from DB (admin settings) or env vars.
  *
  * Correct v3 method names:
  *   /client/create, /client/update, /client/create_or_update, /client/info
@@ -14,7 +14,7 @@
  *   1. getOrCreatePayPage()  — creates hosted payment page (once)
  *   2. generatePaymentUrl()  — generates unique sale URL per transaction
  *   3. Customer enters card on iCount's hosted page
- *   4. iCount sends IPN callback + redirects to success_url
+ *   4. iCount processes payment + redirects to success_url
  */
 
 import { getIcountConfig, type IcountConfig } from "@/lib/icount-config";
@@ -22,14 +22,21 @@ import prisma from "@/lib/prisma";
 
 const ICOUNT_API_BASE = "https://api.icount.co.il/api/v3.php";
 
-/** Mock mode = no API key configured */
+/** Mock mode = missing any of the 3 required auth fields */
 function configIsMock(cfg: IcountConfig): boolean {
-  return !cfg.apiKey;
+  return !cfg.companyId || !cfg.user || !cfg.pass;
+}
+
+function authPayloadFromConfig(cfg: IcountConfig) {
+  return {
+    cid: cfg.companyId,
+    user: cfg.user,
+    pass: cfg.pass,
+  };
 }
 
 /**
- * POST to iCount API v3 with Bearer token auth.
- * All v3 endpoints use Authorization: Bearer {apiKey}.
+ * POST to iCount API v3 with cid/user/pass auth in body.
  */
 async function icountPost(
   path: string,
@@ -41,11 +48,8 @@ async function icountPost(
 
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${cfg.apiKey}`,
-    },
-    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...authPayloadFromConfig(cfg), ...body }),
   });
 
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
@@ -60,7 +64,7 @@ async function icountPost(
 
 // ─── Public helpers ─────────────────────────────────────
 
-/** Check if iCount is in mock mode (no API key configured) */
+/** Check if iCount is in mock mode (no credentials configured) */
 export async function isMockMode(): Promise<boolean> {
   const cfg = await getIcountConfig();
   return configIsMock(cfg);
@@ -76,7 +80,7 @@ export type CreateCustomerInput = {
 
 /**
  * Create or update a customer in iCount.
- * Uses /client/create_or_update (upserts by email/HP).
+ * v3 method: /client/create_or_update (upserts by email/HP).
  */
 export async function createCustomer(data: CreateCustomerInput) {
   const cfg = await getIcountConfig();
@@ -235,6 +239,8 @@ const PAYPAGE_SETTING_KEY = "icount_paypage_id";
 /**
  * Get or create a hosted payment page in iCount.
  * Returns paypage_id — cached in SystemSetting for reuse.
+ *
+ * POST /paypage/create → { paypage_id, paypage_url }
  */
 export async function getOrCreatePayPage(): Promise<string | null> {
   const cfg = await getIcountConfig();
@@ -284,9 +290,7 @@ export async function getOrCreatePayPage(): Promise<string | null> {
  * Generate a unique hosted payment URL for a transaction.
  * Customer is redirected here to enter card details on iCount's page.
  *
- * After payment:
- *   - iCount sends IPN callback to ipnUrl
- *   - Customer is redirected to successUrl
+ * POST /paypage/generate_sale → { sale_url }
  */
 export async function generatePaymentUrl(data: {
   paypageId: string;
@@ -304,43 +308,36 @@ export async function generatePaymentUrl(data: {
     return `${data.successUrl}?mock=1&token=mock-${Date.now()}`;
   }
 
-  const payload = {
-    paypage_id: parseInt(data.paypageId),
-    lang: "he",
-    ipn_url: data.ipnUrl,
-    client_name: data.customerName,
-    email: data.email,
-    phone: data.phone || "",
-    currency_code: data.currency || "ILS",
-    items: [
-      {
-        description: data.description,
-        unitprice_incl: data.amount,
-        quantity: 1,
-      },
-    ],
-    is_iframe: 0,
-    success_url: data.successUrl,
-  };
+  const result = await icountPost(
+    "/paypage/generate_sale",
+    {
+      paypage_id: parseInt(data.paypageId),
+      lang: "he",
+      ipn_url: data.ipnUrl,
+      client_name: data.customerName,
+      email: data.email,
+      phone: data.phone || "",
+      currency_code: data.currency || "ILS",
+      items: [
+        {
+          description: data.description,
+          unitprice_incl: data.amount,
+          quantity: 1,
+        },
+      ],
+      is_iframe: 0,
+      success_url: data.successUrl,
+    },
+    cfg
+  );
 
-  // Try the generic endpoint first, then WooCommerce variant
-  const endpoints = ["/paypage/generate_sale", "/woocommerce/generate_sale"];
-
-  for (const endpoint of endpoints) {
-    try {
-      const result = await icountPost(endpoint, payload, cfg);
-      if (result?.sale_url) {
-        console.log(`[iCount] Generated sale URL via ${endpoint}`);
-        return String(result.sale_url);
-      }
-    } catch (e) {
-      console.warn(`[iCount] ${endpoint} failed:`, e);
-    }
+  const saleUrl = result?.sale_url ? String(result.sale_url) : "";
+  if (!saleUrl) {
+    throw new Error("iCount לא החזיר קישור תשלום");
   }
 
-  throw new Error(
-    "לא ניתן ליצור דף תשלום ב-iCount. יש לוודא שפרטי החיבור נכונים בהגדרות מערכת."
-  );
+  console.log(`[iCount] Generated sale URL: ${saleUrl}`);
+  return saleUrl;
 }
 
 // ─── Webhook ────────────────────────────────────────────
