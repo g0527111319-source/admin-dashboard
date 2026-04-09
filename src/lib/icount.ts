@@ -1,17 +1,19 @@
 /**
- * iCount API integration
+ * iCount API v3 integration
  * https://api.icount.co.il/api/v3.php
  *
- * Credentials are loaded from:
- *   1. Vercel env vars (ICOUNT_API_KEY, ICOUNT_COMPANY_ID, ICOUNT_USER, ICOUNT_PASS)
- *   2. DB SystemSetting (admin settings page → icount section)
+ * Authentication: Bearer token (API Key) in Authorization header.
+ * The API key is loaded from DB (admin settings) or env vars.
  *
- * When neither source has credentials, all functions fall back to mock mode.
+ * Correct v3 method names:
+ *   /client/create, /client/update, /client/create_or_update, /client/info
+ *   /doc/create, /doc/search
+ *   /paypage/create, /paypage/generate_sale, /paypage/get_list
  *
  * Payment page flow (PCI compliant):
- *   1. getOrCreatePayPage()  — creates a hosted payment page in iCount (once)
- *   2. generatePaymentUrl()  — generates a unique sale URL for each transaction
- *   3. Customer enters card details on iCount's hosted page
+ *   1. getOrCreatePayPage()  — creates hosted payment page (once)
+ *   2. generatePaymentUrl()  — generates unique sale URL per transaction
+ *   3. Customer enters card on iCount's hosted page
  *   4. iCount sends IPN callback + redirects to success_url
  */
 
@@ -20,87 +22,45 @@ import prisma from "@/lib/prisma";
 
 const ICOUNT_API_BASE = "https://api.icount.co.il/api/v3.php";
 
+/** Mock mode = no API key configured */
 function configIsMock(cfg: IcountConfig): boolean {
-  return !cfg.apiKey || !cfg.companyId || !cfg.user || !cfg.pass;
+  return !cfg.apiKey;
 }
 
-function authPayloadFromConfig(cfg: IcountConfig) {
-  return {
-    cid: cfg.companyId,
-    user: cfg.user,
-    pass: cfg.pass,
-  };
-}
-
-/** POST to iCount with cid/user/pass auth in body */
+/**
+ * POST to iCount API v3 with Bearer token auth.
+ * All v3 endpoints use Authorization: Bearer {apiKey}.
+ */
 async function icountPost(
   path: string,
   body: Record<string, unknown>,
   cfg: IcountConfig
-) {
+): Promise<Record<string, unknown>> {
   const url = `${ICOUNT_API_BASE}${path}`;
   console.log(`[iCount] POST ${path}`);
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...authPayloadFromConfig(cfg), ...body }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.status === false) {
-    throw new Error(
-      `[iCount] ${path} failed: ${res.status} ${JSON.stringify(data)}`
-    );
-  }
-  return data;
-}
 
-/** POST to iCount with Bearer token auth in header */
-async function icountBearerPost(
-  path: string,
-  body: Record<string, unknown>,
-  token: string
-) {
-  const url = `${ICOUNT_API_BASE}${path}`;
-  console.log(`[iCount] POST ${path} (Bearer)`);
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${cfg.apiKey}`,
     },
     body: JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.status === false) {
-    throw new Error(
-      `[iCount] ${path} failed: ${res.status} ${JSON.stringify(data)}`
-    );
-  }
-  return data;
-}
 
-/**
- * Try an iCount API call with multiple auth methods.
- * Returns the first successful result.
- */
-async function icountPostMultiAuth(
-  path: string,
-  body: Record<string, unknown>,
-  cfg: IcountConfig
-): Promise<Record<string, unknown>> {
-  // Try Bearer token first (used by ecommerce plugins)
-  try {
-    return await icountBearerPost(path, body, cfg.apiKey);
-  } catch (e) {
-    console.warn(`[iCount] ${path} Bearer auth failed:`, e);
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (data.status === false) {
+    const reason = data.reason || data.error_description || "Unknown error";
+    throw new Error(`[iCount] ${path}: ${reason} — ${JSON.stringify(data)}`);
   }
-  // Fallback to cid/user/pass in body
-  return await icountPost(path, body, cfg);
+
+  return data;
 }
 
 // ─── Public helpers ─────────────────────────────────────
 
-/** Check if iCount is in mock mode (no credentials configured) */
+/** Check if iCount is in mock mode (no API key configured) */
 export async function isMockMode(): Promise<boolean> {
   const cfg = await getIcountConfig();
   return configIsMock(cfg);
@@ -114,6 +74,10 @@ export type CreateCustomerInput = {
   phone?: string;
 };
 
+/**
+ * Create or update a customer in iCount.
+ * Uses /client/create_or_update (upserts by email/HP).
+ */
 export async function createCustomer(data: CreateCustomerInput) {
   const cfg = await getIcountConfig();
   if (configIsMock(cfg)) {
@@ -122,11 +86,11 @@ export async function createCustomer(data: CreateCustomerInput) {
   }
 
   return icountPost(
-    "/client/create_update",
+    "/client/create_or_update",
     {
       client_name: data.name,
       email: data.email,
-      hp: data.phone,
+      phone: data.phone || "",
     },
     cfg
   );
@@ -168,7 +132,7 @@ export async function createSubscription(data: CreateSubscriptionInput) {
   );
 }
 
-// ─── Invoice ────────────────────────────────────────────
+// ─── Invoice / Receipt ──────────────────────────────────
 
 export type CreateInvoiceInput = {
   customerId: string;
@@ -219,7 +183,11 @@ export async function cancelSubscription(subscriptionId: string) {
     console.log("[iCount] Mock mode - would cancel subscription:", subscriptionId);
     return { status: true, cancelled: true };
   }
-  return icountPost("/subscription/cancel", { subscription_id: subscriptionId }, cfg);
+  return icountPost(
+    "/subscription/cancel",
+    { subscription_id: subscriptionId },
+    cfg
+  );
 }
 
 export async function chargeRecurring(subscriptionId: string) {
@@ -233,7 +201,11 @@ export async function chargeRecurring(subscriptionId: string) {
       receipt_id: "mock-rcpt-" + Date.now(),
     };
   }
-  return icountPost("/subscription/charge", { subscription_id: subscriptionId }, cfg);
+  return icountPost(
+    "/subscription/charge",
+    { subscription_id: subscriptionId },
+    cfg
+  );
 }
 
 // ─── Payment Token ──────────────────────────────────────
@@ -250,7 +222,7 @@ export async function savePaymentToken(data: CreatePaymentTokenInput) {
     return { token_id: "mock-token-" + Date.now(), status: true };
   }
   return icountPost(
-    "/client/save_token",
+    "/client/update",
     { client_id: data.customerId, card_token: data.cardToken },
     cfg
   );
@@ -263,9 +235,6 @@ const PAYPAGE_SETTING_KEY = "icount_paypage_id";
 /**
  * Get or create a hosted payment page in iCount.
  * Returns paypage_id — cached in SystemSetting for reuse.
- *
- * iCount PayPage API:
- *   POST /paypage/create → { paypage_id: number }
  */
 export async function getOrCreatePayPage(): Promise<string | null> {
   const cfg = await getIcountConfig();
@@ -284,7 +253,7 @@ export async function getOrCreatePayPage(): Promise<string | null> {
 
   // Create new payment page
   try {
-    const result = await icountPostMultiAuth(
+    const result = await icountPost(
       "/paypage/create",
       {
         page_name: "זירת האדריכלות - מנויים",
@@ -312,13 +281,8 @@ export async function getOrCreatePayPage(): Promise<string | null> {
 }
 
 /**
- * Generate a unique hosted payment URL for a specific transaction.
- *
- * Customer is redirected to this URL to enter credit card details
- * on iCount's hosted page (PCI compliant — we never touch card data).
- *
- * iCount API:
- *   POST /paypage/generate_sale → { sale_url: string }
+ * Generate a unique hosted payment URL for a transaction.
+ * Customer is redirected here to enter card details on iCount's page.
  *
  * After payment:
  *   - iCount sends IPN callback to ipnUrl
@@ -359,15 +323,12 @@ export async function generatePaymentUrl(data: {
     success_url: data.successUrl,
   };
 
-  // Try endpoints in order of preference
-  const endpoints = [
-    "/paypage/generate_sale",
-    "/woocommerce/generate_sale",
-  ];
+  // Try the generic endpoint first, then WooCommerce variant
+  const endpoints = ["/paypage/generate_sale", "/woocommerce/generate_sale"];
 
   for (const endpoint of endpoints) {
     try {
-      const result = await icountPostMultiAuth(endpoint, payload, cfg);
+      const result = await icountPost(endpoint, payload, cfg);
       if (result?.sale_url) {
         console.log(`[iCount] Generated sale URL via ${endpoint}`);
         return String(result.sale_url);
@@ -390,7 +351,9 @@ export function verifyWebhookSignature(
 ): boolean {
   const secret = process.env.ICOUNT_WEBHOOK_SECRET;
   if (!secret) {
-    console.log("[iCount] No webhook secret configured — accepting webhook (dev mode)");
+    console.log(
+      "[iCount] No webhook secret configured — accepting webhook (dev mode)"
+    );
     return true;
   }
   if (!signature) return false;

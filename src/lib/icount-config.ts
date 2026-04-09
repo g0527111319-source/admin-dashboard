@@ -26,18 +26,14 @@ let cacheTimestamp = 0;
  *   3. Empty strings (triggers mock mode)
  */
 export async function getIcountConfig(): Promise<IcountConfig> {
-  // If all env vars are set, use them directly (fastest path)
-  if (
-    process.env.ICOUNT_API_KEY &&
-    process.env.ICOUNT_COMPANY_ID &&
-    process.env.ICOUNT_USER &&
-    process.env.ICOUNT_PASS
-  ) {
+  // If API key env var is set, use env vars directly (fastest path)
+  // iCount v3 primarily uses Bearer token (apiKey) for auth
+  if (process.env.ICOUNT_API_KEY) {
     return {
       apiKey: process.env.ICOUNT_API_KEY,
-      companyId: process.env.ICOUNT_COMPANY_ID,
-      user: process.env.ICOUNT_USER,
-      pass: process.env.ICOUNT_PASS,
+      companyId: process.env.ICOUNT_COMPANY_ID || "",
+      user: process.env.ICOUNT_USER || "",
+      pass: process.env.ICOUNT_PASS || "",
     };
   }
 
