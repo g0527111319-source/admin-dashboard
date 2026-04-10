@@ -6,6 +6,7 @@
 // conversation history, and tool calling.
 
 import prisma from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import type { WhatsAppUser } from "./user-resolver";
 import { executeTool, getAnthropicTools } from "./tools";
 
@@ -161,11 +162,11 @@ async function addDailyCost(amount: number): Promise<number> {
     await prisma.systemSetting.upsert({
       where: { key },
       update: {
-        value: { cost: newCost, lastUpdated: new Date().toISOString() } as unknown as Record<string, unknown>,
+        value: { cost: newCost, lastUpdated: new Date().toISOString() } as unknown as Prisma.InputJsonValue,
       },
       create: {
         key,
-        value: { cost: newCost, lastUpdated: new Date().toISOString() } as unknown as Record<string, unknown>,
+        value: { cost: newCost, lastUpdated: new Date().toISOString() } as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -272,7 +273,7 @@ async function getHistory(phone: string): Promise<ConversationMessage[]> {
     });
 
     if (conversation && conversation.messages) {
-      const messages = conversation.messages as ConversationMessage[];
+      const messages = conversation.messages as unknown as ConversationMessage[];
       conversationHistory.set(phone, messages);
       return messages;
     }
@@ -303,7 +304,7 @@ async function saveHistory(
     await prisma.whatsAppConversation.upsert({
       where: { phone },
       update: {
-        messages: trimmed as unknown as Record<string, unknown>[],
+        messages: trimmed as unknown as Prisma.InputJsonValue,
         userType,
         userId: userId || null,
         updatedAt: new Date(),
@@ -312,7 +313,7 @@ async function saveHistory(
         phone,
         userType,
         userId: userId || null,
-        messages: trimmed as unknown as Record<string, unknown>[],
+        messages: trimmed as unknown as Prisma.InputJsonValue,
       },
     });
   } catch (error) {

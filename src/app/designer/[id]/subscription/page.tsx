@@ -144,6 +144,8 @@ export default function DesignerSubscriptionPage() {
         fetch(`/api/designer/subscription?designerId=${designerId}`, { headers }),
         fetch(`/api/designer/subscription/payments?designerId=${designerId}`, { headers }),
       ]);
+      if (!subRes.ok) throw new Error(`Subscription fetch failed: ${subRes.status}`);
+      if (!payRes.ok) throw new Error(`Payments fetch failed: ${payRes.status}`);
       const subData = await subRes.json();
       const payData = await payRes.json();
       setSubscription(subData.subscription || null);

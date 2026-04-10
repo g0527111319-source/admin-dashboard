@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
             prisma.designer.update({
                 where: { id: result.session.userId },
                 data: { lastLoginAt: new Date(), lastActivityAt: new Date() },
-            }).catch(err => console.error("[login] lastLoginAt update failed:", err));
+            }).catch(() => console.error("[login] lastLoginAt update failed"));
         }
 
         // redirect URL based on role — use actual user ID
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         });
     }
     catch (error) {
-        console.error("Login error:", error);
+        console.error("Login error");
         return NextResponse.json({ error: txt("src/app/api/auth/login/route.ts::003", "\u05E9\u05D2\u05D9\u05D0\u05EA \u05DB\u05E0\u05D9\u05E1\u05D4") }, { status: 500 });
     }
 }

@@ -53,11 +53,11 @@ export async function POST(req: NextRequest) {
                 });
             }
             catch (emailError) {
-                console.error("Email send error:", emailError);
+                console.error("Email send error");
             }
         }
         else {
-            console.log(`[DEV] Reset link for ${email}: ${resetUrl}`);
+            // Dev-only: reset link generated (not logged for security)
         }
         return NextResponse.json({
             success: true,
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         });
     }
     catch (error) {
-        console.error("Forgot password error:", error);
+        console.error("Forgot password error");
         return NextResponse.json({ error: txt("src/app/api/auth/forgot-password/route.ts::006", "\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DC\u05D9\u05D7\u05EA \u05E7\u05D9\u05E9\u05D5\u05E8 \u05D0\u05D9\u05E4\u05D5\u05E1") }, { status: 500 });
     }
 }

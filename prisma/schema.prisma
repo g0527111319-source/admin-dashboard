@@ -186,6 +186,8 @@ model Post {
 
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
+
+  @@index([supplierId])
 }
 
 // ==========================================
@@ -218,6 +220,9 @@ model Deal {
 
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+
+  @@index([designerId])
+  @@index([supplierId])
 }
 
 // ==========================================
@@ -296,6 +301,8 @@ model SupplierRecommender {
   phone        String   // טלפון
 
   createdAt    DateTime @default(now())
+
+  @@index([supplierId])
 }
 
 // ==========================================
@@ -1340,7 +1347,7 @@ model CrmClientUpload {
   projectId   String
   project     CrmProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   clientId    String
-  client      CrmClient   @relation(fields: [clientId], references: [id])
+  client      CrmClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   imageUrl    String
   caption     String?

@@ -4,9 +4,9 @@
  * Supports: he (Hebrew), en (English).
  */
 
-export type Lang = "he" | "en";
+export type Lang = "he" | "en" | "ar";
 
-export const RTL_LANGUAGES: Lang[] = ["he"];
+export const RTL_LANGUAGES: Lang[] = ["he", "ar"];
 
 export function isRtl(lang: Lang): boolean {
   return RTL_LANGUAGES.includes(lang);
@@ -79,6 +79,28 @@ const translations: Record<Lang, Record<TranslationKey, string>> = {
     address: "Address",
     home: "Home",
   },
+  ar: {
+    dashboard: "لوحة التحكم",
+    clients: "العملاء",
+    suppliers: "الموردين",
+    projects: "المشاريع",
+    settings: "الإعدادات",
+    login: "تسجيل الدخول",
+    logout: "تسجيل الخروج",
+    save: "حفظ",
+    cancel: "إلغاء",
+    delete: "حذف",
+    search: "بحث",
+    welcome: "مرحبا",
+    loading: "جاري التحميل...",
+    error: "خطأ",
+    success: "نجاح",
+    phone: "هاتف",
+    email: "بريد إلكتروني",
+    name: "اسم",
+    address: "عنوان",
+    home: "الرئيسية",
+  },
 };
 
 const STORAGE_KEY = "zirat-lang";
@@ -87,7 +109,7 @@ const STORAGE_KEY = "zirat-lang";
 export function getSavedLang(): Lang {
   if (typeof window === "undefined") return "he";
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved && (saved === "he" || saved === "en")) {
+  if (saved && (saved === "he" || saved === "en" || saved === "ar")) {
     return saved as Lang;
   }
   return "he";

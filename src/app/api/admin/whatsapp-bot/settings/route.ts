@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { logAuditEvent } from "@/lib/audit-logger";
 
 const SETTINGS_KEY = "whatsapp_bot_config";
@@ -81,7 +82,7 @@ export async function GET() {
 
     return NextResponse.json(merged);
   } catch (error) {
-    console.error("[Bot Settings API] GET error:", error);
+    console.error("[Bot Settings API] GET error");
     return NextResponse.json(
       { error: "Failed to fetch bot settings" },
       { status: 500 }
@@ -119,10 +120,10 @@ export async function PATCH(request: NextRequest) {
     // Upsert into DB
     await prisma.systemSetting.upsert({
       where: { key: SETTINGS_KEY },
-      update: { value: updated as unknown as Record<string, unknown> },
+      update: { value: updated as unknown as Prisma.InputJsonValue },
       create: {
         key: SETTINGS_KEY,
-        value: updated as unknown as Record<string, unknown>,
+        value: updated as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -137,7 +138,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, settings: updated });
   } catch (error) {
-    console.error("[Bot Settings API] PATCH error:", error);
+    console.error("[Bot Settings API] PATCH error");
     return NextResponse.json(
       { error: "Failed to update bot settings" },
       { status: 500 }

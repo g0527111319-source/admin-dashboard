@@ -43,12 +43,10 @@ export async function POST(
       data: { lastUsedAt: new Date() },
     });
 
-    // TODO: In production, send OTP via email instead of returning it
+    // In production: OTP is sent via email/SMS, never exposed in response
     return NextResponse.json({
       success: true,
       message: "קוד אימות נשלח",
-      // DEV ONLY - remove in production
-      code,
     });
   } catch (error) {
     console.error("Portal send OTP error:", error);

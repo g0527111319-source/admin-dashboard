@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
         });
       }
     } else if (price > 0 && paidViaPayPage) {
-      console.log("[subscription] Skipping charge — payment already completed via PayPage");
+      // Skipping charge — payment already completed via PayPage
     }
 
     const nextPeriodEnd = new Date(now);

@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         where: { icountEventId: eventId },
       });
       if (existing) {
-        console.log("[iCount webhook] duplicate event", eventId);
+        // Duplicate event skipped
         return NextResponse.json({ received: true, duplicate: true });
       }
     }
@@ -151,12 +151,12 @@ export async function POST(req: NextRequest) {
       }
 
       default:
-        console.log("[iCount webhook] unhandled event type:", eventType);
+        // Unhandled event type
     }
 
     return NextResponse.json({ received: true, matched: true });
   } catch (error) {
-    console.error("iCount webhook error:", error);
+    console.error("iCount webhook error");
     return NextResponse.json({ error: "webhook failed" }, { status: 500 });
   }
 }

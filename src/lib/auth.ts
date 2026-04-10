@@ -16,21 +16,10 @@ export interface SessionPayload {
   name: string;
 }
 
-const DEMO_USERS: Record<
-  Exclude<UserRole, "admin">,
-  Array<{ email: string; password: string; name: string; userId: string }>
-> = {
-  supplier: [
-    { email: "supplier@zirat.co.il", password: "Supplier123!", name: "???? ??????", userId: "supplier-demo-1" },
-    { email: "or@lighting.co.il", password: "Supplier123!", name: "??? ?????", userId: "supplier-demo-2" },
-    { email: "kitchen@plus.co.il", password: "Supplier123!", name: "????? ????", userId: "supplier-demo-3" },
-  ],
-  designer: [
-    { email: "designer@zirat.co.il", password: "Designer123!", name: "???? ???????'", userId: "designer-demo-1" },
-    { email: "michal@arch.co.il", password: "Designer123!", name: "???? ?????????", userId: "designer-demo-2" },
-    { email: "shira@intdesign.co.il", password: "Designer123!", name: "???? ??? ???", userId: "designer-demo-3" },
-  ],
-};
+// DEMO_USERS with hardcoded credentials removed.
+// The database is the single source of truth for authentication.
+// If the DB is unavailable, login fails safely rather than falling back
+// to hardcoded credentials that could be exploited.
 
 /** Race a promise against a timeout; rejects if the timeout fires first. */
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -45,22 +34,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 const DB_QUERY_TIMEOUT = 7000; // 7 seconds — must complete before Vercel 10s function limit
 
-function getDemoSession(role: Exclude<UserRole, "admin">, email: string, password: string): SessionPayload | null {
-  const demoUser = DEMO_USERS[role].find(
-    (user) => user.email.toLowerCase() === email && user.password === password
-  );
-
-  if (!demoUser) {
-    return null;
-  }
-
-  return {
-    userId: demoUser.userId,
-    role,
-    email: demoUser.email,
-    name: demoUser.name,
-  };
-}
+// getDemoSession removed — no more hardcoded credential fallback.
+// All authentication must go through the database.
 
 // ==========================================
 // JWT — ניהול טוקנים
@@ -71,7 +46,9 @@ function getJwtSecret(): Uint8Array {
   if (secret) {
     return new TextEncoder().encode(secret);
   }
-  // Fallback for dev/build - in production AUTH_SECRET should be set via env vars
+  // No AUTH_SECRET or NEXTAUTH_SECRET set — log a warning and use an insecure fallback.
+  // In production, AUTH_SECRET MUST be set via environment variables.
+  console.warn("AUTH_SECRET not set -- using insecure fallback. Set AUTH_SECRET in production!");
   return new TextEncoder().encode("zirat-dev-only-jwt-secret-not-for-production-use-2024");
 }
 
@@ -168,8 +145,8 @@ export async function isAdmin(): Promise<boolean> {
 
 /** כניסת אדמין */
 export async function loginAdmin(email: string, password: string): Promise<boolean> {
-  const adminEmail = process.env.ADMIN_EMAIL || "tamar@zirat.co.il";
-  const adminPassword = process.env.ADMIN_PASSWORD || "Zirat2024!";
+  const adminEmail = process.env.ADMIN_EMAIL || "";
+  const adminPassword = process.env.ADMIN_PASSWORD || "";
   return (
     email === adminEmail &&
     password === adminPassword
@@ -224,12 +201,8 @@ export async function loginWithEmail(
         };
       }
     } catch (err) {
-      console.error("Supplier DB lookup failed, falling back to demo:", err);
-    }
-
-    const demoSession = getDemoSession("supplier", normalizedEmail, password);
-    if (demoSession) {
-      return { success: true, session: demoSession };
+      console.error("Supplier DB lookup failed");
+      return { success: false, error: "??? ?? ????" };
     }
 
     return { success: false, error: "??? ?? ????" };
@@ -269,12 +242,8 @@ export async function loginWithEmail(
         };
       }
     } catch (err) {
-      console.error("Designer DB lookup failed, falling back to demo:", err);
-    }
-
-    const demoSession = getDemoSession("designer", normalizedEmail, password);
-    if (demoSession) {
-      return { success: true, session: demoSession };
+      console.error("Designer DB lookup failed");
+      return { success: false, error: "?????/? ?? ????/?" };
     }
 
     return { success: false, error: "?????/? ?? ????/?" };

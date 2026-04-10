@@ -81,8 +81,8 @@ export function isRateLimited(phone: string): boolean {
 // Clean up old rate limit entries every 5 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [phone, times] of userMessageTimes.entries()) {
-    const recent = times.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  for (const [phone, times] of Array.from(userMessageTimes.entries())) {
+    const recent = times.filter((t: number) => now - t < RATE_LIMIT_WINDOW_MS);
     if (recent.length === 0) {
       userMessageTimes.delete(phone);
     } else {
@@ -476,13 +476,13 @@ export function getSecurityStats(): {
 // ==========================================
 setInterval(() => {
   const now = Date.now();
-  for (const [phone, expiry] of temporaryBlocks.entries()) {
+  for (const [phone, expiry] of Array.from(temporaryBlocks.entries())) {
     if (now > expiry) {
       temporaryBlocks.delete(phone);
     }
   }
-  for (const [phone, attempts] of injectionAttempts.entries()) {
-    const recent = attempts.filter((t) => now - t < INJECTION_BLOCK_WINDOW_MS);
+  for (const [phone, attempts] of Array.from(injectionAttempts.entries())) {
+    const recent = attempts.filter((t: number) => now - t < INJECTION_BLOCK_WINDOW_MS);
     if (recent.length === 0) {
       injectionAttempts.delete(phone);
     } else {

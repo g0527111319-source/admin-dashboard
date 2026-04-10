@@ -7,14 +7,17 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { fullName, email, phone, password, city, specialization, employmentType, yearsAsIndependent } = body;
+        const { fullName: rawName, email: rawEmail, phone: rawPhone, password, city, specialization, employmentType, yearsAsIndependent } = body;
+        const fullName = (rawName || "").trim();
+        const email = (rawEmail || "").trim().toLowerCase();
+        const phone = (rawPhone || "").trim();
 
         // ולידציה
         if (!fullName || !email || !phone || !password) {
             return NextResponse.json({ error: txt("src/app/api/auth/register/route.ts::001", "נדרשים שם מלא, אימייל, טלפון וסיסמה") }, { status: 400 });
         }
-        if (password.length < 6) {
-            return NextResponse.json({ error: txt("src/app/api/auth/register/route.ts::002", "הסיסמה חייבת להכיל לפחות 6 תווים") }, { status: 400 });
+        if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+            return NextResponse.json({ error: txt("src/app/api/auth/register/route.ts::002", "הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה ומספר") }, { status: 400 });
         }
 
         // ולידציה של אימייל

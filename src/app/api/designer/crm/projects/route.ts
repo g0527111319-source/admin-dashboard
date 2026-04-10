@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
     const clientId = searchParams.get("clientId");
     const search = searchParams.get("search");
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
 
     const where: Record<string, unknown> = {
       designerId,
@@ -30,6 +32,12 @@ export async function GET(req: NextRequest) {
       ];
     }
 
+    // Only apply pagination when params are explicitly provided
+    const usePagination = pageParam !== null || limitParam !== null;
+    const page = parseInt(pageParam || "1");
+    const limit = parseInt(limitParam || "50");
+    const skip = (page - 1) * limit;
+
     const projects = await prisma.crmProject.findMany({
       where,
       include: {
@@ -40,7 +48,16 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { updatedAt: "desc" },
+      ...(usePagination ? { take: limit, skip } : {}),
     });
+
+    if (usePagination) {
+      const total = await prisma.crmProject.count({ where });
+      return NextResponse.json({
+        data: projects,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      });
+    }
 
     return NextResponse.json(projects);
   } catch (error) {

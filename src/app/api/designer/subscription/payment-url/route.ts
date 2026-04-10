@@ -80,9 +80,7 @@ export async function POST(req: NextRequest) {
 
     // If customer ID is mock or missing, create a real one
     if (!icountCustomerId || icountCustomerId.startsWith("mock-")) {
-      console.log(
-        `[payment-url] Creating real iCount customer for ${designerId} (was: ${icountCustomerId})`
-      );
+      // Creating real iCount customer
       const customer = await createCustomer({
         name: designer.fullName || designer.email || "Designer",
         email: designer.email || "",
@@ -111,9 +109,7 @@ export async function POST(req: NextRequest) {
       const planPrice = Number(plan.price);
 
       if (daysSincePayment < 30 && lastAmount >= planPrice && planPrice > 0) {
-        console.log(
-          `[payment-url] Designer ${designerId} already paid ${lastAmount} on ${lastPayment.toISOString()} — skipping PayPage for plan ${plan.name} (${planPrice})`
-        );
+        // Designer already paid for this period — skipping PayPage
         return NextResponse.json({
           success: true,
           alreadyPaid: true,
@@ -156,7 +152,7 @@ export async function POST(req: NextRequest) {
     const cancelUrl = `${baseUrl}/designer/${designerId}/subscription?payment=cancelled`;
     const ipnUrl = `${baseUrl}/api/webhooks/icount`;
 
-    console.log("[payment-url] URLs:", { successUrl, cancelUrl, ipnUrl });
+    // Payment URLs configured
 
     const paymentUrl = await generatePaymentUrl({
       paypageId,

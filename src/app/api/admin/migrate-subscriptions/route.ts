@@ -160,6 +160,10 @@ async function runMigration() {
   const results: { sql: string; ok: boolean; error?: string }[] = [];
   for (const sql of DDL_STATEMENTS) {
     try {
+      // SAFETY: $executeRawUnsafe is acceptable here because DDL_STATEMENTS is a
+      // hardcoded constant array of static DDL (ALTER TABLE, CREATE TABLE, CREATE INDEX).
+      // No user input is interpolated. Prisma's $executeRaw tagged template cannot be
+      // used because the SQL is iterated from an array, not written inline.
       await prisma.$executeRawUnsafe(sql);
       results.push({ sql: sql.slice(0, 80) + "...", ok: true });
     } catch (err) {

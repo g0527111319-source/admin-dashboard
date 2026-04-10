@@ -618,7 +618,7 @@ async function executeAdminBroadcast(
   }
 
   // Deduplicate
-  const uniquePhones = [...new Set(phones.map((p) => normalizePhone(p)))];
+  const uniquePhones = Array.from(new Set(phones.map((p) => normalizePhone(p))));
 
   // Queue messages (send with delays to avoid rate limiting)
   let sent = 0;

@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     // 4. Check if phone is blocked
     if (isBlocked(normalizedPhone)) {
-      console.log(`[Webhook] Blocked phone attempted contact: ${normalizedPhone}`);
+      // Blocked phone attempted contact
       return NextResponse.json({ status: "ok", reason: "blocked" });
     }
 
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
       toolUsed: toolUsed || null,
     });
   } catch (error) {
-    console.error("[Webhook] Error processing message:", error);
+    console.error("[Webhook] Error processing message");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

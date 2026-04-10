@@ -273,7 +273,7 @@ export default function SupplierDashboard() {
                     zIndex: 1,
                   }}>
                     {supplierData.supplierLogo ? (
-                      <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <img src={supplierData.supplierLogo} alt="לוגו הספק" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     ) : (
                       <span className="text-gold font-bold" style={{ fontSize: 10 }}>{supplierData.name[0]}</span>
                     )}
@@ -337,7 +337,7 @@ export default function SupplierDashboard() {
                               flexShrink: 0,
                             }}>
                               {supplierData.supplierLogo ? (
-                                <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                <img src={supplierData.supplierLogo} alt="לוגו הספק" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                               ) : (
                                 <span className="text-gold font-bold" style={{ fontSize: 8 }}>{supplierData.name[0]}</span>
                               )}
@@ -495,7 +495,7 @@ export default function SupplierDashboard() {
                         opacity: 0.3,
                       }}>
                         {supplierData.supplierLogo ? (
-                          <img src={supplierData.supplierLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          <img src={supplierData.supplierLogo} alt="לוגו הספק" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         ) : (
                           <span className="text-gold font-bold" style={{ fontSize: 7 }}>{supplierData.name[0]}</span>
                         )}

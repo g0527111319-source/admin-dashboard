@@ -817,7 +817,7 @@ export default function ChatBot({ designerContext }: ChatBotProps) {
   const handleReset = () => {
     setMessages([{
       id: genId(),
-      text: greetingMessage,
+      text: greetingMessageRef.current,
       sender: "bot",
       timestamp: new Date(),
     }]);

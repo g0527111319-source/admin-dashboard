@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: txt("src/app/api/auth/set-password/route.ts::005", "\u05E1\u05D5\u05D2 \u05DE\u05E9\u05EA\u05DE\u05E9 \u05DC\u05D0 \u05EA\u05E7\u05D9\u05DF") }, { status: 400 });
     }
     catch (error) {
-        console.error("Set password error:", error);
+        console.error("Set password error");
         return NextResponse.json({ error: txt("src/app/api/auth/set-password/route.ts::006", "\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05D2\u05D3\u05E8\u05EA \u05E1\u05D9\u05E1\u05DE\u05D4") }, { status: 500 });
     }
 }
