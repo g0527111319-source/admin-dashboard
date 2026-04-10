@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   CheckSquare,
   Plus,
@@ -17,13 +17,14 @@ import {
   Edit3,
   Trash2,
   Flag,
+  Loader2,
 } from "lucide-react";
 
 type Priority = "urgent" | "normal" | "low";
 type Status = "pending" | "in-progress" | "completed";
 
 interface Task {
-  id: number;
+  id: string;
   title: string;
   priority: Priority;
   dueDate: string;
@@ -82,29 +83,32 @@ function addDays(days: number): string {
   return d.toISOString().split("T")[0];
 }
 
-const initialTasks: Task[] = [
-  // Pending (4)
-  { id: 1, title: "אשר 5 פרסומים חדשים", priority: "urgent", dueDate: addDays(1), category: "FileText", description: "יש לבדוק ולאשר פרסומים שהוגשו על ידי ספקים חדשים", status: "pending" },
-  { id: 2, title: "בדוק תשלום ספק — אור תאורה", priority: "normal", dueDate: addDays(3), category: "CreditCard", description: "וידוא קבלת תשלום חודשי מספק תאורה", status: "pending" },
-  { id: 3, title: "תכנן אירוע הבא", priority: "normal", dueDate: addDays(7), category: "Calendar", description: "לתאם מקום ותאריך לאירוע הנטוורקינג הבא", status: "pending" },
-  { id: 4, title: "עדכן פרופילי ספקים חדשים", priority: "low", dueDate: addDays(14), category: "Users", description: "הוספת פרטים חסרים לפרופילי ספקים שנרשמו לאחרונה", status: "pending" },
-  // In Progress (3)
-  { id: 5, title: "צור דוח חודשי מרץ", priority: "urgent", dueDate: addDays(2), category: "FileText", description: "הכנת דוח סיכום חודשי עם נתוני מכירות ופעילות", status: "in-progress" },
-  { id: 6, title: "הכן הגרלה חודשית", priority: "normal", dueDate: addDays(5), category: "Trophy", description: "הגדרת פרסים ובחירת זוכים להגרלה החודשית", status: "in-progress" },
-  { id: 7, title: "עקוב אחרי ספקים לא פעילים", priority: "normal", dueDate: addDays(7), category: "Users", description: "שליחת תזכורות לספקים שלא פרסמו מעל 30 יום", status: "in-progress" },
-  // Completed (3)
-  { id: 8, title: "אשר 12 פרסומים", priority: "normal", dueDate: addDays(-2), category: "FileText", description: "אושרו כל הפרסומים שהמתינו לבדיקה", status: "completed" },
-  { id: 9, title: "שלח תזכורות תשלום", priority: "urgent", dueDate: addDays(-1), category: "CreditCard", description: "נשלחו תזכורות לכל הספקים עם חובות פתוחים", status: "completed" },
-  { id: 10, title: "ארגן מפגש נטוורקינג", priority: "normal", dueDate: addDays(-3), category: "Calendar", description: "המפגש התקיים בהצלחה עם 45 משתתפים", status: "completed" },
-];
-
 export default function AdminTaskBoardPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [nextId, setNextId] = useState(11);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newPriority, setNewPriority] = useState<Priority>("normal");
   const [newDueDate, setNewDueDate] = useState(addDays(3));
   const [showForm, setShowForm] = useState(false);
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/tasks");
+      if (!res.ok) throw new Error("שגיאה בטעינת משימות");
+      const data = await res.json();
+      setTasks(data);
+      setError(null);
+    } catch {
+      setError("שגיאה בטעינת משימות");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const stats = useMemo(() => {
     const total = tasks.length;
@@ -121,39 +125,78 @@ export default function AdminTaskBoardPage() {
     return grouped;
   }, [tasks]);
 
-  function moveTask(taskId: number, direction: "left" | "right") {
+  async function moveTask(taskId: string, direction: "left" | "right") {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const idx = statusOrder.indexOf(task.status);
+    const newIdx = direction === "left" ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= statusOrder.length) return;
+    const newStatus = statusOrder[newIdx];
     setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const idx = statusOrder.indexOf(t.status);
-        const newIdx = direction === "left" ? idx - 1 : idx + 1;
-        if (newIdx < 0 || newIdx >= statusOrder.length) return t;
-        return { ...t, status: statusOrder[newIdx] };
-      })
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
+    await fetch("/api/admin/tasks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: taskId, status: newStatus }),
+    });
   }
 
-  function deleteTask(taskId: number) {
+  async function deleteTask(taskId: string) {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    await fetch("/api/admin/tasks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: taskId, action: "delete" }),
+    });
   }
 
-  function addTask() {
+  async function addTask() {
     if (!newTitle.trim()) return;
-    const task: Task = {
-      id: nextId,
-      title: newTitle.trim(),
-      priority: newPriority,
-      dueDate: newDueDate,
-      category: "FileText",
-      description: "",
-      status: "pending",
-    };
-    setTasks((prev) => [...prev, task]);
-    setNextId((n) => n + 1);
+    const res = await fetch("/api/admin/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: newTitle.trim(),
+        priority: newPriority,
+        dueDate: newDueDate,
+        category: "FileText",
+        description: "",
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setTasks((prev) => [...prev, data.task]);
+    }
     setNewTitle("");
     setNewPriority("normal");
     setNewDueDate(addDays(3));
     setShowForm(false);
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-gold animate-spin mx-auto mb-3" />
+          <p className="text-text-muted text-sm">טוען משימות...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-3" />
+          <p className="text-red-400 text-sm">{error}</p>
+          <button onClick={fetchTasks} className="btn-gold mt-4 px-4 py-2 rounded-lg text-sm">
+            נסה שוב
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -1,9 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   BarChart3, Download, FileText, HandCoins, CreditCard, Trophy, Calendar,
   TrendingUp, TrendingDown, CheckCircle, XCircle, AlertTriangle, ChevronDown,
-  ChevronUp, Filter, Clock, Shield,
+  ChevronUp, Filter, Clock, Shield, Loader2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -19,73 +19,34 @@ const PaymentsChart = dynamic(() => import("@/components/charts/LuxuryCharts").t
 const RatingDistributionChart = dynamic(() => import("@/components/charts/LuxuryCharts").then((mod) => mod.RatingDistributionChart), { ssr: false, loading: ChartLoading });
 
 // ==============================
-// Demo Data
+// Types for API data
 // ==============================
 
-const dealsMonthlyData = [
-  { month: "אפר׳", deals: 18, revenue: 98000 },
-  { month: "מאי", deals: 22, revenue: 134000 },
-  { month: "יוני", deals: 19, revenue: 112000 },
-  { month: "יולי", deals: 25, revenue: 165000 },
-  { month: "אוג׳", deals: 21, revenue: 128000 },
-  { month: "ספט׳", deals: 24, revenue: 148000 },
-  { month: "אוק׳", deals: 26, revenue: 172000 },
-  { month: "נוב׳", deals: 20, revenue: 118000 },
-  { month: "דצמ׳", deals: 17, revenue: 96000 },
-  { month: "ינו׳", deals: 23, revenue: 142000 },
-  { month: "פבר׳", deals: 25, revenue: 156000 },
-  { month: "מרץ", deals: 28, revenue: 178000 },
-];
+interface MonthlyDeal { month: string; deals: number; revenue: number }
+interface CategoryDeal { name: string; value: number }
+interface PostMonthly { month: string; published: number; pending: number; rejected: number }
+interface PaymentMonthly { month: string; paid: number; overdue: number; pending: number }
+interface RatingDist { rating: string; count: number }
+interface TopEntry { name: string; deals: number; amount: number }
+interface OverdueEntry { name: string; debt: number; days: number; lastPayment: string }
+interface TopPostSupplier { name: string; posts: number; approval: number }
 
-const lastYearDeals = [
-  { month: "אפר׳", deals: 14, revenue: 72000 },
-  { month: "מאי", deals: 18, revenue: 98000 },
-  { month: "יוני", deals: 15, revenue: 86000 },
-  { month: "יולי", deals: 20, revenue: 128000 },
-  { month: "אוג׳", deals: 17, revenue: 102000 },
-  { month: "ספט׳", deals: 19, revenue: 118000 },
-  { month: "אוק׳", deals: 21, revenue: 132000 },
-  { month: "נוב׳", deals: 16, revenue: 94000 },
-  { month: "דצמ׳", deals: 13, revenue: 76000 },
-  { month: "ינו׳", deals: 19, revenue: 110000 },
-  { month: "פבר׳", deals: 20, revenue: 124000 },
-  { month: "מרץ", deals: 22, revenue: 138000 },
-];
-
-const dealsByCategoryData = [
-  { name: "מטבחים", value: 420000 },
-  { name: "ריצוף", value: 310000 },
-  { name: "תאורה", value: 185000 },
-  { name: "אמבטיה", value: 142000 },
-  { name: "ריהוט", value: 98000 },
-  { name: "אחר", value: 85000 },
-];
-
-const postsMonthlyData = [
-  { month: "אוק׳", published: 42, pending: 3, rejected: 5 },
-  { month: "נוב׳", published: 38, pending: 2, rejected: 4 },
-  { month: "דצמ׳", published: 35, pending: 4, rejected: 6 },
-  { month: "ינו׳", published: 44, pending: 3, rejected: 3 },
-  { month: "פבר׳", published: 40, pending: 5, rejected: 4 },
-  { month: "מרץ", published: 46, pending: 5, rejected: 2 },
-];
-
-const paymentsMonthlyData = [
-  { month: "אוק׳", paid: 21500, overdue: 2500, pending: 1500 },
-  { month: "נוב׳", paid: 22000, overdue: 1800, pending: 2200 },
-  { month: "דצמ׳", paid: 20500, overdue: 3000, pending: 1000 },
-  { month: "ינו׳", paid: 23000, overdue: 2200, pending: 1800 },
-  { month: "פבר׳", paid: 23500, overdue: 1500, pending: 2000 },
-  { month: "מרץ", paid: 24500, overdue: 2800, pending: 1200 },
-];
-
-const ratingDistData = [
-  { rating: "⭐ 5", count: 28 },
-  { rating: "⭐ 4", count: 18 },
-  { rating: "⭐ 3", count: 8 },
-  { rating: "⭐ 2", count: 3 },
-  { rating: "⭐ 1", count: 1 },
-];
+interface ReportData {
+  dealsMonthlyData: MonthlyDeal[];
+  lastYearDeals: MonthlyDeal[];
+  dealsByCategoryData: CategoryDeal[];
+  postsMonthlyData: PostMonthly[];
+  paymentsMonthlyData: PaymentMonthly[];
+  ratingDistData: RatingDist[];
+  pendingDeals: PendingDeal[];
+  top5Suppliers: TopEntry[];
+  top5Designers: TopEntry[];
+  overdueList: OverdueEntry[];
+  topPostingSuppliers: TopPostSupplier[];
+  kpi: { totalDeals: number; totalRevenue: number; monthDeals: number; monthRevenue: number; avgDeal: number; dealGrowth: number; revenueGrowth: number };
+  postKpi: { totalPostsPublished: number; pendingPostsCount: number; postsThisMonth: number; approvalRate: number };
+  paymentKpi: { monthlyRevenue: number; paidCount: number; overdueCount: number };
+}
 
 // ==============================
 // Deal Approval Data (Feature 14)
@@ -102,49 +63,7 @@ interface PendingDeal {
   flags: string[];
 }
 
-const pendingDeals: PendingDeal[] = [
-  {
-    id: "d1", designerName: "מיכל לוינשטיין", supplierName: "קיטשן פלוס",
-    amount: 32000, category: "מטבחים", date: "2026-03-18",
-    description: "מטבח מודרני 4.2 מ׳ — לקוח בהרצליה",
-    flags: [],
-  },
-  {
-    id: "d2", designerName: "רותם דיין", supplierName: "סטון דיזיין",
-    amount: 58000, category: "ריצוף וחיפוי", date: "2026-03-17",
-    description: "חיפוי שיש קררה — וילה בקיסריה",
-    flags: ["סכום חריג — מעל ₪50K"],
-  },
-  {
-    id: "d3", designerName: "נועה כהנוביץ׳", supplierName: "אור תאורה",
-    amount: 14500, category: "תאורה", date: "2026-03-16",
-    description: "גופי תאורה לדירת 5 חד׳ — פתח תקווה",
-    flags: [],
-  },
-  {
-    id: "d4", designerName: "יעל גולדברג", supplierName: "וודקראפט",
-    amount: 26000, category: "נגרות", date: "2026-03-15",
-    description: "ארון קיר עם דלתות אלון — רמת השרון",
-    flags: [],
-  },
-  {
-    id: "d5", designerName: "מיכל לוינשטיין", supplierName: "קיטשן פלוס",
-    amount: 28000, category: "מטבחים", date: "2026-03-14",
-    description: "מטבח נוסף — אותו לקוח, קומה 2",
-    flags: ["כפול — אותה מעצבת+ספק תוך 7 ימים"],
-  },
-  {
-    id: "d6", designerName: "שירה אבן צור", supplierName: "דלת הזהב",
-    amount: 18000, category: "דלתות", date: "2026-03-13",
-    description: "6 דלתות פנים + דלת כניסה — פרויקט שלם",
-    flags: [],
-  },
-];
-
-// ==============================
-// Pipeline Data
-// ==============================
-
+// Pipeline stages remain static reference data
 const pipelineStages = [
   { label: "פנייה ראשונית", count: 86, color: "bg-blue-400" },
   { label: "הצעת מחיר", count: 52, color: "bg-yellow-400" },
@@ -170,10 +89,49 @@ export default function ReportsPage() {
   const [showYoY, setShowYoY] = useState(false);
   const [periodToggle, setPeriodToggle] = useState<"monthly" | "yearly">("monthly");
 
+  // Data from API
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchReports = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/admin/reports");
+      if (!res.ok) throw new Error("שגיאה בטעינת דוחות");
+      const data = await res.json();
+      setReportData(data);
+      setFetchError(null);
+    } catch {
+      setFetchError("שגיאה בטעינת נתוני דוחות");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchReports(); }, [fetchReports]);
+
+  // Derived data from API response
+  const dealsMonthlyData = reportData?.dealsMonthlyData ?? [];
+  const lastYearDeals = reportData?.lastYearDeals ?? [];
+  const dealsByCategoryData = reportData?.dealsByCategoryData ?? [];
+  const postsMonthlyData = reportData?.postsMonthlyData ?? [];
+  const paymentsMonthlyData = reportData?.paymentsMonthlyData ?? [];
+  const ratingDistData = reportData?.ratingDistData ?? [];
+
   // Deal approval state
-  const [deals, setDeals] = useState(pendingDeals);
+  const [deals, setDeals] = useState<PendingDeal[]>([]);
   const [expandedDeal, setExpandedDeal] = useState<string | null>(null);
-  const approvedCount = useMemo(() => pendingDeals.length - deals.length, [deals]);
+  const [initialDealCount, setInitialDealCount] = useState(0);
+  const approvedCount = useMemo(() => initialDealCount - deals.length, [deals, initialDealCount]);
+
+  // Sync pending deals from API when loaded
+  useEffect(() => {
+    if (reportData?.pendingDeals) {
+      setDeals(reportData.pendingDeals);
+      setInitialDealCount(reportData.pendingDeals.length);
+    }
+  }, [reportData]);
 
   // Reports Hub state
   const [reportType, setReportType] = useState<"monthly" | "quarterly" | "annual">("monthly");
@@ -188,18 +146,25 @@ export default function ReportsPage() {
   };
 
   // Report hub generated summary
+  const kpi = reportData?.kpi;
+  const postKpi = reportData?.postKpi;
+  const paymentKpi = reportData?.paymentKpi;
   const reportSummary = useMemo(() => {
     const typeLabel = reportType === "monthly" ? "חודשי" : reportType === "quarterly" ? "רבעוני" : "שנתי";
+    const base = kpi ? {
+      totalDeals: kpi.monthDeals,
+      totalRevenue: kpi.monthRevenue,
+    } : { totalDeals: 0, totalRevenue: 0 };
     return {
       typeLabel,
-      totalDeals: reportType === "monthly" ? 28 : reportType === "quarterly" ? 76 : 268,
-      totalRevenue: reportType === "monthly" ? 178000 : reportType === "quarterly" ? 476000 : 1647000,
-      newDesigners: reportType === "monthly" ? 4 : reportType === "quarterly" ? 11 : 38,
-      activeSuppliers: reportType === "monthly" ? 45 : reportType === "quarterly" ? 48 : 52,
-      postsPublished: reportType === "monthly" ? 46 : reportType === "quarterly" ? 130 : 485,
-      eventsHeld: reportType === "monthly" ? 2 : reportType === "quarterly" ? 5 : 14,
+      totalDeals: reportType === "monthly" ? base.totalDeals : reportType === "quarterly" ? base.totalDeals * 3 : (kpi?.totalDeals ?? 0),
+      totalRevenue: reportType === "monthly" ? base.totalRevenue : reportType === "quarterly" ? base.totalRevenue * 3 : (kpi?.totalRevenue ?? 0),
+      newDesigners: 0,
+      activeSuppliers: paymentKpi?.paidCount ?? 0,
+      postsPublished: postKpi?.postsThisMonth ?? 0,
+      eventsHeld: 0,
     };
-  }, [reportType]);
+  }, [reportType, kpi, postKpi, paymentKpi]);
 
   // YoY comparison data
   const yoyData = useMemo(() => {
@@ -211,6 +176,28 @@ export default function ReportsPage() {
       lastYearRev: lastYearDeals[i]?.revenue || 0,
     }));
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-gold animate-spin mx-auto mb-3" />
+          <p className="text-text-muted text-sm">טוען נתוני דוחות...</p>
+        </div>
+      </div>
+    );
+  }
+  if (fetchError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-3" />
+          <p className="text-red-400 text-sm">{fetchError}</p>
+          <button onClick={fetchReports} className="btn-gold mt-4 px-4 py-2 rounded-lg text-sm">נסה שוב</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in">
@@ -284,28 +271,31 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">סה״כ עסקאות</p>
-              <p className="text-gold font-mono text-2xl font-bold">268</p>
+              <p className="text-gold font-mono text-2xl font-bold">{kpi?.totalDeals ?? 0}</p>
+              {(kpi?.dealGrowth ?? 0) !== 0 && (
               <div className="flex items-center justify-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-emerald-600" />
-                <span className="text-emerald-600 text-xs font-mono">+12% מהשנה שעברה</span>
+                {(kpi?.dealGrowth ?? 0) >= 0 ? <TrendingUp className="w-3 h-3 text-emerald-600" /> : <TrendingDown className="w-3 h-3 text-red-400" />}
+                <span className={`text-xs font-mono ${(kpi?.dealGrowth ?? 0) >= 0 ? "text-emerald-600" : "text-red-400"}`}>{(kpi?.dealGrowth ?? 0) > 0 ? "+" : ""}{kpi?.dealGrowth ?? 0}% מהשנה שעברה</span>
               </div>
+              )}
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">סכום כולל</p>
-              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency(1647000)}</p>
+              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency(kpi?.totalRevenue ?? 0)}</p>
+              {(kpi?.revenueGrowth ?? 0) !== 0 && (
               <div className="flex items-center justify-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-emerald-600" />
-                <span className="text-emerald-600 text-xs font-mono">+18%</span>
+                {(kpi?.revenueGrowth ?? 0) >= 0 ? <TrendingUp className="w-3 h-3 text-emerald-600" /> : <TrendingDown className="w-3 h-3 text-red-400" />}
+                <span className={`text-xs font-mono ${(kpi?.revenueGrowth ?? 0) >= 0 ? "text-emerald-600" : "text-red-400"}`}>{(kpi?.revenueGrowth ?? 0) > 0 ? "+" : ""}{kpi?.revenueGrowth ?? 0}%</span>
               </div>
+              )}
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">ממוצע עסקה</p>
-              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency(6146)}</p>
+              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency(kpi?.avgDeal ?? 0)}</p>
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">עסקאות החודש</p>
-              <p className="text-gold font-mono text-2xl font-bold">28</p>
-              <p className="text-emerald-600 text-xs">הכי גבוה השנה!</p>
+              <p className="text-gold font-mono text-2xl font-bold">{kpi?.monthDeals ?? 0}</p>
             </div>
           </div>
 
@@ -410,13 +400,7 @@ export default function ReportsPage() {
                   <tr><th>#</th><th>ספק</th><th>עסקאות</th><th>סכום</th></tr>
                 </thead>
                 <tbody>
-                  {[
-                    { name: "קיטשן פלוס", deals: 22, amount: 320000 },
-                    { name: "סטון דיזיין", deals: 18, amount: 156000 },
-                    { name: "דלת הזהב", deals: 16, amount: 144000 },
-                    { name: "וודקראפט", deals: 14, amount: 210000 },
-                    { name: "סנטק פרו", deals: 10, amount: 87000 },
-                  ].map((s, i) => (
+                  {(reportData?.top5Suppliers ?? []).map((s, i) => (
                     <tr key={i}>
                       <td className="font-mono text-gold">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</td>
                       <td>{s.name}</td>
@@ -434,13 +418,7 @@ export default function ReportsPage() {
                   <tr><th>#</th><th>מעצבת</th><th>עסקאות</th><th>סכום</th></tr>
                 </thead>
                 <tbody>
-                  {[
-                    { name: "מיכל לוינשטיין", deals: 24, amount: 210000 },
-                    { name: "רותם דיין", deals: 15, amount: 125000 },
-                    { name: "נועה כהנוביץ׳", deals: 12, amount: 85000 },
-                    { name: "יעל גולדברג", deals: 10, amount: 72000 },
-                    { name: "שירה אבן צור", deals: 8, amount: 56000 },
-                  ].map((d, i) => (
+                  {(reportData?.top5Designers ?? []).map((d, i) => (
                     <tr key={i}>
                       <td className="font-mono text-gold">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</td>
                       <td>{d.name}</td>
@@ -560,19 +538,19 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">סה״כ פורסמו</p>
-              <p className="text-gold font-mono text-2xl font-bold">245</p>
+              <p className="text-gold font-mono text-2xl font-bold">{postKpi?.totalPostsPublished ?? 0}</p>
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">אחוז אישור</p>
-              <p className="text-emerald-600 font-mono text-2xl font-bold">89%</p>
+              <p className="text-emerald-600 font-mono text-2xl font-bold">{postKpi?.approvalRate ?? 0}%</p>
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">פורסמו החודש</p>
-              <p className="text-gold font-mono text-2xl font-bold">46</p>
+              <p className="text-gold font-mono text-2xl font-bold">{postKpi?.postsThisMonth ?? 0}</p>
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">ממתינים</p>
-              <p className="text-yellow-400 font-mono text-2xl font-bold">5</p>
+              <p className="text-yellow-400 font-mono text-2xl font-bold">{postKpi?.pendingPostsCount ?? 0}</p>
             </div>
           </div>
           <div className="card-static">
@@ -585,13 +563,7 @@ export default function ReportsPage() {
               <table className="w-full table-luxury">
                 <thead><tr><th>#</th><th>ספק</th><th>פרסומים</th><th>אחוז אישור</th></tr></thead>
                 <tbody>
-                  {[
-                    { name: "קיטשן פלוס", posts: 31, approval: 97 },
-                    { name: "סטון דיזיין", posts: 24, approval: 92 },
-                    { name: "דלת הזהב", posts: 20, approval: 95 },
-                    { name: "וודקראפט", posts: 19, approval: 89 },
-                    { name: "אור תאורה", posts: 15, approval: 80 },
-                  ].map((s, i) => (
+                  {(reportData?.topPostingSuppliers ?? []).map((s, i) => (
                     <tr key={i}>
                       <td className="font-mono text-gold">{i + 1}</td>
                       <td>{s.name}</td>
@@ -638,21 +610,20 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">הכנסות חודשיות</p>
-              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency(24500)}</p>
+              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency(paymentKpi?.monthlyRevenue ?? 0)}</p>
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">שולם</p>
-              <p className="text-emerald-600 font-mono text-2xl font-bold">44</p>
+              <p className="text-emerald-600 font-mono text-2xl font-bold">{paymentKpi?.paidCount ?? 0}</p>
               <p className="text-text-muted text-xs">ספקים</p>
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">באיחור</p>
-              <p className="text-red-500 font-mono text-2xl font-bold">3</p>
-              <p className="text-text-muted text-xs">{formatCurrency(2800)} חוב</p>
+              <p className="text-red-500 font-mono text-2xl font-bold">{paymentKpi?.overdueCount ?? 0}</p>
             </div>
             <div className="card-static text-center">
               <p className="text-text-muted text-sm">הכנסה שנתית</p>
-              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency(260300)}</p>
+              <p className="text-gold font-mono text-2xl font-bold">{formatCurrency((paymentKpi?.monthlyRevenue ?? 0) * 12)}</p>
             </div>
           </div>
           <div className="card-static">
@@ -666,11 +637,7 @@ export default function ReportsPage() {
                 <tr><th>ספק</th><th>סכום חוב</th><th>ימי איחור</th><th>תשלום אחרון</th><th>פעולה</th></tr>
               </thead>
               <tbody>
-                {[
-                  { name: "אור תאורה", debt: 1350, days: 45, lastPayment: "15.01.2026" },
-                  { name: "גלאם דקור", debt: 900, days: 22, lastPayment: "15.02.2026" },
-                  { name: "פלוריקס", debt: 550, days: 8, lastPayment: "01.03.2026" },
-                ].map((s, i) => (
+                {(reportData?.overdueList ?? []).map((s, i) => (
                   <tr key={i}>
                     <td className="text-gold">{s.name}</td>
                     <td className="font-mono text-red-500">{formatCurrency(s.debt)}</td>

@@ -1,36 +1,38 @@
 "use client";
-import { useState } from "react";
-import { CalendarClock, Plus, X, ChevronLeft, ChevronRight, Clock, } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { CalendarClock, Plus, X, ChevronLeft, ChevronRight, Clock, Loader2 } from "lucide-react";
+
 interface Reservation {
     id: string;
+    supplierId: string;
     supplierName: string;
     date: string; // YYYY-MM-DD
     time: string;
     notes?: string;
 }
-const demoReservations: Reservation[] = [
-    { id: "r1", supplierName: "סטון דיזיין", date: "2026-03-12", time: "10:30", notes: "פרסום קולקציה חדשה" },
-    { id: "r2", supplierName: "אור תאורה", date: "2026-03-12", time: "13:30" },
-    { id: "r3", supplierName: "קיטשן פלוס", date: "2026-03-12", time: "20:30", notes: "מבצע חודשי" },
-    { id: "r4", supplierName: "סטון דיזיין", date: "2026-03-15", time: "10:30" },
-    { id: "r5", supplierName: "אור תאורה", date: "2026-03-16", time: "13:30", notes: "תמונות חדשות" },
-];
+
+interface SupplierOption {
+    id: string;
+    name: string;
+}
+
 const timeSlots = ["10:30", "13:30", "20:30"];
 const dayNames = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
-const demoSuppliers = [
-    { id: "1", name: "סטון דיזיין" },
-    { id: "2", name: "אור תאורה" },
-    { id: "3", name: "קיטשן פלוס" },
-];
+
 export default function ReservationsPage() {
-    const [reservations, setReservations] = useState(demoReservations);
-    const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 9)); // March 9, 2026 (Mon)
+    const [reservations, setReservations] = useState<Reservation[]>([]);
+    const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+    const [currentDate, setCurrentDate] = useState(new Date());
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState<{
         date: string;
         time: string;
     } | null>(null);
     const [newReservation, setNewReservation] = useState({ supplierId: "", notes: "" });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+
     // Get the week starting from Sunday
     const getWeekDates = (date: Date) => {
         const start = new Date(date);
@@ -44,43 +46,122 @@ export default function ReservationsPage() {
         }
         return dates;
     };
+
     const weekDates = getWeekDates(currentDate);
+
+    const formatDateStr = (d: Date) => {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+
+    const weekStart = formatDateStr(weekDates[0]);
+
+    // Fetch reservations for current week
+    const fetchReservations = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await fetch(`/api/admin/reservations?weekStart=${weekStart}`);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || "שגיאה בטעינת שריונים");
+            }
+            const data: Reservation[] = await res.json();
+            setReservations(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "שגיאה בטעינת שריונים");
+        } finally {
+            setLoading(false);
+        }
+    }, [weekStart]);
+
+    // Fetch suppliers on mount
+    useEffect(() => {
+        async function loadSuppliers() {
+            try {
+                const res = await fetch("/api/admin/suppliers/list");
+                if (!res.ok) throw new Error("שגיאה בטעינת ספקים");
+                const data: SupplierOption[] = await res.json();
+                setSuppliers(data);
+            } catch (err) {
+                console.error("Failed to load suppliers:", err);
+            }
+        }
+        loadSuppliers();
+    }, []);
+
+    // Fetch reservations when week changes
+    useEffect(() => {
+        fetchReservations();
+    }, [fetchReservations]);
+
     const navigateWeek = (direction: number) => {
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + direction * 7);
         setCurrentDate(newDate);
     };
-    const formatDateStr = (d: Date) => {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    };
+
     const getReservation = (date: string, time: string) => {
         return reservations.find(r => r.date === date && r.time === time);
     };
+
     const handleOpenAddModal = (date: string, time: string) => {
         setSelectedSlot({ date, time });
         setNewReservation({ supplierId: "", notes: "" });
         setShowAddModal(true);
     };
-    const handleAddReservation = () => {
-        if (!selectedSlot || !newReservation.supplierId)
-            return;
-        const supplier = demoSuppliers.find(s => s.id === newReservation.supplierId);
-        if (!supplier)
-            return;
-        const newRes: Reservation = {
-            id: `r${Date.now()}`,
-            supplierName: supplier.name,
-            date: selectedSlot.date,
-            time: selectedSlot.time,
-            notes: newReservation.notes || undefined,
-        };
-        setReservations(prev => [...prev, newRes]);
-        setShowAddModal(false);
+
+    const handleAddReservation = async () => {
+        if (!selectedSlot || !newReservation.supplierId) return;
+
+        try {
+            setSubmitting(true);
+            const res = await fetch("/api/admin/reservations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    supplierId: newReservation.supplierId,
+                    date: selectedSlot.date,
+                    time: selectedSlot.time,
+                    notes: newReservation.notes || undefined,
+                }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert(data.error || "שגיאה ביצירת שריון");
+                return;
+            }
+
+            const created: Reservation = await res.json();
+            setReservations(prev => [...prev, created]);
+            setShowAddModal(false);
+        } catch {
+            alert("שגיאה ביצירת שריון");
+        } finally {
+            setSubmitting(false);
+        }
     };
-    const handleRemoveReservation = (id: string) => {
-        setReservations(prev => prev.filter(r => r.id !== id));
+
+    const handleRemoveReservation = async (id: string) => {
+        try {
+            const res = await fetch(`/api/admin/reservations?id=${id}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert(data.error || "שגיאה במחיקת שריון");
+                return;
+            }
+
+            setReservations(prev => prev.filter(r => r.id !== id));
+        } catch {
+            alert("שגיאה במחיקת שריון");
+        }
     };
+
     const monthName = new Intl.DateTimeFormat("he-IL", { month: "long", year: "numeric" }).format(currentDate);
+
     return (<div className="space-y-6 animate-in">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -90,6 +171,14 @@ export default function ReservationsPage() {
           <p className="text-text-muted text-sm mt-1">{"לוח שנה לשריון ימי ושעות פרסום לספקים"}</p>
         </div>
       </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-card p-4 text-red-700 text-sm">
+          {error}
+          <button onClick={fetchReservations} className="underline mr-2">{"נסה שוב"}</button>
+        </div>
+      )}
 
       {/* Week navigation */}
       <div className="card-static">
@@ -105,6 +194,12 @@ export default function ReservationsPage() {
 
         {/* Calendar Grid */}
         <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-gold" />
+              <span className="mr-2 text-text-muted text-sm">{"טוען שריונים..."}</span>
+            </div>
+          ) : (
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -150,6 +245,7 @@ export default function ReservationsPage() {
                 </tr>))}
             </tbody>
           </table>
+          )}
         </div>
       </div>
 
@@ -157,6 +253,9 @@ export default function ReservationsPage() {
       <div className="card-static">
         <h2 className="text-lg font-heading text-text-primary mb-4">{"שריונים קרובים"}</h2>
         <div className="space-y-2">
+          {reservations.length === 0 && !loading && (
+            <p className="text-text-muted text-sm text-center py-4">{"אין שריונים לשבוע זה"}</p>
+          )}
           {reservations
             .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
             .slice(0, 10)
@@ -197,7 +296,7 @@ export default function ReservationsPage() {
                 <label className="block text-text-primary text-sm mb-1">{"ספק *"}</label>
                 <select value={newReservation.supplierId} onChange={(e) => setNewReservation({ ...newReservation, supplierId: e.target.value })} className="select-field">
                   <option value="">{"בחר ספק"}</option>
-                  {demoSuppliers.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+                  {suppliers.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
                 </select>
               </div>
               <div>
@@ -207,7 +306,9 @@ export default function ReservationsPage() {
             </div>
 
             <div className="flex gap-2 mt-6">
-              <button onClick={handleAddReservation} disabled={!newReservation.supplierId} className="btn-gold flex-1 disabled:opacity-50 disabled:cursor-not-allowed">{"שריין"}</button>
+              <button onClick={handleAddReservation} disabled={!newReservation.supplierId || submitting} className="btn-gold flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                {submitting ? "שומר..." : "שריין"}
+              </button>
               <button onClick={() => setShowAddModal(false)} className="btn-outline flex-1">{"ביטול"}</button>
             </div>
           </div>

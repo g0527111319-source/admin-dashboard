@@ -1,10 +1,10 @@
 "use client";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Users, Plus, Search, Filter, Download, AlertTriangle, Phone, Mail,
   MapPin, Calendar, X, Edit3, Eye, MessageCircle, CheckCircle, Clock,
   Shield, ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, Trash2,
-  Bell, Pause, Play, FileText, BarChart3, TrendingUp, XCircle,
+  Bell, Pause, Play, FileText, BarChart3, TrendingUp, XCircle, Loader2,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import StarRating from "@/components/ui/StarRating";
@@ -57,131 +57,52 @@ interface Supplier {
 // Demo Data
 // ==========================================
 
-const demoSuppliers: Supplier[] = [
-  {
-    id: "1", name: "סטון דיזיין", contactName: "יוסי כהן",
-    phone: "0521234567", email: "info@stone-design.co.il",
-    category: "ריצוף וחיפוי", city: "תל אביב", area: "מרכז",
-    website: "https://stone-design.co.il",
-    description: "מובילים בתחום הריצוף והחיפוי — יבוא ישיר מאיטליה ופורטוגל",
-    paymentStatus: "PAID", monthlyFee: 500,
-    subscriptionStart: "2025-06-15", subscriptionEnd: "2026-06-15",
-    totalPosts: 24, postsThisMonth: 3, totalDeals: 18, totalDealAmount: 156000,
-    averageRating: 4.5, ratingCount: 12, isActive: true, isSuspended: false,
-    notes: "", verificationStatus: "verified",
-    verificationChecklist: { license: true, insurance: true, portfolio: true, references: true },
-    lastActivityDate: "2026-03-17",
-    monthlyDeals: [3, 2, 4, 1, 3, 5],
-  },
-  {
-    id: "2", name: "אור תאורה", contactName: "רחל לוי",
-    phone: "0529876543", email: "or@lighting.co.il",
-    category: "תאורה", city: "הרצליה", area: "שרון",
-    website: "https://or-lighting.co.il",
-    description: "גופי תאורה מעוצבים — סקנדינבי, מודרני ואקלקטי",
-    paymentStatus: "OVERDUE", monthlyFee: 450,
-    subscriptionStart: "2025-09-20", subscriptionEnd: "2026-03-20",
-    totalPosts: 15, postsThisMonth: 0, totalDeals: 8, totalDealAmount: 68000,
-    averageRating: 3.0, ratingCount: 6, isActive: true, isSuspended: false,
-    notes: "איטית באספקה — קיבלה פניות",
-    verificationStatus: "pending",
-    verificationChecklist: { license: true, insurance: false, portfolio: true, references: false },
-    lastActivityDate: "2026-02-28",
-    monthlyDeals: [1, 2, 1, 0, 2, 2],
-  },
-  {
-    id: "3", name: "קיטשן פלוס", contactName: "דני אברהם",
-    phone: "0541112233", email: "kitchen@plus.co.il",
-    category: "מטבחים", city: "ראשון לציון", area: "מרכז",
-    website: "https://kitchenplus.co.il",
-    description: "מטבחים מותאמים אישית — עיצוב, ייצור והתקנה מקצה לקצה",
-    paymentStatus: "PAID", monthlyFee: 600,
-    subscriptionStart: "2025-04-01", subscriptionEnd: "2026-09-30",
-    totalPosts: 31, postsThisMonth: 4, totalDeals: 22, totalDealAmount: 320000,
-    averageRating: 4.8, ratingCount: 18, isActive: true, isSuspended: false,
-    notes: "", verificationStatus: "verified",
-    verificationChecklist: { license: true, insurance: true, portfolio: true, references: true },
-    lastActivityDate: "2026-03-19",
-    monthlyDeals: [4, 3, 5, 2, 4, 4],
-  },
-  {
-    id: "4", name: "וודקראפט", contactName: "מיכאל ברנס",
-    phone: "0507778899", email: "info@woodcraft.co.il",
-    category: "נגרות", city: "חיפה", area: "צפון",
-    website: "https://woodcraft.co.il",
-    description: "נגרות יוקרתית — ארונות, דלתות וריהוט בהזמנה אישית",
-    paymentStatus: "PAID", monthlyFee: 550,
-    subscriptionStart: "2025-07-01", subscriptionEnd: "2026-07-01",
-    totalPosts: 19, postsThisMonth: 2, totalDeals: 14, totalDealAmount: 210000,
-    averageRating: 4.2, ratingCount: 9, isActive: true, isSuspended: false,
-    notes: "", verificationStatus: "verified",
-    verificationChecklist: { license: true, insurance: true, portfolio: true, references: false },
-    lastActivityDate: "2026-03-15",
-    monthlyDeals: [2, 3, 2, 1, 3, 3],
-  },
-  {
-    id: "5", name: "צבע ועוד", contactName: "שרה מזרחי",
-    phone: "0523344556", email: "color@more.co.il",
-    category: "צבע וגבס", city: "באר שבע", area: "דרום",
-    website: "",
-    description: "צביעה דקורטיבית, עבודות גבס ותקרות מעוצבות",
-    paymentStatus: "PENDING", monthlyFee: 350,
-    subscriptionStart: "2025-11-01", subscriptionEnd: "2026-05-01",
-    totalPosts: 6, postsThisMonth: 1, totalDeals: 5, totalDealAmount: 42000,
-    averageRating: 3.5, ratingCount: 4, isActive: true, isSuspended: false,
-    notes: "ספקית חדשה — דורש מעקב",
-    verificationStatus: "unverified",
-    verificationChecklist: { license: false, insurance: false, portfolio: true, references: false },
-    lastActivityDate: "2026-03-10",
-    monthlyDeals: [0, 1, 1, 1, 1, 1],
-  },
-  {
-    id: "6", name: "סנטק פרו", contactName: "אלי דוד",
-    phone: "0509988776", email: "santech@pro.co.il",
-    category: "אינסטלציה", city: "נתניה", area: "שרון",
-    website: "https://santechpro.co.il",
-    description: "אינסטלטור מוסמך — חדרי רחצה, מטבחים ומערכות מים מלאות",
-    paymentStatus: "PAID", monthlyFee: 400,
-    subscriptionStart: "2025-08-15", subscriptionEnd: "2026-08-15",
-    totalPosts: 12, postsThisMonth: 0, totalDeals: 10, totalDealAmount: 87000,
-    averageRating: 4.0, ratingCount: 7, isActive: true, isSuspended: false,
-    notes: "", verificationStatus: "pending",
-    verificationChecklist: { license: true, insurance: true, portfolio: false, references: false },
-    lastActivityDate: "2026-03-05",
-    monthlyDeals: [1, 2, 2, 1, 2, 2],
-  },
-  {
-    id: "7", name: "אקווה בריכות", contactName: "עדן לוי",
-    phone: "0541122334", email: "aqua@pools.co.il",
-    category: "בריכות", city: "כפר סבא", area: "שרון",
-    website: "https://aqua-pools.co.il",
-    description: "תכנון ובניית בריכות שחייה ביתיות — מעיין שלווה בגינה שלכם",
-    paymentStatus: "CANCELLED", monthlyFee: 700,
-    subscriptionStart: "2025-03-01", subscriptionEnd: "2025-12-31",
-    totalPosts: 8, postsThisMonth: 0, totalDeals: 3, totalDealAmount: 95000,
-    averageRating: 2.5, ratingCount: 3, isActive: false, isSuspended: true,
-    notes: "הושעה — תלונות חוזרות על איכות שירות",
-    verificationStatus: "unverified",
-    verificationChecklist: { license: false, insurance: false, portfolio: false, references: false },
-    lastActivityDate: "2025-11-20",
-    monthlyDeals: [1, 0, 1, 0, 1, 0],
-  },
-  {
-    id: "8", name: "דלת הזהב", contactName: "נועם פרידמן",
-    phone: "0508765432", email: "gold@door.co.il",
-    category: "דלתות", city: "ירושלים", area: "ירושלים",
-    website: "https://golddoor.co.il",
-    description: "דלתות כניסה ופנים — עץ מלא, מתכת ומשולב",
-    paymentStatus: "PAID", monthlyFee: 480,
-    subscriptionStart: "2025-05-10", subscriptionEnd: "2026-05-10",
-    totalPosts: 20, postsThisMonth: 3, totalDeals: 16, totalDealAmount: 144000,
-    averageRating: 4.6, ratingCount: 11, isActive: true, isSuspended: false,
-    notes: "", verificationStatus: "verified",
-    verificationChecklist: { license: true, insurance: true, portfolio: true, references: true },
-    lastActivityDate: "2026-03-18",
-    monthlyDeals: [2, 3, 3, 2, 3, 3],
-  },
-];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSupplierFromApi(s: any): Supplier {
+  const hasGallery = (s.gallery?.length || 0) > 0;
+  const hasRecs = (s.ratingCount || 0) > 0;
+  const hasWebsite = !!s.website;
+  const now = new Date();
+  const subEnd = s.subscriptionEnd ? new Date(s.subscriptionEnd) : null;
+  const isSuspended = !s.isActive || s.isHidden || false;
+  const verifiedCount = [hasWebsite, hasGallery, hasRecs].filter(Boolean).length;
+  const verificationStatus: VerificationStatus =
+    verifiedCount >= 3 ? "verified" : verifiedCount >= 1 ? "pending" : "unverified";
+  return {
+    id: s.id,
+    name: s.name || "",
+    contactName: s.contactName || "",
+    phone: s.phone || "",
+    email: s.email || "",
+    category: s.category || "",
+    city: s.city || "",
+    area: s.area || "",
+    website: s.website || "",
+    description: s.description || "",
+    paymentStatus: s.paymentStatus || "PENDING",
+    monthlyFee: s.monthlyFee || 0,
+    subscriptionStart: s.subscriptionStart ? new Date(s.subscriptionStart).toISOString().slice(0, 10) : "",
+    subscriptionEnd: subEnd ? subEnd.toISOString().slice(0, 10) : "",
+    totalPosts: s.totalPosts || 0,
+    postsThisMonth: s.postsThisMonth || 0,
+    totalDeals: s.totalDeals || 0,
+    totalDealAmount: s.totalDealAmount || 0,
+    averageRating: s.averageRating || 0,
+    ratingCount: s.ratingCount || 0,
+    isActive: s.isActive ?? true,
+    isSuspended,
+    notes: s.notes || "",
+    verificationStatus,
+    verificationChecklist: {
+      license: hasWebsite,
+      insurance: subEnd ? subEnd > now : false,
+      portfolio: hasGallery,
+      references: hasRecs,
+    },
+    lastActivityDate: s.updatedAt ? new Date(s.updatedAt).toISOString().slice(0, 10) : "",
+    monthlyDeals: [],
+  };
+}
 
 // ==========================================
 // Mini Sparkline SVG
@@ -243,10 +164,25 @@ const ALL = "__ALL__";
 // ==========================================
 
 export default function SuppliersPage() {
-  const [suppliers, setSuppliers] = useState(demoSuppliers);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState(ALL);
   const [statusFilter, setStatusFilter] = useState(ALL);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/suppliers")
+      .then((res) => { if (!res.ok) throw new Error("fetch failed"); return res.json(); })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setSuppliers(data.map(mapSupplierFromApi));
+        }
+      })
+      .catch(() => setError("שגיאה בטעינת ספקים. נסו לרענן את הדף."))
+      .finally(() => setLoading(false));
+  }, []);
   const [verificationFilter, setVerificationFilter] = useState(ALL);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -330,6 +266,24 @@ export default function SuppliersPage() {
   const totalRevenue = suppliers.filter(s => s.isActive && s.paymentStatus === "PAID").reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
   const verifiedCount = suppliers.filter(s => s.verificationStatus === "verified").length;
   const suspendedCount = suppliers.filter(s => s.isSuspended).length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-text-muted gap-2">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span>טוען ספקים...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20 text-red-400">
+        <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in">

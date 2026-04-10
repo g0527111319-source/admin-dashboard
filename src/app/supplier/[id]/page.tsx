@@ -1,58 +1,117 @@
 "use client";
 import { txt } from "@/content/siteText";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import StarRating from "@/components/ui/StarRating";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { FileText, HandCoins, Star, Calendar, Upload, Clock, Send, Edit, Image as ImageIcon, BarChart3, Eye, TrendingUp, CheckCircle2, XCircle, Phone, Mail, Globe, MapPin, Camera, UserPlus, X, Plus, CreditCard, ShieldCheck, } from "lucide-react";
+import { FileText, HandCoins, Star, Calendar, Upload, Clock, Send, Edit, Image as ImageIcon, BarChart3, Eye, TrendingUp, CheckCircle2, XCircle, Phone, Mail, Globe, MapPin, Camera, UserPlus, X, Plus, CreditCard, ShieldCheck, Loader2, } from "lucide-react";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
-const supplierData = {
-    name: txt("src/app/supplier/[id]/page.tsx::001", "סטון דיזיין"),
-    contactName: txt("src/app/supplier/[id]/page.tsx::002", "יוסי כהן"),
-    phone: "052-1234567",
-    email: "yossi@stonedesign.co.il",
-    website: "www.stonedesign.co.il",
-    city: txt("src/app/supplier/[id]/page.tsx::003", "תל אביב"),
-    category: txt("src/app/supplier/[id]/page.tsx::004", "ריצוף וחיפוי"),
-    description: txt("src/app/supplier/[id]/page.tsx::005", "ספק ריצוף וחיפוי פרימיום — ייבוא ישיר מאיטליה וספרד. מגוון קולקציות ייחודיות לפרויקטי יוקרה."),
-    subscriptionEnd: "2026-06-15",
-    daysLeft: 97,
-    paymentStatus: "PAID",
-    postsThisMonth: 3,
-    postsLastMonth: 4,
-    totalDeals: 18,
-    totalDealAmount: 156000,
-    averageRating: 4.5,
-    ratingCount: 12,
-    supplierLogo: "",
-    isVerified: true,
-};
-const recentPosts = [
-    { id: "1", caption: txt("src/app/supplier/[id]/page.tsx::006", "קולקציית אריחי פורצלן חדשה — גימור מאט טבעי, מידות גדולות"), status: "PUBLISHED", date: "07.03.2026", time: "10:30", imageUrl: null },
-    { id: "2", caption: txt("src/app/supplier/[id]/page.tsx::007", "פרויקט מושלם — ריצוף טראצו בוילה בהרצליה פיתוח"), status: "APPROVED", date: "05.03.2026", time: "13:30", imageUrl: null },
-    { id: "3", caption: txt("src/app/supplier/[id]/page.tsx::008", "חיפוי קיר חדשני בגימור תלת מימדי — ייחודי לשוק הישראלי"), status: "PENDING", date: "09.03.2026", time: "20:30", imageUrl: null },
-    { id: "4", caption: txt("src/app/supplier/[id]/page.tsx::009", "מבצע סוף עונה — 30% הנחה על קולקציית LOFT"), status: "REJECTED", date: "02.03.2026", time: "10:30", imageUrl: null, rejectionReason: txt("src/app/supplier/[id]/page.tsx::010", "חסר לוגו קהילה") },
-];
-const recentDeals = [
-    { id: "1", designerInitial: txt("src/app/supplier/[id]/page.tsx::011", "נ. כ."), amount: 12000, date: "08.03.2026", confirmed: true },
-    { id: "2", designerInitial: txt("src/app/supplier/[id]/page.tsx::012", "מ. ל."), amount: 8500, date: "05.03.2026", confirmed: true },
-    { id: "3", designerInitial: txt("src/app/supplier/[id]/page.tsx::013", "ש. א."), amount: 22000, date: "01.03.2026", confirmed: true },
-    { id: "4", designerInitial: txt("src/app/supplier/[id]/page.tsx::014", "ת. ג."), amount: 15000, date: "25.02.2026", confirmed: false },
-    { id: "5", designerInitial: txt("src/app/supplier/[id]/page.tsx::015", "ר. ד."), amount: 9800, date: "20.02.2026", confirmed: true },
-];
+
+interface SupplierData {
+    name: string;
+    contactName: string;
+    phone: string;
+    email: string;
+    website: string;
+    city: string;
+    category: string;
+    description: string;
+    subscriptionEnd: string;
+    daysLeft: number;
+    paymentStatus: string;
+    postsThisMonth: number;
+    postsLastMonth: number;
+    totalDeals: number;
+    totalDealAmount: number;
+    averageRating: number;
+    ratingCount: number;
+    supplierLogo: string;
+    isVerified: boolean;
+}
+
+interface PostItem {
+    id: string;
+    caption: string;
+    status: string;
+    date: string;
+    time: string;
+    imageUrl: string | null;
+    rejectionReason?: string;
+}
+
+interface DealItem {
+    id: string;
+    designerInitial: string;
+    amount: number;
+    date: string;
+    confirmed: boolean;
+}
+
 interface Recommender {
     id: string;
     name: string;
     phone: string;
 }
+
+const EMPTY_SUPPLIER: SupplierData = {
+    name: "",
+    contactName: "",
+    phone: "",
+    email: "",
+    website: "",
+    city: "",
+    category: "",
+    description: "",
+    subscriptionEnd: "",
+    daysLeft: 0,
+    paymentStatus: "",
+    postsThisMonth: 0,
+    postsLastMonth: 0,
+    totalDeals: 0,
+    totalDealAmount: 0,
+    averageRating: 0,
+    ratingCount: 0,
+    supplierLogo: "",
+    isVerified: false,
+};
+
 export default function SupplierDashboard() {
+    const routeParams = useParams<{ id: string }>();
+    const [supplierData, setSupplierData] = useState<SupplierData>(EMPTY_SUPPLIER);
+    const [recentPosts, setRecentPosts] = useState<PostItem[]>([]);
+    const [recentDeals, setRecentDeals] = useState<DealItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"overview" | "posts" | "deals" | "newpost" | "profile" | "card">("overview");
     const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-    const [recommenders, setRecommenders] = useState<Recommender[]>([
-        { id: "1", name: txt("src/app/supplier/[id]/page.tsx::016", "נועה כהנוביץ'"), phone: "0501234567" },
-    ]);
+    const [recommenders, setRecommenders] = useState<Recommender[]>([]);
     const [newRecommender, setNewRecommender] = useState({ name: "", phone: "" });
     const [showAddRecommender, setShowAddRecommender] = useState(false);
+
+    const fetchSupplierProfile = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await fetch(`/api/supplier/profile?id=${routeParams.id}`);
+            if (!res.ok) throw new Error("שגיאה בטעינת פרופיל ספק");
+            const data = await res.json();
+            setSupplierData(data.supplierData ?? EMPTY_SUPPLIER);
+            setRecentPosts(data.recentPosts ?? []);
+            setRecentDeals(data.recentDeals ?? []);
+            setRecommenders(data.recommenders ?? []);
+        } catch (err) {
+            console.error(err);
+            setError(err instanceof Error ? err.message : "שגיאה בטעינת נתונים");
+        } finally {
+            setLoading(false);
+        }
+    }, [routeParams.id]);
+
+    useEffect(() => {
+        if (routeParams.id) fetchSupplierProfile();
+    }, [routeParams.id, fetchSupplierProfile]);
+
     const handleAddRecommender = () => {
         if (!newRecommender.name || !newRecommender.phone || recommenders.length >= 3)
             return;
@@ -71,6 +130,25 @@ export default function SupplierDashboard() {
         { key: "profile", label: txt("src/app/supplier/[id]/page.tsx::021", "ערוך פרופיל"), icon: Edit },
         { key: "card", label: txt("src/app/supplier/[id]/page.tsx::022", "כרטיס ביקור"), icon: CreditCard },
     ] as const;
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-bg">
+                <Loader2 className="w-8 h-8 animate-spin text-gold" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-bg gap-4">
+                <p className="text-red-500 text-lg">{error}</p>
+                <button onClick={fetchSupplierProfile} className="btn-gold px-6 py-2">
+                    {txt("src/app/supplier/[id]/page.tsx::retry", "נסה שוב")}
+                </button>
+            </div>
+        );
+    }
+
     return (<div className="bg-bg">
       {/* Header */}
       <header className="bg-white border-b border-border-subtle shadow-sm">

@@ -38,44 +38,40 @@ import { useParams } from "next/navigation";
 
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 
-// DEMO/FALLBACK data — used until a real designer profile API endpoint is available
-const DEMO_DESIGNER_DATA = {
+// Default empty profile — populated from API
+const EMPTY_DESIGNER_DATA = {
     designerLogo: "",
-    fullName: txt("src/app/designer/[id]/page.tsx::001", "נועה כהנוביץ'"),
-    city: txt("src/app/designer/[id]/page.tsx::002", "תל אביב"),
-    area: txt("src/app/designer/[id]/page.tsx::003", "מרכז"),
-    specialization: txt("src/app/designer/[id]/page.tsx::004", "עיצוב פנים"),
-    yearsExperience: 8,
-    instagram: "@noa.design",
-    email: "noa@design.co.il",
-    phone: "052-9876543",
-    totalDeals: 12,
-    totalDealAmount: 85000,
-    lotteryEntries: 8,
-    lotteryWins: 1,
-    eventsAttended: 5,
-    joinDate: "15.06.2024",
-    rank: 47,
+    fullName: "",
+    city: "",
+    area: "",
+    specialization: "",
+    yearsExperience: 0,
+    instagram: "",
+    email: "",
+    phone: "",
+    totalDeals: 0,
+    totalDealAmount: 0,
+    lotteryEntries: 0,
+    lotteryWins: 0,
+    eventsAttended: 0,
+    joinDate: "",
+    rank: 0,
 };
 
-// DEMO/FALLBACK suppliers — used until a real designer profile API endpoint is available
-const DEMO_SUPPLIERS = [
-    { id: "1", name: txt("src/app/designer/[id]/page.tsx::005", "סטון דיזיין"), category: txt("src/app/designer/[id]/page.tsx::006", "ריצוף וחיפוי"), city: txt("src/app/designer/[id]/page.tsx::007", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::008", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::009", "מובילים בתחום הריצוף והחיפוי — יבוא ישיר מאיטליה ופורטוגל"), phone: "0521234567", email: "info@stonedesign.co.il", contactPerson: "יוסי כהן", address: "רחוב הברזל 12, תל אביב", areas: ["מרכז", "שרון", "תל אביב"], averageRating: 4.5, ratingCount: 12, recommendationCount: 15, dealsCount: 34, workedWithMe: true, isCommunity: true, isVerified: true, logo: "" },
-    { id: "2", name: txt("src/app/designer/[id]/page.tsx::010", "אור תאורה"), category: txt("src/app/designer/[id]/page.tsx::011", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::012", "הרצליה"), area: txt("src/app/designer/[id]/page.tsx::013", "שרון"), description: txt("src/app/designer/[id]/page.tsx::014", "גופי תאורה מעוצבים — סקנדינבי, מודרני ואקלקטי"), phone: "0529876543", email: "contact@or-teura.co.il", contactPerson: "דנה לוי", address: "שד. אבא אבן 8, הרצליה", areas: ["שרון", "מרכז"], averageRating: 3.8, ratingCount: 6, recommendationCount: 8, dealsCount: 18, workedWithMe: false, isCommunity: true, isVerified: true, logo: "" },
-    { id: "3", name: txt("src/app/designer/[id]/page.tsx::015", "קיטשן פלוס"), category: txt("src/app/designer/[id]/page.tsx::016", "מטבחים"), city: txt("src/app/designer/[id]/page.tsx::017", "ראשון לציון"), area: txt("src/app/designer/[id]/page.tsx::018", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::019", "מטבחים מותאמים אישית — עיצוב, ייצור והתקנה מקצה לקצה"), phone: "0541112233", email: "sales@kitchenplus.co.il", contactPerson: "רונית אברהם", address: "אזור תעשייה, ראשון לציון", areas: ["מרכז", "דרום"], averageRating: 4.8, ratingCount: 18, recommendationCount: 22, dealsCount: 45, workedWithMe: true, isCommunity: true, isVerified: true, logo: "" },
-    { id: "4", name: txt("src/app/designer/[id]/page.tsx::020", "נוף גרין"), category: txt("src/app/designer/[id]/page.tsx::021", "חוץ ונוף"), city: txt("src/app/designer/[id]/page.tsx::022", "כפר סבא"), area: txt("src/app/designer/[id]/page.tsx::023", "שרון"), description: txt("src/app/designer/[id]/page.tsx::024", "עיצוב גנים, מרפסות ומרחבים ירוקים — מהתכנון ועד הביצוע"), phone: "0501234567", email: "nof@green.co.il", contactPerson: "עמית גרין", address: "רחוב ויצמן 45, כפר סבא", areas: ["שרון"], averageRating: 4.2, ratingCount: 9, recommendationCount: 11, dealsCount: 20, workedWithMe: false, isCommunity: false, isVerified: false, logo: "" },
-    { id: "5", name: txt("src/app/designer/[id]/page.tsx::025", "דלת הזהב"), category: txt("src/app/designer/[id]/page.tsx::026", "דלתות וחלונות"), city: txt("src/app/designer/[id]/page.tsx::027", "חיפה"), area: txt("src/app/designer/[id]/page.tsx::028", "צפון"), description: txt("src/app/designer/[id]/page.tsx::029", "דלתות פנים וכניסה — עץ, אלומיניום, ופורניר ברמה הגבוהה ביותר"), phone: "0541234567", email: "info@golddoor.co.il", contactPerson: "משה דהן", address: "רחוב העצמאות 20, חיפה", areas: ["צפון", "חיפה"], averageRating: 4.6, ratingCount: 14, recommendationCount: 16, dealsCount: 30, workedWithMe: false, isCommunity: true, isVerified: false, logo: "" },
-    { id: "6", name: txt("src/app/designer/[id]/page.tsx::030", "לייט אפ"), category: txt("src/app/designer/[id]/page.tsx::031", "תאורה"), city: txt("src/app/designer/[id]/page.tsx::032", "תל אביב"), area: txt("src/app/designer/[id]/page.tsx::033", "מרכז"), description: txt("src/app/designer/[id]/page.tsx::034", "פתרונות תאורה חכמה — LED, דימרים ותאורה אדריכלית"), phone: "0531234567", email: "hello@lightup.co.il", contactPerson: "תמר שלום", address: "רחוב דיזנגוף 200, תל אביב", areas: ["מרכז", "תל אביב"], averageRating: 4.3, ratingCount: 10, recommendationCount: 13, dealsCount: 25, workedWithMe: false, isCommunity: false, isVerified: false, logo: "" },
-];
+// Suppliers populated from API
+type SupplierItem = {
+    id: string; name: string; category: string; city: string; area: string;
+    description: string; phone: string; email: string; contactPerson: string;
+    address: string; areas: string[]; averageRating: number; ratingCount: number;
+    recommendationCount: number; dealsCount: number; workedWithMe: boolean;
+    isCommunity: boolean; isVerified: boolean; logo: string;
+};
 
-// DEMO/FALLBACK deal history — used until a real designer profile API endpoint is available
-const DEMO_DEAL_HISTORY = [
-    { id: "1", supplier: txt("src/app/designer/[id]/page.tsx::035", "סטון דיזיין"), amount: 12000, date: "08.03.2026", status: "confirmed", rating: 5 },
-    { id: "2", supplier: txt("src/app/designer/[id]/page.tsx::036", "קיטשן פלוס"), amount: 35000, date: "20.02.2026", status: "confirmed", rating: 5 },
-    { id: "3", supplier: txt("src/app/designer/[id]/page.tsx::037", "אור תאורה"), amount: 8500, date: "10.01.2026", status: "confirmed", rating: 4 },
-    { id: "4", supplier: txt("src/app/designer/[id]/page.tsx::038", "סטון דיזיין"), amount: 15000, date: "05.12.2025", status: "confirmed", rating: 4 },
-    { id: "5", supplier: txt("src/app/designer/[id]/page.tsx::039", "נוף גרין"), amount: 14500, date: "20.11.2025", status: "pending", rating: null },
-];
+// Deal history populated from API
+type DealHistoryItem = {
+    id: string; supplier: string; amount: number; date: string;
+    status: string; rating: number | null;
+};
 
 type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio";
 
@@ -146,15 +142,13 @@ export default function DesignerDashboard() {
     const routeParams = useParams<{ id: string }>();
     const designerIdForGate = routeParams?.id || undefined;
 
-    // Designer profile state — falls back to demo data until a dedicated profile API is built
-    const [designerData, setDesignerData] = useState(DEMO_DESIGNER_DATA);
-    const [suppliers, setSuppliers] = useState(DEMO_SUPPLIERS);
-    const [dealHistory, setDealHistory] = useState(DEMO_DEAL_HISTORY);
-    const [profileLoading, setProfileLoading] = useState(false);
+    // Designer profile state — loaded from API
+    const [designerData, setDesignerData] = useState(EMPTY_DESIGNER_DATA);
+    const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
+    const [dealHistory, setDealHistory] = useState<DealHistoryItem[]>([]);
+    const [profileLoading, setProfileLoading] = useState(true);
+    const [profileError, setProfileError] = useState<string | null>(null);
 
-    // TODO: Replace with a real API call once a GET /api/designer/[id]/profile endpoint exists.
-    // Currently there is no endpoint that returns the full designer profile (name, stats, deals, suppliers).
-    // The /api/auth/me endpoint only returns basic session info (id, role, email, name).
     useEffect(() => {
         if (!designerIdForGate) return;
         let cancelled = false;
@@ -162,20 +156,20 @@ export default function DesignerDashboard() {
         async function fetchDesignerProfile() {
             setProfileLoading(true);
             try {
-                const res = await fetch(`/api/auth/me`);
+                const res = await fetch(`/api/designer/profile?id=${designerIdForGate}`);
                 if (res.ok) {
                     const data = await res.json();
-                    if (!cancelled && data.user) {
-                        // Merge the limited fields we get from /api/auth/me into the demo data
-                        setDesignerData((prev) => ({
-                            ...prev,
-                            fullName: data.user.name || prev.fullName,
-                            email: data.user.email || prev.email,
-                        }));
+                    if (!cancelled) {
+                        if (data.profile) setDesignerData(data.profile);
+                        if (data.suppliers) setSuppliers(data.suppliers);
+                        if (data.dealHistory) setDealHistory(data.dealHistory);
+                        setProfileError(null);
                     }
+                } else {
+                    if (!cancelled) setProfileError("שגיאה בטעינת פרופיל");
                 }
             } catch {
-                // Silently fall back to demo data on error
+                if (!cancelled) setProfileError("שגיאה בטעינת פרופיל");
             } finally {
                 if (!cancelled) setProfileLoading(false);
             }
@@ -194,7 +188,7 @@ export default function DesignerDashboard() {
     const [sortBy, setSortBy] = useState("recommendations");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [showDealModal, setShowDealModal] = useState(false);
-    const [selectedSupplier, setSelectedSupplier] = useState<typeof DEMO_SUPPLIERS[0] | null>(null);
+    const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
     const [projectView, setProjectView] = useState<"list" | "kanban">("list");
 
     const filteredSuppliers = suppliers
@@ -212,6 +206,28 @@ export default function DesignerDashboard() {
 
     // Find active tab label for header
     const activeLabel = navGroups.flatMap(g => g.items).find(i => i.key === activeTab)?.label || "";
+
+    if (profileLoading) {
+      return (
+        <div className="min-h-screen bg-bg flex items-center justify-center" dir="rtl">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-text-muted text-sm">טוען פרופיל...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (profileError) {
+      return (
+        <div className="min-h-screen bg-bg flex items-center justify-center" dir="rtl">
+          <div className="text-center">
+            <p className="text-red-400 text-sm mb-3">{profileError}</p>
+            <button onClick={() => window.location.reload()} className="btn-gold px-4 py-2 rounded-lg text-sm">נסה שוב</button>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="min-h-screen bg-bg">

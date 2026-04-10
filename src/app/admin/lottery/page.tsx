@@ -1,9 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Trophy, Plus, Sparkles, UserPlus, UserMinus, Gift, Medal, X,
   Calendar, DollarSign, Users, Clock, ChevronDown, ChevronUp,
-  MessageCircle, Award,
+  MessageCircle, Award, Loader2, AlertTriangle,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCurrency } from "@/lib/utils";
@@ -78,60 +78,27 @@ const keyframesCSS = `
 }
 `;
 
-// ── Demo Data ───────────────────────────────────────────
-const demoLotteries: LotteryData[] = [
-  {
-    id: "1", month: "2026-03", prize: "שובר מתנה לרשת הום סנטר",
-    prizeValue: 1000, status: "PREPARING", eligibleCount: 34,
-    numberOfWinners: 3, winners: [],
-    minDeals: 2, minAmount: 10000,
-  },
-  {
-    id: "2", month: "2026-02", prize: "יום פינוק בספא",
-    prizeValue: 800, status: "COMPLETED", eligibleCount: 28,
-    numberOfWinners: 2,
-    winners: [
-      { rank: 1, name: "מיכל לוינשטיין" },
-      { rank: 2, name: "שירה אבן צור" },
-    ],
-    drawnAt: "2026-02-28", minDeals: 2, minAmount: 8000,
-  },
-  {
-    id: "3", month: "2026-01", prize: "שובר ל-IKEA",
-    prizeValue: 500, status: "COMPLETED", eligibleCount: 22,
-    numberOfWinners: 1,
-    winners: [{ rank: 1, name: "נועה כהנוביץ'" }],
-    drawnAt: "2026-01-31", minDeals: 1, minAmount: 5000,
-  },
-  {
-    id: "4", month: "2025-12", prize: "סדנת צילום לעיצוב",
-    prizeValue: 650, status: "COMPLETED", eligibleCount: 19,
-    numberOfWinners: 2,
-    winners: [
-      { rank: 1, name: "רותם דיין" },
-      { rank: 2, name: "יעל גולדברג" },
-    ],
-    drawnAt: "2025-12-30", minDeals: 2, minAmount: 7000,
-  },
-  {
-    id: "5", month: "2025-11", prize: "ארוחת שף זוגית",
-    prizeValue: 450, status: "COMPLETED", eligibleCount: 16,
-    numberOfWinners: 1,
-    winners: [{ rank: 1, name: "דנה מזרחי" }],
-    drawnAt: "2025-11-29", minDeals: 1, minAmount: 5000,
-  },
-];
-
-const eligibleDesigners: EligibleDesigner[] = [
-  { id: "1", name: "נועה כהנוביץ'", deals: 4, amount: 28000 },
-  { id: "2", name: "מיכל לוינשטיין", deals: 6, amount: 42000 },
-  { id: "3", name: "שירה אבן צור", deals: 2, amount: 15000 },
-  { id: "4", name: "רותם דיין", deals: 3, amount: 21000 },
-  { id: "5", name: "יעל גולדברג", deals: 5, amount: 35000 },
-  { id: "6", name: "דנה מזרחי", deals: 3, amount: 19000 },
-  { id: "7", name: "ליאת שמש", deals: 4, amount: 31000 },
-  { id: "8", name: "טלי ברקוביץ'", deals: 7, amount: 48000 },
-];
+// ── Data Mapper ─────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapLotteryFromApi(l: any): LotteryData {
+  return {
+    id: l.id,
+    month: l.month || "",
+    prize: l.prize || "",
+    prizeValue: l.prizeValue || 0,
+    status: l.status || "PREPARING",
+    eligibleCount: l.eligibleDesigners?.length || 0,
+    numberOfWinners: l.numberOfWinners || 1,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    winners: (l.winners || []).map((w: any) => ({
+      rank: w.rank,
+      name: w.designer?.fullName || "",
+    })),
+    drawnAt: l.drawnAt ? new Date(l.drawnAt).toISOString().slice(0, 10) : undefined,
+    minDeals: l.minDealCount || undefined,
+    minAmount: l.minDealAmount || undefined,
+  };
+}
 
 const rankLabels: Record<number, string> = { 1: "מקום ראשון", 2: "מקום שני", 3: "מקום שלישי" };
 const rankEmoji: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
@@ -139,7 +106,10 @@ const confettiColors = ["#D4AF37", "#FFD700", "#FFA500", "#FF6347", "#9B59B6", "
 
 // ── Component ───────────────────────────────────────────
 export default function LotteryPage() {
-  const [lotteries, setLotteries] = useState(demoLotteries);
+  const [lotteries, setLotteries] = useState<LotteryData[]>([]);
+  const [eligibleDesigners, setEligibleDesigners] = useState<EligibleDesigner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawPhase, setDrawPhase] = useState<"idle" | "spinning" | "slowing" | "done">("idle");
@@ -154,6 +124,30 @@ export default function LotteryPage() {
   const [newMinDeals, setNewMinDeals] = useState(1);
   const [newMinAmount, setNewMinAmount] = useState(5000);
   const [newWinnerCount, setNewWinnerCount] = useState(1);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetch("/api/lottery").then((r) => { if (!r.ok) throw new Error("fetch failed"); return r.json(); }),
+      fetch("/api/designers").then((r) => { if (!r.ok) throw new Error("fetch failed"); return r.json(); }),
+    ])
+      .then(([lotteriesData, designersData]) => {
+        if (Array.isArray(lotteriesData)) {
+          setLotteries(lotteriesData.map(mapLotteryFromApi));
+        }
+        if (Array.isArray(designersData)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setEligibleDesigners(designersData.map((d: any) => ({
+            id: d.id,
+            name: d.fullName || "",
+            deals: d.totalDealsReported || 0,
+            amount: d.totalDealAmount || 0,
+          })));
+        }
+      })
+      .catch(() => setError("שגיאה בטעינת הגרלות. נסו לרענן את הדף."))
+      .finally(() => setLoading(false));
+  }, []);
 
   const currentLottery = lotteries.find((l) => l.status === "PREPARING");
 
@@ -222,6 +216,24 @@ export default function LotteryPage() {
 
   const whatsAppMsg = (name: string, prize: string) =>
     `🎉 מזל טוב ${name}! זכית ב${prize} בהגרלה החודשית של קהילת זירת. נציגה שלנו תיצור איתך קשר בקרוב 💛`;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-text-muted gap-2">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span>טוען הגרלות...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20 text-red-400">
+        <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in">

@@ -6,7 +6,7 @@ const RevenueBarChart = dynamic(() => import("@/components/charts/LuxuryCharts")
 import {
   Users, Palette, FileText, HandCoins, Calendar, TrendingUp, Clock, ChevronLeft,
   AlertTriangle, Bell, BellOff, CheckCircle2, UserPlus, Star, ShieldAlert, CreditCard,
-  Activity, Heart, ArrowUpRight, ArrowDownRight, Eye, Zap, BarChart3,
+  Activity, Heart, ArrowUpRight, ArrowDownRight, Eye, Zap, BarChart3, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -47,61 +47,30 @@ interface WeeklyData {
 }
 
 // ==========================================
-// Demo Data
+// Default data (replaced by API)
 // ==========================================
 
-const revenueData = [
-  { month: "אפר׳", revenue: 18500 },
-  { month: "מאי", revenue: 21000 },
-  { month: "יוני", revenue: 19800 },
-  { month: "יולי", revenue: 23500 },
-  { month: "אוג׳", revenue: 20200 },
-  { month: "ספט׳", revenue: 22000 },
-  { month: "אוק׳", revenue: 24800 },
-  { month: "נוב׳", revenue: 21500 },
-  { month: "דצמ׳", revenue: 19000 },
-  { month: "ינו׳", revenue: 22500 },
-  { month: "פבר׳", revenue: 23000 },
-  { month: "מרץ", revenue: 24500 },
-];
-
-const kpiTrends = {
-  suppliers: [38, 40, 42, 44, 45, 47],
-  designers: [980, 1020, 1060, 1100, 1150, 1187],
-  deals: [18, 22, 20, 25, 24, 28],
-  revenue: [16000, 19000, 18000, 21000, 22000, 24500],
+const emptyStats: DashboardStats = {
+  activeSuppliers: 0,
+  expiredSubscriptions: 0,
+  pendingPosts: 0,
+  monthlyDeals: 0,
+  monthlyDealAmount: 0,
+  totalDesigners: 0,
+  upcomingEvents: 0,
+  monthlyRevenue: 0,
+  activeThisWeek: 0,
+  newDesignersThisMonth: 0,
 };
 
-const demoAlerts: Alert[] = [
-  { id: "a1", type: "big_deal", title: "עסקה גדולה — ₪52,000", description: "נועה כהנוביץ' דיווחה עסקה עם קיטשן פלוס", priority: "success", time: "לפני 10 דקות", link: "/admin/reports" },
-  { id: "a2", type: "payment", title: "תשלום באיחור — אור תאורה", description: "45 ימי איחור בתשלום חודשי. סכום: ₪890", priority: "critical", time: "לפני 30 דקות", link: "/admin/suppliers" },
-  { id: "a3", type: "post_pending", title: "5 פרסומים ממתינים לאישור", description: "3 מהיום, 2 מאתמול — דורשים סקירה", priority: "warning", time: "לפני שעה", link: "/admin/posts" },
-  { id: "a4", type: "new_designer", title: "מעצבת חדשה נרשמה!", description: "מיכל לוינסון, ירושלים — עיצוב פנים, 5 שנות ניסיון", priority: "info", time: "לפני שעה", link: "/admin/waitlist" },
-  { id: "a5", type: "low_rating", title: "דירוג נמוך — נוף גרין", description: "דירוג 1.5 מ-2 מעצבות. דורש בדיקה", priority: "critical", time: "לפני 2 שעות", link: "/admin/ratings" },
-  { id: "a6", type: "inactive", title: "3 ספקים לא פעילים 14+ ימים", description: "סטון דיזיין, דלתות זהב, לייט אפ — ללא פרסומים", priority: "warning", time: "לפני 3 שעות", link: "/admin/suppliers" },
-  { id: "a7", type: "event_full", title: "סדנת חומרים חדשים — מלא!", description: "40/40 נרשמו. שקלי לפתוח מקומות נוספים", priority: "info", time: "לפני 4 שעות", link: "/admin/events" },
-  { id: "a8", type: "milestone", title: "שיא חדש! 1,187 מעצבות בקהילה", description: "הקהילה צמחה ב-12% החודש — מרשים!", priority: "success", time: "היום", link: "/admin/designers" },
-];
-
-const thisWeek: WeeklyData = {
-  newDesigners: 14,
-  dealsCount: 8,
-  revenue: 6200,
-  postsPublished: 12,
-  eventRegistrations: 28,
-  activeUsers: 342,
+const emptyWeek: WeeklyData = {
+  newDesigners: 0,
+  dealsCount: 0,
+  revenue: 0,
+  postsPublished: 0,
+  eventRegistrations: 0,
+  activeUsers: 0,
 };
-
-const lastWeek: WeeklyData = {
-  newDesigners: 11,
-  dealsCount: 6,
-  revenue: 5100,
-  postsPublished: 15,
-  eventRegistrations: 22,
-  activeUsers: 310,
-};
-
-const healthScore = 82;
 
 // ==========================================
 // Helpers
@@ -210,25 +179,82 @@ function Sparkline({ data, color = "#C9A84C" }: { data: number[]; color?: string
 // ==========================================
 
 export default function AdminDashboard() {
-  const [stats] = useState<DashboardStats>({
-    activeSuppliers: 47,
-    expiredSubscriptions: 3,
-    pendingPosts: 5,
-    monthlyDeals: 28,
-    monthlyDealAmount: 156000,
-    totalDesigners: 1187,
-    upcomingEvents: 2,
-    monthlyRevenue: 24500,
-    activeThisWeek: 342,
-    newDesignersThisMonth: 38,
-  });
+  const [stats, setStats] = useState<DashboardStats>(emptyStats);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [revenueData, setRevenueData] = useState<{ month: string; revenue: number }[]>([]);
+  const [thisWeek, setThisWeek] = useState<WeeklyData>(emptyWeek);
+  const [lastWeek, setLastWeek] = useState<WeeklyData>(emptyWeek);
+  const [recentActivity, setRecentActivity] = useState<{ color: string; name: string; text: string; time: string }[]>([]);
+  const [upcomingEventsData, setUpcomingEventsData] = useState<{ name: string; reg: string; date: string; time: string; full: boolean }[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [alerts, setAlerts] = useState<Alert[]>(demoAlerts);
   const [snoozed, setSnoozed] = useState<Set<string>>(new Set());
   const [handled, setHandled] = useState<Set<string>>(new Set());
   const [pendingWaitlistCount, setPendingWaitlistCount] = useState(0);
 
-  // Fetch real pending waitlist count
+  // Compute kpiTrends from revenueData — need at least 2 data points for Sparkline
+  const kpiTrends = useMemo(() => {
+    const rev = revenueData.slice(-6).map((r) => r.revenue);
+    const pad = (val: number) => [0, val]; // min 2 points for sparkline
+    return {
+      suppliers: pad(stats.activeSuppliers),
+      designers: pad(stats.totalDesigners),
+      deals: pad(stats.monthlyDeals),
+      revenue: rev.length >= 2 ? rev : pad(rev[0] || 0),
+    };
+  }, [revenueData, stats]);
+
+  // Compute health score from real data
+  const healthScore = useMemo(() => {
+    let score = 50;
+    if (stats.activeSuppliers > 0) score += 10;
+    if (stats.totalDesigners > 0) score += 10;
+    if (stats.pendingPosts === 0) score += 10;
+    if (stats.expiredSubscriptions === 0) score += 10;
+    if (stats.monthlyDeals > 0) score += 10;
+    return Math.min(100, score);
+  }, [stats]);
+
+  // Fetch dashboard data
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/admin/dashboard")
+      .then((res) => { if (!res.ok) throw new Error("fetch failed"); return res.json(); })
+      .then((data) => {
+        if (data.stats) setStats(data.stats);
+        if (data.revenueData) setRevenueData(data.revenueData);
+        if (data.thisWeek) setThisWeek(data.thisWeek);
+        if (data.lastWeek) setLastWeek(data.lastWeek);
+        if (data.alerts) setAlerts(data.alerts);
+        if (data.recentActivity) setRecentActivity(data.recentActivity);
+        if (data.upcomingEventsData) setUpcomingEventsData(data.upcomingEventsData);
+      })
+      .catch(() => {
+        // Fallback to basic stats API
+        fetch("/api/admin/stats")
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.error) {
+              setStats({
+                activeSuppliers: data.activeSuppliers || 0,
+                expiredSubscriptions: data.overdueSuppliers || 0,
+                pendingPosts: data.pendingPosts || 0,
+                monthlyDeals: data.monthlyDeals || 0,
+                monthlyDealAmount: data.monthlyDealAmount || 0,
+                totalDesigners: data.totalDesigners || 0,
+                upcomingEvents: data.upcomingEvents || 0,
+                monthlyRevenue: data.monthlyRevenue || 0,
+                activeThisWeek: 0,
+                newDesignersThisMonth: 0,
+              });
+            }
+          })
+          .catch(() => {});
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Fetch pending waitlist count
   useEffect(() => {
     fetch("/api/admin/waitlist?status=PENDING")
       .then((r) => r.json())
@@ -236,20 +262,19 @@ export default function AdminDashboard() {
         const count = data.designers?.length || 0;
         setPendingWaitlistCount(count);
         if (count > 0) {
-          // Replace the demo "new_designer" alert with real data
           setAlerts((prev) => {
-            const withoutDemoDesigner = prev.filter((a) => a.type !== "new_designer");
+            const withoutWaitlist = prev.filter((a) => a.id !== "real-waitlist");
             return [
               {
                 id: "real-waitlist",
                 type: "new_designer" as const,
                 title: `${count} מעצבות ממתינות לאישור`,
-                description: "יש בקשות הצטרפות חדשות ברשימת המתנה — לחצי לסקירה",
+                description: "יש בקשות הצטרפות חדשות ברשימת המתנה -- לחצי לסקירה",
                 priority: "warning" as const,
                 time: "עכשיו",
                 link: "/admin/waitlist",
               },
-              ...withoutDemoDesigner,
+              ...withoutWaitlist,
             ];
           });
         }
@@ -284,6 +309,15 @@ export default function AdminDashboard() {
     { label: "הרשמות לאירועים", icon: Calendar, current: thisWeek.eventRegistrations, prev: lastWeek.eventRegistrations, color: "text-amber-600" },
     { label: "משתמשות פעילות", icon: Activity, current: thisWeek.activeUsers, prev: lastWeek.activeUsers, color: "text-pink-600" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-text-muted gap-2">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span>טוען דשבורד...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in">
@@ -505,10 +539,10 @@ export default function AdminDashboard() {
               <Link href="/admin/events" className="text-gold text-xs hover:underline">הכל</Link>
             </div>
             <div className="space-y-2">
-              {[
-                { name: "סדנת חומרים חדשים", reg: "40/40", date: "15.03", time: "18:00", full: true },
-                { name: "מפגש נטוורקינג", reg: "42/60", date: "22.03", time: "19:00", full: false },
-              ].map((e, i) => (
+              {upcomingEventsData.length === 0 && (
+                <p className="text-text-muted text-sm text-center py-3">אין אירועים קרובים</p>
+              )}
+              {upcomingEventsData.map((e, i) => (
                 <div key={i} className="flex items-center justify-between text-sm bg-bg-surface rounded-btn p-3">
                   <div>
                     <span className="text-text-primary font-medium text-sm">{e.name}</span>
@@ -532,12 +566,7 @@ export default function AdminDashboard() {
               <h3 className="text-base sm:text-lg font-heading text-text-primary">פעילות אחרונה</h3>
             </div>
             <div className="space-y-3 text-sm">
-              {[
-                { color: "bg-emerald-400", name: "נועה כ.", text: "דיווחה עסקה עם סטון דיזיין", time: "לפני שעה" },
-                { color: "bg-blue-400", name: "אור תאורה", text: "שלח פרסום חדש", time: "לפני 2 שעות" },
-                { color: "bg-amber-400", name: "מיכל ל.", text: "נרשמה לסדנת חומרים", time: "לפני 3 שעות" },
-                { color: "bg-purple-400", name: "שירה א.", text: "דירגה את קיטשן פלוס — 5 כוכבים", time: "לפני 5 שעות" },
-              ].map((a, i) => (
+              {recentActivity.map((a, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <div className={`w-2 h-2 rounded-full ${a.color} mt-1.5 flex-shrink-0`} />
                   <div>

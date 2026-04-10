@@ -1,7 +1,7 @@
 "use client";
 import { txt } from "@/content/siteText";
-import { useState } from "react";
-import { FileText, Check, X, Clock, Calendar, Image as ImageIcon, } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FileText, Check, X, Clock, Calendar, Image as ImageIcon, Loader2, AlertTriangle, } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 interface PendingPost {
     id: string;
@@ -21,68 +21,26 @@ interface PendingPost {
 }
 const ALL_POSTS_FILTER = "__ALL__";
 const OTHER_REJECTION_REASON = "__OTHER__";
-const demoPosts: PendingPost[] = [
-    {
-        id: "1",
-        supplierName: txt("src/app/admin/posts/page.tsx::001", "סטון דיזיין"),
-        caption: txt("src/app/admin/posts/page.tsx::002", "קולקציית אריחי פורצלן חדשה — גוונים טבעיים בהשראת האדמה. מחירים מיוחדים למעצבות זירת האדריכלות!"),
-        imageUrl: "/demo/post1.jpg",
-        images: ["/demo/post1.jpg", "/demo/post1b.jpg", "/demo/post1c.jpg"],
-        scheduledTime: "10:30",
-        scheduledDate: "2026-03-09",
-        status: "PENDING",
-        hasLogo: true,
-        hasSupplierLogo: true,
-        hasDesignerCredit: false,
-        createdAt: "2026-03-09T08:15:00",
-        autoDeleteAt: "2026-03-10",
-    },
-    {
-        id: "2",
-        supplierName: txt("src/app/admin/posts/page.tsx::003", "אור תאורה"),
-        caption: txt("src/app/admin/posts/page.tsx::004", "גופי תאורה דקורטיביים מקולקציית 2026 — עיצוב סקנדינבי מינימליסטי. הנחה 15% לחברות הקהילה"),
-        imageUrl: "/demo/post2.jpg",
-        images: ["/demo/post2.jpg"],
-        scheduledTime: "13:30",
-        scheduledDate: "2026-03-09",
-        status: "PENDING",
-        hasLogo: true,
-        hasSupplierLogo: true,
-        hasDesignerCredit: true,
-        createdAt: "2026-03-09T09:30:00",
-        autoDeleteAt: "2026-03-10",
-    },
-    {
-        id: "3",
-        supplierName: txt("src/app/admin/posts/page.tsx::005", "קיטשן פלוס"),
-        caption: txt("src/app/admin/posts/page.tsx::006", "מטבח חלומי? הנה פרויקט שסיימנו — שיש קלקטה מרהיב עם ארונות אלון. בואו לראות את האולם שלנו!"),
-        imageUrl: "/demo/post3.jpg",
-        images: ["/demo/post3.jpg", "/demo/post3b.jpg"],
-        scheduledTime: "20:30",
-        scheduledDate: "2026-03-09",
-        status: "PENDING",
-        hasLogo: false,
-        hasSupplierLogo: true,
-        hasDesignerCredit: true,
-        createdAt: "2026-03-08T16:45:00",
-        autoDeleteAt: "2026-03-10",
-    },
-    {
-        id: "4",
-        supplierName: txt("src/app/admin/posts/page.tsx::007", "סטון דיזיין"),
-        caption: txt("src/app/admin/posts/page.tsx::008", "פרויקט מושלם — ריצוף טראצו בדירת גן בתל אביב"),
-        imageUrl: "/demo/post4.jpg",
-        images: ["/demo/post4.jpg", "/demo/post4b.jpg", "/demo/post4c.jpg", "/demo/post4d.jpg", "/demo/post4e.jpg"],
-        scheduledTime: "10:30",
-        scheduledDate: "2026-03-10",
-        status: "APPROVED",
-        hasLogo: true,
-        hasSupplierLogo: true,
-        hasDesignerCredit: true,
-        createdAt: "2026-03-08T14:00:00",
-        autoDeleteAt: "2026-03-11",
-    },
-];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPostFromApi(p: any): PendingPost {
+    return {
+        id: p.id,
+        supplierName: p.supplier?.name || "",
+        supplierLogo: p.supplier?.logo || undefined,
+        caption: p.caption || "",
+        imageUrl: p.imageUrl || (p.images?.[0]) || "",
+        images: p.images || (p.imageUrl ? [p.imageUrl] : []),
+        scheduledTime: p.scheduledTime || "",
+        scheduledDate: p.scheduledDate ? new Date(p.scheduledDate).toISOString().slice(0, 10) : "",
+        status: p.status || "PENDING",
+        hasLogo: p.hasLogo ?? false,
+        hasSupplierLogo: p.hasSupplierLogo ?? false,
+        hasDesignerCredit: p.hasDesignerCredit ?? false,
+        createdAt: p.createdAt || "",
+        autoDeleteAt: p.autoDeleteAt ? new Date(p.autoDeleteAt).toISOString().slice(0, 10) : undefined,
+    };
+}
 const rejectionReasons = [
     { value: "missingCommunityLogo", label: txt("src/app/admin/posts/page.tsx::009", "חסר לוגו הקהילה") },
     { value: "missingSupplierLogo", label: txt("src/app/admin/posts/page.tsx::010", "חסר לוגו הספק") },
@@ -99,8 +57,23 @@ const postStatusFilters = [
     { value: ALL_POSTS_FILTER, label: txt("src/app/admin/posts/page.tsx::021", "הכל") },
 ] as const;
 export default function PostsManagementPage() {
-    const [posts] = useState(demoPosts);
+    const [posts, setPosts] = useState<PendingPost[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState<string>("PENDING");
+
+    useEffect(() => {
+        setLoading(true);
+        fetch("/api/posts")
+            .then((res) => { if (!res.ok) throw new Error("fetch failed"); return res.json(); })
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setPosts(data.map(mapPostFromApi));
+                }
+            })
+            .catch(() => setError("שגיאה בטעינת פרסומים. נסו לרענן את הדף."))
+            .finally(() => setLoading(false));
+    }, []);
     const [selectedPost, setSelectedPost] = useState<PendingPost | null>(null);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
@@ -116,6 +89,24 @@ export default function PostsManagementPage() {
         setShowRejectModal(false);
         setRejectReason("");
     };
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20 text-text-muted gap-2">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span>טוען פרסומים...</span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-20 text-red-400">
+                <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+                <p>{error}</p>
+            </div>
+        );
+    }
+
     return (<div className="space-y-6 animate-in">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">

@@ -1,86 +1,63 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   MessageCircle, Wifi, WifiOff, QrCode, Send, Clock, RefreshCw,
   AlertTriangle, Plus, X, Users, Filter, CheckCircle, Eye,
-  Calendar, BarChart3, Edit3, Copy, Search,
+  Calendar, BarChart3, Edit3, Copy, Search, Loader2,
 } from "lucide-react";
-
-// --- Demo Data ---
 
 const AREAS = ["צפון", "חיפה", "שרון", "מרכז", "תל אביב", "שפלה", "ירושלים", "דרום"];
 
-const TEMPLATES = [
-  {
-    id: 1,
-    name: "ברוכה הבאה",
-    body: "היי {name} 👋\nברוכה הבאה לקהילת זירת! אנחנו שמחות שהצטרפת. אם יש לך שאלות — אנחנו כאן בשבילך.",
-    variables: ["{name}"],
-  },
-  {
-    id: 2,
-    name: "תזכורת אירוע",
-    body: "שלום {name},\nרצינו להזכיר — {event} מתקיים מחר! נשמח לראותך שם 🎉",
-    variables: ["{name}", "{event}"],
-  },
-  {
-    id: 3,
-    name: "תזכורת תשלום",
-    body: "היי {name},\nרצינו להזכיר שיש לך תשלום פתוח בסך {deal_amount} ₪. ניתן לשלם דרך הלינק באזור האישי.",
-    variables: ["{name}", "{deal_amount}"],
-  },
-  {
-    id: 4,
-    name: "עסקה חדשה",
-    body: "מזל טוב {name}! 🎊\nנסגרה עסקה חדשה בסך {deal_amount} ₪ באירוע {event}. פרטים נוספים באזור האישי.",
-    variables: ["{name}", "{deal_amount}", "{event}"],
-  },
-];
-
-const PAST_BROADCASTS = [
-  {
-    id: 1,
-    date: "2026-03-17",
-    preview: "היי {name}, תזכורת — מפגש נטוורקינג מחר ב-18:00!",
-    recipientsCount: 124,
-    sent: 124,
-    delivered: 118,
-    read: 95,
-    failed: 6,
-  },
-  {
-    id: 2,
-    date: "2026-03-14",
-    preview: "שלום {name}, הזדמנות עסקית חדשה באזור מרכז!",
-    recipientsCount: 67,
-    sent: 67,
-    delivered: 65,
-    read: 41,
-    failed: 2,
-  },
-  {
-    id: 3,
-    date: "2026-03-10",
-    preview: "ברוכות הבאות לחודש מרץ! 🌸 הנה הפעילויות...",
-    recipientsCount: 210,
-    sent: 210,
-    delivered: 198,
-    read: 152,
-    failed: 12,
-  },
-];
-
-const MESSAGE_LOGS = [
-  { time: "09:15", dir: "שליחה", phone: "052-***-4567", msg: "תזכורת פרסום — סטון דיזיין", status: "נמסר" },
-  { time: "09:10", dir: "קבלה", phone: "050-***-1234", msg: "דיווח עסקה חדשה", status: "נקרא" },
-  { time: "08:45", dir: "שליחה", phone: "054-***-2233", msg: "אישור פרסום", status: "נשלח" },
-];
-
-// --- Component ---
+interface WaTemplate {
+  id: string;
+  name: string;
+  body: string;
+  variables: string[];
+}
+interface WaBroadcast {
+  id: string;
+  date: string;
+  preview: string;
+  recipientsCount: number;
+  sent: number;
+  delivered: number;
+  read: number;
+  failed: number;
+}
+interface WaLog {
+  time: string;
+  dir: string;
+  phone: string;
+  msg: string;
+  status: string;
+}
 
 export default function WhatsAppPage() {
   const [isConnected] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [TEMPLATES, setTemplates] = useState<WaTemplate[]>([]);
+  const [PAST_BROADCASTS, setBroadcasts] = useState<WaBroadcast[]>([]);
+  const [MESSAGE_LOGS, setMessageLogs] = useState<WaLog[]>([]);
+  const [waStats, setWaStats] = useState({ todayMessages: 0, failedToday: 0, pendingReminders: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const fetchWhatsappData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/whatsapp");
+      if (!res.ok) throw new Error("שגיאה");
+      const data = await res.json();
+      setTemplates(data.templates || []);
+      setBroadcasts(data.broadcasts || []);
+      setMessageLogs(data.messageLogs || []);
+      setWaStats(data.stats || { todayMessages: 0, failedToday: 0, pendingReminders: 0 });
+    } catch {
+      // Silent fallback — empty data
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchWhatsappData(); }, [fetchWhatsappData]);
 
   // Tabs
   type TabKey = "broadcast" | "templates" | "history" | "log";
@@ -209,23 +186,29 @@ export default function WhatsAppPage() {
       )}
 
       {/* Statistics */}
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 text-gold animate-spin" />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card-static text-center">
           <Send className="w-6 h-6 text-gold mx-auto mb-2" />
-          <p className="text-gold font-mono text-2xl font-bold">47</p>
+          <p className="text-gold font-mono text-2xl font-bold">{waStats.todayMessages}</p>
           <p className="text-text-muted text-xs">{"הודעות היום"}</p>
         </div>
         <div className="card-static text-center">
           <Clock className="w-6 h-6 text-gold mx-auto mb-2" />
-          <p className="text-gold font-mono text-2xl font-bold">3</p>
+          <p className="text-gold font-mono text-2xl font-bold">{waStats.pendingReminders}</p>
           <p className="text-text-muted text-xs">{"תזכורות ממתינות"}</p>
         </div>
         <div className="card-static text-center">
           <AlertTriangle className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-          <p className="text-yellow-400 font-mono text-2xl font-bold">0</p>
+          <p className="text-yellow-400 font-mono text-2xl font-bold">{waStats.failedToday}</p>
           <p className="text-text-muted text-xs">{"שגיאות שליחה"}</p>
         </div>
       </div>
+      )}
 
       {/* Safety Rules */}
       <div className="card-static">
@@ -485,6 +468,9 @@ export default function WhatsAppPage() {
                 {"תבנית חדשה"}
               </button>
             </div>
+            {TEMPLATES.length === 0 && (
+              <div className="text-center py-8 text-text-muted text-sm">אין תבניות עדיין</div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TEMPLATES.map((tpl) => (
                 <div key={tpl.id} className="bg-bg-surface rounded-lg p-4 border border-gold/10">
@@ -525,6 +511,10 @@ export default function WhatsAppPage() {
               <BarChart3 className="w-4 h-4 text-gold" />
               {"היסטוריית שידורים"}
             </h3>
+            {PAST_BROADCASTS.length === 0 && (
+              <div className="text-center py-8 text-text-muted text-sm">אין שידורים קודמים</div>
+            )}
+            {PAST_BROADCASTS.length > 0 && (
             <div className="overflow-x-auto">
               <table className="table-luxury w-full text-sm">
                 <thead>
@@ -563,6 +553,7 @@ export default function WhatsAppPage() {
                 </tbody>
               </table>
             </div>
+            )}
 
             {/* Summary cards per broadcast */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -609,6 +600,9 @@ export default function WhatsAppPage() {
               <MessageCircle className="w-4 h-4 text-gold" />
               {"לוג הודעות אחרון"}
             </h3>
+            {MESSAGE_LOGS.length === 0 && (
+              <div className="text-center py-8 text-text-muted text-sm">אין הודעות בלוג</div>
+            )}
             <div className="space-y-2 text-sm">
               {MESSAGE_LOGS.map((log, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-bg-surface rounded">

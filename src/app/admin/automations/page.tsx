@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Zap, Plus, X, Play, Pause, Edit3, Trash2, ChevronDown, ChevronUp,
   MessageCircle, Mail, Tag, Bell, DollarSign, Star, Users, Calendar,
-  CheckCircle, AlertTriangle,
+  CheckCircle, AlertTriangle, Loader2,
 } from "lucide-react";
 
 type Trigger = "עסקה חדשה" | "מעצבת חדשה" | "דירוג הוזן" | "מנוי עומד לפוג" | "ספק לא פעיל";
 type Action = "שלח WhatsApp" | "שלח מייל" | "הוסף תג" | "צור התראה";
 
 interface Rule {
-  id: number;
+  id: string;
   trigger: Trigger;
   conditionValue: number | null;
   action: Action;
@@ -71,19 +71,30 @@ function buildPreview(trigger: Trigger, conditionValue: number | null, action: A
   return `${triggerMap[trigger]}${condPart ? ` ב${condPart}` : ""} → ${action}`;
 }
 
-const initialRules: Rule[] = [
-  { id: 1, trigger: "עסקה חדשה", conditionValue: 10000, action: "שלח WhatsApp", actionDetail: "מזל טוב! עסקה גדולה נרשמה", enabled: true, executions: 12 },
-  { id: 2, trigger: "מעצבת חדשה", conditionValue: null, action: "שלח מייל", actionDetail: "ברוכה הבאה למשפחת זירת! אנחנו שמחים שהצטרפת.", enabled: true, executions: 38 },
-  { id: 3, trigger: "דירוג הוזן", conditionValue: 3, action: "צור התראה", actionDetail: "דירוג נמוך התקבל - נדרשת בדיקה", enabled: true, executions: 5 },
-  { id: 4, trigger: "מנוי עומד לפוג", conditionValue: 14, action: "שלח WhatsApp", actionDetail: "המנוי שלך עומד לפוג בקרוב. חדשי עכשיו!", enabled: false, executions: 22 },
-];
-
 export default function AutomationsPage() {
-  const [rules, setRules] = useState<Rule[]>(initialRules);
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
   const [step, setStep] = useState(1);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const fetchRules = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/automations");
+      if (!res.ok) throw new Error("שגיאה");
+      const data = await res.json();
+      setRules(data);
+      setError(null);
+    } catch {
+      setError("שגיאה בטעינת אוטומציות");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchRules(); }, [fetchRules]);
 
   // form state
   const [formTrigger, setFormTrigger] = useState<Trigger>("עסקה חדשה");
@@ -115,37 +126,58 @@ export default function AutomationsPage() {
     setShowModal(true);
   };
 
-  const saveRule = () => {
+  const saveRule = async () => {
     if (editingRule) {
-      setRules((prev) =>
-        prev.map((r) =>
-          r.id === editingRule.id
-            ? { ...r, trigger: formTrigger, conditionValue: formTrigger === "מעצבת חדשה" ? null : formCondition, action: formAction, actionDetail: formDetail }
-            : r
-        )
-      );
-    } else {
-      const newRule: Rule = {
-        id: Date.now(),
+      const updates = {
         trigger: formTrigger,
         conditionValue: formTrigger === "מעצבת חדשה" ? null : formCondition,
         action: formAction,
         actionDetail: formDetail,
-        enabled: true,
-        executions: 0,
       };
-      setRules((prev) => [...prev, newRule]);
+      setRules((prev) =>
+        prev.map((r) => (r.id === editingRule.id ? { ...r, ...updates } : r))
+      );
+      await fetch("/api/admin/automations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingRule.id, ...updates }),
+      });
+    } else {
+      const res = await fetch("/api/admin/automations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trigger: formTrigger,
+          conditionValue: formTrigger === "מעצבת חדשה" ? null : formCondition,
+          action: formAction,
+          actionDetail: formDetail,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRules((prev) => [...prev, data.rule]);
+      }
     }
     setShowModal(false);
     resetForm();
   };
 
-  const deleteRule = (id: number) => {
+  const deleteRule = async (id: string) => {
     setRules((prev) => prev.filter((r) => r.id !== id));
+    await fetch("/api/admin/automations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "delete" }),
+    });
   };
 
-  const toggleRule = (id: number) => {
+  const toggleRule = async (id: string) => {
     setRules((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
+    await fetch("/api/admin/automations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "toggle" }),
+    });
   };
 
   const needsCondition = formTrigger !== "מעצבת חדשה";
@@ -161,6 +193,28 @@ export default function AutomationsPage() {
       default: return "";
     }
   })();
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen" dir="rtl">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-gold animate-spin mx-auto mb-3" />
+          <p className="text-text-muted text-sm">טוען אוטומציות...</p>
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen" dir="rtl">
+        <div className="text-center">
+          <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-3" />
+          <p className="text-red-400 text-sm">{error}</p>
+          <button onClick={fetchRules} className="btn-gold mt-4 px-4 py-2 rounded-lg text-sm">נסה שוב</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-in" dir="rtl">

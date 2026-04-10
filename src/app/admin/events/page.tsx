@@ -1,8 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Calendar, Plus, MapPin, Users, CreditCard, CheckCircle, Send, Download,
   X, Clock, ChevronDown, ChevronUp, Camera, Star, Bell, Edit3, Eye, Trash2, Image,
+  Loader2, AlertTriangle as AlertTriangleIcon,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
@@ -37,10 +38,34 @@ interface EventItem {
 
 type TabKey = "upcoming" | "past" | "create";
 
-/* ─── Demo Data ─── */
+/* ─── Data Mapper ─── */
 const TODAY = new Date().toISOString().slice(0, 10);
 
-const demoEvents: EventItem[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapEventFromApi(e: any): EventItem {
+  const eventDate = e.date ? new Date(e.date).toISOString() : "";
+  const isPast = eventDate.slice(0, 10) < TODAY;
+  return {
+    id: e.id,
+    title: e.title || "",
+    description: e.description || "",
+    date: eventDate,
+    location: e.location || "",
+    type: "",
+    isPaid: e.isPaid ?? false,
+    price: e.price ?? null,
+    maxAttendees: e.maxAttendees || 0,
+    registered: e.registered || 0,
+    paid: e.paid || 0,
+    status: e.status || "DRAFT",
+    imageUrl: e.imageUrl || null,
+    attendees: [],
+    reminders: { week: false, day: false, hour: false },
+    ...(isPast && e.status === "CLOSED" ? { survey: { satisfaction: 0, attendanceRate: 0 }, feedbackQuotes: [] } : {}),
+  };
+}
+
+const _unusedDemoEvents: EventItem[] = [
   {
     id: "1",
     title: "סדנת חומרים חדשים 2026",
@@ -233,15 +258,30 @@ const EVENT_TYPES = ["סדנה", "סמינר", "נטוורקינג", "הרצאה
 
 /* ─── Component ─── */
 export default function EventsPage() {
-  const [events] = useState<EventItem[]>(demoEvents);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("upcoming");
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [previewEvent, setPreviewEvent] = useState<string | null>(null);
-  const [reminderState, setReminderState] = useState<Record<string, { week: boolean; day: boolean; hour: boolean }>>(() => {
-    const init: Record<string, { week: boolean; day: boolean; hour: boolean }> = {};
-    demoEvents.forEach((e) => { init[e.id] = { ...e.reminders }; });
-    return init;
-  });
+  const [reminderState, setReminderState] = useState<Record<string, { week: boolean; day: boolean; hour: boolean }>>({});
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/events")
+      .then((res) => { if (!res.ok) throw new Error("fetch failed"); return res.json(); })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const mapped = data.map(mapEventFromApi);
+          setEvents(mapped);
+          const init: Record<string, { week: boolean; day: boolean; hour: boolean }> = {};
+          mapped.forEach((e) => { init[e.id] = { ...e.reminders }; });
+          setReminderState(init);
+        }
+      })
+      .catch(() => setError("שגיאה בטעינת אירועים. נסו לרענן את הדף."))
+      .finally(() => setLoading(false));
+  }, []);
 
   /* Create form state */
   const [newTitle, setNewTitle] = useState("");
@@ -273,6 +313,24 @@ export default function EventsPage() {
   const displayedEvents = activeTab === "upcoming" ? upcomingEvents : activeTab === "past" ? pastEvents : [];
 
   /* ─── Render ─── */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-text-muted gap-2">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span>טוען אירועים...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20 text-red-400">
+        <AlertTriangleIcon className="w-10 h-10 mx-auto mb-3 opacity-60" />
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in">
       {/* Header */}

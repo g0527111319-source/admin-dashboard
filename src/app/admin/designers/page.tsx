@@ -1,8 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Palette, Plus, Search, Download, MapPin, Phone, Instagram, Trophy, TrendingUp,
   Calendar, SortAsc, SortDesc, Mail, Star, Award, Crown, Flame, X, Filter,
+  Loader2, AlertTriangle,
 } from "lucide-react";
 import { AREAS, SPECIALIZATIONS, formatCurrency } from "@/lib/utils";
 
@@ -37,16 +38,28 @@ interface Designer {
 // Demo Data — 8 designers
 // ==========================================
 
-const demoDesigners: Designer[] = [
-  { id: "1", fullName: "נועה כהנוביץ'", phone: "0501234567", email: "noa@design.co.il", city: "תל אביב", area: "מרכז", specialization: "עיצוב פנים", yearsExperience: 8, instagram: "@noa_design", totalDealsReported: 12, totalDealAmount: 85000, lotteryEntriesTotal: 8, lotteryWinsTotal: 1, eventsAttended: 5, joinDate: "2024-06-15", isActive: true, postsCount: 0 },
-  { id: "2", fullName: "מיכל לוינשטיין", phone: "0527654321", email: "michal@arch.co.il", city: "הרצליה", area: "שרון", specialization: "אדריכלות", yearsExperience: 15, instagram: "@michal_arch", totalDealsReported: 24, totalDealAmount: 210000, lotteryEntriesTotal: 18, lotteryWinsTotal: 2, eventsAttended: 8, joinDate: "2023-11-01", isActive: true, postsCount: 0 },
-  { id: "3", fullName: "שירה אבן צור", phone: "0541122334", email: "shira@intdesign.co.il", city: "ירושלים", area: "ירושלים", specialization: "עיצוב פנים", yearsExperience: 5, instagram: "@shira_interiors", totalDealsReported: 6, totalDealAmount: 42000, lotteryEntriesTotal: 4, lotteryWinsTotal: 0, eventsAttended: 3, joinDate: "2025-02-20", isActive: true, postsCount: 0 },
-  { id: "4", fullName: "רותם דיין", phone: "0509876543", email: "rotem@spaces.co.il", city: "חיפה", area: "צפון", specialization: "אדריכלות", yearsExperience: 12, instagram: "", totalDealsReported: 15, totalDealAmount: 125000, lotteryEntriesTotal: 12, lotteryWinsTotal: 0, eventsAttended: 6, joinDate: "2024-01-10", isActive: true, postsCount: 0 },
-  { id: "5", fullName: "יעל גולדברג", phone: "0521112233", email: "yael@golddesign.co.il", city: "רעננה", area: "שרון", specialization: "עיצוב פנים", yearsExperience: 3, instagram: "@yael_gold", totalDealsReported: 4, totalDealAmount: 28000, lotteryEntriesTotal: 3, lotteryWinsTotal: 0, eventsAttended: 2, joinDate: "2025-06-01", isActive: true, postsCount: 0 },
-  { id: "6", fullName: "ענת שלום", phone: "0506000001", email: "anat@design.co.il", city: "תל אביב", area: "מרכז", specialization: "עיצוב פנים", yearsExperience: 10, instagram: "@anat_shalom", totalDealsReported: 9, totalDealAmount: 67000, lotteryEntriesTotal: 6, lotteryWinsTotal: 1, eventsAttended: 4, joinDate: "2024-03-15", isActive: true, postsCount: 0 },
-  { id: "7", fullName: "דפנה כץ", phone: "0506000002", email: "dafna@arch.co.il", city: "ירושלים", area: "ירושלים", specialization: "אדריכלות", yearsExperience: 18, instagram: "", totalDealsReported: 18, totalDealAmount: 156000, lotteryEntriesTotal: 14, lotteryWinsTotal: 1, eventsAttended: 7, joinDate: "2023-08-20", isActive: true, postsCount: 0 },
-  { id: "8", fullName: "לירון פרידמן", phone: "0506000003", email: "liron@design.co.il", city: "באר שבע", area: "דרום", specialization: "נוף", yearsExperience: 6, instagram: "@liron_landscape", totalDealsReported: 3, totalDealAmount: 22000, lotteryEntriesTotal: 2, lotteryWinsTotal: 0, eventsAttended: 1, joinDate: "2025-09-01", isActive: true, postsCount: 0 },
-];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDesignerFromApi(d: any): Designer {
+  return {
+    id: d.id,
+    fullName: d.fullName || "",
+    phone: d.phone || "",
+    email: d.email || "",
+    city: d.city || "",
+    area: d.area || "",
+    specialization: d.specialization || "",
+    yearsExperience: d.yearsExperience || 0,
+    instagram: d.instagram || "",
+    totalDealsReported: d.totalDealsReported || 0,
+    totalDealAmount: d.totalDealAmount || 0,
+    lotteryEntriesTotal: d.lotteryEntriesTotal || 0,
+    lotteryWinsTotal: d.lotteryWinsTotal || 0,
+    eventsAttended: d.eventsAttended || 0,
+    joinDate: d.joinDate ? new Date(d.joinDate).toISOString().slice(0, 10) : "",
+    isActive: d.isActive ?? true,
+    postsCount: 0,
+  };
+}
 
 // ==========================================
 // Heatmap Data Generator
@@ -137,7 +150,9 @@ function getUniqueCities(designers: Designer[]): string[] {
 // ==========================================
 
 export default function DesignersPage() {
-  const [designers] = useState(demoDesigners);
+  const [designers, setDesigners] = useState<Designer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [areaFilter, setAreaFilter] = useState("הכל");
   const [specFilter, setSpecFilter] = useState("הכל");
@@ -148,7 +163,22 @@ export default function DesignersPage() {
   const [sortField, setSortField] = useState<SortField>("totalDealsReported");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [heatmapData] = useState(() => generateHeatmapData(demoDesigners));
+  const [heatmapData, setHeatmapData] = useState<Record<string, ActivityLevel[]>>({});
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/designers")
+      .then((res) => { if (!res.ok) throw new Error("fetch failed"); return res.json(); })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const mapped = data.map(mapDesignerFromApi);
+          setDesigners(mapped);
+          setHeatmapData(generateHeatmapData(mapped));
+        }
+      })
+      .catch(() => setError("שגיאה בטעינת מעצבות. נסו לרענן את הדף."))
+      .finally(() => setLoading(false));
+  }, []);
 
   const cities = useMemo(() => getUniqueCities(designers), [designers]);
 
@@ -229,6 +259,24 @@ export default function DesignersPage() {
     }
     return labels;
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-text-muted gap-2">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span>טוען מעצבות...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20 text-red-400">
+        <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in">

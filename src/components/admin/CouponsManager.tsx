@@ -76,6 +76,7 @@ export default function CouponsManager({ plans }: Props) {
   const [discountValue, setDiscountValue] = useState<string>("10");
   const [durationMonths, setDurationMonths] = useState<string>("1");
   const [maxRedemptions, setMaxRedemptions] = useState<string>("");
+  const [validFrom, setValidFrom] = useState<string>("");
   const [validUntil, setValidUntil] = useState<string>("");
   const [applicablePlanIds, setApplicablePlanIds] = useState<string[]>([]);
 
@@ -104,6 +105,7 @@ export default function CouponsManager({ plans }: Props) {
     setDiscountValue("10");
     setDurationMonths("1");
     setMaxRedemptions("");
+    setValidFrom("");
     setValidUntil("");
     setApplicablePlanIds([]);
   };
@@ -127,6 +129,7 @@ export default function CouponsManager({ plans }: Props) {
           discountValue: Number(discountValue) || 0,
           durationMonths: Number(durationMonths) || 1,
           maxRedemptions: maxRedemptions ? Number(maxRedemptions) : null,
+          validFrom: validFrom || null,
           validUntil: validUntil || null,
           applicablePlanIds,
         }),
@@ -225,6 +228,8 @@ export default function CouponsManager({ plans }: Props) {
                 <Input
                   id="discountValue"
                   type="number"
+                  step="0.01"
+                  min="0"
                   value={discountValue}
                   onChange={(e) => setDiscountValue(e.target.value)}
                 />
@@ -247,6 +252,15 @@ export default function CouponsManager({ plans }: Props) {
                   value={maxRedemptions}
                   onChange={(e) => setMaxRedemptions(e.target.value)}
                   placeholder="ללא הגבלה"
+                />
+              </div>
+              <div>
+                <Label htmlFor="validFrom" optional>תקף מתאריך</Label>
+                <Input
+                  id="validFrom"
+                  type="date"
+                  value={validFrom}
+                  onChange={(e) => setValidFrom(e.target.value)}
                 />
               </div>
               <div>

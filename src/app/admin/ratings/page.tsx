@@ -1,48 +1,77 @@
 "use client";
-import { useState } from "react";
-import { Star, AlertTriangle, Send, TrendingDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star, AlertTriangle, Send, TrendingDown, Loader2 } from "lucide-react";
 import StarRating from "@/components/ui/StarRating";
-const demoRatings = [
-    {
-        id: "1",
-        supplierName: "סטון דיזיין",
-        rating: 5,
-        text: "שירות מעולה, אספקה בזמן, מחירים הוגנים. ממליצה בחום!",
-        date: "2026-03-07",
-        dealAmount: 12000,
-    },
-    {
-        id: "2",
-        supplierName: "אור תאורה",
-        rating: 3,
-        text: "מוצרים יפים אבל אספקה איטית מאוד. 3 שבועות המתנה.",
-        date: "2026-03-05",
-        dealAmount: 8500,
-    },
-    {
-        id: "3",
-        supplierName: "קיטשן פלוס",
-        rating: 5,
-        text: "הכי טובים בתחום! מטבח מושלם, התקנה מקצועית.",
-        date: "2026-03-04",
-        dealAmount: 45000,
-    },
-    {
-        id: "4",
-        supplierName: "אור תאורה",
-        rating: 2,
-        text: "בעיות באספקה ושירות לקוחות לא מגיב",
-        date: "2026-03-01",
-        dealAmount: 3200,
-    },
-];
-const supplierAverages = [
-    { name: "קיטשן פלוס", avg: 4.8, count: 18, trend: "up" },
-    { name: "סטון דיזיין", avg: 4.5, count: 12, trend: "up" },
-    { name: "אור תאורה", avg: 3.0, count: 6, trend: "down" },
-];
+
+interface Rating {
+    id: string;
+    supplierName: string;
+    rating: number;
+    text: string;
+    date: string;
+    dealAmount: number;
+}
+
+interface SupplierAvg {
+    name: string;
+    avg: number;
+    count: number;
+    trend: string;
+}
+
 export default function RatingsPage() {
-    const [ratings] = useState(demoRatings);
+    const [ratings, setRatings] = useState<Rating[]>([]);
+    const [supplierAverages, setSupplierAverages] = useState<SupplierAvg[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        fetch("/api/ratings")
+            .then((res) => { if (!res.ok) throw new Error("fetch failed"); return res.json(); })
+            .then((data) => {
+                if (data.ratings && Array.isArray(data.ratings)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    setRatings(data.ratings.map((r: any) => ({
+                        id: r.id,
+                        supplierName: r.supplierName || "",
+                        rating: r.rating || 0,
+                        text: r.text || "",
+                        date: r.date ? new Date(r.date).toISOString().slice(0, 10) : "",
+                        dealAmount: r.dealAmount || 0,
+                    })));
+                }
+                if (data.supplierAverages && Array.isArray(data.supplierAverages)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    setSupplierAverages(data.supplierAverages.map((s: any) => ({
+                        name: s.name || "",
+                        avg: s.averageRating || 0,
+                        count: s.ratingCount || 0,
+                        trend: (s.averageRating || 0) >= 3 ? "up" : "down",
+                    })));
+                }
+            })
+            .catch(() => setError("שגיאה בטעינת דירוגים. נסו לרענן את הדף."))
+            .finally(() => setLoading(false));
+    }, []);
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20 text-text-muted gap-2">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span>טוען דירוגים...</span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-20 text-red-400">
+                <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-60" />
+                <p>{error}</p>
+            </div>
+        );
+    }
+
     return (<div className="space-y-6 animate-in">
       {/* Header */}
       <div>
@@ -94,6 +123,12 @@ export default function RatingsPage() {
                   &ldquo;{r.text}&rdquo;
                 </p>)}
             </div>))}
+          {ratings.length === 0 && (
+            <div className="text-center py-8 text-text-muted">
+              <Star className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p>עדיין אין דירוגים</p>
+            </div>
+          )}
         </div>
       </div>
     </div>);

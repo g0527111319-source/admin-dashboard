@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { MapPin, Users, TrendingUp, DollarSign, Star, ChevronRight, Eye } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { MapPin, Users, TrendingUp, DollarSign, Star, ChevronRight, Eye, Loader2, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 /* ─── Types ─── */
@@ -23,29 +23,7 @@ interface Region {
   dotPositions: { x: number; y: number }[];
 }
 
-/* ─── Demo Data ─── */
-const designers: Designer[] = [
-  { id: 1, name: "נועה לוי", region: "tel-aviv", deals: 18, dealAmount: 425000, rating: 4.9, activityLevel: "high" },
-  { id: 2, name: "יוסי כהן", region: "tel-aviv", deals: 14, dealAmount: 310000, rating: 4.7, activityLevel: "high" },
-  { id: 3, name: "מיכל אברהם", region: "tel-aviv", deals: 11, dealAmount: 275000, rating: 4.6, activityLevel: "high" },
-  { id: 4, name: "דני רוזן", region: "center", deals: 15, dealAmount: 340000, rating: 4.8, activityLevel: "high" },
-  { id: 5, name: "שרה גולד", region: "center", deals: 12, dealAmount: 280000, rating: 4.5, activityLevel: "high" },
-  { id: 6, name: "אבי מזרחי", region: "center", deals: 8, dealAmount: 185000, rating: 4.3, activityLevel: "medium" },
-  { id: 7, name: "רונית שלום", region: "sharon", deals: 10, dealAmount: 230000, rating: 4.4, activityLevel: "high" },
-  { id: 8, name: "עמית ברק", region: "sharon", deals: 6, dealAmount: 140000, rating: 4.1, activityLevel: "medium" },
-  { id: 9, name: "תמר פרידמן", region: "haifa", deals: 13, dealAmount: 295000, rating: 4.7, activityLevel: "high" },
-  { id: 10, name: "אלון דוד", region: "haifa", deals: 7, dealAmount: 160000, rating: 4.2, activityLevel: "medium" },
-  { id: 11, name: "ליאת ישראלי", region: "north", deals: 5, dealAmount: 115000, rating: 4.0, activityLevel: "medium" },
-  { id: 12, name: "גיל נחום", region: "north", deals: 3, dealAmount: 68000, rating: 3.8, activityLevel: "low" },
-  { id: 13, name: "הדס עמר", region: "jerusalem", deals: 9, dealAmount: 210000, rating: 4.5, activityLevel: "medium" },
-  { id: 14, name: "משה קליין", region: "jerusalem", deals: 11, dealAmount: 260000, rating: 4.6, activityLevel: "high" },
-  { id: 15, name: "יעל פינטו", region: "shfela", deals: 7, dealAmount: 155000, rating: 4.2, activityLevel: "medium" },
-  { id: 16, name: "עידו חן", region: "shfela", deals: 4, dealAmount: 92000, rating: 3.9, activityLevel: "low" },
-  { id: 17, name: "רותם שגב", region: "south", deals: 3, dealAmount: 72000, rating: 3.7, activityLevel: "low" },
-  { id: 18, name: "אורי בנימין", region: "south", deals: 2, dealAmount: 45000, rating: 3.5, activityLevel: "low" },
-  { id: 19, name: "קרן אוחנה", region: "tel-aviv", deals: 9, dealAmount: 198000, rating: 4.4, activityLevel: "medium" },
-  { id: 20, name: "בן צור", region: "center", deals: 6, dealAmount: 132000, rating: 4.1, activityLevel: "medium" },
-];
+/* ─── Data is loaded from API ─── */
 
 const regions: Region[] = [
   {
@@ -114,7 +92,26 @@ const activityLabel = (level: Designer["activityLevel"]) =>
 
 /* ─── Page Component ─── */
 export default function CommunityMapPage() {
+  const [designers, setDesigners] = useState<Designer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+
+  const fetchDesigners = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/map");
+      if (!res.ok) throw new Error("שגיאה");
+      const data = await res.json();
+      setDesigners(data);
+      setError(null);
+    } catch {
+      setError("שגיאה בטעינת נתוני מפה");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchDesigners(); }, [fetchDesigners]);
 
   const regionStats = useMemo(() => {
     return regions.map((region) => {
@@ -132,12 +129,34 @@ export default function CommunityMapPage() {
         avgRating,
       };
     });
-  }, []);
+  }, [designers]);
 
   const selectedData = useMemo(
     () => regionStats.find((r) => r.id === selectedRegion) ?? null,
     [selectedRegion, regionStats]
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-gold animate-spin mx-auto mb-3" />
+          <p className="text-text-muted text-sm">טוען נתוני מפה...</p>
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" dir="rtl">
+        <div className="text-center">
+          <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-3" />
+          <p className="text-red-400 text-sm">{error}</p>
+          <button onClick={fetchDesigners} className="btn-gold mt-4 px-4 py-2 rounded-lg text-sm">נסה שוב</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in space-y-6" dir="rtl">

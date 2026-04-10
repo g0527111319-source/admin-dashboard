@@ -58,6 +58,18 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    if (Number(discountValue) <= 0) {
+      return NextResponse.json(
+        { error: "ערך הנחה חייב להיות גדול מאפס" },
+        { status: 400 },
+      );
+    }
+    if (discountType === "percent" && Number(discountValue) > 100) {
+      return NextResponse.json(
+        { error: "הנחה באחוזים לא יכולה לעלות על 100%" },
+        { status: 400 },
+      );
+    }
 
     const normalizedCode = String(code).trim().toUpperCase();
 
