@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { sendEmail } from "@/lib/email";
 
 // PATCH /api/designer/crm/contracts/[contractId]
 export async function PATCH(
@@ -85,7 +86,41 @@ export async function PATCH(
         timestamp: new Date().toISOString(),
       });
       updateData.emailsSent = emailsSent;
-      // TODO: Send actual email via transactional email service
+
+      // Send contract signing invitation email to client
+      if (existing.clientEmail) {
+        try {
+          const designer = await prisma.designer.findUnique({
+            where: { id: designerId },
+            select: { fullName: true },
+          });
+          const contractTitle = (body.title || existing.title || `חוזה ${existing.contractNumber}`).trim();
+          const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://admin-dashboard-nu-mocha.vercel.app";
+          const signUrl = `${APP_URL}/contract/sign/${existing.signToken}`;
+
+          await sendEmail({
+            to: existing.clientEmail,
+            subject: `חוזה לחתימה — ${contractTitle}`,
+            html: `
+              <div dir="rtl" style="font-family: Heebo, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #e5e5e5; padding: 40px; border-radius: 12px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h1 style="color: #C9A84C; font-size: 28px; margin: 0;">זירת האדריכלות</h1>
+                </div>
+                <h2 style="color: #fff;">חוזה ממתין לחתימתך</h2>
+                <p>שלום ${existing.clientName || ""},</p>
+                <p><strong>${designer?.fullName || "המעצבת"}</strong> שלחה לך חוזה <strong>${contractTitle}</strong> לעיון ולחתימה.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${signUrl}" style="background: #C9A84C; color: #000; padding: 14px 36px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">לצפייה ולחתימה</a>
+                </div>
+                <p style="color: #888; font-size: 13px;">לחצ/י על הכפתור למעלה כדי לצפות בחוזה ולחתום עליו דיגיטלית.</p>
+                <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">זירת האדריכלות</p>
+              </div>
+            `,
+          });
+        } catch (emailError) {
+          console.error("Failed to send contract signing email to client:", emailError);
+        }
+      }
     }
 
     const contract = await prisma.crmContract.update({

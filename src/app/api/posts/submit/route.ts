@@ -1,7 +1,14 @@
 import { txt } from "@/content/siteText";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { sendMessage } from "@/lib/whatsapp/green-api";
+import { templates } from "@/lib/whatsapp";
 export const dynamic = "force-dynamic";
+
+const ADMIN_PHONES = (process.env.ADMIN_WHATSAPP_PHONES || "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
 // POST /api/posts/submit — ספק שולח פרסום חדש
 export async function POST(req: NextRequest) {
     try {
@@ -28,8 +35,14 @@ export async function POST(req: NextRequest) {
                 status: "PENDING",
             },
         });
-        // TODO: שליחת הודעת WhatsApp לתמר
-        // await sendMessage(ADMIN_PHONE, templates.postApprovalRequest(supplier.name));
+        // Notify admin via WhatsApp about new post for approval
+        try {
+            for (const adminPhone of ADMIN_PHONES) {
+                await sendMessage(adminPhone, templates.postApprovalRequest(supplier.name));
+            }
+        } catch (err) {
+            console.error("Failed to send post approval request to admin:", err);
+        }
         return NextResponse.json({ success: true, post }, { status: 201 });
     }
     catch (error) {

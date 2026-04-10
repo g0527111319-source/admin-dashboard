@@ -185,10 +185,18 @@ export async function loginWithEmail(
       );
 
       if (supplier) {
-        if (!supplier.passwordHash) return { success: false, error: "?? ?????? ?????. ?????/? ?????? ?????." };
+        if (!supplier.passwordHash) return { success: false, error: "לא הוגדרה סיסמה. יש ליצור סיסמה חדשה." };
 
         const isValid = await verifyPassword(password, supplier.passwordHash);
-        if (!isValid) return { success: false, error: "????? ?????" };
+        if (!isValid) return { success: false, error: "פרטי כניסה שגויים" };
+
+        // בדיקת סטטוס אישור — רשימת המתנה
+        if (supplier.approvalStatus === "PENDING") {
+          return { success: false, error: "בקשתך עדיין ממתינה לאישור" };
+        }
+        if (supplier.approvalStatus === "REJECTED") {
+          return { success: false, error: "בקשתך נדחתה. ניתן להגיש בקשה מחדש." };
+        }
 
         return {
           success: true,
@@ -348,6 +356,75 @@ export async function registerDesigner(data: {
   });
 
   return { success: true, designerId: designer.id, status: "pending" };
+}
+
+/** רישום ספק חדש — סטטוס PENDING עד אישור מנהלת */
+export async function registerSupplier(data: {
+  contactName: string;
+  businessName: string;
+  email: string;
+  phone: string;
+  password: string;
+  category: string;
+  website?: string;
+  description?: string;
+  city?: string;
+}): Promise<{ success: boolean; supplierId?: string; status?: string; error?: string }> {
+  const passwordHash = await hashPassword(data.password);
+  const loginToken = crypto.randomUUID();
+
+  // בדיקה אם האימייל כבר קיים
+  const existing = await prisma.supplier.findUnique({
+    where: { email: data.email },
+  });
+
+  if (existing) {
+    // כבר ממתין לאישור
+    if (existing.approvalStatus === "PENDING") {
+      return { success: true, supplierId: existing.id, status: "already_pending" };
+    }
+    // נדחה — מאפשרים הגשה מחדש
+    if (existing.approvalStatus === "REJECTED") {
+      const updated = await prisma.supplier.update({
+        where: { id: existing.id },
+        data: {
+          name: data.businessName,
+          contactName: data.contactName,
+          phone: data.phone,
+          category: data.category,
+          city: data.city || null,
+          website: data.website || null,
+          description: data.description || null,
+          approvalStatus: "PENDING",
+          passwordHash,
+          loginToken,
+        },
+      });
+      return { success: true, supplierId: updated.id, status: "reapplied" };
+    }
+    // כבר אושר
+    if (existing.approvalStatus === "APPROVED") {
+      return { success: true, supplierId: existing.id, status: "already_pending" };
+    }
+  }
+
+  const supplier = await prisma.supplier.create({
+    data: {
+      name: data.businessName,
+      contactName: data.contactName,
+      email: data.email,
+      phone: data.phone,
+      category: data.category,
+      city: data.city || null,
+      website: data.website || null,
+      description: data.description || null,
+      approvalStatus: "PENDING",
+      passwordHash,
+      loginToken,
+    },
+  });
+
+  return { success: true, supplierId: supplier.id, status: "pending" };
 }
 
 // ==========================================

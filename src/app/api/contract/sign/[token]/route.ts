@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit-logger";
+import { sendEmail } from "@/lib/email";
 
 // GET /api/contract/sign/[token] — public: client views the contract
 export async function GET(
@@ -168,8 +169,61 @@ export async function POST(
       },
     });
 
-    // TODO: Integrate with transactional email service (e.g., SendGrid/Resend)
-    // Emails to send are logged in emailsSent array above
+    // Send contract notification emails via Resend
+    try {
+      const designer = await prisma.designer.findUnique({
+        where: { id: contract.designerId },
+        select: { fullName: true, email: true },
+      });
+
+      const contractTitle = contract.title || `חוזה ${contract.contractNumber}`;
+      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://admin-dashboard-nu-mocha.vercel.app";
+
+      // Send confirmation to client
+      if (contract.clientEmail) {
+        await sendEmail({
+          to: contract.clientEmail,
+          subject: `אישור חתימה — ${contractTitle}`,
+          html: `
+            <div dir="rtl" style="font-family: Heebo, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #e5e5e5; padding: 40px; border-radius: 12px;">
+              <h1 style="color: #C9A84C; text-align: center;">חתימתך התקבלה</h1>
+              <p>שלום ${contract.clientName || ""},</p>
+              <p>חתימתך על <strong>${contractTitle}</strong> התקבלה בהצלחה.</p>
+              ${bothSigned
+                ? '<p style="color: #4CAF50; font-weight: bold;">החוזה נחתם על ידי שני הצדדים ונכנס לתוקף.</p>'
+                : "<p>ממתינים לחתימת המעצבת להשלמת התהליך.</p>"
+              }
+              <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">זירת האדריכלות</p>
+            </div>
+          `,
+        });
+      }
+
+      // Notify designer that client signed
+      if (designer?.email) {
+        await sendEmail({
+          to: designer.email,
+          subject: `הלקוח/ה חתם/ה על ${contractTitle}`,
+          html: `
+            <div dir="rtl" style="font-family: Heebo, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #e5e5e5; padding: 40px; border-radius: 12px;">
+              <h1 style="color: #C9A84C; text-align: center;">חתימת לקוח/ה התקבלה</h1>
+              <p>שלום ${designer.fullName},</p>
+              <p><strong>${contract.clientName || "הלקוח/ה"}</strong> חתם/ה על <strong>${contractTitle}</strong>.</p>
+              ${bothSigned
+                ? '<p style="color: #4CAF50; font-weight: bold;">החוזה נחתם על ידי שני הצדדים ונכנס לתוקף.</p>'
+                : "<p>החוזה ממתין לחתימתך.</p>"
+              }
+              <div style="text-align: center; margin-top: 24px;">
+                <a href="${APP_URL}/designer" style="background: #C9A84C; color: #000; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">צפייה בחוזה</a>
+              </div>
+              <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">זירת האדריכלות</p>
+            </div>
+          `,
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send contract signing emails:", emailError);
+    }
 
     logAuditEvent("CONTRACT_SIGNED", contract.clientEmail || "unknown-client", {
       contractId: contract.id,

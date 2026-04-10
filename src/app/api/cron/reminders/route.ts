@@ -1,7 +1,14 @@
 import { txt } from "@/content/siteText";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { sendMessage } from "@/lib/whatsapp/green-api";
+import { templates } from "@/lib/whatsapp";
 export const dynamic = "force-dynamic";
+
+const ADMIN_PHONES = (process.env.ADMIN_WHATSAPP_PHONES || "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
 // GET /api/cron/reminders — תזכורות יומיות לספקים
 // Cron Job: כל יום בצהריים
 export async function GET(req: NextRequest) {
@@ -40,7 +47,17 @@ export async function GET(req: NextRequest) {
                     daysSincePost,
                     level: "critical",
                 });
-                // TODO: שליחת הודעה לתמר
+                // Send WhatsApp alert to admin about inactive suppliers
+                try {
+                    for (const adminPhone of ADMIN_PHONES) {
+                        await sendMessage(
+                            adminPhone,
+                            `🚨 *התראת ספק לא פעיל*\n\nספק *${supplier.name}* לא פרסם כבר ${daysSincePost} ימים.\nנדרשת בדיקה.`
+                        );
+                    }
+                } catch (err) {
+                    console.error(`Failed to send admin alert for supplier ${supplier.name}:`, err);
+                }
             }
             else if (daysSincePost >= 14) {
                 // 14+ ימים — תזכורת שנייה + עדכון לתמר
@@ -50,7 +67,14 @@ export async function GET(req: NextRequest) {
                     daysSincePost,
                     level: "warning",
                 });
-                // TODO: שליחת תזכורת שנייה לספק
+                // Send second reminder to supplier
+                if (supplier.phone) {
+                    try {
+                        await sendMessage(supplier.phone, templates.postReminder(daysSincePost));
+                    } catch (err) {
+                        console.error(`Failed to send second reminder to supplier ${supplier.name}:`, err);
+                    }
+                }
             }
             else if (daysSincePost >= 7) {
                 // 7+ ימים — תזכורת עדינה
@@ -60,7 +84,14 @@ export async function GET(req: NextRequest) {
                     daysSincePost,
                     level: "gentle",
                 });
-                // TODO: שליחת תזכורת לספק
+                // Send gentle reminder to supplier
+                if (supplier.phone) {
+                    try {
+                        await sendMessage(supplier.phone, templates.postReminder(daysSincePost));
+                    } catch (err) {
+                        console.error(`Failed to send reminder to supplier ${supplier.name}:`, err);
+                    }
+                }
             }
         }
         return NextResponse.json({

@@ -15,7 +15,7 @@ model Supplier {
   name              String   // שם העסק
   contactName       String   // שם איש קשר
   phone             String   // טלפון (WhatsApp)
-  email             String?  // מייל
+  email             String?  @unique // מייל
   logo              String?  // URL לוגו
   category          String   // קטגוריה
   city              String?  // עיר
@@ -38,6 +38,9 @@ model Supplier {
   totalDealAmount   Float    @default(0)
   averageRating     Float    @default(0)
   ratingCount       Int      @default(0)
+
+  // סטטוס אישור (רשימת המתנה)
+  approvalStatus    ApprovalStatus @default(PENDING)
 
   isActive          Boolean  @default(true)
   isHidden          Boolean  @default(false)

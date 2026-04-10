@@ -1,6 +1,8 @@
 import { txt } from "@/content/siteText";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { sendMessage } from "@/lib/whatsapp/green-api";
+import { templates } from "@/lib/whatsapp";
 export const dynamic = "force-dynamic";
 // GET /api/posts — רשימת פרסומים
 export async function GET(req: NextRequest) {
@@ -60,7 +62,15 @@ export async function PATCH(req: NextRequest) {
                     totalPosts: { increment: 1 },
                 },
             });
-            // TODO: שלח WhatsApp לספק
+            // Notify supplier via WhatsApp about post approval
+            if (post.supplier.phone) {
+                try {
+                    const scheduledTime = post.scheduledTime || "בקרוב";
+                    await sendMessage(post.supplier.phone, templates.postApproved(scheduledTime));
+                } catch (err) {
+                    console.error("Failed to send approval WhatsApp to supplier:", err);
+                }
+            }
         }
         else if (action === "reject") {
             await prisma.post.update({
@@ -70,7 +80,17 @@ export async function PATCH(req: NextRequest) {
                     rejectionReason: rejectionReason || null,
                 },
             });
-            // TODO: שלח WhatsApp לספק עם סיבת הדחייה
+            // Notify supplier via WhatsApp about post rejection
+            if (post.supplier.phone) {
+                try {
+                    await sendMessage(
+                        post.supplier.phone,
+                        templates.postRejected(rejectionReason || "לא צוינה סיבה")
+                    );
+                } catch (err) {
+                    console.error("Failed to send rejection WhatsApp to supplier:", err);
+                }
+            }
         }
         else if (action === "publish") {
             await prisma.post.update({
