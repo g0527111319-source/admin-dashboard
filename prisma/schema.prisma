@@ -67,7 +67,7 @@ model Designer {
   id                   String   @id @default(uuid())
   fullName             String
   phone                String
-  email                String?
+  email                String?  @unique
   city                 String?
   area                 String?
   specialization       String?

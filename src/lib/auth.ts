@@ -315,7 +315,7 @@ export async function registerDesigner(data: {
   const loginToken = crypto.randomUUID();
 
   // בדיקה אם האימייל כבר קיים
-  const existing = await prisma.designer.findFirst({
+  const existing = await prisma.designer.findUnique({
     where: { email: data.email },
   });
 
