@@ -71,7 +71,7 @@ export default function SupplierDashboard() {
         { key: "profile", label: txt("src/app/supplier/[id]/page.tsx::021", "ערוך פרופיל"), icon: Edit },
         { key: "card", label: txt("src/app/supplier/[id]/page.tsx::022", "כרטיס ביקור"), icon: CreditCard },
     ] as const;
-    return (<div className="min-h-screen bg-bg">
+    return (<div className="bg-bg">
       {/* Header */}
       <header className="bg-white border-b border-border-subtle shadow-sm">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
@@ -142,7 +142,7 @@ export default function SupplierDashboard() {
       <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* ===== OVERVIEW TAB ===== */}
         {activeTab === "overview" && (<div className="space-y-6 animate-in">
-            <h2 className="text-xl sm:text-2xl font-heading text-text-primary">{txt("src/app/supplier/[id]/page.tsx::024", "שלום")}{supplierData.contactName}
+            <h2 className="text-xl sm:text-2xl font-heading text-text-primary">{txt("src/app/supplier/[id]/page.tsx::024", "שלום ")}{supplierData.contactName}
             </h2>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -179,8 +179,8 @@ export default function SupplierDashboard() {
                   <HandCoins className="w-4 h-4 text-gold"/>
                   <p className="text-text-muted text-xs sm:text-sm">{txt("src/app/supplier/[id]/page.tsx::028", "עסקאות מדווחות")}</p>
                 </div>
-                <p className="text-2xl sm:text-3xl font-bold font-mono text-text-primary">{supplierData.totalDeals}</p>
-                <p className="text-text-muted text-xs mt-1">{txt("src/app/supplier/[id]/page.tsx::029", "סה&quot;כ ₪")}{supplierData.totalDealAmount.toLocaleString()}</p>
+                <p className="text-2xl sm:text-3xl font-bold font-mono text-text-primary">{recentDeals.length}</p>
+                <p className="text-text-muted text-xs mt-1">{txt("src/app/supplier/[id]/page.tsx::029", "סה״כ ₪")}{recentDeals.reduce((s, d) => s + d.amount, 0).toLocaleString()}</p>
               </div>
 
               <div className="card-static">
@@ -394,7 +394,7 @@ export default function SupplierDashboard() {
               </div>
 
               <div className="bg-bg-surface rounded-card p-4">
-                <p className="text-text-secondary text-sm font-medium mb-3">{txt("src/app/supplier/[id]/page.tsx::062", "צ&apos;קליסט:")}</p>
+                <p className="text-text-secondary text-sm font-medium mb-3">{txt("src/app/supplier/[id]/page.tsx::062", "צ'קליסט:")}</p>
                 <div className="space-y-2">
                   {[txt("src/app/supplier/[id]/page.tsx::063", "לוגו זירת האדריכלות בתמונה"), txt("src/app/supplier/[id]/page.tsx::064", "לוגו שלי בתמונה"), txt("src/app/supplier/[id]/page.tsx::065", "קרדיט למעצבת (אם רלוונטי)")].map((item) => (<label key={item} className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" className="accent-[#C9A84C] w-4 h-4"/>

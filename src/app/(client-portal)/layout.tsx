@@ -4,7 +4,7 @@ export default function ClientPortalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#faf9f7] to-white" dir="rtl">
+    <div className="bg-gradient-to-b from-[#faf9f7] to-white" dir="rtl">
       {children}
     </div>
   );

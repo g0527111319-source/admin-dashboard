@@ -542,7 +542,6 @@ textarea.input-field {
 .main-with-sidebar {
   margin-right: var(--sidebar-width);
   padding-top: var(--header-height);
-  min-height: 100vh;
 }
 
 /* ============================
