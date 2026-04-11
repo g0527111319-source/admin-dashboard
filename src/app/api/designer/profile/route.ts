@@ -75,26 +75,51 @@ export async function GET(req: NextRequest) {
     });
     const workedWithIds = new Set(supplierDeals.map((d) => d.supplierId));
 
-    // Get community suppliers (active, approved)
-    const suppliers = await prisma.supplier.findMany({
-      where: { isActive: true, approvalStatus: "APPROVED" },
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        city: true,
-        area: true,
-        description: true,
-        phone: true,
-        email: true,
-        contactName: true,
-        averageRating: true,
-        ratingCount: true,
-        totalDeals: true,
-        logo: true,
-      },
-      take: 50,
-    });
+    // Get community suppliers (active)
+    // Try with approvalStatus filter first; fall back if column not yet migrated
+    let suppliers;
+    try {
+      suppliers = await prisma.supplier.findMany({
+        where: { isActive: true, approvalStatus: "APPROVED" },
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          city: true,
+          area: true,
+          description: true,
+          phone: true,
+          email: true,
+          contactName: true,
+          averageRating: true,
+          ratingCount: true,
+          totalDeals: true,
+          logo: true,
+        },
+        take: 50,
+      });
+    } catch {
+      // approvalStatus column may not exist yet — fall back to isActive only
+      suppliers = await prisma.supplier.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          city: true,
+          area: true,
+          description: true,
+          phone: true,
+          email: true,
+          contactName: true,
+          averageRating: true,
+          ratingCount: true,
+          totalDeals: true,
+          logo: true,
+        },
+        take: 50,
+      });
+    }
 
     // Count recommendations per supplier
     const recCounts = await prisma.recommendation.groupBy({
