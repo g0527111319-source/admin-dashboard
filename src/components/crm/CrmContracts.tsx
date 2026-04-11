@@ -1439,7 +1439,7 @@ function ContractFillForm({
 // MAIN COMPONENT
 // ==========================
 
-export default function CrmContracts() {
+export default function CrmContracts({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);

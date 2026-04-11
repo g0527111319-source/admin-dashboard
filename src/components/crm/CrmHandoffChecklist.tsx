@@ -103,7 +103,7 @@ const DEFAULT_ITEMS: { label: string; category: string; assignee: "designer" | "
   { label: "שלטים — מזגנים, תריסים, שערים", category: "כללי", assignee: "client" },
 ];
 
-export default function CrmHandoffChecklist() {
+export default function CrmHandoffChecklist({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

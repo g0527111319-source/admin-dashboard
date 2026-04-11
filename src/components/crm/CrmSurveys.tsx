@@ -30,7 +30,7 @@ type Project = {
   client?: { id: string; name: string };
 };
 
-export default function CrmSurveys() {
+export default function CrmSurveys({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

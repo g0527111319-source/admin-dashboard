@@ -97,115 +97,6 @@ const SUB_TABS: { key: ClientSubTab; label: string; icon: typeof User }[] = [
   { key: "inspiration", label: "השראה", icon: Lightbulb },
 ];
 
-// ===== DEMO DATA — always available even without DB =====
-const DEMO_CLIENTS: CrmClient[] = [
-  {
-    id: "demo-client-1",
-    name: "רונית ואבי כהן",
-    firstName: "רונית", lastName: "כהן",
-    partner1FirstName: "אבי", partner1LastName: "כהן",
-    partner1Phone: "054-7654321", partner1Email: "avi.cohen@example.com",
-    phone: "054-1234567",
-    email: "ronit.cohen@example.com",
-    address: "רחוב הרצל 42, תל אביב",
-    street: "הרצל 42", floor: "3", apartment: "10", neighborhood: "לב העיר", city: "תל אביב",
-    renovationSameAddress: true,
-    renovationStreet: null, renovationFloor: null, renovationApartment: null, renovationNeighborhood: null, renovationCity: null,
-    renovationDetails: "שיפוץ כללי של דירת 4 חדרים, כולל מטבח ו-2 חדרי אמבטיה",
-    renovationPurpose: "דירת מגורים", estimatedBudget: "250000",
-    accessInstructions: "קוד כניסה לבניין: 1234. קומה 3 ימינה.",
-    notes: "לקוחה קבועה, מעדיפה סגנון מודרני מינימליסטי. תקציב גמיש. בעל מעורב בהחלטות.",
-    createdAt: "2025-12-15T10:00:00.000Z",
-    projects: [
-      { id: "demo-proj-1", name: "שיפוץ דירת 4 חדרים — הרצל 42", status: "ACTIVE" },
-    ],
-    _count: { projects: 1 },
-  },
-  {
-    id: "demo-client-2",
-    name: "יוסי ומיכל לוי",
-    firstName: "יוסי", lastName: "לוי",
-    partner1FirstName: "מיכל", partner1LastName: "לוי",
-    partner1Phone: "052-1112233", partner1Email: "michal.levi@example.com",
-    phone: "052-9876543",
-    email: "levi.family@example.com",
-    address: "שדרות רוטשילד 15, רמת גן",
-    street: "רוטשילד 15", floor: "5", apartment: "18", neighborhood: "", city: "רמת גן",
-    renovationSameAddress: false,
-    renovationStreet: "ויצמן 30", renovationFloor: "2", renovationApartment: "7", renovationNeighborhood: "מרכז", renovationCity: "רמת גן",
-    renovationDetails: "עיצוב דירה חדשה מקבלן, כל החדרים",
-    renovationPurpose: "דירת מגורים", estimatedBudget: "180000",
-    accessInstructions: "להתקשר לפני הגעה, יש שער חשמלי",
-    notes: "זוג צעיר, דירה חדשה מקבלן. מעוניינים בעיצוב סקנדינבי. תקציב מוגבל.",
-    createdAt: "2026-01-20T14:30:00.000Z",
-    projects: [
-      { id: "demo-proj-2", name: "עיצוב דירה חדשה — רוטשילד 15", status: "ACTIVE" },
-    ],
-    _count: { projects: 1 },
-  },
-  {
-    id: "demo-client-3",
-    name: "דנה אברהם",
-    firstName: "דנה", lastName: "אברהם",
-    phone: "050-5555123",
-    email: "dana.a@example.com",
-    address: "נחלת בנימין 8, תל אביב",
-    street: "נחלת בנימין 8", floor: "1", apartment: "3", neighborhood: "", city: "תל אביב",
-    renovationSameAddress: true,
-    renovationDetails: "שיפוץ מטבח בלבד. סגנון תעשייתי.",
-    renovationPurpose: "דירת מגורים", estimatedBudget: "85000",
-    accessInstructions: "",
-    notes: "מעוניינת בשיפוץ מטבח בלבד. סגנון תעשייתי. מאוד מדויקת בפרטים.",
-    createdAt: "2026-02-05T09:15:00.000Z",
-    projects: [
-      { id: "demo-proj-3", name: "שיפוץ מטבח — נחלת בנימין 8", status: "ACTIVE" },
-    ],
-    _count: { projects: 1 },
-  },
-  {
-    id: "demo-client-4",
-    name: "נועה ואלון ברק",
-    firstName: "נועה", lastName: "ברק",
-    partner1FirstName: "אלון", partner1LastName: "ברק",
-    partner1Phone: "053-4441234", partner1Email: null,
-    phone: "053-7771234",
-    email: "barak.family@example.com",
-    address: "אלנבי 120, תל אביב",
-    street: "אלנבי 120", floor: "קרקע", apartment: "1", neighborhood: "פלורנטין", city: "תל אביב",
-    renovationSameAddress: true,
-    renovationDetails: "שיפוץ דירת גן כולל גינה. סגנון בוהו-שיק עם אלמנטים טבעיים.",
-    renovationPurpose: "דירת מגורים", estimatedBudget: "300000",
-    accessInstructions: "כניסה מהחצר האחורית. יש כלב — לתאם מראש.",
-    notes: "שיפוץ דירת גן. מתעניינים בסגנון בוהו-שיק עם אלמנטים טבעיים. 3 ילדים.",
-    createdAt: "2026-02-28T11:00:00.000Z",
-    projects: [
-      { id: "demo-proj-4", name: "שיפוץ דירת גן — אלנבי 120", status: "ON_HOLD" },
-    ],
-    _count: { projects: 1 },
-  },
-  {
-    id: "demo-client-5",
-    name: "ד״ר שרה מזרחי",
-    firstName: "שרה", lastName: "מזרחי",
-    phone: "058-6669876",
-    email: "sara.mizrachi@example.com",
-    address: "דרך השלום 50, גבעתיים",
-    street: "דרך השלום 50", floor: "4", apartment: "12", neighborhood: "", city: "גבעתיים",
-    renovationSameAddress: false,
-    renovationStreet: "הרב קוק 8", renovationFloor: "קרקע", renovationApartment: "", renovationNeighborhood: "מרכז", renovationCity: "גבעתיים",
-    renovationDetails: "עיצוב מרפאת שיניים + דירת מגורים. שני פרויקטים במקביל.",
-    renovationPurpose: "משרד", estimatedBudget: "400000",
-    accessInstructions: "מרפאה: כניסה ראשית, קומת קרקע. דירה: קוד כניסה 5678.",
-    notes: "מרפאת שיניים + דירת מגורים. שני פרויקטים במקביל. מאוד עסוקה — לתאם פגישות מראש.",
-    createdAt: "2026-03-01T16:45:00.000Z",
-    projects: [
-      { id: "demo-proj-5a", name: "עיצוב מרפאת שיניים — דרך השלום 50", status: "ACTIVE" },
-      { id: "demo-proj-5b", name: "עיצוב סלון + מטבח — דירת מגורים", status: "COMPLETED" },
-    ],
-    _count: { projects: 2 },
-  },
-];
-
 const EMPTY_FORM = {
   firstName: "", lastName: "", phone: "", email: "",
   partner1FirstName: "", partner1LastName: "", partner1Phone: "", partner1Email: "",
@@ -239,7 +130,7 @@ export default function CrmClients() {
   const [showPartner, setShowPartner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [isUsingDemo, setIsUsingDemo] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<{ id: string; name: string; status: string } | null>(null);
   const subTabsRef = useRef<HTMLDivElement>(null);
   const [portalUrl, setPortalUrl] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
@@ -253,35 +144,16 @@ export default function CrmClients() {
       const res = await fetch(`/api/designer/crm/clients?${params}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.length > 0) {
-          setClients(data);
-          setIsUsingDemo(false);
-          setLoading(false);
-          return;
-        }
+        setClients(Array.isArray(data) ? data : data.data || []);
+      } else {
+        setClients([]);
       }
-      loadDemoClients();
     } catch {
-      loadDemoClients();
+      setClients([]);
+    } finally {
+      setLoading(false);
     }
   }, [search]);
-
-  const loadDemoClients = () => {
-    setIsUsingDemo(true);
-    let filtered = DEMO_CLIENTS;
-    if (search) {
-      const s = search.toLowerCase();
-      filtered = DEMO_CLIENTS.filter(
-        (c) =>
-          c.name.toLowerCase().includes(s) ||
-          c.phone?.includes(s) ||
-          c.email?.toLowerCase().includes(s) ||
-          c.address?.toLowerCase().includes(s)
-      );
-    }
-    setClients(filtered);
-    setLoading(false);
-  };
 
   useEffect(() => {
     setLoading(true);
@@ -305,41 +177,6 @@ export default function CrmClients() {
     setError("");
 
     const computedName = computeDisplayName(formData);
-    const computedAddress = [formData.street, formData.city].filter(Boolean).join(", ") || null;
-
-    if (isUsingDemo) {
-      if (editingClient) {
-        setClients((prev) =>
-          prev.map((c) =>
-            c.id === editingClient.id ? { ...c, ...formData, name: computedName, address: computedAddress } : c
-          )
-        );
-      } else {
-        const newClient: CrmClient = {
-          id: `demo-new-${Date.now()}`,
-          name: computedName,
-          ...formData,
-          phone: formData.phone || null,
-          email: formData.email || null,
-          address: computedAddress,
-          notes: formData.notes || null,
-          partner1FirstName: formData.partner1FirstName || null,
-          partner1LastName: formData.partner1LastName || null,
-          partner1Phone: formData.partner1Phone || null,
-          partner1Email: formData.partner1Email || null,
-          createdAt: new Date().toISOString(),
-          projects: [],
-          _count: { projects: 0 },
-        };
-        setClients((prev) => [newClient, ...prev]);
-      }
-      setShowAddForm(false);
-      setEditingClient(null);
-      setShowPartner(false);
-      setFormData({ ...EMPTY_FORM });
-      setSaving(false);
-      return;
-    }
 
     try {
       const url = editingClient
@@ -373,13 +210,6 @@ export default function CrmClients() {
 
   const handleDelete = async (clientId: string) => {
     if (!confirm("למחוק את הלקוח?")) return;
-
-    if (isUsingDemo) {
-      setClients((prev) => prev.filter((c) => c.id !== clientId));
-      if (selectedClient?.id === clientId) setSelectedClient(null);
-      return;
-    }
-
     try {
       await fetch(`/api/designer/crm/clients/${clientId}`, { method: "DELETE" });
       if (selectedClient?.id === clientId) setSelectedClient(null);
@@ -520,10 +350,10 @@ export default function CrmClients() {
   // CLIENT DETAIL VIEW — with sub-tabs
   // =====================================================
   if (selectedClient) {
-    return (
-      <div className="space-y-4 animate-in">
-        {/* Back button + client name — Premium */}
-        <div className="flex items-center justify-between">
+    // If no project selected yet, show project picker
+    if (!selectedProject && selectedClient.projects.length > 0) {
+      return (
+        <div className="space-y-6 animate-in">
           <button
             onClick={() => { setSelectedClient(null); setActiveSubTab("details"); }}
             className="flex items-center gap-1.5 text-gold text-sm hover:underline font-medium group"
@@ -531,13 +361,112 @@ export default function CrmClients() {
             <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             חזרה לרשימת לקוחות
           </button>
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center">
+              <span className="text-gold font-bold text-lg">{selectedClient.name[0]}</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-heading font-bold text-gradient-gold">{selectedClient.name}</h2>
+              <p className="text-xs text-text-muted">{selectedClient.projects.length} פרויקטים</p>
+            </div>
+          </div>
+
+          {/* Client quick info */}
+          <div className="card-glass">
+            <div className="flex flex-wrap gap-4 text-sm text-text-muted">
+              {selectedClient.phone && (
+                <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {selectedClient.phone}</span>
+              )}
+              {selectedClient.email && (
+                <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {selectedClient.email}</span>
+              )}
+              {selectedClient.city && (
+                <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {selectedClient.city}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Project picker */}
+          <div>
+            <h3 className="text-base font-heading font-bold text-text-primary mb-3 flex items-center gap-2">
+              <FolderOpen className="w-4 h-4 text-gold" />
+              בחרי פרויקט
+            </h3>
+            <div className="space-y-3">
+              {selectedClient.projects.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => { setSelectedProject(project); setActiveSubTab("details"); }}
+                  className="w-full card-glass hover:shadow-gold transition-all duration-200 text-right"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold/10 to-gold/5 flex items-center justify-center">
+                        <FolderOpen className="w-5 h-5 text-gold" />
+                      </div>
+                      <span className="text-text-primary font-medium">{project.name}</span>
+                    </div>
+                    <span className={`badge text-xs px-2.5 py-1 rounded-full ${statusColor[project.status] || "bg-gray-100 text-gray-600"}`}>
+                      {statusLabel[project.status] || project.status}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Button to view client details without project */}
+          <button
+            onClick={() => { setSelectedProject({ id: "__details__", name: "פרטי לקוח", status: "" }); setActiveSubTab("details"); }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-border-subtle hover:border-gold/40 text-text-muted hover:text-gold transition-all duration-200 text-sm font-medium"
+          >
+            <User className="w-4 h-4" />
+            צפייה בפרטי לקוח בלבד
+          </button>
+        </div>
+      );
+    }
+
+    // If client has no projects, go straight to details
+    if (!selectedProject && selectedClient.projects.length === 0) {
+      setSelectedProject({ id: "__details__", name: "פרטי לקוח", status: "" });
+    }
+
+    return (
+      <div className="space-y-4 animate-in">
+        {/* Back button + client/project name */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => {
+              if (selectedClient.projects.length > 1 && selectedProject?.id !== "__details__") {
+                setSelectedProject(null);
+                setActiveSubTab("details");
+              } else {
+                setSelectedClient(null);
+                setSelectedProject(null);
+                setActiveSubTab("details");
+              }
+            }}
+            className="flex items-center gap-1.5 text-gold text-sm hover:underline font-medium group"
+          >
+            <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            {selectedClient.projects.length > 1 && selectedProject?.id !== "__details__" ? "חזרה לבחירת פרויקט" : "חזרה לרשימת לקוחות"}
+          </button>
           <div className="flex items-center gap-3">
             <div className="avatar-gold">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center">
                 <span className="text-gold font-bold text-sm">{selectedClient.name[0]}</span>
               </div>
             </div>
-            <h2 className="text-lg font-heading font-bold text-gradient-gold">{selectedClient.name}</h2>
+            <div className="text-left">
+              <h2 className="text-lg font-heading font-bold text-gradient-gold">{selectedClient.name}</h2>
+              {selectedProject && selectedProject.id !== "__details__" && (
+                <p className="text-xs text-text-muted flex items-center gap-1">
+                  <FolderOpen className="w-3 h-3" /> {selectedProject.name}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -788,8 +717,12 @@ export default function CrmClients() {
                     {selectedClient.projects.map((project) => (
                       <button
                         key={project.id}
-                        onClick={() => setActiveSubTab("projects")}
-                        className="list-item-premium w-full flex items-center justify-between p-3.5 bg-bg-surface/50 rounded-xl hover:bg-gold/5 transition-all duration-200 text-right"
+                        onClick={() => { setSelectedProject(project); setActiveSubTab("projects"); }}
+                        className={`list-item-premium w-full flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 text-right ${
+                          selectedProject?.id === project.id
+                            ? "bg-gold/10 ring-1 ring-gold/30"
+                            : "bg-bg-surface/50 hover:bg-gold/5"
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center">
@@ -826,25 +759,25 @@ export default function CrmClients() {
             </div>
           )}
 
-          {activeSubTab === "projects" && <CrmProjects />}
-          {activeSubTab === "tasks" && <CrmTasks />}
-          {activeSubTab === "quotes" && <CrmQuotes />}
-          {activeSubTab === "contracts" && <CrmContracts />}
-          {activeSubTab === "moodboards" && <CrmMoodboards />}
-          {activeSubTab === "calendar" && <CrmCalendar />}
-          {activeSubTab === "plans" && <CrmPlans />}
-          {activeSubTab === "materials" && <CrmMaterials />}
-          {activeSubTab === "budget" && <CrmBudgetTracker />}
-          {activeSubTab === "timeline" && <CrmTimeline />}
-          {activeSubTab === "before-after" && <CrmBeforeAfter />}
-          {activeSubTab === "approvals" && <CrmApprovals />}
-          {activeSubTab === "time-tracking" && <CrmTimeTracking />}
-          {activeSubTab === "handoff" && <CrmHandoffChecklist />}
-          {activeSubTab === "scheduler" && <CrmScheduler />}
-          {activeSubTab === "onboarding" && <CrmOnboarding />}
-          {activeSubTab === "style-quiz" && <CrmStyleQuiz designerId="" />}
-          {activeSubTab === "surveys" && <CrmSurveys />}
-          {activeSubTab === "inspiration" && <CrmInspirationLibrary />}
+          {activeSubTab === "projects" && <CrmProjects clientId={selectedClient.id} />}
+          {activeSubTab === "tasks" && <CrmTasks clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "quotes" && <CrmQuotes clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "contracts" && <CrmContracts clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "moodboards" && <CrmMoodboards clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "calendar" && <CrmCalendar clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "plans" && <CrmPlans clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "materials" && <CrmMaterials clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "budget" && <CrmBudgetTracker clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "timeline" && <CrmTimeline clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "before-after" && <CrmBeforeAfter clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "approvals" && <CrmApprovals clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "time-tracking" && <CrmTimeTracking clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "handoff" && <CrmHandoffChecklist clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "scheduler" && <CrmScheduler clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "onboarding" && <CrmOnboarding clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "style-quiz" && <CrmStyleQuiz designerId="" clientId={selectedClient.id} />}
+          {activeSubTab === "surveys" && <CrmSurveys clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "inspiration" && <CrmInspirationLibrary clientId={selectedClient.id} />}
         </div>
       </div>
     );
@@ -1302,7 +1235,7 @@ export default function CrmClients() {
               <div
                 key={client.id}
                 className={`list-item-premium card-glass hover:shadow-gold cursor-pointer transition-all duration-200 stagger-${Math.min(i + 1, 8)} animate-in`}
-                onClick={() => setSelectedClient(client)}
+                onClick={() => { setSelectedClient(client); setSelectedProject(null); }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -1366,7 +1299,7 @@ export default function CrmClients() {
               <div
                 key={client.id}
                 className={`list-item-premium card-glass cursor-pointer transition-all duration-200 opacity-70 hover:opacity-100 stagger-${Math.min(i + 1, 8)} animate-in`}
-                onClick={() => setSelectedClient(client)}
+                onClick={() => { setSelectedClient(client); setSelectedProject(null); }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">

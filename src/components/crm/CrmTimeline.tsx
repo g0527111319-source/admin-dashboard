@@ -38,7 +38,7 @@ const ACTION_CONFIG: Record<string, { label: string; icon: typeof Clock; color: 
 
 const DEFAULT_ACTION = { label: "פעולה", icon: Clock, color: "text-gray-500 bg-gray-50" };
 
-export default function CrmTimeline() {
+export default function CrmTimeline({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

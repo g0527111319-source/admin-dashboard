@@ -19,7 +19,7 @@ type CalendarEvent = {
 
 type Project = { id: string; name: string; client: { name: string } };
 
-export default function CrmCalendar() {
+export default function CrmCalendar({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

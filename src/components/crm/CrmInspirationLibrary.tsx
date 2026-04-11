@@ -50,7 +50,7 @@ const materialOptions = ["עץ", "שיש", "מתכת", "זכוכית", "בטון
 const emptyBoard = { name: "", description: "", projectId: "" };
 const emptyItem = { imageUrl: "", title: "", notes: "", styleTag: "", roomTag: "", materialTag: "" };
 
-export default function CrmInspirationLibrary() {
+export default function CrmInspirationLibrary({ clientId }: { clientId?: string } = {}) {
   const [boards, setBoards] = useState<InspirationBoard[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBoardForm, setShowBoardForm] = useState(false);

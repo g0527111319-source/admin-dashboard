@@ -209,9 +209,11 @@ const DEMO_CLIENTS: Client[] = [
 export default function CrmProjects({
   initialProjectId,
   onClearProjectId,
+  clientId,
 }: {
   initialProjectId?: string | null;
   onClearProjectId?: () => void;
+  clientId?: string;
 }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);

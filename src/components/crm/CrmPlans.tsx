@@ -41,7 +41,7 @@ const getCategoryInfo = (key: string) =>
 
 const isPdf = (url: string) => url.toLowerCase().endsWith(".pdf");
 
-export default function CrmPlans() {
+export default function CrmPlans({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

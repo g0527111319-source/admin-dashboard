@@ -42,7 +42,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: typeof Cl
   REJECTED: { label: "נדחה", color: "text-red-600 bg-red-50", icon: XCircle },
 };
 
-export default function CrmApprovals() {
+export default function CrmApprovals({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

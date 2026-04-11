@@ -25,7 +25,7 @@ const STATUS_OPTIONS = [
   { value: "paid", label: "שולם", color: "badge-green" },
 ];
 
-export default function CrmBudgetTracker() {
+export default function CrmBudgetTracker({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

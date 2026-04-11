@@ -113,7 +113,7 @@ const DEFAULT_TASK_SETS: { name: string; icon: string; tasks: { title: string; d
   },
 ];
 
-export default function CrmTasks() {
+export default function CrmTasks({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);

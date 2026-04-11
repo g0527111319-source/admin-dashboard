@@ -17,7 +17,7 @@ type TimeEntry = {
 
 type Project = { id: string; name: string; client: { name: string } };
 
-export default function CrmTimeTracking() {
+export default function CrmTimeTracking({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

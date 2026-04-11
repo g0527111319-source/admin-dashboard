@@ -31,7 +31,7 @@ type Project = {
   name: string;
 };
 
-export default function CrmMaterials() {
+export default function CrmMaterials({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [categories, setCategories] = useState<MaterialCategory[]>([]);

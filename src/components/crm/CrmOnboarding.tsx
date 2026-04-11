@@ -23,7 +23,7 @@ type OnboardingItem = {
 
 type Client = { id: string; name: string };
 
-export default function CrmOnboarding() {
+export default function CrmOnboarding({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [view, setView] = useState<"templates" | "clients">("clients");
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
   const [clients, setClients] = useState<Client[]>([]);

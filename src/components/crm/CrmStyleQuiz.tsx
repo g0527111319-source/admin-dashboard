@@ -35,7 +35,7 @@ type ClientWithResponses = {
   responses: QuizResponse[];
 };
 
-export default function CrmStyleQuiz({ designerId }: { designerId: string }) {
+export default function CrmStyleQuiz({ designerId, clientId }: { designerId: string; clientId?: string }) {
   const [templates, setTemplates] = useState<QuizTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"templates" | "responses">("templates");

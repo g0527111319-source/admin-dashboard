@@ -24,7 +24,7 @@ type Moodboard = {
 
 type Project = { id: string; name: string; client: { name: string } };
 
-export default function CrmMoodboards() {
+export default function CrmMoodboards({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [moodboards, setMoodboards] = useState<Moodboard[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

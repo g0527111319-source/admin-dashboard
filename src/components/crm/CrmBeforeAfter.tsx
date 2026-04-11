@@ -155,7 +155,7 @@ function Lightbox({
   );
 }
 
-export default function CrmBeforeAfter() {
+export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
   const [sets, setSets] = useState<BeforeAfterSet[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

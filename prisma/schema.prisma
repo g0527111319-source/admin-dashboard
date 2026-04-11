@@ -127,6 +127,7 @@ model Designer {
   crmQuotes            CrmQuote[]
   crmContracts         CrmContract[]
   crmContractTemplates CrmContractTemplate[]
+  crmQuoteTemplates    CrmQuoteTemplate[]
   crmSuppliers         CrmSupplier[]
   messageTemplates     CrmMessageTemplate[]
   whatsAppConfig       WhatsAppConfig?
@@ -841,6 +842,27 @@ model CrmQuote {
   @@index([projectId])
   @@index([designerId])
   @@index([status])
+}
+
+// תבניות הצעת מחיר — מעצבת מגדירה פעם אחת, משתמשת בכמה הצעות
+model CrmQuoteTemplate {
+  id             String   @id @default(uuid())
+  designerId     String
+  designer       Designer @relation(fields: [designerId], references: [id])
+  name           String
+  description    String?
+  isDefault      Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  contentBlocks  Json     @default("[]")
+  fields         Json     @default("[]")
+  headerHtml     String?
+  footerHtml     String?
+  styling        Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([designerId])
 }
 
 // תבניות חוזה — מעצבת מגדירה פעם אחת, משתמשת בכמה חוזים
