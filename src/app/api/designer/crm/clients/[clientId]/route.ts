@@ -62,17 +62,73 @@ export async function PATCH(
       return NextResponse.json({ error: "לקוח לא נמצא" }, { status: 404 });
     }
 
-    const { name, phone, email, address, notes } = body;
+    const {
+      firstName, lastName, phone, email,
+      partner1FirstName, partner1LastName, partner1Phone, partner1Email,
+      street, floor, apartment, neighborhood, city,
+      renovationSameAddress, renovationStreet, renovationFloor,
+      renovationApartment, renovationNeighborhood, renovationCity,
+      renovationDetails, renovationPurpose, estimatedBudget,
+      accessInstructions, notes,
+      name: legacyName,
+    } = body;
+
+    // Auto-compute name from structured fields if provided
+    const updateData: Record<string, unknown> = {};
+
+    if (firstName !== undefined) updateData.firstName = firstName?.trim() || null;
+    if (lastName !== undefined) updateData.lastName = lastName?.trim() || null;
+    if (phone !== undefined) updateData.phone = phone?.trim() || null;
+    if (email !== undefined) updateData.email = email?.trim() || null;
+    if (notes !== undefined) updateData.notes = notes?.trim() || null;
+    if (partner1FirstName !== undefined) updateData.partner1FirstName = partner1FirstName?.trim() || null;
+    if (partner1LastName !== undefined) updateData.partner1LastName = partner1LastName?.trim() || null;
+    if (partner1Phone !== undefined) updateData.partner1Phone = partner1Phone?.trim() || null;
+    if (partner1Email !== undefined) updateData.partner1Email = partner1Email?.trim() || null;
+    if (street !== undefined) updateData.street = street?.trim() || null;
+    if (floor !== undefined) updateData.floor = floor?.trim() || null;
+    if (apartment !== undefined) updateData.apartment = apartment?.trim() || null;
+    if (neighborhood !== undefined) updateData.neighborhood = neighborhood?.trim() || null;
+    if (city !== undefined) updateData.city = city?.trim() || null;
+    if (renovationSameAddress !== undefined) updateData.renovationSameAddress = renovationSameAddress === true;
+    if (renovationStreet !== undefined) updateData.renovationStreet = renovationStreet?.trim() || null;
+    if (renovationFloor !== undefined) updateData.renovationFloor = renovationFloor?.trim() || null;
+    if (renovationApartment !== undefined) updateData.renovationApartment = renovationApartment?.trim() || null;
+    if (renovationNeighborhood !== undefined) updateData.renovationNeighborhood = renovationNeighborhood?.trim() || null;
+    if (renovationCity !== undefined) updateData.renovationCity = renovationCity?.trim() || null;
+    if (renovationDetails !== undefined) updateData.renovationDetails = renovationDetails?.trim() || null;
+    if (renovationPurpose !== undefined) updateData.renovationPurpose = renovationPurpose?.trim() || null;
+    if (estimatedBudget !== undefined) updateData.estimatedBudget = estimatedBudget?.toString()?.trim() || null;
+    if (accessInstructions !== undefined) updateData.accessInstructions = accessInstructions?.trim() || null;
+
+    // Auto-compute name for backwards compatibility
+    const fn = firstName !== undefined ? firstName?.trim() : existing.firstName;
+    const ln = lastName !== undefined ? lastName?.trim() : existing.lastName;
+    const p1fn = partner1FirstName !== undefined ? partner1FirstName?.trim() : existing.partner1FirstName;
+    const p1ln = partner1LastName !== undefined ? partner1LastName?.trim() : existing.partner1LastName;
+
+    if (fn) {
+      let computedName = `${fn} ${(ln || "").trim()}`.trim();
+      if (p1fn) {
+        const partnerName = `${p1fn} ${(p1ln || "").trim()}`.trim();
+        computedName = `${computedName} ו${partnerName}`;
+      }
+      updateData.name = computedName;
+    } else if (legacyName !== undefined) {
+      updateData.name = legacyName.trim();
+    }
+
+    // Build legacy address from structured fields
+    const st = street !== undefined ? street?.trim() : existing.street;
+    const ct = city !== undefined ? city?.trim() : existing.city;
+    const addrParts = [st, ct].filter(Boolean);
+    if (addrParts.length > 0) {
+      updateData.address = addrParts.join(", ");
+    }
 
     const client = await prisma.crmClient.update({
       where: { id: clientId },
-      data: {
-        ...(name !== undefined && { name: name.trim() }),
-        ...(phone !== undefined && { phone: phone?.trim() || null }),
-        ...(email !== undefined && { email: email?.trim() || null }),
-        ...(address !== undefined && { address: address?.trim() || null }),
-        ...(notes !== undefined && { notes: notes?.trim() || null }),
-      },
+      data: updateData,
     });
 
     return NextResponse.json(client);

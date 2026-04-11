@@ -7,7 +7,8 @@ import {
   Calendar, Layout, Package, DollarSign, GitBranch, ArrowLeftRight,
   ThumbsUp, Clock, ClipboardCheck, CalendarClock, UserPlus, Sparkles,
   BarChart3, Lightbulb, ScrollText, Ruler, Link2, Copy, ExternalLink,
-  MessageCircle, Building2, Archive, RotateCcw
+  MessageCircle, Building2, Archive, RotateCcw, ChevronDown, ChevronUp,
+  Home, Users
 } from "lucide-react";
 
 // ===== Client-specific CRM components (sub-tabs) =====
@@ -42,6 +43,28 @@ type CrmClient = {
   projects: { id: string; name: string; status: string }[];
   _count: { projects: number };
   isArchived?: boolean;
+  // Structured fields
+  firstName?: string | null;
+  lastName?: string | null;
+  partner1FirstName?: string | null;
+  partner1LastName?: string | null;
+  partner1Phone?: string | null;
+  partner1Email?: string | null;
+  street?: string | null;
+  floor?: string | null;
+  apartment?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  renovationSameAddress?: boolean;
+  renovationStreet?: string | null;
+  renovationFloor?: string | null;
+  renovationApartment?: string | null;
+  renovationNeighborhood?: string | null;
+  renovationCity?: string | null;
+  renovationDetails?: string | null;
+  renovationPurpose?: string | null;
+  estimatedBudget?: string | null;
+  accessInstructions?: string | null;
 };
 
 type ClientSubTab =
@@ -79,9 +102,18 @@ const DEMO_CLIENTS: CrmClient[] = [
   {
     id: "demo-client-1",
     name: "רונית ואבי כהן",
+    firstName: "רונית", lastName: "כהן",
+    partner1FirstName: "אבי", partner1LastName: "כהן",
+    partner1Phone: "054-7654321", partner1Email: "avi.cohen@example.com",
     phone: "054-1234567",
     email: "ronit.cohen@example.com",
     address: "רחוב הרצל 42, תל אביב",
+    street: "הרצל 42", floor: "3", apartment: "10", neighborhood: "לב העיר", city: "תל אביב",
+    renovationSameAddress: true,
+    renovationStreet: null, renovationFloor: null, renovationApartment: null, renovationNeighborhood: null, renovationCity: null,
+    renovationDetails: "שיפוץ כללי של דירת 4 חדרים, כולל מטבח ו-2 חדרי אמבטיה",
+    renovationPurpose: "דירת מגורים", estimatedBudget: "250000",
+    accessInstructions: "קוד כניסה לבניין: 1234. קומה 3 ימינה.",
     notes: "לקוחה קבועה, מעדיפה סגנון מודרני מינימליסטי. תקציב גמיש. בעל מעורב בהחלטות.",
     createdAt: "2025-12-15T10:00:00.000Z",
     projects: [
@@ -92,9 +124,18 @@ const DEMO_CLIENTS: CrmClient[] = [
   {
     id: "demo-client-2",
     name: "יוסי ומיכל לוי",
+    firstName: "יוסי", lastName: "לוי",
+    partner1FirstName: "מיכל", partner1LastName: "לוי",
+    partner1Phone: "052-1112233", partner1Email: "michal.levi@example.com",
     phone: "052-9876543",
     email: "levi.family@example.com",
     address: "שדרות רוטשילד 15, רמת גן",
+    street: "רוטשילד 15", floor: "5", apartment: "18", neighborhood: "", city: "רמת גן",
+    renovationSameAddress: false,
+    renovationStreet: "ויצמן 30", renovationFloor: "2", renovationApartment: "7", renovationNeighborhood: "מרכז", renovationCity: "רמת גן",
+    renovationDetails: "עיצוב דירה חדשה מקבלן, כל החדרים",
+    renovationPurpose: "דירת מגורים", estimatedBudget: "180000",
+    accessInstructions: "להתקשר לפני הגעה, יש שער חשמלי",
     notes: "זוג צעיר, דירה חדשה מקבלן. מעוניינים בעיצוב סקנדינבי. תקציב מוגבל.",
     createdAt: "2026-01-20T14:30:00.000Z",
     projects: [
@@ -105,9 +146,15 @@ const DEMO_CLIENTS: CrmClient[] = [
   {
     id: "demo-client-3",
     name: "דנה אברהם",
+    firstName: "דנה", lastName: "אברהם",
     phone: "050-5555123",
     email: "dana.a@example.com",
     address: "נחלת בנימין 8, תל אביב",
+    street: "נחלת בנימין 8", floor: "1", apartment: "3", neighborhood: "", city: "תל אביב",
+    renovationSameAddress: true,
+    renovationDetails: "שיפוץ מטבח בלבד. סגנון תעשייתי.",
+    renovationPurpose: "דירת מגורים", estimatedBudget: "85000",
+    accessInstructions: "",
     notes: "מעוניינת בשיפוץ מטבח בלבד. סגנון תעשייתי. מאוד מדויקת בפרטים.",
     createdAt: "2026-02-05T09:15:00.000Z",
     projects: [
@@ -117,10 +164,18 @@ const DEMO_CLIENTS: CrmClient[] = [
   },
   {
     id: "demo-client-4",
-    name: "משפחת ברק",
+    name: "נועה ואלון ברק",
+    firstName: "נועה", lastName: "ברק",
+    partner1FirstName: "אלון", partner1LastName: "ברק",
+    partner1Phone: "053-4441234", partner1Email: null,
     phone: "053-7771234",
     email: "barak.family@example.com",
     address: "אלנבי 120, תל אביב",
+    street: "אלנבי 120", floor: "קרקע", apartment: "1", neighborhood: "פלורנטין", city: "תל אביב",
+    renovationSameAddress: true,
+    renovationDetails: "שיפוץ דירת גן כולל גינה. סגנון בוהו-שיק עם אלמנטים טבעיים.",
+    renovationPurpose: "דירת מגורים", estimatedBudget: "300000",
+    accessInstructions: "כניסה מהחצר האחורית. יש כלב — לתאם מראש.",
     notes: "שיפוץ דירת גן. מתעניינים בסגנון בוהו-שיק עם אלמנטים טבעיים. 3 ילדים.",
     createdAt: "2026-02-28T11:00:00.000Z",
     projects: [
@@ -131,9 +186,16 @@ const DEMO_CLIENTS: CrmClient[] = [
   {
     id: "demo-client-5",
     name: "ד״ר שרה מזרחי",
+    firstName: "שרה", lastName: "מזרחי",
     phone: "058-6669876",
     email: "sara.mizrachi@example.com",
     address: "דרך השלום 50, גבעתיים",
+    street: "דרך השלום 50", floor: "4", apartment: "12", neighborhood: "", city: "גבעתיים",
+    renovationSameAddress: false,
+    renovationStreet: "הרב קוק 8", renovationFloor: "קרקע", renovationApartment: "", renovationNeighborhood: "מרכז", renovationCity: "גבעתיים",
+    renovationDetails: "עיצוב מרפאת שיניים + דירת מגורים. שני פרויקטים במקביל.",
+    renovationPurpose: "משרד", estimatedBudget: "400000",
+    accessInstructions: "מרפאה: כניסה ראשית, קומת קרקע. דירה: קוד כניסה 5678.",
     notes: "מרפאת שיניים + דירת מגורים. שני פרויקטים במקביל. מאוד עסוקה — לתאם פגישות מראש.",
     createdAt: "2026-03-01T16:45:00.000Z",
     projects: [
@@ -143,6 +205,17 @@ const DEMO_CLIENTS: CrmClient[] = [
     _count: { projects: 2 },
   },
 ];
+
+const EMPTY_FORM = {
+  firstName: "", lastName: "", phone: "", email: "",
+  partner1FirstName: "", partner1LastName: "", partner1Phone: "", partner1Email: "",
+  street: "", floor: "", apartment: "", neighborhood: "", city: "",
+  renovationSameAddress: false,
+  renovationStreet: "", renovationFloor: "", renovationApartment: "", renovationNeighborhood: "", renovationCity: "",
+  renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
+  accessInstructions: "",
+  notes: "",
+};
 
 export default function CrmClients() {
   const [clients, setClients] = useState<CrmClient[]>([]);
@@ -154,9 +227,16 @@ export default function CrmClients() {
   const [selectedClient, setSelectedClient] = useState<CrmClient | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<ClientSubTab>("details");
   const [formData, setFormData] = useState({
-    name: "", phone: "", email: "", address: "", notes: "",
-    propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
+    firstName: "", lastName: "", phone: "", email: "",
+    partner1FirstName: "", partner1LastName: "", partner1Phone: "", partner1Email: "",
+    street: "", floor: "", apartment: "", neighborhood: "", city: "",
+    renovationSameAddress: false,
+    renovationStreet: "", renovationFloor: "", renovationApartment: "", renovationNeighborhood: "", renovationCity: "",
+    renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
+    accessInstructions: "",
+    notes: "",
   });
+  const [showPartner, setShowPartner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [isUsingDemo, setIsUsingDemo] = useState(false);
@@ -164,6 +244,7 @@ export default function CrmClients() {
   const [portalUrl, setPortalUrl] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalCopied, setPortalCopied] = useState(false);
+  const [portalEmailSent, setPortalEmailSent] = useState<string | null>(null);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -207,27 +288,45 @@ export default function CrmClients() {
     fetchClients();
   }, [fetchClients]);
 
+  // Compute display name from structured fields
+  const computeDisplayName = (data: typeof formData) => {
+    let fullName = `${data.firstName} ${data.lastName}`.trim();
+    if (data.partner1FirstName.trim()) {
+      const partnerName = `${data.partner1FirstName} ${data.partner1LastName}`.trim();
+      fullName = `${fullName} ו${partnerName}`;
+    }
+    return fullName;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    if (!formData.firstName.trim()) return;
     setSaving(true);
     setError("");
+
+    const computedName = computeDisplayName(formData);
+    const computedAddress = [formData.street, formData.city].filter(Boolean).join(", ") || null;
 
     if (isUsingDemo) {
       if (editingClient) {
         setClients((prev) =>
           prev.map((c) =>
-            c.id === editingClient.id ? { ...c, ...formData } : c
+            c.id === editingClient.id ? { ...c, ...formData, name: computedName, address: computedAddress } : c
           )
         );
       } else {
         const newClient: CrmClient = {
           id: `demo-new-${Date.now()}`,
-          name: formData.name,
+          name: computedName,
+          ...formData,
           phone: formData.phone || null,
           email: formData.email || null,
-          address: formData.address || null,
+          address: computedAddress,
           notes: formData.notes || null,
+          partner1FirstName: formData.partner1FirstName || null,
+          partner1LastName: formData.partner1LastName || null,
+          partner1Phone: formData.partner1Phone || null,
+          partner1Email: formData.partner1Email || null,
           createdAt: new Date().toISOString(),
           projects: [],
           _count: { projects: 0 },
@@ -236,7 +335,8 @@ export default function CrmClients() {
       }
       setShowAddForm(false);
       setEditingClient(null);
-      setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" });
+      setShowPartner(false);
+      setFormData({ ...EMPTY_FORM });
       setSaving(false);
       return;
     }
@@ -250,7 +350,7 @@ export default function CrmClients() {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, name: computedName }),
       });
 
       if (!res.ok) {
@@ -261,7 +361,8 @@ export default function CrmClients() {
 
       setShowAddForm(false);
       setEditingClient(null);
-      setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" });
+      setShowPartner(false);
+      setFormData({ ...EMPTY_FORM });
       fetchClients();
     } catch {
       setError("שגיאת רשת");
@@ -291,20 +392,40 @@ export default function CrmClients() {
   const startEdit = (client: CrmClient) => {
     setEditingClient(client);
     setFormData({
-      name: client.name,
+      firstName: client.firstName || "",
+      lastName: client.lastName || "",
       phone: client.phone || "",
       email: client.email || "",
-      address: client.address || "",
+      partner1FirstName: client.partner1FirstName || "",
+      partner1LastName: client.partner1LastName || "",
+      partner1Phone: client.partner1Phone || "",
+      partner1Email: client.partner1Email || "",
+      street: client.street || "",
+      floor: client.floor || "",
+      apartment: client.apartment || "",
+      neighborhood: client.neighborhood || "",
+      city: client.city || "",
+      renovationSameAddress: client.renovationSameAddress || false,
+      renovationStreet: client.renovationStreet || "",
+      renovationFloor: client.renovationFloor || "",
+      renovationApartment: client.renovationApartment || "",
+      renovationNeighborhood: client.renovationNeighborhood || "",
+      renovationCity: client.renovationCity || "",
+      renovationDetails: client.renovationDetails || "",
+      renovationPurpose: client.renovationPurpose || "",
+      estimatedBudget: client.estimatedBudget || "",
+      accessInstructions: client.accessInstructions || "",
       notes: client.notes || "",
-      propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
     });
+    setShowPartner(!!(client.partner1FirstName || client.partner1Phone || client.partner1Email));
     setShowAddForm(true);
   };
 
-  const generatePortalLink = async (clientId: string) => {
+  const generatePortalLink = async (clientId: string, clientEmail?: string | null) => {
     setPortalLoading(true);
     setPortalUrl("");
     setPortalCopied(false);
+    setPortalEmailSent(null);
     try {
       const res = await fetch(`/api/designer/crm/clients/${clientId}/portal-token`, {
         method: "POST",
@@ -313,6 +434,10 @@ export default function CrmClients() {
         const data = await res.json();
         const fullUrl = `${window.location.origin}${data.url}`;
         setPortalUrl(fullUrl);
+        if (data.emailSent && data.emailRecipients?.length > 0) {
+          setPortalEmailSent(data.emailRecipients.join(", "));
+          setTimeout(() => setPortalEmailSent(null), 5000);
+        }
       }
     } catch {
       console.error("Failed to generate portal link");
@@ -463,6 +588,8 @@ export default function CrmClients() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-xl font-heading font-bold text-text-primary">{selectedClient.name}</h2>
+
+                    {/* Client 1 details */}
                     <div className="flex flex-wrap gap-4 mt-3 text-sm text-text-muted">
                       {selectedClient.phone && (
                         <span className="flex items-center gap-1.5 hover:text-gold transition-colors">
@@ -474,12 +601,79 @@ export default function CrmClients() {
                           <Mail className="w-3.5 h-3.5" /> {selectedClient.email}
                         </span>
                       )}
-                      {selectedClient.address && (
-                        <span className="flex items-center gap-1.5 hover:text-gold transition-colors">
-                          <MapPin className="w-3.5 h-3.5" /> {selectedClient.address}
-                        </span>
-                      )}
                     </div>
+
+                    {/* Client 2 / Partner details */}
+                    {selectedClient.partner1FirstName && (
+                      <div className="mt-3 pt-3 border-t border-border-subtle/30">
+                        <p className="text-xs text-text-faint mb-1.5 flex items-center gap-1"><Users className="w-3 h-3" /> לקוח/ה נוסף/ת</p>
+                        <div className="flex flex-wrap gap-4 text-sm text-text-muted">
+                          <span className="font-medium text-text-primary">
+                            {`${selectedClient.partner1FirstName} ${selectedClient.partner1LastName || ""}`.trim()}
+                          </span>
+                          {selectedClient.partner1Phone && (
+                            <span className="flex items-center gap-1.5 hover:text-gold transition-colors">
+                              <Phone className="w-3.5 h-3.5" /> {selectedClient.partner1Phone}
+                            </span>
+                          )}
+                          {selectedClient.partner1Email && (
+                            <span className="flex items-center gap-1.5 hover:text-gold transition-colors">
+                              <Mail className="w-3.5 h-3.5" /> {selectedClient.partner1Email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Residential address */}
+                    {(selectedClient.street || selectedClient.city) && (
+                      <div className="mt-3 pt-3 border-t border-border-subtle/30">
+                        <p className="text-xs text-text-faint mb-1.5 flex items-center gap-1"><Home className="w-3 h-3" /> כתובת מגורים</p>
+                        <p className="text-sm text-text-muted flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                          {[
+                            selectedClient.street,
+                            selectedClient.floor && `קומה ${selectedClient.floor}`,
+                            selectedClient.apartment && `דירה ${selectedClient.apartment}`,
+                            selectedClient.neighborhood,
+                            selectedClient.city,
+                          ].filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Renovation property */}
+                    {(selectedClient.renovationSameAddress || selectedClient.renovationStreet || selectedClient.renovationCity || selectedClient.renovationDetails) && (
+                      <div className="mt-3 pt-3 border-t border-border-subtle/30">
+                        <p className="text-xs text-text-faint mb-1.5 flex items-center gap-1"><Building2 className="w-3 h-3" /> נכס לשיפוץ</p>
+                        {selectedClient.renovationSameAddress ? (
+                          <p className="text-sm text-text-muted">הנכס נמצא בכתובת המגורים</p>
+                        ) : (selectedClient.renovationStreet || selectedClient.renovationCity) ? (
+                          <p className="text-sm text-text-muted flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                            {[
+                              selectedClient.renovationStreet,
+                              selectedClient.renovationFloor && `קומה ${selectedClient.renovationFloor}`,
+                              selectedClient.renovationApartment && `דירה ${selectedClient.renovationApartment}`,
+                              selectedClient.renovationNeighborhood,
+                              selectedClient.renovationCity,
+                            ].filter(Boolean).join(", ")}
+                          </p>
+                        ) : null}
+                        {selectedClient.accessInstructions && (
+                          <p className="text-sm text-text-muted mt-1"><span className="text-text-faint">דרך גישה:</span> {selectedClient.accessInstructions}</p>
+                        )}
+                        {selectedClient.renovationDetails && (
+                          <p className="text-sm text-text-muted mt-1"><span className="text-text-faint">פרטי השיפוץ:</span> {selectedClient.renovationDetails}</p>
+                        )}
+                        {selectedClient.renovationPurpose && (
+                          <p className="text-sm text-text-muted mt-1"><span className="text-text-faint">מטרה:</span> {selectedClient.renovationPurpose}</p>
+                        )}
+                        {selectedClient.estimatedBudget && (
+                          <p className="text-sm text-text-muted mt-1"><span className="text-text-faint">תקציב משוער:</span> {Number(selectedClient.estimatedBudget).toLocaleString()} &#x20AA;</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <button onClick={() => startEdit(selectedClient)} className="p-2.5 rounded-xl text-text-muted hover:text-gold hover:bg-gold/5 transition-all duration-200">
                     <Edit3 className="w-4 h-4" />
@@ -506,7 +700,7 @@ export default function CrmClients() {
                 ) : (
                 <div className="space-y-3">
                   <button
-                    onClick={() => generatePortalLink(selectedClient.id)}
+                    onClick={() => generatePortalLink(selectedClient.id, selectedClient.email)}
                     disabled={portalLoading}
                     className="btn-gold text-sm flex items-center gap-2"
                   >
@@ -517,6 +711,13 @@ export default function CrmClients() {
                     )}
                     שלח לינק לאזור אישי
                   </button>
+
+                  {portalEmailSent && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm">
+                      <Mail className="w-4 h-4" />
+                      <span>הלינק נשלח למייל {portalEmailSent}</span>
+                    </div>
+                  )}
 
                   {portalUrl && (
                     <div className="space-y-2">
@@ -639,7 +840,7 @@ export default function CrmClients() {
     return (
       <div className="space-y-6 animate-in max-w-lg mx-auto">
         <button
-          onClick={() => { setShowAddForm(false); setEditingClient(null); }}
+          onClick={() => { setShowAddForm(false); setEditingClient(null); setShowPartner(false); }}
           className="flex items-center gap-1 text-gold text-sm hover:underline"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -648,126 +849,344 @@ export default function CrmClients() {
         <h2 className="text-xl font-heading text-text-primary">
           {editingClient ? "עריכת לקוח" : "לקוח חדש"}
         </h2>
-        <form onSubmit={handleSubmit} className="card-static space-y-4">
-          <div>
-            <label className="text-text-secondary text-sm font-medium block mb-1">שם הלקוח *</label>
-            <input
-              type="text"
-              className="input-field"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-text-secondary text-sm font-medium block mb-1">טלפון</label>
-              <input
-                type="tel"
-                className="input-field"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                dir="ltr"
-              />
+        <form onSubmit={handleSubmit} className="card-static space-y-6">
+
+          {/* Section 1: Primary Client */}
+          <div className="space-y-4">
+            <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+              <User className="w-4 h-4 text-gold" />
+              לקוח/ה ראשי/ת
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">שם פרטי *</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">שם משפחה</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-text-secondary text-sm font-medium block mb-1">מייל</label>
-              <input
-                type="email"
-                className="input-field"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                dir="ltr"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">טלפון</label>
+                <input
+                  type="tel"
+                  className="input-field"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">מייל</label>
+                <input
+                  type="email"
+                  className="input-field"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="text-text-secondary text-sm font-medium block mb-1">כתובת</label>
-            <input
-              type="text"
-              className="input-field"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="text-text-secondary text-sm font-medium block mb-1">הערות פנימיות</label>
-            <textarea
-              className="input-field h-20 resize-none"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            />
           </div>
 
-          {/* Intake — Project Details */}
-          {!editingClient && (
-            <div className="border-t border-border-subtle pt-4 mt-4 space-y-4">
-              <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-gold" />
-                פרטי הפרויקט (שאלון קליטה)
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Section 2: Partner / Second Client — collapsible */}
+          <div className="border-t border-border-subtle pt-4">
+            {!showPartner ? (
+              <button
+                type="button"
+                onClick={() => setShowPartner(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-border-subtle hover:border-gold/40 text-text-muted hover:text-gold transition-all duration-200 text-sm font-medium"
+              >
+                <UserPlus className="w-4 h-4" />
+                הוסף לקוח/ה נוסף/ת (שותף/בן זוג)
+              </button>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gold" />
+                    לקוח/ה נוסף/ת
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPartner(false);
+                      setFormData({ ...formData, partner1FirstName: "", partner1LastName: "", partner1Phone: "", partner1Email: "" });
+                    }}
+                    className="p-1.5 rounded-lg text-text-muted hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                    title="הסר לקוח/ה נוסף/ת"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-text-secondary text-sm font-medium block mb-1">שם פרטי</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={formData.partner1FirstName}
+                      onChange={(e) => setFormData({ ...formData, partner1FirstName: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-text-secondary text-sm font-medium block mb-1">שם משפחה</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={formData.partner1LastName}
+                      onChange={(e) => setFormData({ ...formData, partner1LastName: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-text-secondary text-sm font-medium block mb-1">טלפון</label>
+                    <input
+                      type="tel"
+                      className="input-field"
+                      value={formData.partner1Phone}
+                      onChange={(e) => setFormData({ ...formData, partner1Phone: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-text-secondary text-sm font-medium block mb-1">מייל</label>
+                    <input
+                      type="email"
+                      className="input-field"
+                      value={formData.partner1Email}
+                      onChange={(e) => setFormData({ ...formData, partner1Email: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Residential Address */}
+          <div className="border-t border-border-subtle pt-4 space-y-4">
+            <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+              <Home className="w-4 h-4 text-gold" />
+              כתובת מגורים
+            </h3>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">רחוב ומספר</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.street}
+                onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                placeholder="הרצל 42"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">קומה</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={formData.floor}
+                  onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                  placeholder="3"
+                />
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">דירה</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={formData.apartment}
+                  onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
+                  placeholder="10"
+                />
+              </div>
+              <div>
+                <label className="text-text-secondary text-sm font-medium block mb-1">שכונה <span className="text-text-faint text-xs">(אופציונלי)</span></label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={formData.neighborhood}
+                  onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">עיר</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="תל אביב"
+              />
+            </div>
+          </div>
+
+          {/* Section 4: Renovation Property */}
+          <div className="border-t border-border-subtle pt-4 space-y-4">
+            <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-gold" />
+              נכס לשיפוץ
+            </h3>
+
+            {/* Same address checkbox */}
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, renovationSameAddress: !formData.renovationSameAddress })}
+              className="flex items-center gap-3 cursor-pointer group w-full text-right"
+            >
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                formData.renovationSameAddress
+                  ? "bg-gold border-gold"
+                  : "border-border-subtle group-hover:border-gold/40"
+              }`}>
+                {formData.renovationSameAddress && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm text-text-primary font-medium">כתובת זהה לכתובת המגורים</span>
+            </button>
+
+            {formData.renovationSameAddress ? (
+              <div className="bg-gradient-to-br from-bg-surface to-bg-surface-2 rounded-xl p-4">
+                <p className="text-sm text-text-muted flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-gold flex-shrink-0" />
+                  הנכס נמצא בכתובת המגורים
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
                 <div>
-                  <label className="text-text-secondary text-sm font-medium block mb-1">כתובת הנכס</label>
+                  <label className="text-text-secondary text-sm font-medium block mb-1">רחוב ומספר</label>
                   <input
                     type="text"
                     className="input-field"
-                    value={formData.propertyAddress}
-                    onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
-                    placeholder="רחוב ומספר"
+                    value={formData.renovationStreet}
+                    onChange={(e) => setFormData({ ...formData, renovationStreet: e.target.value })}
+                    placeholder="רחוב ומספר של הנכס"
                   />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-text-secondary text-sm font-medium block mb-1">קומה</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={formData.renovationFloor}
+                      onChange={(e) => setFormData({ ...formData, renovationFloor: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-text-secondary text-sm font-medium block mb-1">דירה</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={formData.renovationApartment}
+                      onChange={(e) => setFormData({ ...formData, renovationApartment: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-text-secondary text-sm font-medium block mb-1">שכונה <span className="text-text-faint text-xs">(אופציונלי)</span></label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={formData.renovationNeighborhood}
+                      onChange={(e) => setFormData({ ...formData, renovationNeighborhood: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="text-text-secondary text-sm font-medium block mb-1">עיר</label>
                   <input
                     type="text"
                     className="input-field"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="תל אביב"
+                    value={formData.renovationCity}
+                    onChange={(e) => setFormData({ ...formData, renovationCity: e.target.value })}
+                    placeholder="עיר הנכס"
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-text-secondary text-sm font-medium block mb-1">פרטי השיפוץ</label>
-                <textarea
-                  className="input-field h-20 resize-none"
-                  value={formData.renovationDetails}
-                  onChange={(e) => setFormData({ ...formData, renovationDetails: e.target.value })}
-                  placeholder="תיאור קצר של העבודה הנדרשת..."
+            )}
+
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">דרך גישה</label>
+              <textarea
+                className="input-field h-16 resize-none"
+                value={formData.accessInstructions}
+                onChange={(e) => setFormData({ ...formData, accessInstructions: e.target.value })}
+                placeholder="קוד כניסה, הנחיות הגעה, הערות לגישה..."
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">פרטי השיפוץ</label>
+              <textarea
+                className="input-field h-20 resize-none"
+                value={formData.renovationDetails}
+                onChange={(e) => setFormData({ ...formData, renovationDetails: e.target.value })}
+                placeholder="תיאור קצר של העבודה הנדרשת..."
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">מטרת השיפוץ</label>
+              <select
+                className="input-field"
+                value={formData.renovationPurpose}
+                onChange={(e) => setFormData({ ...formData, renovationPurpose: e.target.value })}
+              >
+                <option value="">בחרי מטרה...</option>
+                <option value="דירת מגורים">דירת מגורים</option>
+                <option value="משרד">משרד</option>
+                <option value="חנות/עסק">חנות/עסק</option>
+                <option value="דירת Airbnb">דירת Airbnb</option>
+                <option value="אחר">אחר</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">תקציב משוער</label>
+              <div className="relative">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">&#x20AA;</span>
+                <input
+                  type="number"
+                  className="input-field pr-8"
+                  value={formData.estimatedBudget}
+                  onChange={(e) => setFormData({ ...formData, estimatedBudget: e.target.value })}
+                  placeholder="0"
+                  dir="ltr"
                 />
               </div>
-              <div>
-                <label className="text-text-secondary text-sm font-medium block mb-1">מטרת השיפוץ</label>
-                <select
-                  className="input-field"
-                  value={formData.renovationPurpose}
-                  onChange={(e) => setFormData({ ...formData, renovationPurpose: e.target.value })}
-                >
-                  <option value="">בחרי מטרה...</option>
-                  <option value="דירת מגורים">דירת מגורים</option>
-                  <option value="משרד">משרד</option>
-                  <option value="חנות/עסק">חנות/עסק</option>
-                  <option value="דירת Airbnb">דירת Airbnb</option>
-                  <option value="אחר">אחר</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-text-secondary text-sm font-medium block mb-1">תקציב משוער</label>
-                <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">&#x20AA;</span>
-                  <input
-                    type="number"
-                    className="input-field pr-8"
-                    value={formData.estimatedBudget}
-                    onChange={(e) => setFormData({ ...formData, estimatedBudget: e.target.value })}
-                    placeholder="0"
-                    dir="ltr"
-                  />
-                </div>
-              </div>
             </div>
-          )}
+          </div>
+
+          {/* Section 5: Internal Notes */}
+          <div className="border-t border-border-subtle pt-4 space-y-4">
+            <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+              <FileText className="w-4 h-4 text-gold" />
+              הערות פנימיות
+            </h3>
+            <textarea
+              className="input-field h-20 resize-none"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="הערות שלא יוצגו ללקוח..."
+            />
+          </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button type="submit" disabled={saving} className="btn-gold w-full">
@@ -787,7 +1206,7 @@ export default function CrmClients() {
         <h2 className="text-xl font-heading font-bold text-gradient-gold">הלקוחות שלי</h2>
         <button
           onClick={() => {
-            setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" });
+            setFormData({ ...EMPTY_FORM });
             setEditingClient(null);
             setShowAddForm(true);
           }}
@@ -855,7 +1274,7 @@ export default function CrmClients() {
             </p>
             {!search && (
               <button
-                onClick={() => { setFormData({ name: "", phone: "", email: "", address: "", notes: "", propertyAddress: "", city: "", renovationDetails: "", renovationPurpose: "", estimatedBudget: "" }); setEditingClient(null); setShowAddForm(true); }}
+                onClick={() => { setFormData({ ...EMPTY_FORM }); setEditingClient(null); setShowAddForm(true); }}
                 className="btn-gold text-sm flex items-center gap-1.5 mx-auto"
               >
                 <Plus className="w-4 h-4" /> לקוח חדש

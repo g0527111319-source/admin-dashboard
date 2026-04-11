@@ -94,20 +94,64 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, phone, email, address, notes } = body;
+    const {
+      firstName, lastName, phone, email,
+      partner1FirstName, partner1LastName, partner1Phone, partner1Email,
+      street, floor, apartment, neighborhood, city,
+      renovationSameAddress, renovationStreet, renovationFloor,
+      renovationApartment, renovationNeighborhood, renovationCity,
+      renovationDetails, renovationPurpose, estimatedBudget,
+      accessInstructions, notes,
+      name: legacyName,
+    } = body;
 
-    if (!name || !name.trim()) {
+    // Auto-compute name from firstName + lastName for backwards compatibility
+    let computedName = legacyName?.trim() || "";
+    if (firstName?.trim()) {
+      computedName = `${firstName.trim()} ${(lastName || "").trim()}`.trim();
+      if (partner1FirstName?.trim()) {
+        const partnerName = `${partner1FirstName.trim()} ${(partner1LastName || "").trim()}`.trim();
+        computedName = `${computedName} ו${partnerName}`;
+      }
+    }
+
+    if (!computedName) {
       return NextResponse.json({ error: "שם לקוח הוא שדה חובה" }, { status: 400 });
     }
+
+    // Build legacy address from structured fields
+    const addressParts = [street, city].filter(Boolean);
+    const legacyAddress = addressParts.length > 0 ? addressParts.join(", ") : null;
 
     const client = await prisma.crmClient.create({
       data: {
         designerId,
-        name: name.trim(),
+        name: computedName,
         phone: phone?.trim() || null,
         email: email?.trim() || null,
-        address: address?.trim() || null,
+        address: legacyAddress,
         notes: notes?.trim() || null,
+        firstName: firstName?.trim() || null,
+        lastName: lastName?.trim() || null,
+        partner1FirstName: partner1FirstName?.trim() || null,
+        partner1LastName: partner1LastName?.trim() || null,
+        partner1Phone: partner1Phone?.trim() || null,
+        partner1Email: partner1Email?.trim() || null,
+        street: street?.trim() || null,
+        floor: floor?.trim() || null,
+        apartment: apartment?.trim() || null,
+        neighborhood: neighborhood?.trim() || null,
+        city: city?.trim() || null,
+        renovationSameAddress: renovationSameAddress === true,
+        renovationStreet: renovationStreet?.trim() || null,
+        renovationFloor: renovationFloor?.trim() || null,
+        renovationApartment: renovationApartment?.trim() || null,
+        renovationNeighborhood: renovationNeighborhood?.trim() || null,
+        renovationCity: renovationCity?.trim() || null,
+        renovationDetails: renovationDetails?.trim() || null,
+        renovationPurpose: renovationPurpose?.trim() || null,
+        estimatedBudget: estimatedBudget?.toString()?.trim() || null,
+        accessInstructions: accessInstructions?.trim() || null,
       },
     });
 

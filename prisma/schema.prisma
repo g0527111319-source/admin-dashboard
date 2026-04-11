@@ -526,11 +526,38 @@ model CrmClient {
   designerId     String
   designer       Designer  @relation(fields: [designerId], references: [id])
 
-  name           String    // שם הלקוח
+  name           String    // שם הלקוח (auto-computed for backwards compat)
   phone          String?   // טלפון
   email          String?   // מייל
-  address        String?   // כתובת הנכס
+  address        String?   // כתובת הנכס (legacy)
   notes          String?   // הערות פנימיות
+
+  // Structured name fields
+  firstName          String?   // שם פרטי - לקוח 1
+  lastName           String?   // שם משפחה - לקוח 1
+  partner1FirstName  String?   // שם פרטי - לקוח 2 (שותף/בן זוג)
+  partner1LastName   String?   // שם משפחה - לקוח 2
+  partner1Phone      String?   // טלפון לקוח 2
+  partner1Email      String?   // מייל לקוח 2
+
+  // Structured address - residential
+  street             String?   // רחוב ומספר
+  floor              String?   // קומה
+  apartment          String?   // דירה
+  neighborhood       String?   // שכונה
+  city               String?   // עיר
+
+  // Renovation property
+  renovationSameAddress  Boolean @default(false)  // הנכס זהה לכתובת המגורים
+  renovationStreet       String?  // רחוב הנכס
+  renovationFloor        String?  // קומה
+  renovationApartment    String?  // דירה
+  renovationNeighborhood String?  // שכונה
+  renovationCity         String?  // עיר
+  renovationDetails      String?  // פרטי השיפוץ
+  renovationPurpose      String?  // מטרת השיפוץ
+  estimatedBudget        String?  // תקציב משוער
+  accessInstructions     String?  // דרך גישה
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
