@@ -44,22 +44,45 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(limitParam || "50");
     const skip = (page - 1) * limit;
 
-    const clients = await prisma.crmClient.findMany({
-      where,
-      include: {
-        projects: {
-          where: { deletedAt: null },
-          select: { id: true, name: true, status: true },
-        },
-        _count: {
-          select: {
-            projects: { where: { deletedAt: null } },
+    let clients;
+    try {
+      clients = await prisma.crmClient.findMany({
+        where,
+        include: {
+          projects: {
+            where: { deletedAt: null },
+            select: { id: true, name: true, status: true },
+          },
+          _count: {
+            select: {
+              projects: { where: { deletedAt: null } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-      ...(usePagination ? { take: limit, skip } : {}),
-    });
+        orderBy: { createdAt: "desc" },
+        ...(usePagination ? { take: limit, skip } : {}),
+      });
+    } catch {
+      // Fallback: new columns may not exist — use select for core fields only
+      clients = await prisma.crmClient.findMany({
+        where,
+        select: {
+          id: true, designerId: true, name: true, phone: true, email: true,
+          address: true, notes: true, createdAt: true, updatedAt: true, deletedAt: true,
+          projects: {
+            where: { deletedAt: null },
+            select: { id: true, name: true, status: true },
+          },
+          _count: {
+            select: {
+              projects: { where: { deletedAt: null } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        ...(usePagination ? { take: limit, skip } : {}),
+      });
+    }
 
     if (usePagination) {
       const total = await prisma.crmClient.count({ where });
@@ -123,37 +146,54 @@ export async function POST(req: NextRequest) {
     const addressParts = [street, city].filter(Boolean);
     const legacyAddress = addressParts.length > 0 ? addressParts.join(", ") : null;
 
-    const client = await prisma.crmClient.create({
-      data: {
-        designerId,
-        name: computedName,
-        phone: phone?.trim() || null,
-        email: email?.trim() || null,
-        address: legacyAddress,
-        notes: notes?.trim() || null,
-        firstName: firstName?.trim() || null,
-        lastName: lastName?.trim() || null,
-        partner1FirstName: partner1FirstName?.trim() || null,
-        partner1LastName: partner1LastName?.trim() || null,
-        partner1Phone: partner1Phone?.trim() || null,
-        partner1Email: partner1Email?.trim() || null,
-        street: street?.trim() || null,
-        floor: floor?.trim() || null,
-        apartment: apartment?.trim() || null,
-        neighborhood: neighborhood?.trim() || null,
-        city: city?.trim() || null,
-        renovationSameAddress: renovationSameAddress === true,
-        renovationStreet: renovationStreet?.trim() || null,
-        renovationFloor: renovationFloor?.trim() || null,
-        renovationApartment: renovationApartment?.trim() || null,
-        renovationNeighborhood: renovationNeighborhood?.trim() || null,
-        renovationCity: renovationCity?.trim() || null,
-        renovationDetails: renovationDetails?.trim() || null,
-        renovationPurpose: renovationPurpose?.trim() || null,
-        estimatedBudget: estimatedBudget?.toString()?.trim() || null,
-        accessInstructions: accessInstructions?.trim() || null,
-      },
-    });
+    // Try creating with all new fields; fall back to core fields if DB not migrated
+    let client;
+    try {
+      client = await prisma.crmClient.create({
+        data: {
+          designerId,
+          name: computedName,
+          phone: phone?.trim() || null,
+          email: email?.trim() || null,
+          address: legacyAddress,
+          notes: notes?.trim() || null,
+          firstName: firstName?.trim() || null,
+          lastName: lastName?.trim() || null,
+          partner1FirstName: partner1FirstName?.trim() || null,
+          partner1LastName: partner1LastName?.trim() || null,
+          partner1Phone: partner1Phone?.trim() || null,
+          partner1Email: partner1Email?.trim() || null,
+          street: street?.trim() || null,
+          floor: floor?.trim() || null,
+          apartment: apartment?.trim() || null,
+          neighborhood: neighborhood?.trim() || null,
+          city: city?.trim() || null,
+          renovationSameAddress: renovationSameAddress === true,
+          renovationStreet: renovationStreet?.trim() || null,
+          renovationFloor: renovationFloor?.trim() || null,
+          renovationApartment: renovationApartment?.trim() || null,
+          renovationNeighborhood: renovationNeighborhood?.trim() || null,
+          renovationCity: renovationCity?.trim() || null,
+          renovationDetails: renovationDetails?.trim() || null,
+          renovationPurpose: renovationPurpose?.trim() || null,
+          estimatedBudget: estimatedBudget?.toString()?.trim() || null,
+          accessInstructions: accessInstructions?.trim() || null,
+        },
+      });
+    } catch (createError) {
+      // Fallback: new columns may not exist in DB yet — create with core fields only
+      console.warn("CRM client create with new fields failed, falling back:", createError);
+      client = await prisma.crmClient.create({
+        data: {
+          designerId,
+          name: computedName,
+          phone: phone?.trim() || null,
+          email: email?.trim() || null,
+          address: legacyAddress,
+          notes: notes?.trim() || null,
+        },
+      });
+    }
 
     return NextResponse.json(client, { status: 201 });
   } catch (error) {

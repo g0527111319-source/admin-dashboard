@@ -421,11 +421,13 @@ export default function CrmClients() {
     setShowAddForm(true);
   };
 
+  const [portalError, setPortalError] = useState("");
   const generatePortalLink = async (clientId: string, clientEmail?: string | null) => {
     setPortalLoading(true);
     setPortalUrl("");
     setPortalCopied(false);
     setPortalEmailSent(null);
+    setPortalError("");
     try {
       const res = await fetch(`/api/designer/crm/clients/${clientId}/portal-token`, {
         method: "POST",
@@ -437,10 +439,16 @@ export default function CrmClients() {
         if (data.emailSent && data.emailRecipients?.length > 0) {
           setPortalEmailSent(data.emailRecipients.join(", "));
           setTimeout(() => setPortalEmailSent(null), 5000);
+        } else if (clientEmail) {
+          // Email was expected but not sent — notify user
+          setPortalEmailSent(null);
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setPortalError(errData.error || "שגיאה ביצירת לינק");
       }
     } catch {
-      console.error("Failed to generate portal link");
+      setPortalError("שגיאת רשת — נסה שוב");
     } finally {
       setPortalLoading(false);
     }
@@ -711,6 +719,13 @@ export default function CrmClients() {
                     )}
                     שלח לינק לאזור אישי
                   </button>
+
+                  {portalError && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 text-red-600 text-sm">
+                      <X className="w-4 h-4" />
+                      <span>{portalError}</span>
+                    </div>
+                  )}
 
                   {portalEmailSent && (
                     <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm">

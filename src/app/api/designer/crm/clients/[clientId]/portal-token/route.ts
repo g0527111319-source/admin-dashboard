@@ -17,10 +17,25 @@ export async function POST(
 
     const { clientId } = await params;
 
-    // Verify designer ownership
-    const client = await prisma.crmClient.findFirst({
-      where: { id: clientId, designerId, deletedAt: null },
-    });
+    // Verify designer ownership — select only core fields to avoid issues
+    // with new schema columns that may not exist in production DB yet
+    let client;
+    try {
+      client = await prisma.crmClient.findFirst({
+        where: { id: clientId, designerId, deletedAt: null },
+        select: {
+          id: true, name: true, email: true,
+          firstName: true, lastName: true,
+          partner1Email: true,
+        },
+      });
+    } catch {
+      // Fallback if new columns don't exist yet
+      client = await prisma.crmClient.findFirst({
+        where: { id: clientId, designerId, deletedAt: null },
+        select: { id: true, name: true, email: true },
+      });
+    }
     if (!client) {
       return NextResponse.json({ error: "לקוח לא נמצא" }, { status: 404 });
     }
@@ -50,14 +65,17 @@ export async function POST(
     const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://admin-dashboard-nu-mocha.vercel.app";
     const portalFullUrl = `${APP_URL}/client-portal/${portalToken.token}`;
     const designerName = designer?.fullName || "המעצבת";
-    const clientDisplayName = client.firstName
-      ? `${client.firstName} ${client.lastName || ""}`.trim()
+    const clientFirstName = "firstName" in client ? (client as { firstName?: string }).firstName : undefined;
+    const clientLastName = "lastName" in client ? (client as { lastName?: string }).lastName : undefined;
+    const partnerEmail = "partner1Email" in client ? (client as { partner1Email?: string }).partner1Email : undefined;
+    const clientDisplayName = clientFirstName
+      ? `${clientFirstName} ${clientLastName || ""}`.trim()
       : client.name;
 
     // Send portal link email to client (and partner if they have email)
     const emailRecipients: string[] = [];
     if (client.email) emailRecipients.push(client.email);
-    if (client.partner1Email) emailRecipients.push(client.partner1Email);
+    if (partnerEmail) emailRecipients.push(partnerEmail);
 
     if (emailRecipients.length > 0) {
       try {

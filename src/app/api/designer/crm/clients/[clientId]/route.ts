@@ -54,10 +54,20 @@ export async function PATCH(
     const { clientId } = await params;
     const body = await req.json();
 
-    // Verify ownership
-    const existing = await prisma.crmClient.findFirst({
-      where: { id: clientId, designerId, deletedAt: null },
-    });
+    // Verify ownership — use select to avoid crashing on missing columns
+    let existing;
+    try {
+      existing = await prisma.crmClient.findFirst({
+        where: { id: clientId, designerId, deletedAt: null },
+      });
+    } catch {
+      // New columns may not exist yet — fall back to core fields
+      existing = await prisma.crmClient.findFirst({
+        where: { id: clientId, designerId, deletedAt: null },
+        select: { id: true, name: true, email: true, phone: true, address: true, notes: true,
+                  designerId: true, createdAt: true, updatedAt: true, deletedAt: true },
+      });
+    }
     if (!existing) {
       return NextResponse.json({ error: "לקוח לא נמצא" }, { status: 404 });
     }
@@ -102,10 +112,12 @@ export async function PATCH(
     if (accessInstructions !== undefined) updateData.accessInstructions = accessInstructions?.trim() || null;
 
     // Auto-compute name for backwards compatibility
-    const fn = firstName !== undefined ? firstName?.trim() : existing.firstName;
-    const ln = lastName !== undefined ? lastName?.trim() : existing.lastName;
-    const p1fn = partner1FirstName !== undefined ? partner1FirstName?.trim() : existing.partner1FirstName;
-    const p1ln = partner1LastName !== undefined ? partner1LastName?.trim() : existing.partner1LastName;
+    // Use safe access since existing may lack new fields if DB not migrated
+    const ex = existing as Record<string, unknown>;
+    const fn = firstName !== undefined ? firstName?.trim() : (ex.firstName as string | undefined);
+    const ln = lastName !== undefined ? lastName?.trim() : (ex.lastName as string | undefined);
+    const p1fn = partner1FirstName !== undefined ? partner1FirstName?.trim() : (ex.partner1FirstName as string | undefined);
+    const p1ln = partner1LastName !== undefined ? partner1LastName?.trim() : (ex.partner1LastName as string | undefined);
 
     if (fn) {
       let computedName = `${fn} ${(ln || "").trim()}`.trim();
@@ -119,17 +131,33 @@ export async function PATCH(
     }
 
     // Build legacy address from structured fields
-    const st = street !== undefined ? street?.trim() : existing.street;
-    const ct = city !== undefined ? city?.trim() : existing.city;
+    const st = street !== undefined ? street?.trim() : (ex.street as string | undefined);
+    const ct = city !== undefined ? city?.trim() : (ex.city as string | undefined);
     const addrParts = [st, ct].filter(Boolean);
     if (addrParts.length > 0) {
       updateData.address = addrParts.join(", ");
     }
 
-    const client = await prisma.crmClient.update({
-      where: { id: clientId },
-      data: updateData,
-    });
+    let client;
+    try {
+      client = await prisma.crmClient.update({
+        where: { id: clientId },
+        data: updateData,
+      });
+    } catch (updateError) {
+      // Fallback: new columns may not exist — update only core fields
+      console.warn("CRM client update with new fields failed, falling back:", updateError);
+      const coreData: Record<string, unknown> = {};
+      if (updateData.name !== undefined) coreData.name = updateData.name;
+      if (updateData.phone !== undefined) coreData.phone = updateData.phone;
+      if (updateData.email !== undefined) coreData.email = updateData.email;
+      if (updateData.address !== undefined) coreData.address = updateData.address;
+      if (updateData.notes !== undefined) coreData.notes = updateData.notes;
+      client = await prisma.crmClient.update({
+        where: { id: clientId },
+        data: coreData,
+      });
+    }
 
     return NextResponse.json(client);
   } catch (error) {
