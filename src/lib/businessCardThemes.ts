@@ -1,5 +1,5 @@
 ﻿// ==========================================
-// ׳¢׳¨׳›׳•׳× ׳ ׳•׳©׳ ׳׳›׳¨׳˜׳™׳¡ ׳‘׳™׳§׳•׳¨ ׳“׳™׳’׳™׳˜׳׳™
+// ערכות נושא לכרטיס ביקור דיגיטלי
 // 10 theme presets for digital business cards
 // ==========================================
 
@@ -33,7 +33,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "elegant-gold",
     name: "Elegant Gold",
-    nameHe: "׳–׳”׳‘ ׳׳׳’׳ ׳˜׳™",
+    nameHe: "זהב אלגנטי",
     fontStyle: "serif",
     cardStyle: "rounded",
     colors: {
@@ -55,7 +55,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "modern-minimal",
     name: "Modern Minimal",
-    nameHe: "׳׳™׳ ׳™׳׳׳™ ׳׳•׳“׳¨׳ ׳™",
+    nameHe: "מינימלי מודרני",
     fontStyle: "sans",
     cardStyle: "sharp",
     colors: {
@@ -77,7 +77,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "dark-luxe",
     name: "Dark Luxe",
-    nameHe: "׳™׳•׳§׳¨׳” ׳›׳”׳”",
+    nameHe: "יוקרה כהה",
     fontStyle: "serif",
     cardStyle: "rounded",
     colors: {
@@ -99,7 +99,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "ocean-blue",
     name: "Ocean Blue",
-    nameHe: "׳›׳—׳•׳ ׳׳•׳§׳™׳™׳ ׳•׳¡",
+    nameHe: "כחול אוקיינוס",
     fontStyle: "sans",
     cardStyle: "rounded",
     colors: {
@@ -121,7 +121,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "rose-garden",
     name: "Rose Garden",
-    nameHe: "׳’׳ ׳•׳¨׳“׳™׳",
+    nameHe: "גן ורדים",
     fontStyle: "mixed",
     cardStyle: "soft",
     colors: {
@@ -143,7 +143,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "forest-green",
     name: "Forest Green",
-    nameHe: "׳™׳¨׳•׳§ ׳™׳¢׳¨",
+    nameHe: "ירוק יער",
     fontStyle: "mixed",
     cardStyle: "rounded",
     colors: {
@@ -165,7 +165,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "royal-purple",
     name: "Royal Purple",
-    nameHe: "׳¡׳’׳•׳ ׳׳׳›׳•׳×׳™",
+    nameHe: "סגול מלכותי",
     fontStyle: "serif",
     cardStyle: "rounded",
     colors: {
@@ -187,7 +187,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "sunset-warm",
     name: "Sunset Warm",
-    nameHe: "׳©׳§׳™׳¢׳” ׳—׳׳”",
+    nameHe: "שקיעה חמה",
     fontStyle: "sans",
     cardStyle: "soft",
     colors: {
@@ -209,7 +209,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "arctic-clean",
     name: "Arctic Clean",
-    nameHe: "׳׳¨׳§׳˜׳™ ׳ ׳§׳™",
+    nameHe: "ארקטי נקי",
     fontStyle: "sans",
     cardStyle: "sharp",
     colors: {
@@ -231,7 +231,7 @@ export const cardThemes: CardTheme[] = [
   {
     id: "terracotta",
     name: "Terracotta",
-    nameHe: "׳˜׳¨׳§׳•׳˜׳”",
+    nameHe: "טרקוטה",
     fontStyle: "mixed",
     cardStyle: "rounded",
     colors: {
@@ -271,16 +271,16 @@ export type SocialLinkType =
   | "phone";
 
 export const socialLinkConfig: Record<SocialLinkType, { label: string; labelHe: string; icon: string; placeholder: string; prefix?: string }> = {
-  facebook: { label: "Facebook", labelHe: "׳₪׳™׳™׳¡׳‘׳•׳§", icon: "fb", placeholder: "https://facebook.com/...", },
-  instagram: { label: "Instagram", labelHe: "׳׳™׳ ׳¡׳˜׳’׳¨׳", icon: "ig", placeholder: "@username", },
-  whatsapp: { label: "WhatsApp", labelHe: "׳•׳•׳׳˜׳¡׳׳₪", icon: "wa", placeholder: "05X-XXXXXXX", prefix: "https://wa.me/972", },
-  email: { label: "Email", labelHe: "׳׳™׳™׳", icon: "mail", placeholder: "email@example.com", prefix: "mailto:", },
-  website: { label: "Website", labelHe: "׳׳×׳¨", icon: "web", placeholder: "https://...", },
-  linkedin: { label: "LinkedIn", labelHe: "׳׳™׳ ׳§׳“׳׳™׳", icon: "li", placeholder: "https://linkedin.com/in/...", },
-  pinterest: { label: "Pinterest", labelHe: "׳₪׳™׳ ׳˜׳¨׳¡׳˜", icon: "pin", placeholder: "https://pinterest.com/...", },
-  tiktok: { label: "TikTok", labelHe: "׳˜׳™׳§׳˜׳•׳§", icon: "tt", placeholder: "@username", },
-  youtube: { label: "YouTube", labelHe: "׳™׳•׳˜׳™׳•׳‘", icon: "yt", placeholder: "https://youtube.com/...", },
-  phone: { label: "Phone", labelHe: "׳˜׳׳₪׳•׳", icon: "ph", placeholder: "05X-XXXXXXX", prefix: "tel:", },
+  facebook: { label: "Facebook", labelHe: "פייסבוק", icon: "fb", placeholder: "https://facebook.com/...", },
+  instagram: { label: "Instagram", labelHe: "אינסטגרם", icon: "ig", placeholder: "@username", },
+  whatsapp: { label: "WhatsApp", labelHe: "וואטסאפ", icon: "wa", placeholder: "05X-XXXXXXX", prefix: "https://wa.me/972", },
+  email: { label: "Email", labelHe: "מייל", icon: "mail", placeholder: "email@example.com", prefix: "mailto:", },
+  website: { label: "Website", labelHe: "אתר", icon: "web", placeholder: "https://...", },
+  linkedin: { label: "LinkedIn", labelHe: "לינקדאין", icon: "li", placeholder: "https://linkedin.com/in/...", },
+  pinterest: { label: "Pinterest", labelHe: "פינטרסט", icon: "pin", placeholder: "https://pinterest.com/...", },
+  tiktok: { label: "TikTok", labelHe: "טיקטוק", icon: "tt", placeholder: "@username", },
+  youtube: { label: "YouTube", labelHe: "יוטיוב", icon: "yt", placeholder: "https://youtube.com/...", },
+  phone: { label: "Phone", labelHe: "טלפון", icon: "ph", placeholder: "05X-XXXXXXX", prefix: "tel:", },
 };
 
 // Personal field types
@@ -292,16 +292,16 @@ export interface PersonalField {
 }
 
 export const defaultFieldTemplates = [
-  { label: "׳©׳ ׳׳׳", icon: "user" },
-  { label: "׳×׳₪׳§׳™׳“", icon: "briefcase" },
-  { label: "׳˜׳׳₪׳•׳", icon: "phone" },
-  { label: "׳׳™׳™׳", icon: "mail" },
-  { label: "׳›׳×׳•׳‘׳×", icon: "mappin" },
-  { label: "׳¢׳™׳¨", icon: "city" },
-  { label: "׳׳×׳¨", icon: "globe" },
-  { label: "׳”׳×׳׳—׳•׳×", icon: "star" },
-  { label: "׳©׳ ׳•׳× ׳ ׳™׳¡׳™׳•׳", icon: "clock" },
-  { label: "׳—׳‘׳¨׳”", icon: "building" },
+  { label: "שם מלא", icon: "user" },
+  { label: "תפקיד", icon: "briefcase" },
+  { label: "טלפון", icon: "phone" },
+  { label: "מייל", icon: "mail" },
+  { label: "כתובת", icon: "mappin" },
+  { label: "עיר", icon: "city" },
+  { label: "אתר", icon: "globe" },
+  { label: "התמחות", icon: "star" },
+  { label: "שנות ניסיון", icon: "clock" },
+  { label: "חברה", icon: "building" },
 ];
 
 // Testimonial
@@ -312,8 +312,8 @@ export interface Testimonial {
 }
 
 // ==========================================
-// ׳’׳•׳₪׳ ׳™׳ ׳¢׳‘׳¨׳™׳™׳ ג€” Hebrew Font Options
-// 30 ׳’׳•׳₪׳ ׳™ ׳“׳₪׳•׳¡ + 10 ׳’׳•׳₪׳ ׳™ ׳›׳×׳‘ ׳™׳“
+// גופנים עבריים — Hebrew Font Options
+// 30 גופני דפוס + 10 גופני כתב יד
 // ==========================================
 export type FontCategory = "print" | "handwriting";
 
@@ -322,7 +322,7 @@ export interface FontOption {
   nameHe: string;
   family: string;
   category: FontCategory;
-  sampleText: string; // ׳“׳•׳’׳׳” ׳‘׳¢׳‘׳¨׳™׳×
+  sampleText: string; // דוגמה בעברית
 }
 
 // ===== 30 גופני דפוס =====
@@ -350,7 +350,7 @@ const handwritingFonts: FontOption[] = [
   { id: "sn-megila", nameHe: "מגילה", family: "'SN Megila', cursive", category: "handwriting", sampleText: "תחושה אמנותית וייחודית" },
 ];
 
-// ׳›׳ ׳”׳’׳•׳₪׳ ׳™׳ ׳™׳—׳“
+// כל הגופנים יחד
 export const fontOptions: FontOption[] = [...printFonts, ...handwritingFonts];
 export const printFontOptions: FontOption[] = printFonts;
 export const handwritingFontOptions: FontOption[] = handwritingFonts;
@@ -433,10 +433,10 @@ export interface BusinessCardData {
 
 export const defaultBusinessCard: BusinessCardData = {
   fields: [
-    { id: "1", label: "׳©׳ ׳׳׳", value: "", icon: "user" },
-    { id: "2", label: "׳×׳₪׳§׳™׳“", value: "", icon: "briefcase" },
-    { id: "3", label: "׳˜׳׳₪׳•׳", value: "", icon: "phone" },
-    { id: "4", label: "׳׳™׳™׳", value: "", icon: "mail" },
+    { id: "1", label: "שם מלא", value: "", icon: "user" },
+    { id: "2", label: "תפקיד", value: "", icon: "briefcase" },
+    { id: "3", label: "טלפון", value: "", icon: "phone" },
+    { id: "4", label: "מייל", value: "", icon: "mail" },
   ],
   socialLinks: [],
   galleryImages: [],
