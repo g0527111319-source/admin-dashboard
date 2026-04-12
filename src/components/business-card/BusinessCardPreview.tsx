@@ -521,20 +521,24 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                     } else if (rawUrl && !rawUrl.startsWith("http") && !rawUrl.startsWith("mailto:") && !rawUrl.startsWith("tel:")) {
                       href = "https://" + rawUrl;
                     }
-                    // mailto/tel: no target (native protocol). Web links: new tab.
-                    const isProtocol = social.type === "email" || social.type === "phone";
-                    return (<a key={i} href={href || "#"} {...(isProtocol ? {} : { target: "_blank", rel: "noopener noreferrer" })} style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: theme.cardStyle === "sharp" ? "4px" : "10px",
-                    background: colors.socialBg,
-                    border: `1px solid ${colors.border}`,
+                    // No target="_blank" — works in all browsers including mobile WebViews
+                    return (<a key={i} href={href || "#"} style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    width: 44,
+                    height: 44,
+                    minWidth: 44,
+                    minHeight: 44,
+                    borderRadius: theme.cardStyle === "sharp" ? "4px" : "10px",
+                    background: colors.socialBg,
+                    border: `1px solid ${colors.border}`,
                     cursor: "pointer",
-                    transition: "all 0.2s",
                     textDecoration: "none",
+                    position: "relative",
+                    zIndex: 2,
+                    WebkitTapHighlightColor: "rgba(0,0,0,0.1)",
+                    touchAction: "auto",
                 }} title={config?.labelHe || social.type}>
                     {getSocialIcon(social.type, 18, colors.socialIcon)}
                   </a>);
