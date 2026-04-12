@@ -507,9 +507,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                 {activeSocials.map((social, i) => {
                     const config = socialLinkConfig[social.type];
                     let href = social.url;
+                    // Deep-link types: whatsapp, email, phone — build with prefix
+                    const isDeepLink = social.type === "whatsapp" || social.type === "email" || social.type === "phone";
                     if (config?.prefix && href) {
-                      // For whatsapp: strip leading 0 and prepend prefix
                       if (social.type === "whatsapp") {
+                        // Strip leading 0 and dashes, prepend country prefix
                         const cleaned = href.replace(/^0/, "").replace(/[-\s]/g, "");
                         href = config.prefix + cleaned;
                       } else {
@@ -518,7 +520,8 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                     } else if (href && !href.startsWith("http") && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
                       href = "https://" + href;
                     }
-                    return (<a key={i} href={href || "#"} target={social.type === "email" || social.type === "phone" ? undefined : "_blank"} rel={social.type === "email" || social.type === "phone" ? undefined : "noopener noreferrer"} style={{
+                    // Deep links (whatsapp/email/phone) open in same window; web links open in new tab
+                    return (<a key={i} href={href || "#"} target={isDeepLink ? "_self" : "_blank"} rel={isDeepLink ? undefined : "noopener noreferrer"} style={{
                     width: 40,
                     height: 40,
                     borderRadius: theme.cardStyle === "sharp" ? "4px" : "10px",
