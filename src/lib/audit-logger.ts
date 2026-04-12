@@ -6,6 +6,7 @@ export type AuditAction =
   | "LOGIN_SUCCESS"
   | "LOGIN_FAILURE"
   | "FILE_UPLOAD"
+  | "FILE_DELETE"
   | "CONTRACT_SIGNED"
   | "ADMIN_SETTINGS_CHANGE"
   | "LOGOUT";

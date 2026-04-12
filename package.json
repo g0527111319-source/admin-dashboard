@@ -15,6 +15,7 @@
     "db:reset": "npx prisma db push --force-reset && npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1029.0",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
