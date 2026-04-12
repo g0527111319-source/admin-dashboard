@@ -1,18 +1,19 @@
 "use client";
 import { useState } from "react";
-import { CreditCard, Monitor, Smartphone, Save, Eye, EyeOff, Share2, } from "lucide-react";
+import { CreditCard, Monitor, Smartphone, Save, Eye, EyeOff, Share2, Check, Link2, } from "lucide-react";
 import type { BusinessCardData } from "@/lib/businessCardThemes";
 import { defaultBusinessCard } from "@/lib/businessCardThemes";
 import BusinessCardEditor from "./BusinessCardEditor";
 import BusinessCardPreview from "./BusinessCardPreview";
 interface BusinessCardBuilderProps {
     initialData?: BusinessCardData;
+    designerId?: string;
     userName?: string;
     userRole?: string;
     userPhone?: string;
     userEmail?: string;
 }
-export default function BusinessCardBuilder({ initialData, userName = "", userRole = "", userPhone = "", userEmail = "", }: BusinessCardBuilderProps) {
+export default function BusinessCardBuilder({ initialData, designerId, userName = "", userRole = "", userPhone = "", userEmail = "", }: BusinessCardBuilderProps) {
     const [cardData, setCardData] = useState<BusinessCardData>(() => {
         if (initialData)
             return initialData;
@@ -31,12 +32,41 @@ export default function BusinessCardBuilder({ initialData, userName = "", userRo
     const [showPreview, setShowPreview] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<string | null>(null);
+    const [shareState, setShareState] = useState<"idle" | "copied">("idle");
     const handleSave = async () => {
         setIsSaving(true);
         // TODO: API call to save business card
         await new Promise(r => setTimeout(r, 800));
         setIsSaving(false);
         setLastSaved(new Date().toLocaleTimeString("he-IL"));
+    };
+    const handleShare = async () => {
+        const shareUrl = designerId
+            ? `${window.location.origin}/projects?designer=${designerId}`
+            : window.location.href;
+        const shareData = {
+            title: `${userName} — כרטיס ביקור`,
+            text: `${userName} | ${userRole}`,
+            url: shareUrl,
+        };
+        // Try native share API (mobile)
+        if (typeof navigator !== "undefined" && navigator.share) {
+            try {
+                await navigator.share(shareData);
+                return;
+            } catch {
+                // User cancelled or not supported — fall through to copy
+            }
+        }
+        // Fallback: copy link to clipboard
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setShareState("copied");
+            setTimeout(() => setShareState("idle"), 2500);
+        } catch {
+            // Last resort: prompt
+            window.prompt("העתק את הקישור:", shareUrl);
+        }
     };
     return (<div className="space-y-4">
       {/* Header */}
@@ -53,9 +83,9 @@ export default function BusinessCardBuilder({ initialData, userName = "", userRo
             <Save className="w-4 h-4"/>
             {isSaving ? "שומר..." : "שמור"}
           </button>
-          <button className="btn-outline text-sm py-2 px-3 flex items-center gap-1.5">
-            <Share2 className="w-4 h-4"/>
-            <span className="hidden sm:inline">{"שתף"}</span>
+          <button onClick={handleShare} className={`text-sm py-2 px-3 flex items-center gap-1.5 transition-all ${shareState === "copied" ? "btn-gold" : "btn-outline"}`}>
+            {shareState === "copied" ? <Check className="w-4 h-4"/> : <Share2 className="w-4 h-4"/>}
+            <span className="hidden sm:inline">{shareState === "copied" ? "הקישור הועתק!" : "שתף"}</span>
           </button>
         </div>
       </div>
@@ -110,7 +140,7 @@ export default function BusinessCardBuilder({ initialData, userName = "", userRo
                   <div className="w-20 h-1 bg-gray-300 rounded-full"/>
                 </div>)}
 
-              <BusinessCardPreview data={cardData} viewMode={viewMode}/>
+              <BusinessCardPreview data={cardData} viewMode={viewMode} designerId={designerId}/>
 
               {viewMode === "mobile" && (<div className="flex justify-center mt-3">
                   <div className="w-8 h-8 border-2 border-gray-300 rounded-full"/>

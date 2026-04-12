@@ -1112,7 +1112,7 @@ export default function DesignerDashboard() {
                     {"תיק עבודות \u2190"}
                   </button>
                 </div>
-                <BusinessCardBuilder userName={designerData.fullName} userRole={designerData.specialization} userPhone={designerData.phone} userEmail={designerData.email} />
+                <BusinessCardBuilder designerId={designerIdForGate} userName={designerData.fullName} userRole={designerData.specialization} userPhone={designerData.phone} userEmail={designerData.email} />
               </div>
               </FeatureGate>
             )}

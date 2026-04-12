@@ -1,13 +1,22 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Phone, Mail, Globe, MapPin, User, Briefcase, Star, Clock, Building2, Facebook, Instagram, Linkedin, Youtube, MessageCircle, Image as ImageIcon, Quote, ChevronLeft, ChevronRight, X, QrCode, Play, Tag, ArrowLeftRight, BarChart3, Download, Navigation, Sun, Moon, Award, Users as UsersIcon, FolderKanban, } from "lucide-react";
 import type { BusinessCardData, CardColors, CardTheme, BeforeAfterItem, BusinessHours, ProfessionalStats, EntryAnimation, } from "@/lib/businessCardThemes";
 import { getThemeById, getMergedColors, getFontById } from "@/lib/businessCardThemes";
 
+interface PortfolioProject {
+    id: string;
+    title: string;
+    coverImageUrl: string | null;
+    category: string;
+    images: { imageUrl: string; thumbnailUrl?: string | null; mediumUrl?: string | null }[];
+}
+
 interface BusinessCardPreviewProps {
     data: BusinessCardData;
     viewMode: "mobile" | "desktop";
+    designerId?: string;
 }
 
 // Icon mapping
@@ -156,11 +165,21 @@ const animationClassStyles = `
 .bc-anim-stagger > *:nth-child(10) { animation-delay: 0.72s; }
 `;
 
-export default function BusinessCardPreview({ data, viewMode }: BusinessCardPreviewProps) {
+export default function BusinessCardPreview({ data, viewMode, designerId }: BusinessCardPreviewProps) {
     const [showGallery, setShowGallery] = useState(false);
     const [showTestimonials, setShowTestimonials] = useState(false);
     const [galleryIndex, setGalleryIndex] = useState(0);
     const [beforeAfterIndex, setBeforeAfterIndex] = useState(0);
+    const [portfolioProjects, setPortfolioProjects] = useState<PortfolioProject[]>([]);
+
+    // Fetch portfolio projects for this designer
+    useEffect(() => {
+        if (!designerId) return;
+        fetch(`/api/public/projects?designer=${designerId}`)
+            .then(res => res.ok ? res.json() : [])
+            .then((projects: PortfolioProject[]) => setPortfolioProjects(projects))
+            .catch(() => setPortfolioProjects([]));
+    }, [designerId]);
 
     const theme: CardTheme = getThemeById(data.themeId);
     const baseColors: CardColors = getMergedColors(theme, data.customColors);
@@ -711,6 +730,11 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                   <span style={{ fontSize: "0.8rem", fontWeight: 600, color: colors.text }}>
                       {"תיק עבודות"}
                   </span>
+                  {portfolioProjects.length > 0 && (
+                      <span style={{ fontSize: "0.65rem", color: colors.textMuted, marginRight: 4 }}>
+                          ({portfolioProjects.length})
+                      </span>
+                  )}
               </div>
               <div style={{
                   background: colors.socialBg,
@@ -725,22 +749,73 @@ export default function BusinessCardPreview({ data, viewMode }: BusinessCardPrev
                       gap: 8,
                       marginBottom: 12,
                   }}>
-                      {[1, 2, 3, 4].map((i) => (
-                          <div key={i} style={{
-                              aspectRatio: "4/3",
-                              borderRadius: theme.cardStyle === "sharp" ? "2px" : "8px",
-                              background: `linear-gradient(135deg, ${colors.primary}15, ${colors.secondary}25)`,
-                              border: `1px solid ${colors.border}`,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                          }}>
-                              <ImageIcon size={16} color={colors.textMuted} strokeWidth={1} style={{ opacity: 0.4 }} />
-                          </div>
-                      ))}
+                      {portfolioProjects.length > 0 ? (
+                          portfolioProjects.slice(0, 4).map((project) => {
+                              const imgSrc = project.images?.[0]?.mediumUrl
+                                  || project.images?.[0]?.thumbnailUrl
+                                  || project.images?.[0]?.imageUrl
+                                  || project.coverImageUrl;
+                              return (
+                                  <div key={project.id} style={{
+                                      aspectRatio: "4/3",
+                                      borderRadius: theme.cardStyle === "sharp" ? "2px" : "8px",
+                                      overflow: "hidden",
+                                      border: `1px solid ${colors.border}`,
+                                      position: "relative",
+                                      cursor: "pointer",
+                                  }}
+                                  onClick={() => window.open(`/projects/${project.id}`, "_blank")}
+                                  >
+                                      {imgSrc ? (
+                                          <Image
+                                              src={imgSrc}
+                                              alt={project.title}
+                                              fill
+                                              sizes="150px"
+                                              style={{ objectFit: "cover" }}
+                                          />
+                                      ) : (
+                                          <div style={{
+                                              width: "100%", height: "100%",
+                                              background: `linear-gradient(135deg, ${colors.primary}15, ${colors.secondary}25)`,
+                                              display: "flex", alignItems: "center", justifyContent: "center",
+                                          }}>
+                                              <ImageIcon size={16} color={colors.textMuted} strokeWidth={1} style={{ opacity: 0.4 }} />
+                                          </div>
+                                      )}
+                                      <div style={{
+                                          position: "absolute", bottom: 0, left: 0, right: 0,
+                                          background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
+                                          padding: "12px 6px 4px",
+                                      }}>
+                                          <span style={{ fontSize: "0.6rem", color: "#fff", fontWeight: 500 }}>
+                                              {project.title}
+                                          </span>
+                                      </div>
+                                  </div>
+                              );
+                          })
+                      ) : (
+                          [1, 2, 3, 4].map((i) => (
+                              <div key={i} style={{
+                                  aspectRatio: "4/3",
+                                  borderRadius: theme.cardStyle === "sharp" ? "2px" : "8px",
+                                  background: `linear-gradient(135deg, ${colors.primary}15, ${colors.secondary}25)`,
+                                  border: `1px solid ${colors.border}`,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                              }}>
+                                  <ImageIcon size={16} color={colors.textMuted} strokeWidth={1} style={{ opacity: 0.4 }} />
+                              </div>
+                          ))
+                      )}
                   </div>
                   <button
-                      onClick={() => window.open("/projects", "_blank")}
+                      onClick={() => window.open(
+                          designerId ? `/projects?designer=${designerId}` : "/projects",
+                          "_blank"
+                      )}
                       style={{
                           width: "100%",
                           padding: "8px 14px",
