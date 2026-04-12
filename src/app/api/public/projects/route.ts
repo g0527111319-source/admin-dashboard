@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
             specialization: true,
             instagram: true,
             website: true,
+            crmSettings: {
+              select: { logoUrl: true, companyName: true },
+            },
           },
         },
         images: {

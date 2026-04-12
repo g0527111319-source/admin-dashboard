@@ -25,6 +25,9 @@ export async function GET(
             specialization: true,
             instagram: true,
             website: true,
+            crmSettings: {
+              select: { logoUrl: true, companyName: true },
+            },
           },
         },
         images: {

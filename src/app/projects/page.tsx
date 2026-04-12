@@ -19,6 +19,7 @@ type Designer = {
   city: string | null;
   area: string | null;
   specialization: string | null;
+  crmSettings?: { logoUrl: string | null; companyName: string | null } | null;
 };
 
 type PublicProject = {
@@ -80,6 +81,7 @@ function ProjectsContent() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [styleFilter, setStyleFilter] = useState("all");
   const [designerName, setDesignerName] = useState<string | null>(null);
+  const [designerLogo, setDesignerLogo] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -95,6 +97,7 @@ function ProjectsContent() {
           // Extract designer name when filtered by designer
           if (designerParam && data.length > 0 && data[0].designer?.fullName) {
             setDesignerName(data[0].designer.fullName);
+            setDesignerLogo(data[0].designer?.crmSettings?.logoUrl || null);
           }
         }
       } catch (e) {
@@ -130,6 +133,15 @@ function ProjectsContent() {
         <div className="max-w-7xl mx-auto text-center">
           {designerParam && designerName ? (
             <>
+              {designerLogo && (
+                <div className="mb-6">
+                  <img
+                    src={designerLogo}
+                    alt={`לוגו ${designerName}`}
+                    className="mx-auto h-20 sm:h-28 w-auto object-contain rounded-xl"
+                  />
+                </div>
+              )}
               <h1 className="text-3xl sm:text-5xl font-heading font-bold mb-4">
                 תיק העבודות של <span className="text-[#C9A84C]">{designerName}</span>
               </h1>

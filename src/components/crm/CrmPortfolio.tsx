@@ -646,7 +646,9 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
             <FileUpload
               category="image"
               folder="portfolio"
-              label="העלאת תמונה לפרויקט"
+              label="העלאת תמונות לפרויקט (ניתן לבחור כמה)"
+              multiple
+              skipEditor
               maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
               onUpload={async (file: UploadedFile) => {
                 if (!selectedProject) return;

@@ -21,6 +21,7 @@ type Designer = {
   specialization: string | null;
   instagram: string | null;
   website: string | null;
+  crmSettings?: { logoUrl: string | null; companyName: string | null } | null;
 };
 
 type PublicProject = {
@@ -267,12 +268,20 @@ export default function ProjectPage() {
       <section className="border-b border-white/5 bg-[#0a0a0a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
           <div className="flex items-center gap-4">
-            {/* Avatar/Initials */}
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C9A84C]/30 to-[#C9A84C]/10 flex items-center justify-center border-2 border-[#C9A84C]/40">
-              <span className="text-lg font-heading font-bold text-[#C9A84C]">
-                {project.designer.fullName.charAt(0)}
-              </span>
-            </div>
+            {/* Avatar/Logo */}
+            {project.designer.crmSettings?.logoUrl ? (
+              <img
+                src={project.designer.crmSettings.logoUrl}
+                alt={`לוגו ${project.designer.fullName}`}
+                className="w-12 h-12 rounded-full object-cover border-2 border-[#C9A84C]/40"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C9A84C]/30 to-[#C9A84C]/10 flex items-center justify-center border-2 border-[#C9A84C]/40">
+                <span className="text-lg font-heading font-bold text-[#C9A84C]">
+                  {project.designer.fullName.charAt(0)}
+                </span>
+              </div>
+            )}
             <div>
               <p className="text-sm font-semibold text-white flex items-center gap-2">
                 <User className="w-3.5 h-3.5 text-[#C9A84C]" />
