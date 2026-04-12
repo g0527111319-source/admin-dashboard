@@ -1376,54 +1376,7 @@ textarea.input-field {
   animation: shimmer 2s ease-in-out infinite;
 }
 
-/* ============================
-   FLOATING ACTION BAR
-   ============================ */
-
-.floating-bar {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: var(--radius-2xl);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(201, 168, 76, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  animation: floatSubtle 4s ease-in-out infinite;
-}
-
-.floating-bar-btn {
-  @apply flex items-center justify-center rounded-xl transition-all ease-out;
-  width: 40px;
-  height: 40px;
-  color: var(--text-muted);
-}
-.floating-bar-btn:hover {
-  background: var(--gold-50);
-  color: var(--gold);
-  transform: scale(1.1);
-}
-
-.floating-bar-btn-primary {
-  @apply flex items-center justify-center rounded-xl;
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, #C9A84C, #D4B65E);
-  color: white;
-  box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
-  transition: all 0.3s var(--ease-out);
-}
-.floating-bar-btn-primary:hover {
-  transform: scale(1.1) rotate(45deg);
-  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4);
-}
+/* Floating action bar removed */
 
 /* ============================
    BREADCRUMB

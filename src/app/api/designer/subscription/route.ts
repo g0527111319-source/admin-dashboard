@@ -9,10 +9,8 @@ import {
 } from "@/lib/icount";
 
 function getDesignerId(req: NextRequest): string | null {
-  return (
-    req.headers.get("x-user-id") ||
-    new URL(req.url).searchParams.get("designerId")
-  );
+  // Security: only use authenticated user ID from middleware, never from query params
+  return req.headers.get("x-user-id");
 }
 
 // GET /api/designer/subscription — current subscription info

@@ -1138,24 +1138,7 @@ export default function DesignerDashboard() {
           </div>
         )}
 
-        {/* ============ FLOATING ACTION BAR ============ */}
-        <div className="floating-bar max-md:hidden">
-          <button onClick={() => setActiveTab("deals")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::130", "דיווח עסקה")}>
-            <HandCoins className="w-4 h-4" />
-          </button>
-          <button onClick={() => setActiveTab("clients")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::131", "לקוחות")}>
-            <Users className="w-4 h-4" />
-          </button>
-          <button onClick={() => setActiveTab("suppliers")} className="floating-bar-btn-primary" title={txt("src/app/designer/[id]/page.tsx::132", "חיפוש")}>
-            <Plus className="w-5 h-5" />
-          </button>
-          <button onClick={() => setActiveTab("whatsapp")} className="floating-bar-btn" title="WhatsApp">
-            <MessageCircle className="w-4 h-4" />
-          </button>
-          <button onClick={() => setActiveTab("history")} className="floating-bar-btn" title={txt("src/app/designer/[id]/page.tsx::133", "היסטוריה")}>
-            <History className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Floating action bar removed */}
 
         {/* ============ CHATBOT ============ */}
         <ChatBot designerContext={{

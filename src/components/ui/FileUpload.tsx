@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import ImageEditor from "./ImageEditor";
 
 export interface UploadedFile {
   url: string;
@@ -23,6 +24,8 @@ interface FileUploadProps {
   compact?: boolean;
   currentUrl?: string;
   disabled?: boolean;
+  /** Disable the image editor for image uploads */
+  skipEditor?: boolean;
 }
 
 export default function FileUpload({
@@ -38,11 +41,13 @@ export default function FileUpload({
   compact = false,
   currentUrl,
   disabled = false,
+  skipEditor = false,
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
+  const [editingFile, setEditingFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const defaultAccept = category === "image"
@@ -51,6 +56,7 @@ export default function FileUpload({
     ? ".pdf,.doc,.docx,.xls,.xlsx,.txt"
     : "*";
 
+  /** Upload a file (or edited blob) directly to R2 */
   const uploadFile = useCallback(async (file: File) => {
     if (disabled) return;
 
@@ -114,93 +120,130 @@ export default function FileUpload({
     }
   }, [folder, designerId, category, maxSize, disabled, onUpload, onError, currentUrl]);
 
+  /** Check if file is an editable image */
+  const isEditableImage = useCallback((file: File) => {
+    return !skipEditor && file.type.startsWith("image/") && !file.type.includes("svg");
+  }, [skipEditor]);
+
+  /** Process a selected file — open editor for images, upload directly for others */
+  const processFile = useCallback((file: File) => {
+    if (isEditableImage(file)) {
+      setEditingFile(file);
+    } else {
+      uploadFile(file);
+    }
+  }, [isEditableImage, uploadFile]);
+
+  /** Called when the image editor saves a cropped/rotated image */
+  const handleEditorSave = useCallback((editedBlob: Blob, filename: string) => {
+    setEditingFile(null);
+    const editedFile = new File([editedBlob], filename, { type: editedBlob.type });
+    uploadFile(editedFile);
+  }, [uploadFile]);
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       if (multiple) {
-        files.forEach(uploadFile);
+        files.forEach(processFile);
       } else {
-        uploadFile(files[0]);
+        processFile(files[0]);
       }
     }
-  }, [multiple, uploadFile]);
+  }, [multiple, processFile]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       if (multiple) {
-        files.forEach(uploadFile);
+        files.forEach(processFile);
       } else {
-        uploadFile(files[0]);
+        processFile(files[0]);
       }
     }
     // Reset input so same file can be uploaded again
     if (inputRef.current) inputRef.current.value = "";
-  }, [multiple, uploadFile]);
+  }, [multiple, processFile]);
 
   const isImage = preview && (preview.startsWith("data:image") || /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(preview));
 
   if (compact) {
     return (
-      <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-        <input
-          ref={inputRef}
-          type="file"
-          accept={accept || defaultAccept}
-          multiple={multiple}
-          onChange={handleFileSelect}
-          style={{ display: "none" }}
-          disabled={disabled || uploading}
-        />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled || uploading}
-          style={{
-            padding: "6px 14px",
-            background: uploading ? "#ccc" : "var(--primary, #2563eb)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "6px",
-            cursor: disabled || uploading ? "not-allowed" : "pointer",
-            fontSize: "13px",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          {uploading ? (
-            <>
-              <span style={{
-                width: "14px", height: "14px",
-                border: "2px solid rgba(255,255,255,0.3)",
-                borderTopColor: "#fff",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
-                display: "inline-block",
-              }} />
-              מעלה...
-            </>
-          ) : (
-            <>📎 {label || "העלאת קובץ"}</>
-          )}
-        </button>
-        {preview && isImage && (
-          <img
-            src={preview}
-            alt="preview"
-            style={{ width: "32px", height: "32px", borderRadius: "4px", objectFit: "cover" }}
+      <>
+        {editingFile && (
+          <ImageEditor
+            file={editingFile}
+            onSave={handleEditorSave}
+            onCancel={() => setEditingFile(null)}
           />
         )}
-        <style dangerouslySetInnerHTML={{ __html: `@keyframes spin { to { transform: rotate(360deg); } }` }} />
-      </div>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept || defaultAccept}
+            multiple={multiple}
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+            disabled={disabled || uploading}
+          />
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={disabled || uploading}
+            style={{
+              padding: "6px 14px",
+              background: uploading ? "#ccc" : "var(--primary, #2563eb)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              cursor: disabled || uploading ? "not-allowed" : "pointer",
+              fontSize: "13px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            {uploading ? (
+              <>
+                <span style={{
+                  width: "14px", height: "14px",
+                  border: "2px solid rgba(255,255,255,0.3)",
+                  borderTopColor: "#fff",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                  display: "inline-block",
+                }} />
+                מעלה...
+              </>
+            ) : (
+              <>📎 {label || "העלאת קובץ"}</>
+            )}
+          </button>
+          {preview && isImage && (
+            <img
+              src={preview}
+              alt="preview"
+              style={{ width: "32px", height: "32px", borderRadius: "4px", objectFit: "cover" }}
+            />
+          )}
+          <style dangerouslySetInnerHTML={{ __html: `@keyframes spin { to { transform: rotate(360deg); } }` }} />
+        </div>
+      </>
     );
   }
 
   return (
     <div style={{ width: "100%" }}>
+      {editingFile && (
+        <ImageEditor
+          file={editingFile}
+          onSave={handleEditorSave}
+          onCancel={() => setEditingFile(null)}
+        />
+      )}
       <input
         ref={inputRef}
         type="file"

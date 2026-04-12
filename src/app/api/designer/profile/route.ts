@@ -12,6 +12,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "חסר מזהה מעצב/ת" }, { status: 400 });
     }
 
+    // Security: designers can only view their own profile, admins can view any
+    const authenticatedUserId = req.headers.get("x-user-id");
+    const userRole = req.headers.get("x-user-role");
+    if (userRole !== "admin" && authenticatedUserId && designerId !== authenticatedUserId) {
+      return NextResponse.json({ error: "אין הרשאה לצפות בפרופיל של מעצב/ת אחר/ת" }, { status: 403 });
+    }
+
     const designer = await prisma.designer.findUnique({
       where: { id: designerId },
       select: {

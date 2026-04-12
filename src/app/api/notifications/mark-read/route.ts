@@ -14,6 +14,11 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "חסר מזהה משתמש" }, { status: 400 });
     }
+    // Security: only allow modifying own notifications
+    const authenticatedUserId = req.headers.get("x-user-id");
+    if (authenticatedUserId && userId !== authenticatedUserId) {
+      return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
+    }
 
     if (all) {
       const result = await markAllRead(userId, (userType || "designer") as "designer" | "admin");

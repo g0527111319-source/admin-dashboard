@@ -31,9 +31,15 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: txt("src/app/api/posts/route.ts::002", "\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05E4\u05E8\u05E1\u05D5\u05DE\u05D9\u05DD") }, { status: 500 });
     }
 }
-// PATCH /api/posts — עדכון סטטוס פרסום (אישור/דחייה)
+// PATCH /api/posts — עדכון סטטוס פרסום (אישור/דחייה) — admin only
 export async function PATCH(req: NextRequest) {
     try {
+        // Security: only admins can approve/reject/publish posts
+        const userRole = req.headers.get("x-user-role");
+        if (userRole !== "admin") {
+            return NextResponse.json({ error: "אין הרשאה — פעולה זו מיועדת למנהלת בלבד" }, { status: 403 });
+        }
+
         const body = await req.json();
         const { id, action, rejectionReason, approvedBy } = body;
         if (!id || !action) {

@@ -5,9 +5,8 @@ import prisma from "@/lib/prisma";
 // GET /api/designer/subscription/payments — list payment history
 export async function GET(req: NextRequest) {
   try {
-    const designerId =
-      req.headers.get("x-user-id") ||
-      new URL(req.url).searchParams.get("designerId");
+    // Security: only use authenticated user ID from middleware
+    const designerId = req.headers.get("x-user-id");
 
     if (!designerId) {
       return NextResponse.json({ error: "לא מחובר" }, { status: 401 });

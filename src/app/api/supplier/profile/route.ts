@@ -12,6 +12,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "חסר מזהה ספק" }, { status: 400 });
     }
 
+    // Security: suppliers can only view their own profile, admins can view any
+    const authenticatedUserId = req.headers.get("x-user-id");
+    const userRole = req.headers.get("x-user-role");
+    if (userRole !== "admin" && authenticatedUserId && supplierId !== authenticatedUserId) {
+      return NextResponse.json({ error: "אין הרשאה לצפות בפרופיל של ספק אחר" }, { status: 403 });
+    }
+
     const supplier = await prisma.supplier.findUnique({
       where: { id: supplierId },
     });

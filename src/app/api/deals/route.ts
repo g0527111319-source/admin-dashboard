@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
         if (!designerId || !supplierId || !amount) {
             return NextResponse.json({ error: txt("src/app/api/deals/route.ts::002", "\u05D7\u05E1\u05E8\u05D9\u05DD \u05E9\u05D3\u05D5\u05EA \u05D7\u05D5\u05D1\u05D4") }, { status: 400 });
         }
+        // Security: verify designer can only report deals for themselves
+        const authenticatedUserId = req.headers.get("x-user-id");
+        if (authenticatedUserId && designerId !== authenticatedUserId) {
+            return NextResponse.json({ error: "אין הרשאה לדווח עסקה בשם מעצב/ת אחר/ת" }, { status: 403 });
+        }
         const deal = await prisma.deal.create({
             data: {
                 designerId,
