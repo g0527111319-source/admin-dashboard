@@ -20,6 +20,7 @@ import {
   Eye,
   Grid3X3,
 } from "lucide-react";
+import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
 
 type InspirationItem = {
   id: string;
@@ -495,12 +496,15 @@ export default function CrmInspirationLibrary({ clientId }: { clientId?: string 
             </div>
             <div className="space-y-4">
               <div>
-                <label className="form-label">קישור לתמונה</label>
-                <input
-                  className="input-field"
-                  value={itemForm.imageUrl}
-                  onChange={(e) => setItemForm({ ...itemForm, imageUrl: e.target.value })}
-                  placeholder="https://..."
+                <label className="form-label">תמונה</label>
+                <FileUpload
+                  compact
+                  category="image"
+                  folder="inspiration"
+                  currentUrl={itemForm.imageUrl}
+                  label="העלאת תמונה"
+                  onUpload={(file: UploadedFile) => setItemForm({ ...itemForm, imageUrl: file.url })}
+                  onError={(err: string) => alert(err)}
                 />
               </div>
               <div>

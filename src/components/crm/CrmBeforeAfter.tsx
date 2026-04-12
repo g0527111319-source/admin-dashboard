@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, X, Image, Eye, EyeOff, Globe, Trash2, Edit3, ChevronLeft, ChevronRight, Upload, ZoomIn } from "lucide-react";
+import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
 
 type BeforeAfterSet = {
   id: string;
@@ -281,22 +282,32 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
                 <span className="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
                 תמונת לפני
               </label>
-              <input value={form.beforeImageUrl} onChange={e => setForm({ ...form, beforeImageUrl: e.target.value })} placeholder="URL תמונה" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
+              <FileUpload
+                compact
+                category="image"
+                folder="before-after"
+                currentUrl={form.beforeImageUrl}
+                label="העלאת תמונת לפני"
+                onUpload={(file: UploadedFile) => setForm({ ...form, beforeImageUrl: file.url })}
+                onError={(err: string) => alert(err)}
+              />
               <input value={form.beforeCaption} onChange={e => setForm({ ...form, beforeCaption: e.target.value })} placeholder="כיתוב (אופציונלי)" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
-              <label className="flex items-center gap-2 text-xs text-gold cursor-pointer hover:underline">
-                <Upload className="w-3 h-3" /> העלאת תמונה (URL)
-              </label>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
                 תמונת אחרי
               </label>
-              <input value={form.afterImageUrl} onChange={e => setForm({ ...form, afterImageUrl: e.target.value })} placeholder="URL תמונה" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
+              <FileUpload
+                compact
+                category="image"
+                folder="before-after"
+                currentUrl={form.afterImageUrl}
+                label="העלאת תמונת אחרי"
+                onUpload={(file: UploadedFile) => setForm({ ...form, afterImageUrl: file.url })}
+                onError={(err: string) => alert(err)}
+              />
               <input value={form.afterCaption} onChange={e => setForm({ ...form, afterCaption: e.target.value })} placeholder="כיתוב (אופציונלי)" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
-              <label className="flex items-center gap-2 text-xs text-gold cursor-pointer hover:underline">
-                <Upload className="w-3 h-3" /> העלאת תמונה (URL)
-              </label>
             </div>
           </div>
 

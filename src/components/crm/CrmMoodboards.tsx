@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Image, Link, Type, Palette, Trash2, ChevronLeft, Eye, EyeOff } from "lucide-react";
+import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
 
 type MoodboardItem = {
   id: string;
@@ -168,7 +169,17 @@ export default function CrmMoodboards({ clientId, projectId }: { clientId?: stri
             })}
           </div>
           <input type="text" className="input-field" placeholder="כותרת" value={newItem.title} onChange={e => setNewItem({ ...newItem, title: e.target.value })} />
-          {newItem.type === "image" && <input type="url" className="input-field" placeholder="URL לתמונה" value={newItem.imageUrl} onChange={e => setNewItem({ ...newItem, imageUrl: e.target.value })} dir="ltr" />}
+          {newItem.type === "image" && (
+            <FileUpload
+              compact
+              category="image"
+              folder="moodboards"
+              currentUrl={newItem.imageUrl}
+              label="העלאת תמונה"
+              onUpload={(file: UploadedFile) => setNewItem({ ...newItem, imageUrl: file.url })}
+              onError={(err: string) => alert(err)}
+            />
+          )}
           {newItem.type === "link" && <input type="url" className="input-field" placeholder="URL" value={newItem.content} onChange={e => setNewItem({ ...newItem, content: e.target.value })} dir="ltr" />}
           {newItem.type === "note" && <textarea className="input-field h-20 resize-none" placeholder="תוכן ההערה" value={newItem.content} onChange={e => setNewItem({ ...newItem, content: e.target.value })} />}
           {newItem.type === "color" && <input type="color" value={newItem.content || "#2563eb"} onChange={e => setNewItem({ ...newItem, content: e.target.value })} className="w-full h-12 rounded-btn cursor-pointer" />}

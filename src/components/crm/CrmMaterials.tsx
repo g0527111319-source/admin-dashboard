@@ -5,6 +5,7 @@ import {
   Plus, X, ChevronLeft, ChevronDown, ChevronUp,
   Package, Trash2, Edit3, Eye, EyeOff, DollarSign,
 } from "lucide-react";
+import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
 
 type MaterialItem = {
   id: string;
@@ -406,13 +407,14 @@ export default function CrmMaterials({ clientId, projectId }: { clientId?: strin
                             onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
                             dir="ltr"
                           />
-                          <input
-                            type="url"
-                            className="input-field"
-                            placeholder="קישור לתמונה"
-                            value={itemForm.imageUrl}
-                            onChange={(e) => setItemForm({ ...itemForm, imageUrl: e.target.value })}
-                            dir="ltr"
+                          <FileUpload
+                            compact
+                            category="image"
+                            folder="materials"
+                            currentUrl={itemForm.imageUrl}
+                            label="העלאת תמונה"
+                            onUpload={(file: UploadedFile) => setItemForm({ ...itemForm, imageUrl: file.url })}
+                            onError={(err: string) => alert(err)}
                           />
                         </div>
                         <textarea

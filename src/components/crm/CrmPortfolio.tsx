@@ -8,6 +8,12 @@ import {
   Upload, Loader2, Share2, Copy, ExternalLink, CreditCard,
   MessageCircle,
 } from "lucide-react";
+import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
+
+// ===== PORTFOLIO LIMITS =====
+const MAX_IMAGES_PER_PROJECT = 7;
+const MAX_TOTAL_SIZE_PER_PROJECT = 20 * 1024 * 1024; // 20MB
+const MAX_PROJECTS_PER_DESIGNER = 20;
 
 // ===== TYPES =====
 type ProjectImage = {
@@ -192,6 +198,10 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
 
   // ===== FORM ACTIONS =====
   const openCreate = () => {
+    if (projects.length >= MAX_PROJECTS_PER_DESIGNER) {
+      alert(`הגעת למקסימום ${MAX_PROJECTS_PER_DESIGNER} פרויקטים. מחקי פרויקט קיים כדי להוסיף חדש.`);
+      return;
+    }
     setEditingProject(null);
     setForm(EMPTY_FORM);
     setError("");
@@ -617,119 +627,61 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
             הוסף תמונה
           </h3>
 
-          {/* Tab toggle: URL / Upload */}
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => { setImageAddMode("url"); setUploadError(""); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                imageAddMode === "url"
-                  ? "bg-[#C9A84C]/15 border-[#C9A84C] text-[#C9A84C]"
-                  : "bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
-              }`}
-            >
-              <Link2 className="w-4 h-4" />
-              הדבק לינק
-            </button>
-            <button
-              type="button"
-              onClick={() => { setImageAddMode("upload"); setImagePreviewError(false); setGooglePhotosWarning(false); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                imageAddMode === "upload"
-                  ? "bg-[#C9A84C]/15 border-[#C9A84C] text-[#C9A84C]"
-                  : "bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
-              }`}
-            >
-              <Upload className="w-4 h-4" />
-              העלה מהמחשב
-            </button>
+          {/* Limits info */}
+          <div className="mb-3 text-xs text-white/50 flex items-center gap-4 flex-wrap">
+            <span>
+              תמונות: {projectImages.length} / {MAX_IMAGES_PER_PROJECT}
+              {projectImages.length >= MAX_IMAGES_PER_PROJECT && (
+                <span className="text-red-400 mr-1">(הגעת למקסימום)</span>
+              )}
+            </span>
           </div>
 
-          {/* URL mode */}
-          {imageAddMode === "url" && (
-            <>
-              <div className="flex gap-3 items-start">
-                <div className="flex-1 space-y-2">
-                  <input
-                    type="url"
-                    placeholder="הכנסי כתובת URL של תמונה..."
-                    value={newImageUrl}
-                    onChange={(e) => handleImageUrlChange(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
-                    dir="ltr"
-                  />
-                  {imagePreviewError && (
-                    <p className="text-red-400 text-xs flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      הלינק לא תקין
-                    </p>
-                  )}
-                  {/* Google Photos warning removed - proxy handles these URLs */}
-                  {multiAddCount !== null && multiAddCount > 0 && (
-                    <p className="text-emerald-400 text-xs flex items-center gap-1">
-                      נוספו {multiAddCount} תמונות
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={handleAddImage}
-                  className="px-5 py-3 bg-[#C9A84C] text-black text-sm font-semibold rounded-xl hover:bg-[#e0c068] transition-colors flex-shrink-0"
-                >
-                  הוסף תמונה
-                </button>
-              </div>
-
-              {/* URL Preview */}
-              {newImageUrl.trim() && imagePreviewValid && !googlePhotosWarning && (
-                <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
-                  <img
-                    src={convertImageUrl(newImageUrl.trim())}
-                    alt="תצוגה מקדימה"
-                    className="w-full h-40 object-cover"
-                    loading="lazy"
-                    onError={() => {
-                      setImagePreviewError(true);
-                      setImagePreviewValid(false);
-                    }}
-                    onLoad={() => {
-                      setImagePreviewError(false);
-                    }}
-                  />
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Upload guide mode */}
-          {imageAddMode === "upload" && (
-            <div className="space-y-4">
-              <div className="bg-[#0a0a0a] rounded-xl border border-[#C9A84C]/20 p-5">
-                <h4 className="text-sm font-bold text-[#C9A84C] mb-3">איך להעלות תמונות?</h4>
-                <div className="space-y-3 text-sm text-white/70">
-                  <div className="flex gap-3 items-start">
-                    <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                    <div>
-                      <p className="font-medium text-white/90">Google Drive</p>
-                      <p className="text-xs text-white/50 mt-0.5">{`העלי תמונה ל-Drive \u2192 שתפי "כל מי שיש לו קישור" \u2192 העתיקי לינק \u2192 הדביקי כאן`}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 items-start">
-                    <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                    <div>
-                      <p className="font-medium text-white/90">Instagram</p>
-                      <p className="text-xs text-white/50 mt-0.5">{`העתיקי את הלינק של הפוסט \u2192 הדביקי כאן`}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 items-start">
-                    <span className="bg-[#C9A84C]/20 text-[#C9A84C] rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                    <div>
-                      <p className="font-medium text-white/90">כל לינק ישיר לתמונה</p>
-                      <p className="text-xs text-white/50 mt-0.5">הדביקי כל כתובת URL שמובילה ישירות לתמונה</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {projectImages.length >= MAX_IMAGES_PER_PROJECT ? (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              הגעת למקסימום {MAX_IMAGES_PER_PROJECT} תמונות לפרויקט. מחקי תמונה קיימת כדי להוסיף חדשה.
             </div>
+          ) : (
+            <FileUpload
+              category="image"
+              folder="portfolio"
+              label="העלאת תמונה לפרויקט"
+              maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+              onUpload={async (file: UploadedFile) => {
+                if (!selectedProject) return;
+                try {
+                  const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      imageUrl: file.url,
+                      sortOrder: projectImages.length,
+                    }),
+                  });
+                  if (res.ok) {
+                    const image = await res.json();
+                    setProjectImages((prev) => [...prev, image]);
+                    if (!selectedProject.coverImageUrl) {
+                      try {
+                        await fetch(`/api/designer/projects/${selectedProject.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ coverImageUrl: file.url }),
+                        });
+                        setSelectedProject({ ...selectedProject, coverImageUrl: file.url });
+                      } catch (coverErr) {
+                        console.error("Auto-set cover error", coverErr);
+                      }
+                    }
+                    await fetchProjects();
+                  }
+                } catch (e) {
+                  console.error("Add image error", e);
+                }
+              }}
+              onError={(err: string) => alert(err)}
+            />
           )}
         </div>
 
@@ -939,33 +891,20 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
             </div>
           </div>
 
-          {/* Cover Image URL */}
+          {/* Cover Image */}
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">תמונת כיסוי (URL)</label>
-            <input
-              type="url"
-              value={form.coverImageUrl}
-              onChange={(e) => {
-                const raw = e.target.value;
+            <label className="block text-sm font-semibold text-white/80 mb-2">תמונת כיסוי</label>
+            <FileUpload
+              category="image"
+              folder="portfolio"
+              currentUrl={form.coverImageUrl}
+              label="העלאת תמונת כיסוי"
+              onUpload={(file: UploadedFile) => {
                 setCoverImageWarning(false);
-                const converted = raw.trim() ? convertImageUrl(raw.trim()) : raw;
-                setForm({ ...form, coverImageUrl: converted });
+                setForm({ ...form, coverImageUrl: file.url });
               }}
-              placeholder="https://example.com/image.jpg"
-              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
-              dir="ltr"
+              onError={(err: string) => alert(err)}
             />
-            {/* Google Photos warning removed - proxy handles these URLs */}
-            {form.coverImageUrl && !coverImageWarning && (isValidUrl(form.coverImageUrl) || form.coverImageUrl.startsWith("/api/")) && (
-              <div className="mt-3 rounded-xl overflow-hidden border border-white/10 max-w-xs">
-                <img
-                  src={form.coverImageUrl}
-                  alt="תצוגה מקדימה"
-                  className="w-full h-40 object-cover"
-                  loading="lazy"
-                />
-              </div>
-            )}
           </div>
 
           {/* Status Toggle */}
@@ -1066,7 +1005,12 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
             <FolderKanban className="w-5 h-5 text-[#C9A84C]" />
             תיק עבודות
           </h2>
-          <p className="text-sm text-white/40 mt-1">{projects.length} פרויקטים</p>
+          <p className="text-sm text-white/40 mt-1">
+            {projects.length} / {MAX_PROJECTS_PER_DESIGNER} פרויקטים
+            {projects.length >= MAX_PROJECTS_PER_DESIGNER && (
+              <span className="text-red-400 mr-1"> (מקסימום)</span>
+            )}
+          </p>
         </div>
         <button
           onClick={openCreate}

@@ -5,6 +5,7 @@ import {
   CheckCircle2, XCircle, Clock, Plus, X, Send, Image,
   MessageSquare, ChevronDown, ChevronUp, ExternalLink, Copy, Check
 } from "lucide-react";
+import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
 
 type ApprovalOption = {
   id: string;
@@ -212,7 +213,15 @@ export default function CrmApprovals({ clientId, projectId }: { clientId?: strin
                   <span className="text-gold font-bold mt-2">{String.fromCharCode(65 + i)}</span>
                   <div className="flex-1 space-y-2">
                     <input value={opt.label} onChange={e => { const opts = [...form.options]; opts[i] = { ...opts[i], label: e.target.value }; setForm({ ...form, options: opts }); }} placeholder="שם האפשרות" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
-                    <input value={opt.imageUrl} onChange={e => { const opts = [...form.options]; opts[i] = { ...opts[i], imageUrl: e.target.value }; setForm({ ...form, options: opts }); }} placeholder="URL תמונה (אופציונלי)" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
+                    <FileUpload
+                      compact
+                      category="image"
+                      folder="approvals"
+                      currentUrl={opt.imageUrl}
+                      label="העלאת תמונה"
+                      onUpload={(file: UploadedFile) => { const opts = [...form.options]; opts[i] = { ...opts[i], imageUrl: file.url }; setForm({ ...form, options: opts }); }}
+                      onError={(err: string) => alert(err)}
+                    />
                   </div>
                   {form.options.length > 1 && (
                     <button onClick={() => setForm({ ...form, options: form.options.filter((_, j) => j !== i) })} className="text-red-400 hover:text-red-600 mt-2"><X className="w-4 h-4" /></button>
