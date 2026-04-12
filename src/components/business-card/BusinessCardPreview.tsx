@@ -339,15 +339,18 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
             </p>)}
 
           {/* Logo */}
-          {data.logoUrl && (<div style={{ marginTop: 12 }}>
-              <Image src={data.logoUrl} alt="" unoptimized width={120} height={32} style={{
-                maxHeight: 32,
-                maxWidth: 120,
+          {data.logoUrl && (() => {
+            const sz = data.logoSize || 64;
+            return (<div style={{ marginTop: 12 }}>
+              <Image src={data.logoUrl} alt="" unoptimized width={sz} height={sz} style={{
+                width: sz,
+                height: sz,
                 objectFit: "contain",
                 margin: "0 auto",
                 display: "block",
             }}/>
-            </div>)}
+            </div>);
+          })()}
         </div>
 
         {/* Card Body */}

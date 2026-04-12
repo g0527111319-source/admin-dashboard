@@ -556,6 +556,22 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
 
           <ImageUploader label="לוגו" value={data.logoUrl || ""} onChange={(url) => onChange({ ...data, logoUrl: url })} shape="square" sticker/>
 
+          {data.logoUrl && (<div>
+            <label className="block text-text-primary text-xs font-medium mb-1.5">
+              {"גודל לוגו"} <span className="text-text-muted font-normal">{data.logoSize || 64}px</span>
+            </label>
+            <div className="flex items-center gap-3">
+              <span className="text-text-muted text-[10px]">24</span>
+              <input type="range" min={24} max={160} step={4} value={data.logoSize || 64}
+                onChange={(e) => onChange({ ...data, logoSize: parseInt(e.target.value) })}
+                className="flex-1 h-1.5 bg-border-subtle rounded-full appearance-none cursor-pointer
+                           [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                           [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gold [&::-webkit-slider-thumb]:shadow-sm
+                           [&::-webkit-slider-thumb]:cursor-pointer"/>
+              <span className="text-text-muted text-[10px]">160</span>
+            </div>
+          </div>)}
+
           <ImageUploader label="תמונת פרופיל" value={data.avatarUrl || ""} onChange={(url) => onChange({ ...data, avatarUrl: url })} shape="circle"/>
 
           <div>

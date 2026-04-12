@@ -422,6 +422,8 @@ export interface BusinessCardData {
   subtitle?: string;
   avatarUrl?: string;
   logoUrl?: string;
+  /** Logo display size in px (default 64) */
+  logoSize?: number;
   // Fonts
   headingFontId?: string;
   bodyFontId?: string;
