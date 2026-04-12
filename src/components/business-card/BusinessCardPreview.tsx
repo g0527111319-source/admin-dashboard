@@ -506,22 +506,34 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
             }}>
                 {activeSocials.map((social, i) => {
                     const config = socialLinkConfig[social.type];
-                    let href = social.url;
-                    // Deep-link types: whatsapp, email, phone — build with prefix
-                    const isDeepLink = social.type === "whatsapp" || social.type === "email" || social.type === "phone";
-                    if (config?.prefix && href) {
-                      if (social.type === "whatsapp") {
-                        // Strip leading 0 and dashes, prepend country prefix
-                        const cleaned = href.replace(/^0/, "").replace(/[-\s]/g, "");
-                        href = config.prefix + cleaned;
-                      } else {
-                        href = config.prefix + href;
-                      }
-                    } else if (href && !href.startsWith("http") && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
-                      href = "https://" + href;
+                    const rawUrl = social.url;
+                    // Build the final href for each social type
+                    let href = rawUrl;
+                    if (social.type === "whatsapp" && rawUrl) {
+                      const cleaned = rawUrl.replace(/^0/, "").replace(/[-\s]/g, "");
+                      href = `https://api.whatsapp.com/send?phone=972${cleaned}`;
+                    } else if (social.type === "email" && rawUrl) {
+                      href = `mailto:${rawUrl}`;
+                    } else if (social.type === "phone" && rawUrl) {
+                      href = `tel:${rawUrl}`;
+                    } else if (config?.prefix && rawUrl) {
+                      href = config.prefix + rawUrl;
+                    } else if (rawUrl && !rawUrl.startsWith("http") && !rawUrl.startsWith("mailto:") && !rawUrl.startsWith("tel:")) {
+                      href = "https://" + rawUrl;
                     }
-                    // Deep links (whatsapp/email/phone) open in same window; web links open in new tab
-                    return (<a key={i} href={href || "#"} target={isDeepLink ? "_self" : "_blank"} rel={isDeepLink ? undefined : "noopener noreferrer"} style={{
+                    // Use onClick for reliable cross-browser/mobile behavior
+                    const handleClick = (e: React.MouseEvent) => {
+                      e.preventDefault();
+                      if (!href) return;
+                      if (social.type === "email" || social.type === "phone") {
+                        // Protocol handlers: set location directly
+                        window.location.href = href;
+                      } else {
+                        // WhatsApp & web links: open in new tab
+                        window.open(href, "_blank", "noopener,noreferrer");
+                      }
+                    };
+                    return (<a key={i} href={href || "#"} onClick={handleClick} style={{
                     width: 40,
                     height: 40,
                     borderRadius: theme.cardStyle === "sharp" ? "4px" : "10px",

@@ -632,7 +632,7 @@ export default function SupplierDashboard() {
 
         {/* ===== BUSINESS CARD TAB ===== */}
         {activeTab === "card" && (<div className="animate-in">
-            <BusinessCardBuilder userName={supplierData.contactName} userRole={supplierData.category} userPhone={supplierData.phone} userEmail={supplierData.email}/>
+            <BusinessCardBuilder designerId={routeParams.id} userName={supplierData.contactName} userRole={supplierData.category} userPhone={supplierData.phone} userEmail={supplierData.email}/>
           </div>)}
       </main>
     </div>);
