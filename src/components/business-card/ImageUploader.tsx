@@ -33,10 +33,14 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             const formData = new FormData();
             formData.append("file", file);
             formData.append("folder", folder);
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), 25000);
             const res = await fetch("/api/upload", {
                 method: "POST",
                 body: formData,
+                signal: controller.signal,
             });
+            window.clearTimeout(timeoutId);
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.error || "שגיאה בהעלאה");
@@ -45,7 +49,11 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             onChange(url);
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "שגיאה בהעלאה");
+            if (err instanceof DOMException && err.name === "AbortError") {
+                setError("ההעלאה לקחה יותר מדי זמן. נסה תמונה קטנה יותר");
+            } else {
+                setError(err instanceof Error ? err.message : "שגיאה בהעלאה");
+            }
         }
         finally {
             setUploading(false);

@@ -35,7 +35,10 @@ function GalleryUploadButton({ onUploaded }: {
             const fd = new FormData();
             fd.append("file", file);
             fd.append("folder", "business-cards");
-            const res = await fetch("/api/upload", { method: "POST", body: fd });
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), 25000);
+            const res = await fetch("/api/upload", { method: "POST", body: fd, signal: controller.signal });
+            window.clearTimeout(timeoutId);
             if (!res.ok) {
                 const d = await res.json();
                 throw new Error(d.error);
@@ -44,7 +47,11 @@ function GalleryUploadButton({ onUploaded }: {
             onUploaded(url);
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : txt("src/components/business-card/BusinessCardEditor.tsx::003", "שגיאה בהעלאה"));
+            if (err instanceof DOMException && err.name === "AbortError") {
+                setError("ההעלאה לקחה יותר מדי זמן. נסה תמונה קטנה יותר");
+            } else {
+                setError(err instanceof Error ? err.message : txt("src/components/business-card/BusinessCardEditor.tsx::003", "שגיאה בהעלאה"));
+            }
         }
         finally {
             setUploading(false);

@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+export const maxDuration = 30; // Allow up to 30s for image processing
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import sharp from "sharp";
@@ -286,60 +287,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Hash deduplication ----
+    // ---- Hash & folder setup ----
     const fileHash = calculateHash(buffer);
+    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "_");
 
-    const existing = await findExistingByHash(fileHash);
-    if (existing) {
-      console.log(`[upload] Duplicate detected for hash ${fileHash.substring(0, 12)}…, returning existing URLs`);
+    // Fast path: folders that don't need heavy processing (logos, avatars, branding)
+    const FAST_FOLDERS = ["business-cards", "logos", "avatars", "branding"];
+    const isFastPath = FAST_FOLDERS.includes(safeFolder) || buffer.length < 200 * 1024; // < 200KB
 
-      // Audit log for deduplicated upload
-      const userId = request.headers.get("x-user-id") || designerId || "unknown";
-      logAuditEvent("FILE_UPLOAD", userId, {
-        originalName: file.name,
-        type: file.type,
-        size: file.size,
-        folder,
-        deduplicated: true,
-        existingKey: existing.r2Key,
-      }, ip);
+    // ---- Hash deduplication (skip for fast-path to save DB queries) ----
+    if (!isFastPath) {
+      const existing = await findExistingByHash(fileHash);
+      if (existing) {
+        console.log(`[upload] Duplicate detected for hash ${fileHash.substring(0, 12)}…`);
+        const userId = request.headers.get("x-user-id") || designerId || "unknown";
+        logAuditEvent("FILE_UPLOAD", userId, {
+          originalName: file.name, type: file.type, size: file.size,
+          folder, deduplicated: true, existingKey: existing.r2Key,
+        }, ip);
 
-      const response = NextResponse.json({
-        url: existing.imageUrl,
-        key: existing.r2Key,
-        filename: file.name,
-        size: file.size,
-        contentType: file.type,
-        hash: existing.fileHash,
-        thumbnailUrl: existing.thumbnailUrl,
-        mediumUrl: existing.mediumUrl,
-        deduplicated: true,
-      });
-      response.headers.set("X-RateLimit-Remaining", String(remaining));
-      response.headers.set("X-RateLimit-Reset", String(resetAt));
-      return response;
+        const response = NextResponse.json({
+          url: existing.imageUrl, key: existing.r2Key,
+          filename: file.name, size: file.size, contentType: file.type,
+          hash: existing.fileHash, thumbnailUrl: existing.thumbnailUrl,
+          mediumUrl: existing.mediumUrl, deduplicated: true,
+        });
+        response.headers.set("X-RateLimit-Remaining", String(remaining));
+        response.headers.set("X-RateLimit-Reset", String(resetAt));
+        return response;
+      }
     }
 
-    // ---- Optimize image ----
-    const optimized = await optimizeImage(buffer, file.type);
-    let finalBuffer = optimized.buffer;
-    let finalContentType = optimized.contentType;
+    // ---- Optimize & convert (skip for fast-path small files) ----
+    let finalBuffer: Buffer<ArrayBuffer> = buffer;
+    let finalContentType = file.type;
 
-    // ---- Convert to WebP (JPEG/PNG only, not GIF) ----
-    const converted = await convertToWebP(finalBuffer, finalContentType);
-    finalBuffer = converted.buffer;
-    finalContentType = converted.contentType;
+    if (!isFastPath) {
+      const optimized = await optimizeImage(buffer, file.type);
+      finalBuffer = optimized.buffer as Buffer<ArrayBuffer>;
+      finalContentType = optimized.contentType;
 
-    // ---- Sanitize folder and generate key ----
-    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "_");
+      const converted = await convertToWebP(finalBuffer, finalContentType);
+      finalBuffer = converted.buffer as Buffer<ArrayBuffer>;
+      finalContentType = converted.contentType;
+    }
+
+    // ---- Generate key ----
     let key = generateFileKey(safeFolder, file.name, designerId || undefined);
-
-    // If we converted to WebP, update the key extension
     if (finalContentType === "image/webp" && CONVERTIBLE_TO_WEBP.includes(file.type)) {
       key = replaceExtension(key, "webp");
     }
 
-    // ---- Get image metadata ----
+    // ---- Get image metadata (quick, single sharp call) ----
     let width: number | undefined;
     let height: number | undefined;
     let format: string | undefined;
@@ -354,63 +353,49 @@ export async function POST(request: NextRequest) {
     // ---- Upload main file to R2 ----
     const result = await uploadToR2(finalBuffer, key, finalContentType);
 
-    // ---- Generate and upload thumbnails (images only, not GIF) ----
+    // ---- Generate thumbnails (skip for fast-path — logos/avatars don't need them) ----
     let thumbnailUrl: string | undefined;
     let mediumUrl: string | undefined;
 
-    if (IMAGE_TYPES_FOR_PROCESSING.includes(finalContentType)) {
+    if (!isFastPath && IMAGE_TYPES_FOR_PROCESSING.includes(finalContentType)) {
       try {
-        // Generate _thumb variant: max 200px, WebP, quality 75
-        const thumbKey = deriveVariantKey(key, "_thumb");
-        const thumbBuffer = await generateVariant(finalBuffer, 200, 75);
-        await uploadToR2(thumbBuffer, thumbKey, "image/webp");
-        thumbnailUrl = getPublicUrl(thumbKey);
+        const [thumbBuffer, mediumBuffer] = await Promise.all([
+          generateVariant(finalBuffer, 200, 75),
+          generateVariant(finalBuffer, 800, 80),
+        ]);
 
-        // Generate _medium variant: max 800px, WebP, quality 80
+        const thumbKey = deriveVariantKey(key, "_thumb");
         const mediumKey = deriveVariantKey(key, "_medium");
-        const mediumBuffer = await generateVariant(finalBuffer, 800, 80);
-        await uploadToR2(mediumBuffer, mediumKey, "image/webp");
+
+        await Promise.all([
+          uploadToR2(thumbBuffer, thumbKey, "image/webp"),
+          uploadToR2(mediumBuffer, mediumKey, "image/webp"),
+        ]);
+
+        thumbnailUrl = getPublicUrl(thumbKey);
         mediumUrl = getPublicUrl(mediumKey);
 
         console.log(
-          `[upload] Thumbnails generated: thumb=${(thumbBuffer.length / 1024).toFixed(1)}KB, medium=${(mediumBuffer.length / 1024).toFixed(1)}KB`
+          `[upload] Thumbnails: thumb=${(thumbBuffer.length / 1024).toFixed(1)}KB, medium=${(mediumBuffer.length / 1024).toFixed(1)}KB`
         );
       } catch (err) {
         console.warn("[upload] Thumbnail generation failed:", err);
-        // Non-fatal: main upload already succeeded
       }
     }
 
     // ---- Audit log ----
     const userId = request.headers.get("x-user-id") || designerId || "unknown";
     logAuditEvent("FILE_UPLOAD", userId, {
-      key: result.key,
-      originalName: file.name,
-      type: file.type,
-      finalType: finalContentType,
-      size: file.size,
-      finalSize: result.size,
-      folder: safeFolder,
-      url: result.url,
-      hash: fileHash,
-      thumbnailUrl,
-      mediumUrl,
-      width,
-      height,
+      key: result.key, originalName: file.name, type: file.type,
+      finalType: finalContentType, size: file.size, finalSize: result.size,
+      folder: safeFolder, url: result.url, hash: fileHash,
+      thumbnailUrl, mediumUrl, width, height,
     }, ip);
 
     const response = NextResponse.json({
-      url: result.url,
-      key: result.key,
-      filename: file.name,
-      size: result.size,
-      contentType: finalContentType,
-      hash: fileHash,
-      thumbnailUrl,
-      mediumUrl,
-      width,
-      height,
-      format,
+      url: result.url, key: result.key, filename: file.name,
+      size: result.size, contentType: finalContentType, hash: fileHash,
+      thumbnailUrl, mediumUrl, width, height, format,
     });
     response.headers.set("X-RateLimit-Remaining", String(remaining));
     response.headers.set("X-RateLimit-Reset", String(resetAt));
