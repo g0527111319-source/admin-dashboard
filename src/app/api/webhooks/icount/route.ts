@@ -68,17 +68,30 @@ export async function POST(req: NextRequest) {
     const subscriptionId = event.subscription_id || null;
     const clientId = event.client_id || null;
 
-    const subscription = subscriptionId
+    // Look up subscription — prefer subscriptionId (unique) over clientId (NOT unique)
+    let subscription = subscriptionId
       ? await prisma.designerSubscription.findFirst({
           where: { icountSubscriptionId: subscriptionId },
           include: { designer: true },
         })
-      : clientId
-      ? await prisma.designerSubscription.findFirst({
-          where: { icountCustomerId: clientId },
-          include: { designer: true },
-        })
       : null;
+
+    // Fallback to clientId, but enforce single-match to prevent payment misrouting
+    if (!subscription && clientId) {
+      const matches = await prisma.designerSubscription.findMany({
+        where: { icountCustomerId: clientId },
+        include: { designer: true },
+      });
+      if (matches.length === 1) {
+        subscription = matches[0];
+      } else if (matches.length > 1) {
+        console.error(
+          `[iCount webhook] SECURITY: Multiple subscriptions share icountCustomerId=${clientId}. ` +
+          `Refusing to process payment. Affected designerIds: ${matches.map(m => m.designerId).join(", ")}`
+        );
+        return NextResponse.json({ received: true, matched: false, error: "ambiguous_customer" });
+      }
+    }
 
     if (!subscription) {
       console.warn("[iCount webhook] no matching subscription:", {
