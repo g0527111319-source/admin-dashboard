@@ -521,19 +521,9 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                     } else if (rawUrl && !rawUrl.startsWith("http") && !rawUrl.startsWith("mailto:") && !rawUrl.startsWith("tel:")) {
                       href = "https://" + rawUrl;
                     }
-                    // Use onClick for reliable cross-browser/mobile behavior
-                    const handleClick = (e: React.MouseEvent) => {
-                      e.preventDefault();
-                      if (!href) return;
-                      if (social.type === "email" || social.type === "phone") {
-                        // Protocol handlers: set location directly
-                        window.location.href = href;
-                      } else {
-                        // WhatsApp & web links: open in new tab
-                        window.open(href, "_blank", "noopener,noreferrer");
-                      }
-                    };
-                    return (<a key={i} href={href || "#"} onClick={handleClick} style={{
+                    // mailto/tel: no target (native protocol). Web links: new tab.
+                    const isProtocol = social.type === "email" || social.type === "phone";
+                    return (<a key={i} href={href || "#"} {...(isProtocol ? {} : { target: "_blank", rel: "noopener noreferrer" })} style={{
                     width: 40,
                     height: 40,
                     borderRadius: theme.cardStyle === "sharp" ? "4px" : "10px",
