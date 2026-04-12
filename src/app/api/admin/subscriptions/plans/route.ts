@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
           crm: false,
           businessCard: false,
           contracts: false,
+          portfolio: false,
+          messages: false,
         },
         description: description ?? null,
         sortOrder: sortOrder ?? 0,

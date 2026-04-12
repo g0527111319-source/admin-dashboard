@@ -7,6 +7,8 @@ export type PlanFeatures = {
   crm: boolean;
   businessCard: boolean;
   contracts: boolean;
+  portfolio: boolean;
+  messages: boolean;
 };
 
 export const DEFAULT_PLANS: Array<{
@@ -29,6 +31,8 @@ export const DEFAULT_PLANS: Array<{
       crm: false,
       businessCard: false,
       contracts: false,
+      portfolio: false,
+      messages: false,
     },
     sortOrder: 1,
   },
@@ -44,6 +48,8 @@ export const DEFAULT_PLANS: Array<{
       crm: true,
       businessCard: true,
       contracts: true,
+      portfolio: true,
+      messages: true,
     },
     sortOrder: 2,
   },
@@ -59,6 +65,8 @@ export const DEFAULT_PLANS: Array<{
       crm: true,
       businessCard: true,
       contracts: true,
+      portfolio: true,
+      messages: true,
     },
     sortOrder: 3,
   },
@@ -74,6 +82,8 @@ export const DEFAULT_PLANS: Array<{
       crm: true,
       businessCard: true,
       contracts: true,
+      portfolio: true,
+      messages: true,
     },
     sortOrder: 4,
   },

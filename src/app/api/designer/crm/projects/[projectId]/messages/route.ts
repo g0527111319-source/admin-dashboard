@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { canAccessFeature } from "@/lib/subscription-gate";
 
 // GET /api/designer/crm/projects/[projectId]/messages
 export async function GET(
@@ -11,6 +12,12 @@ export async function GET(
     const designerId = req.headers.get("x-user-id");
     if (!designerId) {
       return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    }
+
+    // Verify "messages" feature access
+    const hasAccess = await canAccessFeature(designerId, "messages");
+    if (!hasAccess) {
+      return NextResponse.json({ error: "פיצ'ר זה זמין במנוי המקצועי" }, { status: 403 });
     }
 
     const { projectId } = await params;
@@ -43,6 +50,12 @@ export async function POST(
     const designerId = req.headers.get("x-user-id");
     if (!designerId) {
       return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    }
+
+    // Verify "messages" feature access
+    const hasAccess = await canAccessFeature(designerId, "messages");
+    if (!hasAccess) {
+      return NextResponse.json({ error: "פיצ'ר זה זמין במנוי המקצועי" }, { status: 403 });
     }
 
     const { projectId } = await params;

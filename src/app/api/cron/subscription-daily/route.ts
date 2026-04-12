@@ -28,7 +28,11 @@ import { logSubscriptionAudit } from "@/lib/subscription-audit";
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // dev-friendly
+  if (!secret) {
+    // In production, block unauthenticated access even without CRON_SECRET
+    if (process.env.NODE_ENV === "production") return false;
+    return true; // dev-friendly in local
+  }
   const auth = req.headers.get("authorization") || "";
   return auth === `Bearer ${secret}`;
 }

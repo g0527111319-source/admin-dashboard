@@ -153,7 +153,7 @@ export default function CrmTasks({ clientId, projectId }: { clientId?: string; p
 
   const fetchTemplates = useCallback(async () => {
     try {
-      const res = await fetch("/api/designer/crm/workflow-templates");
+      const res = await fetch("/api/designer/crm/workflows");
       if (res.ok) {
         const data = await res.json();
         setTemplates(data);

@@ -10,8 +10,11 @@ import prisma from "@/lib/prisma";
  */
 export async function GET(req: NextRequest) {
   try {
-    // Optional Vercel cron auth
+    // Vercel cron auth
     const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret && process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 401 });
+    }
     if (cronSecret) {
       const auth = req.headers.get("authorization") || "";
       if (auth !== `Bearer ${cronSecret}`) {

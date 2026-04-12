@@ -8,8 +8,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeScheduledTasks } from "@/lib/whatsapp/scheduled-tasks";
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret if configured
+  // Verify cron secret
   const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 401 });
+  }
   if (cronSecret) {
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${cronSecret}`) {
