@@ -215,6 +215,25 @@ function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
   });
 }
 
+/**
+ * Detect actual image type from magic bytes.
+ * Useful for sticker files with non-standard extensions (.57, .sticker, etc.)
+ */
+function detectImageType(buffer: Buffer): string | null {
+  for (const [mimeType, signatures] of Object.entries(MAGIC_BYTES)) {
+    if (!mimeType.startsWith("image/")) continue;
+    const match = signatures.some((sig) => {
+      if (buffer.length < sig.length) return false;
+      return sig.every((byte, i) => buffer[i] === byte);
+    });
+    if (match) return mimeType;
+  }
+  // SVG detection (text-based, starts with < or <?xml)
+  const head = buffer.subarray(0, 256).toString("utf8").trim();
+  if (head.startsWith("<svg") || head.startsWith("<?xml")) return "image/svg+xml";
+  return null;
+}
+
 function getClientIp(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
     || req.headers.get("x-real-ip")
@@ -270,17 +289,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "שם קובץ ארוך מדי" }, { status: 400 });
     }
 
-    // Validate file type and size
-    const validation = validateFile(file.name, file.size, file.type, category);
-    if (!validation.valid) {
-      return NextResponse.json({ error: validation.error }, { status: 400 });
-    }
-
-    // Read file bytes and validate magic bytes
+    // Read file bytes early — we may need to detect real type
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    if (!validateMagicBytes(buffer, file.type)) {
+    // If the browser can't determine MIME type (sticker files with .57 etc.),
+    // detect it from magic bytes
+    let fileType = file.type;
+    if (!fileType || fileType === "application/octet-stream" || !fileType.startsWith("image/")) {
+      const detected = detectImageType(buffer);
+      if (detected) {
+        console.log(`[upload] Detected real type ${detected} for file "${file.name}" (declared: ${file.type})`);
+        fileType = detected;
+      }
+    }
+
+    // Validate file type and size
+    const validation = validateFile(file.name, file.size, fileType, category);
+    if (!validation.valid) {
+      // Retry with detected type if extension-based validation failed
+      const detected = detectImageType(buffer);
+      if (detected) {
+        const retry = validateFile(file.name, file.size, detected, category);
+        if (retry.valid) {
+          fileType = detected;
+        } else {
+          return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+      } else {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+    }
+
+    // Validate magic bytes match declared type
+    if (!validateMagicBytes(buffer, fileType)) {
       return NextResponse.json(
         { error: "תוכן הקובץ לא תואם לסוג שהוצהר" },
         { status: 400 }
@@ -302,13 +344,13 @@ export async function POST(request: NextRequest) {
         console.log(`[upload] Duplicate detected for hash ${fileHash.substring(0, 12)}…`);
         const userId = request.headers.get("x-user-id") || designerId || "unknown";
         logAuditEvent("FILE_UPLOAD", userId, {
-          originalName: file.name, type: file.type, size: file.size,
+          originalName: file.name, type: fileType, size: file.size,
           folder, deduplicated: true, existingKey: existing.r2Key,
         }, ip);
 
         const response = NextResponse.json({
           url: existing.imageUrl, key: existing.r2Key,
-          filename: file.name, size: file.size, contentType: file.type,
+          filename: file.name, size: file.size, contentType: fileType,
           hash: existing.fileHash, thumbnailUrl: existing.thumbnailUrl,
           mediumUrl: existing.mediumUrl, deduplicated: true,
         });
@@ -320,10 +362,10 @@ export async function POST(request: NextRequest) {
 
     // ---- Optimize & convert (skip for fast-path small files) ----
     let finalBuffer: Buffer<ArrayBuffer> = buffer;
-    let finalContentType = file.type;
+    let finalContentType = fileType;
 
     if (!isFastPath) {
-      const optimized = await optimizeImage(buffer, file.type);
+      const optimized = await optimizeImage(buffer, fileType);
       finalBuffer = optimized.buffer as Buffer<ArrayBuffer>;
       finalContentType = optimized.contentType;
 
@@ -334,7 +376,7 @@ export async function POST(request: NextRequest) {
 
     // ---- Generate key ----
     let key = generateFileKey(safeFolder, file.name, designerId || undefined);
-    if (finalContentType === "image/webp" && CONVERTIBLE_TO_WEBP.includes(file.type)) {
+    if (finalContentType === "image/webp" && CONVERTIBLE_TO_WEBP.includes(fileType)) {
       key = replaceExtension(key, "webp");
     }
 
@@ -386,7 +428,7 @@ export async function POST(request: NextRequest) {
     // ---- Audit log ----
     const userId = request.headers.get("x-user-id") || designerId || "unknown";
     logAuditEvent("FILE_UPLOAD", userId, {
-      key: result.key, originalName: file.name, type: file.type,
+      key: result.key, originalName: file.name, type: fileType,
       finalType: finalContentType, size: file.size, finalSize: result.size,
       folder: safeFolder, url: result.url, hash: fileHash,
       thumbnailUrl, mediumUrl, width, height,

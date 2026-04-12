@@ -84,9 +84,9 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
         backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0px",
     } : {};
 
-    // Accept types — sticker mode adds GIF
+    // Accept types — sticker mode accepts any image (stickers often have weird extensions like .57)
     const acceptTypes = sticker
-        ? ".png,.webp,.svg,.gif,.jpg,.jpeg,image/png,image/webp,image/svg+xml,image/gif,image/jpeg"
+        ? "image/*,.png,.webp,.svg,.gif,.jpg,.jpeg,.sticker"
         : ".png,.webp,.svg,.jpg,.jpeg,image/png,image/webp,image/svg+xml,image/jpeg";
 
     return (<div>
