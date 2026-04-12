@@ -555,7 +555,7 @@ function PlanCard({
           <img
             src={plan.fileUrl}
             alt={plan.title || plan.fileName}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">

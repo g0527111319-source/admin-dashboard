@@ -72,7 +72,7 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
         /* Preview with remove button */
         <div className="relative inline-block group">
           <div className={`${previewClass} relative overflow-hidden border-2 border-border-subtle bg-bg-surface`}>
-            <Image src={value} alt="" fill unoptimized className="object-cover" onError={(e) => {
+            <Image src={value} alt="" fill unoptimized className="object-contain" onError={(e) => {
                 (e.target as HTMLImageElement).src = "";
                 (e.target as HTMLImageElement).style.display = "none";
             }}/>

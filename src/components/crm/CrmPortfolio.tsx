@@ -734,7 +734,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
                     <img
                       src={image.imageUrl}
                       alt={image.caption || ""}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       loading="lazy"
                       onError={() => {
                         setBrokenImages((prev) => new Set(prev).add(image.id));
@@ -1140,7 +1140,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
                   <img
                     src={project.coverImageUrl}
                     alt={project.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
                 ) : (

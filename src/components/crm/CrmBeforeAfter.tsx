@@ -363,7 +363,7 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
                     onClick={() => set.beforeImageUrl && setLightbox({ index: setIndex, side: "before" })}
                   >
                     {set.beforeImageUrl ? (
-                      <div className="w-full h-full bg-cover bg-center rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.beforeImageUrl})` }} />
+                      <div className="w-full h-full bg-contain bg-center bg-no-repeat rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.beforeImageUrl})` }} />
                     ) : (
                       <><Image className="w-8 h-8 mb-1" /><span className="text-xs">לפני</span></>
                     )}
@@ -384,7 +384,7 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
                     onClick={() => set.afterImageUrl && setLightbox({ index: setIndex, side: "after" })}
                   >
                     {set.afterImageUrl ? (
-                      <div className="w-full h-full bg-cover bg-center rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.afterImageUrl})` }} />
+                      <div className="w-full h-full bg-contain bg-center bg-no-repeat rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.afterImageUrl})` }} />
                     ) : (
                       <><Image className="w-8 h-8 mb-1" /><span className="text-xs">אחרי</span></>
                     )}

@@ -138,7 +138,7 @@ export default function CrmMoodboards({ clientId, projectId }: { clientId?: stri
             <div key={item.id} className="card-static overflow-hidden">
               {item.type === "image" && item.imageUrl && (
                 <div className="w-full h-32 bg-bg-surface rounded-btn mb-2 overflow-hidden">
-                  <img src={item.imageUrl} alt={item.title || ""} className="w-full h-full object-cover" />
+                  <img src={item.imageUrl} alt={item.title || ""} className="w-full h-full object-contain" />
                 </div>
               )}
               {item.type === "color" && (
