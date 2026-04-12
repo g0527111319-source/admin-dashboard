@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Phone, Mail, Globe, MapPin, User, Briefcase, Star, Clock, Building2, Facebook, Instagram, Linkedin, Youtube, MessageCircle, Image as ImageIcon, Quote, ChevronLeft, ChevronRight, X, QrCode, Play, Tag, ArrowLeftRight, BarChart3, Download, Navigation, Sun, Moon, Award, Users as UsersIcon, FolderKanban, } from "lucide-react";
 import type { BusinessCardData, CardColors, CardTheme, BeforeAfterItem, BusinessHours, ProfessionalStats, EntryAnimation, } from "@/lib/businessCardThemes";
-import { getThemeById, getMergedColors, getFontById } from "@/lib/businessCardThemes";
+import { getThemeById, getMergedColors, getFontById, socialLinkConfig } from "@/lib/businessCardThemes";
 
 interface PortfolioProject {
     id: string;
@@ -504,7 +504,21 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                 gap: 8,
                 justifyContent: "center",
             }}>
-                {activeSocials.map((social, i) => (<div key={i} style={{
+                {activeSocials.map((social, i) => {
+                    const config = socialLinkConfig[social.type];
+                    let href = social.url;
+                    if (config?.prefix && href) {
+                      // For whatsapp: strip leading 0 and prepend prefix
+                      if (social.type === "whatsapp") {
+                        const cleaned = href.replace(/^0/, "").replace(/[-\s]/g, "");
+                        href = config.prefix + cleaned;
+                      } else {
+                        href = config.prefix + href;
+                      }
+                    } else if (href && !href.startsWith("http") && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
+                      href = "https://" + href;
+                    }
+                    return (<a key={i} href={href || "#"} target={social.type === "email" || social.type === "phone" ? undefined : "_blank"} rel={social.type === "email" || social.type === "phone" ? undefined : "noopener noreferrer"} style={{
                     width: 40,
                     height: 40,
                     borderRadius: theme.cardStyle === "sharp" ? "4px" : "10px",
@@ -515,9 +529,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                     justifyContent: "center",
                     cursor: "pointer",
                     transition: "all 0.2s",
-                }} title={social.type}>
+                    textDecoration: "none",
+                }} title={config?.labelHe || social.type}>
                     {getSocialIcon(social.type, 18, colors.socialIcon)}
-                  </div>))}
+                  </a>);
+                  })}
               </div>
             </div>)}
 
@@ -532,7 +548,7 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                   }}>
                       <Tag size={14} color={colors.primary} strokeWidth={1.5} />
                       <span style={{ fontSize: "0.8rem", fontWeight: 600, color: colors.text }}>
-                          {"תחומות מומחיות"}
+                          {"תחומי מומחיות"}
                       </span>
                   </div>
                   <div style={{
