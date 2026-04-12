@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { deleteR2WithVariants } from "@/lib/r2-cleanup";
 
 // GET /api/designer/crm/projects/[projectId]
 export async function GET(
@@ -103,6 +104,22 @@ export async function DELETE(
     });
     if (!existing) {
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
+    }
+
+    // Delete R2 files before soft-deleting the project
+    try {
+      const photos = await prisma.crmProjectPhoto.findMany({
+        where: { projectId },
+        select: { r2Key: true },
+      });
+
+      const r2Deletions = photos
+        .filter((photo) => photo.r2Key)
+        .map((photo) => deleteR2WithVariants(photo.r2Key!));
+
+      await Promise.allSettled(r2Deletions);
+    } catch (err) {
+      console.warn("[r2-cleanup] שגיאה במחיקת קבצי R2 של פרויקט CRM:", err);
     }
 
     await prisma.crmProject.update({

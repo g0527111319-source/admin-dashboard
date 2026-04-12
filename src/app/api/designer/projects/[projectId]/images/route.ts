@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { deleteR2WithVariants } from "@/lib/r2-cleanup";
 
 // GET /api/designer/projects/[projectId]/images — List images for a project
 export async function GET(
@@ -168,6 +169,15 @@ export async function DELETE(
 
     if (!image) {
       return NextResponse.json({ error: "תמונה לא נמצאה" }, { status: 404 });
+    }
+
+    // Delete from R2 if r2Key exists
+    if (image.r2Key) {
+      try {
+        await deleteR2WithVariants(image.r2Key);
+      } catch (err) {
+        console.warn("[r2-cleanup] שגיאה במחיקת קובץ R2 של תמונה:", err);
+      }
     }
 
     await prisma.designerProjectImage.delete({

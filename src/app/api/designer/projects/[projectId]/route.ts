@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { deleteR2WithVariants } from "@/lib/r2-cleanup";
 
 // GET /api/designer/projects/[projectId] — Get single project with images
 export async function GET(
@@ -105,6 +106,26 @@ export async function DELETE(
 
     if (!existing) {
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
+    }
+
+    // Delete R2 files before DB deletion (cascade will remove image records)
+    try {
+      const images = await prisma.designerProjectImage.findMany({
+        where: { projectId },
+        select: { r2Key: true },
+      });
+
+      const r2Deletions = images
+        .filter((img) => img.r2Key)
+        .map((img) => deleteR2WithVariants(img.r2Key!));
+
+      if (existing.coverImageR2Key) {
+        r2Deletions.push(deleteR2WithVariants(existing.coverImageR2Key));
+      }
+
+      await Promise.allSettled(r2Deletions);
+    } catch (err) {
+      console.warn("[r2-cleanup] שגיאה במחיקת קבצי R2 של פרויקט:", err);
     }
 
     // Images are cascade-deleted via the relation

@@ -1,4 +1,11 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || "";
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || "";
@@ -23,6 +30,12 @@ export interface UploadResult {
   url: string;
   size: number;
   contentType: string;
+  thumbnailUrl?: string;
+  mediumUrl?: string;
+  hash?: string;
+  width?: number;
+  height?: number;
+  format?: string;
 }
 
 /**
@@ -99,6 +112,62 @@ export function generateFileKey(
  */
 export function getPublicUrl(key: string): string {
   return `${R2_PUBLIC_URL}/${key}`;
+}
+
+/**
+ * Generate a pre-signed PUT URL for direct browser uploads
+ */
+export async function generatePresignedUploadUrl(
+  key: string,
+  contentType: string,
+  expiresIn: number = 3600
+): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET_NAME,
+    Key: key,
+    ContentType: contentType,
+    CacheControl: "public, max-age=31536000, immutable",
+  });
+
+  return getSignedUrl(r2Client, command, { expiresIn });
+}
+
+/**
+ * List all objects in the bucket (for orphan cleanup)
+ */
+export async function listR2Objects(
+  prefix?: string
+): Promise<Array<{ key: string; size: number; lastModified: Date }>> {
+  const results: Array<{ key: string; size: number; lastModified: Date }> = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const command = new ListObjectsV2Command({
+      Bucket: R2_BUCKET_NAME,
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+    });
+
+    const response = await r2Client.send(command);
+
+    if (response.Contents) {
+      for (const obj of response.Contents) {
+        if (obj.Key) {
+          results.push({
+            key: obj.Key,
+            size: obj.Size ?? 0,
+            lastModified: obj.LastModified ?? new Date(),
+          });
+        }
+      }
+    }
+
+    continuationToken = response.IsTruncated
+      ? response.NextContinuationToken
+      : undefined;
+  } while (continuationToken);
+
+  return results;
 }
 
 /**

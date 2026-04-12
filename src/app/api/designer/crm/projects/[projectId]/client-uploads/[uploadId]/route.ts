@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { deleteR2WithVariants } from "@/lib/r2-cleanup";
 
 // PATCH /api/designer/crm/projects/[projectId]/client-uploads/[uploadId] — עדכון העלאה
 export async function PATCH(
@@ -58,6 +59,20 @@ export async function DELETE(
     });
     if (!project) {
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
+    }
+
+    // Delete from R2 before removing the DB record
+    const upload = await prisma.crmClientUpload.findUnique({
+      where: { id: uploadId },
+      select: { r2Key: true },
+    });
+
+    if (upload?.r2Key) {
+      try {
+        await deleteR2WithVariants(upload.r2Key);
+      } catch (err) {
+        console.warn("[r2-cleanup] שגיאה במחיקת קובץ R2 של העלאת לקוח:", err);
+      }
     }
 
     await prisma.crmClientUpload.delete({ where: { id: uploadId } });

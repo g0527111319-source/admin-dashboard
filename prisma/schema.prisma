@@ -698,6 +698,11 @@ model CrmProjectPhoto {
   project           CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   imageUrl          String
+  r2Key             String?    // מפתח R2 למחיקה
+  fileHash          String?    // SHA-256 למניעת כפילויות
+  thumbnailUrl      String?    // תמונה ממוזערת 200px
+  mediumUrl         String?    // תמונה בינונית 800px
+  fileSize          Int?       // גודל בבייטים
   caption           String?
   phaseName         String?    // שם השלב שבו צולם
   isVisibleToClient Boolean    @default(false)
@@ -705,6 +710,7 @@ model CrmProjectPhoto {
   createdAt         DateTime   @default(now())
 
   @@index([projectId])
+  @@index([fileHash])
 }
 
 // הגדרות CRM למעצבת (self-service)
@@ -1402,6 +1408,11 @@ model CrmClientUpload {
   client      CrmClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   imageUrl    String
+  r2Key       String?     // מפתח R2 למחיקה
+  fileHash    String?     // SHA-256 למניעת כפילויות
+  thumbnailUrl String?    // תמונה ממוזערת 200px
+  mediumUrl   String?     // תמונה בינונית 800px
+  fileSize    Int?        // גודל בבייטים
   caption     String?
   category    String      @default("general") // inspiration | current_state | reference | general
   isReviewed  Boolean     @default(false) // האם המעצבת ראתה
@@ -1410,6 +1421,7 @@ model CrmClientUpload {
 
   @@index([projectId])
   @@index([clientId])
+  @@index([fileHash])
 }
 
 // ==========================================
@@ -1773,6 +1785,7 @@ model DesignerProject {
   category       String   @default("apartment") // apartment, house, office, commercial, other
   styleTags      String[] @default([])
   coverImageUrl  String?
+  coverImageR2Key String? // מפתח R2 לתמונת כיסוי
   status         String   @default("private") // public, private
   suppliers      String[] @default([]) // supplier IDs linked to this project
   createdAt      DateTime @default(now())
@@ -1784,14 +1797,23 @@ model DesignerProject {
 }
 
 model DesignerProjectImage {
-  id        String  @id @default(cuid())
-  projectId String
-  project   DesignerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  imageUrl  String
-  caption   String?
-  sortOrder Int     @default(0)
+  id           String  @id @default(cuid())
+  projectId    String
+  project      DesignerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  imageUrl     String
+  r2Key        String?    // מפתח R2 למחיקה
+  fileHash     String?    // SHA-256 למניעת כפילויות
+  thumbnailUrl String?    // תמונה ממוזערת 200px
+  mediumUrl    String?    // תמונה בינונית 800px
+  fileSize     Int?       // גודל בבייטים
+  width        Int?       // רוחב בפיקסלים
+  height       Int?       // גובה בפיקסלים
+  format       String?    // פורמט הקובץ (webp, jpeg, etc.)
+  caption      String?
+  sortOrder    Int     @default(0)
 
   @@index([projectId])
+  @@index([fileHash])
 }
 
 // ==========================================
