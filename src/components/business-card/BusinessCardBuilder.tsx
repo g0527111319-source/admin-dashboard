@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreditCard, Monitor, Smartphone, Save, Eye, EyeOff, Share2, Check, Link2, } from "lucide-react";
 import type { BusinessCardData } from "@/lib/businessCardThemes";
 import { defaultBusinessCard } from "@/lib/businessCardThemes";
@@ -28,18 +28,40 @@ export default function BusinessCardBuilder({ initialData, designerId, userName 
             ],
         };
     });
+    const [isLoading, setIsLoading] = useState(!!designerId);
     const [viewMode, setViewMode] = useState<"mobile" | "desktop">("mobile");
     const [showPreview, setShowPreview] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<string | null>(null);
     const [shareState, setShareState] = useState<"idle" | "copied">("idle");
+
+    // Load saved card data from API on mount
+    useEffect(() => {
+      if (!designerId) return;
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await fetch(`/api/business-card/${designerId}`);
+          if (!res.ok) throw new Error("fetch failed");
+          const { card } = await res.json();
+          if (card && !cancelled) {
+            setCardData(prev => ({ ...prev, ...card }));
+          }
+        } catch (err) {
+          console.error("Failed to load business card:", err);
+        } finally {
+          if (!cancelled) setIsLoading(false);
+        }
+      })();
+      return () => { cancelled = true; };
+    }, [designerId]);
     const handleSave = async () => {
         setIsSaving(true);
         try {
             if (designerId) {
                 await fetch(`/api/business-card/${designerId}`, {
                     method: "PUT",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "application/json", "x-user-id": designerId },
                     body: JSON.stringify(cardData),
                 });
             }
@@ -78,6 +100,22 @@ export default function BusinessCardBuilder({ initialData, designerId, userName 
             window.prompt("העתק את הקישור:", shareUrl);
         }
     };
+    if (isLoading) {
+      return (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "4rem 0" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              width: 40, height: 40, border: "3px solid #e5e7eb",
+              borderTopColor: "#C9A84C", borderRadius: "50%",
+              animation: "spin 0.8s linear infinite", margin: "0 auto 12px",
+            }} />
+            <p style={{ color: "#9ca3af", fontSize: 14 }}>{"טוען כרטיס ביקור..."}</p>
+            <style dangerouslySetInnerHTML={{ __html: `@keyframes spin{to{transform:rotate(360deg)}}` }} />
+          </div>
+        </div>
+      );
+    }
+
     return (<div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">

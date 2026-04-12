@@ -372,6 +372,13 @@ model BusinessCard {
   bodyFontId      String?  // Google Font ID for body text
   headerBgImage   String?  // Background image URL for header
 
+  // Extended features — single JSON column for all extra card settings
+  // Stores: logoSize, showQrCode, qrCodeUrl, videoUrl, entryAnimation,
+  // darkMode, businessHours, showBusinessHours, expertiseTags,
+  // beforeAfterItems, professionalStats, showStats, showVCard,
+  // businessAddress, showMapButton
+  extraData       Json?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

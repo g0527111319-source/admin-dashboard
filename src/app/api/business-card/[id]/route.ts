@@ -2,6 +2,14 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// All extra fields stored in the extraData JSON column
+const EXTRA_KEYS = [
+  "logoSize", "showQrCode", "qrCodeUrl", "videoUrl", "entryAnimation",
+  "darkMode", "businessHours", "showBusinessHours", "expertiseTags",
+  "beforeAfterItems", "professionalStats", "showStats", "showVCard",
+  "businessAddress", "showMapButton",
+] as const;
+
 // GET /api/business-card/[id] — Public: fetch business card by designer/supplier ID
 export async function GET(
   _req: NextRequest,
@@ -54,24 +62,31 @@ export async function GET(
       return NextResponse.json({ error: "לא נמצא" }, { status: 404 });
     }
 
+    // Merge extraData back into the card object for the client
+    let cardData = null;
+    if (card) {
+      const extra = (card.extraData as Record<string, unknown>) || {};
+      cardData = {
+        fields: card.fields,
+        socialLinks: card.socialLinks,
+        galleryImages: card.galleryImages,
+        testimonials: card.testimonials,
+        themeId: card.themeId,
+        customColors: card.customColors,
+        title: card.title,
+        subtitle: card.subtitle,
+        avatarUrl: card.avatarUrl,
+        logoUrl: card.logoUrl,
+        headingFontId: card.headingFontId,
+        bodyFontId: card.bodyFontId,
+        headerBgImage: card.headerBgImage,
+        // Spread all extra fields back into the card
+        ...extra,
+      };
+    }
+
     return NextResponse.json({
-      card: card
-        ? {
-            fields: card.fields,
-            socialLinks: card.socialLinks,
-            galleryImages: card.galleryImages,
-            testimonials: card.testimonials,
-            themeId: card.themeId,
-            customColors: card.customColors,
-            title: card.title,
-            subtitle: card.subtitle,
-            avatarUrl: card.avatarUrl,
-            logoUrl: card.logoUrl,
-            headingFontId: card.headingFontId,
-            bodyFontId: card.bodyFontId,
-            headerBgImage: card.headerBgImage,
-          }
-        : null,
+      card: cardData,
       profile,
       profileType,
     });
@@ -105,6 +120,14 @@ export async function PUT(
       avatarUrl, logoUrl, headingFontId, bodyFontId, headerBgImage,
     } = body;
 
+    // Collect all extra fields into a single JSON object
+    const extraData: Record<string, unknown> = {};
+    for (const key of EXTRA_KEYS) {
+      if (body[key] !== undefined) {
+        extraData[key] = body[key];
+      }
+    }
+
     // Determine if this is a designer or supplier
     const designer = await prisma.designer.findUnique({ where: { id }, select: { id: true } });
     const ownerField = designer
@@ -114,29 +137,23 @@ export async function PUT(
       ? { designerId: id }
       : { supplierId: id };
 
+    const saveData = {
+      fields: fields || [],
+      socialLinks: socialLinks || [],
+      galleryImages: galleryImages || [],
+      testimonials: testimonials || [],
+      themeId: themeId || "elegant-gold",
+      customColors: customColors || null,
+      title, subtitle, avatarUrl, logoUrl,
+      headingFontId, bodyFontId, headerBgImage,
+      extraData: Object.keys(extraData).length > 0 ? extraData : undefined,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const card = await prisma.businessCard.upsert({
       where: uniqueField,
-      create: {
-        ...ownerField,
-        fields: fields || [],
-        socialLinks: socialLinks || [],
-        galleryImages: galleryImages || [],
-        testimonials: testimonials || [],
-        themeId: themeId || "elegant-gold",
-        customColors: customColors || null,
-        title, subtitle, avatarUrl, logoUrl,
-        headingFontId, bodyFontId, headerBgImage,
-      },
-      update: {
-        fields: fields || [],
-        socialLinks: socialLinks || [],
-        galleryImages: galleryImages || [],
-        testimonials: testimonials || [],
-        themeId: themeId || "elegant-gold",
-        customColors: customColors || null,
-        title, subtitle, avatarUrl, logoUrl,
-        headingFontId, bodyFontId, headerBgImage,
-      },
+      create: { ...ownerField, ...saveData } as any,
+      update: saveData as any,
     });
 
     return NextResponse.json({ success: true, id: card.id });
