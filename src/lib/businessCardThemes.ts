@@ -341,6 +341,22 @@ const printFonts: FontOption[] = [
   { id: "sbl-hebrew", nameHe: "אס בי אל עברית", family: "'SBL Hebrew', serif", category: "print", sampleText: "עברית אלגנטית לקריאה" },
   { id: "sf-hebrew", nameHe: "אס אף עברית", family: "'SF Hebrew', sans-serif", category: "print", sampleText: "מודרני, נקי ומאוזן" },
   { id: "shlomo", nameHe: "שלמה", family: "'Shlomo', serif", category: "print", sampleText: "אופי עברי קלאסי" },
+  { id: "rubik", nameHe: "רוביק", family: "'Rubik', sans-serif", category: "print", sampleText: "מודרני ונגיש לכולם" },
+  { id: "secular-one", nameHe: "סקולר וואן", family: "'Secular One', sans-serif", category: "print", sampleText: "כותרות עבות ומרשימות" },
+  { id: "varela-round", nameHe: "וארלה ראונד", family: "'Varela Round', sans-serif", category: "print", sampleText: "עגול, ידידותי ונעים" },
+  { id: "open-sans-hebrew", nameHe: "אופן סנס", family: "'Open Sans Hebrew', sans-serif", category: "print", sampleText: "נקי ומקצועי לכל שימוש" },
+  { id: "noto-sans-hebrew", nameHe: "נוטו סנס", family: "'Noto Sans Hebrew', sans-serif", category: "print", sampleText: "סטנדרט בינלאומי איכותי" },
+  { id: "noto-serif-hebrew", nameHe: "נוטו סריף", family: "'Noto Serif Hebrew', serif", category: "print", sampleText: "אלגנטיות מסורתית עדינה" },
+  { id: "suez-one", nameHe: "סואץ וואן", family: "'Suez One', serif", category: "print", sampleText: "כבדות וחדות ביחד" },
+  { id: "amatic-sc", nameHe: "אמטיק", family: "'Amatic SC', sans-serif", category: "print", sampleText: "דק ומעוצב בקלילות" },
+  { id: "bellefair", nameHe: "בלפייר", family: "'Bellefair', serif", category: "print", sampleText: "שיק אירופאי עם נגיעה ישראלית" },
+  { id: "cousine", nameHe: "קוסין", family: "'Cousine', monospace", category: "print", sampleText: "רוחב קבוע וטכני מדויק" },
+  { id: "tinos", nameHe: "טינוס", family: "'Tinos', serif", category: "print", sampleText: "קלאסי ורציני לטקסט ארוך" },
+  { id: "arimo", nameHe: "ארימו", family: "'Arimo', sans-serif", category: "print", sampleText: "פשוט, נקי ובהיר" },
+  { id: "ibm-plex-sans", nameHe: "פלקס סנס", family: "'IBM Plex Sans Hebrew', sans-serif", category: "print", sampleText: "עסקי ומקצועי ברמה גבוהה" },
+  { id: "karantina", nameHe: "קרנטינה", family: "'Karantina', sans-serif", category: "print", sampleText: "בולט ויוצא דופן" },
+  { id: "bona-nova", nameHe: "בונה נובה", family: "'Bona Nova', serif", category: "print", sampleText: "רומנטי וקלאסי כאחד" },
+  { id: "noto-rashi-hebrew", nameHe: "נוטו רש״י", family: "'Noto Rashi Hebrew', serif", category: "print", sampleText: "מסורתי עם שורשים עמוקים" },
 ];
 
 // ===== 10 גופני כתב יד =====
@@ -348,6 +364,13 @@ const handwritingFonts: FontOption[] = [
   { id: "mark-hand", nameHe: "מארק הנד", family: "'Mark Hand', cursive", category: "handwriting", sampleText: "טאץ׳ אישי וקליל" },
   { id: "happiness-regular", nameHe: "האפי נס", family: "'Happiness Regular', cursive", category: "handwriting", sampleText: "כתב יד שמח וזורם" },
   { id: "sn-megila", nameHe: "מגילה", family: "'SN Megila', cursive", category: "handwriting", sampleText: "תחושה אמנותית וייחודית" },
+  { id: "handlee", nameHe: "הנדלי", family: "'Handlee', cursive", category: "handwriting", sampleText: "כתיבה חופשית ורכה" },
+  { id: "patrick-hand", nameHe: "פטריק הנד", family: "'Patrick Hand', cursive", category: "handwriting", sampleText: "ידני ואותנטי" },
+  { id: "caveat", nameHe: "קאבט", family: "'Caveat', cursive", category: "handwriting", sampleText: "הערות שוליים אישיות" },
+  { id: "kalam", nameHe: "קלם", family: "'Kalam', cursive", category: "handwriting", sampleText: "כתב יד אמנותי וזורם" },
+  { id: "gochi-hand", nameHe: "גוצ׳י הנד", family: "'Gochi Hand', cursive", category: "handwriting", sampleText: "שובב וצעיר ברוח" },
+  { id: "indie-flower", nameHe: "אינדי פלאוור", family: "'Indie Flower', cursive", category: "handwriting", sampleText: "פרחוני ומשחקי" },
+  { id: "dancing-script", nameHe: "דאנסינג סקריפט", family: "'Dancing Script', cursive", category: "handwriting", sampleText: "זורם ואלגנטי כריקוד" },
 ];
 
 // כל הגופנים יחד
