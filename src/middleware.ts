@@ -133,7 +133,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // /supplier/* — רק ספק (או אדמין)
+  // /supplier/[id]/* — רק הספק עצמו (או אדמין)
   if (pathname.startsWith("/supplier")) {
     if (role !== "supplier" && role !== "admin") {
       if (pathname.startsWith("/api/")) {
@@ -141,15 +141,35 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.redirect(new URL("/login", request.url));
     }
+    // בדיקת בעלות — ספק יכול לגשת רק לאזור שלו
+    if (role === "supplier") {
+      const supplierIdMatch = pathname.match(/^\/supplier\/([^/]+)/);
+      if (supplierIdMatch && supplierIdMatch[1] !== session.userId) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json({ error: "אין הרשאה לגשת לאזור של ספק אחר" }, { status: 403 });
+        }
+        return NextResponse.redirect(new URL(`/supplier/${session.userId}`, request.url));
+      }
+    }
   }
 
-  // /designer/* or /api/designer/* — רק מעצבת (או אדמין)
+  // /designer/[id]/* or /api/designer/* — רק מעצבת (או אדמין)
   if (pathname.startsWith("/designer") || pathname.startsWith("/api/designer")) {
     if (role !== "designer" && role !== "admin") {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
       }
       return NextResponse.redirect(new URL("/login", request.url));
+    }
+    // בדיקת בעלות — מעצבת יכולה לגשת רק לאזור שלה
+    if (role === "designer") {
+      const designerIdMatch = pathname.match(/^\/designer\/([^/]+)/);
+      if (designerIdMatch && designerIdMatch[1] !== session.userId) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json({ error: "אין הרשאה לגשת לאזור של מעצב/ת אחר/ת" }, { status: 403 });
+        }
+        return NextResponse.redirect(new URL(`/designer/${session.userId}`, request.url));
+      }
     }
   }
 

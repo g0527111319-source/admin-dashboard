@@ -59,7 +59,7 @@ function getJwtSecretCached(): Uint8Array {
   return _jwtSecret;
 }
 
-const JWT_EXPIRY = "24h"; // תוקף 24 שעות
+const JWT_EXPIRY = "6h"; // תוקף 6 שעות — אבטחה מוגברת
 
 /** יצירת JWT טוקן */
 export async function createToken(payload: SessionPayload): Promise<string> {
@@ -110,7 +110,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<void> {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 60 * 60 * 24, // 24 שעות
+    maxAge: 60 * 60 * 6, // 6 שעות — תואם ל-JWT_EXPIRY
     path: "/",
   });
 }
