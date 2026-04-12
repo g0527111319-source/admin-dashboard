@@ -215,6 +215,7 @@ export default function CrmApprovals({ clientId, projectId }: { clientId?: strin
                     <input value={opt.label} onChange={e => { const opts = [...form.options]; opts[i] = { ...opts[i], label: e.target.value }; setForm({ ...form, options: opts }); }} placeholder="שם האפשרות" className="w-full border border-border-subtle rounded-lg px-3 py-2 text-sm" />
                     <FileUpload
                       compact
+                      dark
                       category="image"
                       folder="approvals"
                       currentUrl={opt.imageUrl}

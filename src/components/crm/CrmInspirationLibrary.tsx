@@ -499,6 +499,7 @@ export default function CrmInspirationLibrary({ clientId }: { clientId?: string 
                 <label className="form-label">תמונה</label>
                 <FileUpload
                   compact
+                  dark
                   category="image"
                   folder="inspiration"
                   currentUrl={itemForm.imageUrl}

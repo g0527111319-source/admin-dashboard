@@ -409,6 +409,7 @@ export default function CrmMaterials({ clientId, projectId }: { clientId?: strin
                           />
                           <FileUpload
                             compact
+                            dark
                             category="image"
                             folder="materials"
                             currentUrl={itemForm.imageUrl}

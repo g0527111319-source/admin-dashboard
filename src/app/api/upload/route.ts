@@ -9,6 +9,71 @@ import { uploadToR2, generateFileKey, validateFile, type FileCategory } from "@/
 
 const MAX_FILENAME_LENGTH = 255;
 
+// Image optimization threshold (500KB)
+const IMAGE_OPTIMIZATION_THRESHOLD = 500 * 1024;
+const IMAGE_MAX_DIMENSION = 2000;
+
+// Attempt to load sharp for image optimization
+let sharp: typeof import("sharp") | null = null;
+try {
+  sharp = require("sharp");
+} catch {
+  // sharp not available — image optimization will be skipped
+}
+
+/**
+ * Optimize an image buffer using sharp (if available).
+ * Returns the optimized buffer and (possibly updated) content type,
+ * or the originals when optimization is skipped.
+ */
+async function optimizeImage(
+  buffer: Buffer,
+  contentType: string
+): Promise<{ buffer: Buffer; contentType: string }> {
+  if (!sharp) return { buffer, contentType };
+
+  // Only optimize JPEG, PNG, and WebP above the size threshold
+  const optimizableTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!optimizableTypes.includes(contentType)) return { buffer, contentType };
+  if (buffer.length <= IMAGE_OPTIMIZATION_THRESHOLD) return { buffer, contentType };
+
+  const originalSize = buffer.length;
+
+  try {
+    let pipeline = sharp(buffer).resize({
+      width: IMAGE_MAX_DIMENSION,
+      height: IMAGE_MAX_DIMENSION,
+      fit: "inside",
+      withoutEnlargement: true,
+    });
+
+    let optimizedBuffer: Buffer;
+
+    switch (contentType) {
+      case "image/jpeg":
+        optimizedBuffer = await pipeline.jpeg({ quality: 85 }).toBuffer();
+        break;
+      case "image/png":
+        optimizedBuffer = await pipeline.png({ compressionLevel: 9, quality: 85 }).toBuffer();
+        break;
+      case "image/webp":
+        optimizedBuffer = await pipeline.webp({ quality: 85 }).toBuffer();
+        break;
+      default:
+        return { buffer, contentType };
+    }
+
+    console.log(
+      `[upload] Image optimized: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB (${contentType})`
+    );
+
+    return { buffer: optimizedBuffer, contentType };
+  } catch (err) {
+    console.warn("[upload] Image optimization failed, using original:", err);
+    return { buffer, contentType };
+  }
+}
+
 // Magic bytes for file type validation
 const MAGIC_BYTES: Record<string, number[][]> = {
   "image/jpeg": [[0xFF, 0xD8, 0xFF]],
@@ -68,12 +133,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Optimize image if applicable (resize + compress large images)
+    const optimized = await optimizeImage(buffer, file.type);
+    const finalBuffer = optimized.buffer;
+    const finalContentType = optimized.contentType;
+
     // Sanitize folder name
     const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, "_");
 
     // Generate unique key and upload to R2
     const key = generateFileKey(safeFolder, file.name, designerId || undefined);
-    const result = await uploadToR2(buffer, key, file.type);
+    const result = await uploadToR2(finalBuffer, key, finalContentType);
 
     // Audit log
     const userId = request.headers.get("x-user-id") || designerId || "unknown";

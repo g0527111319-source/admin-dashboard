@@ -284,6 +284,7 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
               </label>
               <FileUpload
                 compact
+                dark
                 category="image"
                 folder="before-after"
                 currentUrl={form.beforeImageUrl}
@@ -300,6 +301,7 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
               </label>
               <FileUpload
                 compact
+                dark
                 category="image"
                 folder="before-after"
                 currentUrl={form.afterImageUrl}

@@ -172,6 +172,7 @@ export default function CrmMoodboards({ clientId, projectId }: { clientId?: stri
           {newItem.type === "image" && (
             <FileUpload
               compact
+              dark
               category="image"
               folder="moodboards"
               currentUrl={newItem.imageUrl}

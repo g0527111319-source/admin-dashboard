@@ -649,6 +649,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
               label="העלאת תמונות לפרויקט (ניתן לבחור כמה)"
               multiple
               skipEditor
+              dark
               maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
               onUpload={async (file: UploadedFile) => {
                 if (!selectedProject) return;
@@ -897,6 +898,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
           <div>
             <label className="block text-sm font-semibold text-white/80 mb-2">תמונת כיסוי</label>
             <FileUpload
+              dark
               category="image"
               folder="portfolio"
               currentUrl={form.coverImageUrl}
