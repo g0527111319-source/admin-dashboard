@@ -245,53 +245,30 @@ function ProjectsContent() {
                 <Link
                   key={project.id}
                   href={`/projects/${project.id}`}
-                  className="group relative block rounded-xl overflow-hidden border border-white/5 hover:border-[#C9A84C]/30 transition-all"
+                  className="group relative block rounded-xl overflow-hidden border border-white/5 hover:border-[#C9A84C]/30 transition-all bg-[#1a1a2e]"
                   style={{ borderRadius: "12px" }}
                 >
                   {/* Cover */}
-                  <div className="relative h-64 bg-[#1a1a2e]">
+                  <div className="relative overflow-hidden">
                     {project.coverImageUrl ? (
                       <img
                         src={proxyImageUrl(project.coverImageUrl)}
                         alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
                         loading="lazy"
                       />
                     ) : project.images[0] ? (
                       <img
                         src={proxyImageUrl(project.images[0].imageUrl)}
                         alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a]">
+                      <div className="w-full py-16 flex items-center justify-center bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a]">
                         <span className="text-white/10 text-4xl font-heading">{project.title.charAt(0)}</span>
                       </div>
                     )}
-
-                    {/* Dark overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                    {/* Content overlay */}
-                    <div className="absolute bottom-0 right-0 left-0 p-5">
-                      <h3 className="text-base font-bold text-white mb-1 line-clamp-1">
-                        {project.title}
-                      </h3>
-                      <p className="text-xs text-white/60">
-                        {project.designer.fullName}
-                        {project.designer.city && ` \u00B7 ${project.designer.city}`}
-                      </p>
-                      {project.styleTags && project.styleTags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {project.styleTags.slice(0, 3).map((tag: string) => (
-                            <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-[#C9A84C]/20 text-[#C9A84C] border border-[#C9A84C]/30">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
 
                     {/* Category badge */}
                     <div className="absolute top-3 right-3">
@@ -299,6 +276,26 @@ function ProjectsContent() {
                         {getCategoryLabel(project.category)}
                       </span>
                     </div>
+                  </div>
+
+                  {/* Info below image */}
+                  <div className="p-4 bg-gradient-to-b from-[#1a1a2e] to-[#111]">
+                    <h3 className="text-base font-bold text-white mb-1 line-clamp-1">
+                      {project.title}
+                    </h3>
+                    <p className="text-xs text-white/60">
+                      {project.designer.fullName}
+                      {project.designer.city && ` \u00B7 ${project.designer.city}`}
+                    </p>
+                    {project.styleTags && project.styleTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {project.styleTags.slice(0, 3).map((tag: string) => (
+                          <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-[#C9A84C]/20 text-[#C9A84C] border border-[#C9A84C]/30">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}

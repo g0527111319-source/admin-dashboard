@@ -225,41 +225,38 @@ export default function ProjectPage() {
       </header>
 
       {/* Hero - Cover Image */}
-      <section className="relative">
-        <div className="relative h-[50vh] sm:h-[60vh] bg-[#1a1a2e]">
-          {project.coverImageUrl ? (
-            <img
-              src={proxyImageUrl(project.coverImageUrl)}
-              alt={project.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          ) : project.images[0] ? (
-            <img
-              src={proxyImageUrl(project.images[0].imageUrl)}
-              alt={project.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a]">
-              <span className="text-white/10 text-8xl font-heading">{project.title.charAt(0)}</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent" />
+      <section className="relative bg-[#1a1a2e]">
+        {project.coverImageUrl ? (
+          <img
+            src={proxyImageUrl(project.coverImageUrl)}
+            alt={project.title}
+            className="w-full h-auto block max-h-[80vh]  object-contain mx-auto"
+            loading="lazy"
+          />
+        ) : project.images[0] ? (
+          <img
+            src={proxyImageUrl(project.images[0].imageUrl)}
+            alt={project.title}
+            className="w-full h-auto block max-h-[80vh] object-contain mx-auto"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full py-24 flex items-center justify-center bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a]">
+            <span className="text-white/10 text-8xl font-heading">{project.title.charAt(0)}</span>
+          </div>
+        )}
 
-          {/* Title overlay */}
-          <div className="absolute bottom-0 right-0 left-0 p-6 sm:p-10">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="px-3 py-1 bg-[#C9A84C]/90 text-black text-xs font-bold rounded-full">
-                  {CATEGORIES[project.category] || project.category}
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-heading font-bold">
-                {project.title}
-              </h1>
+        {/* Title bar below image */}
+        <div className="bg-gradient-to-t from-[#050505] to-[#1a1a2e] p-6 sm:p-10">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 bg-[#C9A84C]/90 text-black text-xs font-bold rounded-full">
+                {CATEGORIES[project.category] || project.category}
+              </span>
             </div>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-heading font-bold">
+              {project.title}
+            </h1>
           </div>
         </div>
       </section>
@@ -326,18 +323,18 @@ export default function ProjectPage() {
               {project.images.length > 0 && (
                 <div>
                   <h2 className="text-lg font-bold text-white mb-4">גלריית תמונות</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="columns-2 sm:columns-3 gap-3 space-y-3">
                     {project.images.map((image, index) => (
                       <button
                         key={image.id}
                         onClick={() => setLightboxIndex(index)}
-                        className="relative group rounded-xl overflow-hidden aspect-square border border-white/5 hover:border-[#C9A84C]/30 transition-all"
+                        className="relative group rounded-xl overflow-hidden border border-white/5 hover:border-[#C9A84C]/30 transition-all block w-full break-inside-avoid"
                         style={{ borderRadius: "12px" }}
                       >
                         <img
                           src={proxyImageUrl(image.imageUrl)}
                           alt={image.caption || ""}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-auto block group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
