@@ -11,6 +11,7 @@ const R2_ENDPOINT = process.env.R2_ENDPOINT || `https://${R2_ACCOUNT_ID}.r2.clou
 const r2Client = new S3Client({
   region: "auto",
   endpoint: R2_ENDPOINT,
+  forcePathStyle: true,
   credentials: {
     accessKeyId: R2_ACCESS_KEY_ID,
     secretAccessKey: R2_SECRET_ACCESS_KEY,
