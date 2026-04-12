@@ -540,7 +540,7 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                     WebkitTapHighlightColor: "rgba(0,0,0,0.1)",
                     touchAction: "auto",
                 }} title={config?.labelHe || social.type}>
-                    {getSocialIcon(social.type, 18, colors.socialIcon)}
+                    <span style={{ pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>{getSocialIcon(social.type, 18, colors.socialIcon)}</span>
                   </a>);
                   })}
               </div>
