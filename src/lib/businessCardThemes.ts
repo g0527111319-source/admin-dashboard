@@ -325,52 +325,52 @@ export interface FontOption {
   sampleText: string; // דוגמה בעברית
 }
 
-// ===== 30 גופני דפוס =====
+// ===== 30 גופני דפוס עבריים =====
 const printFonts: FontOption[] = [
+  // --- גופני Google (עברית) ---
   { id: "heebo", nameHe: "חיבו", family: "'Heebo', sans-serif", category: "print", sampleText: "שלום, אני מעצבת פנים" },
   { id: "assistant", nameHe: "אסיסטנט", family: "'Assistant', sans-serif", category: "print", sampleText: "עיצוב שמדבר אליך" },
   { id: "alef", nameHe: "אלף", family: "'Alef', sans-serif", category: "print", sampleText: "עברית ברורה ונקייה" },
   { id: "frank-ruhl", nameHe: "פרנק רוהל", family: "'Frank Ruhl Libre', serif", category: "print", sampleText: "אלגנטיות קלאסית" },
   { id: "david-libre", nameHe: "דוד ליברה", family: "'David Libre', serif", category: "print", sampleText: "גופן ישראלי קלאסי" },
   { id: "miriam-libre", nameHe: "מרים ליברה", family: "'Miriam Libre', sans-serif", category: "print", sampleText: "ישראלית ושמחה" },
-  { id: "aviv-regular", nameHe: "אביב", family: "'Aviv Regular', sans-serif", category: "print", sampleText: "קווים נקיים ומראה עברי" },
-  { id: "ashur-b", nameHe: "אשור", family: "'Ashur B', serif", category: "print", sampleText: "נוכחות קלאסית עם אופי" },
-  { id: "david-libre-local", nameHe: "דוד ליברה בולד", family: "'David Libre Local', serif", category: "print", sampleText: "כותרת עברית מודגשת" },
-  { id: "italki-atik", nameHe: "אטיק", family: "'Italki Atik', serif", category: "print", sampleText: "עברית מסורתית ומרשימה" },
-  { id: "mekorot-vilna", nameHe: "מקורות וילנה", family: "'Mekorot Vilna', serif", category: "print", sampleText: "חותם עמוק עם אופי" },
-  { id: "sbl-hebrew", nameHe: "אס בי אל עברית", family: "'SBL Hebrew', serif", category: "print", sampleText: "עברית אלגנטית לקריאה" },
-  { id: "sf-hebrew", nameHe: "אס אף עברית", family: "'SF Hebrew', sans-serif", category: "print", sampleText: "מודרני, נקי ומאוזן" },
-  { id: "shlomo", nameHe: "שלמה", family: "'Shlomo', serif", category: "print", sampleText: "אופי עברי קלאסי" },
   { id: "rubik", nameHe: "רוביק", family: "'Rubik', sans-serif", category: "print", sampleText: "מודרני ונגיש לכולם" },
   { id: "secular-one", nameHe: "סקולר וואן", family: "'Secular One', sans-serif", category: "print", sampleText: "כותרות עבות ומרשימות" },
   { id: "varela-round", nameHe: "וארלה ראונד", family: "'Varela Round', sans-serif", category: "print", sampleText: "עגול, ידידותי ונעים" },
-  { id: "open-sans-hebrew", nameHe: "אופן סנס", family: "'Open Sans Hebrew', sans-serif", category: "print", sampleText: "נקי ומקצועי לכל שימוש" },
-  { id: "noto-sans-hebrew", nameHe: "נוטו סנס", family: "'Noto Sans Hebrew', sans-serif", category: "print", sampleText: "סטנדרט בינלאומי איכותי" },
-  { id: "noto-serif-hebrew", nameHe: "נוטו סריף", family: "'Noto Serif Hebrew', serif", category: "print", sampleText: "אלגנטיות מסורתית עדינה" },
+  { id: "noto-sans-hebrew", nameHe: "נוטו סנס עברית", family: "'Noto Sans Hebrew', sans-serif", category: "print", sampleText: "סטנדרט בינלאומי איכותי" },
+  { id: "noto-serif-hebrew", nameHe: "נוטו סריף עברית", family: "'Noto Serif Hebrew', serif", category: "print", sampleText: "אלגנטיות מסורתית עדינה" },
+  { id: "noto-rashi-hebrew", nameHe: "נוטו רש״י", family: "'Noto Rashi Hebrew', serif", category: "print", sampleText: "מסורתי עם שורשים עמוקים" },
   { id: "suez-one", nameHe: "סואץ וואן", family: "'Suez One', serif", category: "print", sampleText: "כבדות וחדות ביחד" },
-  { id: "amatic-sc", nameHe: "אמטיק", family: "'Amatic SC', sans-serif", category: "print", sampleText: "דק ומעוצב בקלילות" },
-  { id: "bellefair", nameHe: "בלפייר", family: "'Bellefair', serif", category: "print", sampleText: "שיק אירופאי עם נגיעה ישראלית" },
-  { id: "cousine", nameHe: "קוסין", family: "'Cousine', monospace", category: "print", sampleText: "רוחב קבוע וטכני מדויק" },
-  { id: "tinos", nameHe: "טינוס", family: "'Tinos', serif", category: "print", sampleText: "קלאסי ורציני לטקסט ארוך" },
-  { id: "arimo", nameHe: "ארימו", family: "'Arimo', sans-serif", category: "print", sampleText: "פשוט, נקי ובהיר" },
-  { id: "ibm-plex-sans", nameHe: "פלקס סנס", family: "'IBM Plex Sans Hebrew', sans-serif", category: "print", sampleText: "עסקי ומקצועי ברמה גבוהה" },
+  { id: "bellefair", nameHe: "בלפייר", family: "'Bellefair', serif", category: "print", sampleText: "שיק עדין עם נגיעה ישראלית" },
   { id: "karantina", nameHe: "קרנטינה", family: "'Karantina', sans-serif", category: "print", sampleText: "בולט ויוצא דופן" },
   { id: "bona-nova", nameHe: "בונה נובה", family: "'Bona Nova', serif", category: "print", sampleText: "רומנטי וקלאסי כאחד" },
-  { id: "noto-rashi-hebrew", nameHe: "נוטו רש״י", family: "'Noto Rashi Hebrew', serif", category: "print", sampleText: "מסורתי עם שורשים עמוקים" },
+  { id: "ibm-plex-sans", nameHe: "פלקס סנס עברית", family: "'IBM Plex Sans Hebrew', sans-serif", category: "print", sampleText: "עסקי ומקצועי ברמה גבוהה" },
+  { id: "amatic-sc", nameHe: "אמטיק", family: "'Amatic SC', sans-serif", category: "print", sampleText: "דק ומעוצב בקלילות" },
+  // --- גופנים מקומיים (עברית) ---
+  { id: "aviv-regular", nameHe: "אביב", family: "'Aviv Regular', sans-serif", category: "print", sampleText: "קווים נקיים ומראה עברי" },
+  { id: "ashur-b", nameHe: "אשור", family: "'Ashur B', serif", category: "print", sampleText: "נוכחות קלאסית עם אופי" },
+  { id: "david-libre-local", nameHe: "דוד ליברה בולד", family: "'David Libre Local', serif", category: "print", sampleText: "כותרת עברית מודגשת" },
+  { id: "geoffrey", nameHe: "ג׳פרי", family: "'Geoffrey', serif", category: "print", sampleText: "אופי חזק וייחודי" },
+  { id: "italki-atik", nameHe: "אטיק", family: "'Italki Atik', serif", category: "print", sampleText: "עברית מסורתית ומרשימה" },
+  { id: "mekorot-vilna", nameHe: "מקורות וילנה", family: "'Mekorot Vilna', serif", category: "print", sampleText: "חותם עמוק עם אופי" },
+  { id: "rubik-one", nameHe: "רוביק וואן", family: "'Rubik One', sans-serif", category: "print", sampleText: "עבה וחזק לכותרות" },
+  { id: "sbl-hebrew", nameHe: "אס בי אל עברית", family: "'SBL Hebrew', serif", category: "print", sampleText: "עברית אלגנטית לקריאה" },
+  { id: "sf-hebrew", nameHe: "אס אף עברית", family: "'SF Hebrew', sans-serif", category: "print", sampleText: "מודרני, נקי ומאוזן" },
+  { id: "shlomo", nameHe: "שלמה", family: "'Shlomo', serif", category: "print", sampleText: "אופי עברי קלאסי" },
 ];
 
-// ===== 10 גופני כתב יד =====
+// ===== 10 גופני כתב יד עבריים =====
 const handwritingFonts: FontOption[] = [
   { id: "mark-hand", nameHe: "מארק הנד", family: "'Mark Hand', cursive", category: "handwriting", sampleText: "טאץ׳ אישי וקליל" },
-  { id: "happiness-regular", nameHe: "האפי נס", family: "'Happiness Regular', cursive", category: "handwriting", sampleText: "כתב יד שמח וזורם" },
+  { id: "happiness-regular", nameHe: "האפינס", family: "'Happiness Regular', cursive", category: "handwriting", sampleText: "כתב יד שמח וזורם" },
   { id: "sn-megila", nameHe: "מגילה", family: "'SN Megila', cursive", category: "handwriting", sampleText: "תחושה אמנותית וייחודית" },
-  { id: "handlee", nameHe: "הנדלי", family: "'Handlee', cursive", category: "handwriting", sampleText: "כתיבה חופשית ורכה" },
-  { id: "patrick-hand", nameHe: "פטריק הנד", family: "'Patrick Hand', cursive", category: "handwriting", sampleText: "ידני ואותנטי" },
-  { id: "caveat", nameHe: "קאבט", family: "'Caveat', cursive", category: "handwriting", sampleText: "הערות שוליים אישיות" },
-  { id: "kalam", nameHe: "קלם", family: "'Kalam', cursive", category: "handwriting", sampleText: "כתב יד אמנותי וזורם" },
-  { id: "gochi-hand", nameHe: "גוצ׳י הנד", family: "'Gochi Hand', cursive", category: "handwriting", sampleText: "שובב וצעיר ברוח" },
-  { id: "indie-flower", nameHe: "אינדי פלאוור", family: "'Indie Flower', cursive", category: "handwriting", sampleText: "פרחוני ומשחקי" },
-  { id: "dancing-script", nameHe: "דאנסינג סקריפט", family: "'Dancing Script', cursive", category: "handwriting", sampleText: "זורם ואלגנטי כריקוד" },
+  { id: "sharpie", nameHe: "שארפי", family: "'ShArpie', cursive", category: "handwriting", sampleText: "טוש עבה ובולט" },
+  { id: "adi", nameHe: "עדי", family: "'Adi', cursive", category: "handwriting", sampleText: "כתב יד עדין ואישי" },
+  { id: "aviva", nameHe: "אביבה", family: "'Aviva', cursive", category: "handwriting", sampleText: "רך וזורם כמו אביב" },
+  { id: "hodaya", nameHe: "הודיה", family: "'Hodaya', cursive", category: "handwriting", sampleText: "חם ונעים לעין" },
+  { id: "karin", nameHe: "קארין", family: "'Karin', cursive", category: "handwriting", sampleText: "נגיעה אישית ומקורית" },
+  { id: "reut", nameHe: "רעות", family: "'Reut', cursive", category: "handwriting", sampleText: "ידני וקרוב ללב" },
+  { id: "yael", nameHe: "יעל", family: "'Yael', cursive", category: "handwriting", sampleText: "חופשי ומלא חיים" },
 ];
 
 // כל הגופנים יחד

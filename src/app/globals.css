@@ -1,8 +1,34 @@
 /*
  * Fonts are loaded via next/font/google in src/app/layout.tsx.
  * CSS variables available: --font-heebo, --font-assistant, --font-frank-ruhl.
- * Playfair Display was removed — it has NO Hebrew glyphs and caused fallback to system serif.
+ * Local Hebrew fonts loaded below via @font-face.
  */
+
+/* ==============================
+   גופנים עבריים מקומיים
+   ============================== */
+@font-face { font-family: 'Ashur B'; src: url('/fonts/AshurB.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'Aviv Regular'; src: url('/fonts/Aviv-Regular_qeknqm.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'David Libre Local'; src: url('/fonts/DavidLibre-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Geoffrey'; src: url('/fonts/Geoffrey-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Italki Atik'; src: url('/fonts/ItalkiAtikThird.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Mekorot Vilna'; src: url('/fonts/Mekorot-Vilna-Bold-Italic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Rubik One'; src: url('/fonts/RubikOne-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'SBL Hebrew'; src: url('/fonts/SBL_Hbrw.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'SF Hebrew'; src: url('/fonts/SF-Hebrew.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Shlomo'; src: url('/fonts/Shlomo.ttf') format('truetype'); font-display: swap; }
+/* כתב יד — דפוס */
+@font-face { font-family: 'Mark Hand'; src: url('/fonts/Mark_hand-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Happiness Regular'; src: url('/fonts/happiness-Regular.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'SN Megila'; src: url('/fonts/SN_megila.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'ShArpie'; src: url('/fonts/ShArpie.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Adi'; src: url('/fonts/Adi.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Aviva'; src: url('/fonts/Aviva-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Hodaya'; src: url('/fonts/Hodaya-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Karin'; src: url('/fonts/Karin-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Reut'; src: url('/fonts/Reut.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Yael'; src: url('/fonts/Yael.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Sabina'; src: url('/fonts/Sabina-Regular.ttf') format('truetype'); font-display: swap; }
 
 @tailwind base;
 @tailwind components;

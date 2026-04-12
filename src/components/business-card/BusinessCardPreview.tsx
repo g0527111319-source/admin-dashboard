@@ -219,6 +219,33 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
     const fontFamily = bodyFont.family;
     const headingFamily = headingFont.family;
 
+    // Dynamically load Google Hebrew fonts used by this card
+    useEffect(() => {
+      const googleFontFamilies = new Set<string>();
+      const googleFonts = [
+        "Heebo", "Assistant", "Alef", "Frank Ruhl Libre", "David Libre",
+        "Miriam Libre", "Rubik", "Secular One", "Varela Round",
+        "Noto Sans Hebrew", "Noto Serif Hebrew", "Noto Rashi Hebrew",
+        "Suez One", "Bellefair", "Karantina", "Bona Nova",
+        "IBM Plex Sans Hebrew", "Amatic SC",
+      ];
+      for (const font of [bodyFont, headingFont]) {
+        const raw = font.family.split(",")[0].replace(/'/g, "").trim();
+        if (googleFonts.includes(raw)) googleFontFamilies.add(raw);
+      }
+      if (googleFontFamilies.size === 0) return;
+      const families = Array.from(googleFontFamilies).map(f => `family=${f.replace(/ /g, "+")}:wght@300;400;500;600;700`).join("&");
+      const linkId = "bcard-google-fonts";
+      let link = document.getElementById(linkId) as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement("link");
+        link.id = linkId;
+        link.rel = "stylesheet";
+        document.head.appendChild(link);
+      }
+      link.href = `https://fonts.googleapis.com/css2?${families}&subset=hebrew&display=swap`;
+    }, [bodyFont, headingFont]);
+
     // Name & subtitle from fields
     const nameField = filledFields.find(f => f.icon === "user");
     const roleField = filledFields.find(f => f.icon === "briefcase");
