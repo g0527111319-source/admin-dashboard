@@ -179,7 +179,20 @@ export default function DesignerDashboard() {
         return () => { cancelled = true; };
     }, [designerIdForGate]);
 
-    const [activeTab, setActiveTab] = useState<TabKey>("home");
+    const [activeTab, setActiveTabRaw] = useState<TabKey>(() => {
+        if (typeof window !== "undefined") {
+            const hash = window.location.hash.replace("#", "") as TabKey;
+            if (hash) return hash;
+        }
+        return "home";
+    });
+    // Wrap setActiveTab to also update the URL hash
+    const setActiveTab = (tab: TabKey) => {
+        setActiveTabRaw(tab);
+        if (typeof window !== "undefined") {
+            window.history.replaceState(null, "", `#${tab}`);
+        }
+    };
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [search, setSearch] = useState("");

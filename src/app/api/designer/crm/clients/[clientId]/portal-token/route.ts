@@ -62,7 +62,7 @@ export async function POST(
       },
     });
 
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://admin-dashboard-nu-mocha.vercel.app";
+    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
     const portalFullUrl = `${APP_URL}/client-portal/${portalToken.token}`;
     const designerName = designer?.fullName || "המעצבת";
     const clientFirstName = "firstName" in client ? (client as { firstName?: string }).firstName : undefined;

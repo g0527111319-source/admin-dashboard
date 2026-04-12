@@ -95,7 +95,7 @@ export async function PATCH(
             select: { fullName: true },
           });
           const contractTitle = (body.title || existing.title || `חוזה ${existing.contractNumber}`).trim();
-          const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://admin-dashboard-nu-mocha.vercel.app";
+          const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
           const signUrl = `${APP_URL}/contract/sign/${existing.signToken}`;
 
           await sendEmail({

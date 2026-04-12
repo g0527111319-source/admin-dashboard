@@ -83,7 +83,20 @@ export default function SupplierDashboard() {
     const [recentDeals, setRecentDeals] = useState<DealItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<"overview" | "posts" | "deals" | "newpost" | "profile" | "card">("overview");
+    type SupplierTab = "overview" | "posts" | "deals" | "newpost" | "profile" | "card";
+    const [activeTab, setActiveTabRaw] = useState<SupplierTab>(() => {
+        if (typeof window !== "undefined") {
+            const hash = window.location.hash.replace("#", "") as SupplierTab;
+            if (hash && ["overview", "posts", "deals", "newpost", "profile", "card"].includes(hash)) return hash;
+        }
+        return "overview";
+    });
+    const setActiveTab = (tab: SupplierTab) => {
+        setActiveTabRaw(tab);
+        if (typeof window !== "undefined") {
+            window.history.replaceState(null, "", `#${tab}`);
+        }
+    };
     const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
     const [recommenders, setRecommenders] = useState<Recommender[]>([]);
     const [newRecommender, setNewRecommender] = useState({ name: "", phone: "" });

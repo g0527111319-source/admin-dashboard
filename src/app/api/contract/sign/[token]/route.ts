@@ -177,7 +177,7 @@ export async function POST(
       });
 
       const contractTitle = contract.title || `חוזה ${contract.contractNumber}`;
-      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://admin-dashboard-nu-mocha.vercel.app";
+      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
 
       // Send confirmation to client
       if (contract.clientEmail) {

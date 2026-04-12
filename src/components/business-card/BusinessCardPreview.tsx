@@ -252,7 +252,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
     const displayName = data.title || nameField?.value || "";
     const displayRole = data.subtitle || roleField?.value || "";
     const detailFields = filledFields.filter(f => f.icon !== "user" && f.icon !== "briefcase");
-    const headerTextColor = data.headerBgImage ? "#FFFFFF" : colors.headerText;
+    const headerTextColor = data.headerBgImage
+        ? "#FFFFFF"
+        : (theme.headerStyle || "solid") === "minimal"
+            ? colors.text
+            : colors.headerText;
 
     const animClass = getAnimationClass(data.entryAnimation);
     const hasBeforeAfter = (data.beforeAfterItems?.length ?? 0) > 0;
@@ -270,21 +274,58 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
             borderRadius,
             overflow: "hidden",
             fontFamily,
-            boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
+            boxShadow: (theme.shadowStyle || "soft") === "none" ? "none"
+                : (theme.shadowStyle || "soft") === "soft" ? "0 2px 12px rgba(0,0,0,0.06)"
+                : (theme.shadowStyle || "soft") === "medium" ? "0 4px 20px rgba(0,0,0,0.1)"
+                : (theme.shadowStyle || "soft") === "dramatic" ? "0 8px 40px rgba(0,0,0,0.18)"
+                : "0 2px 12px rgba(0,0,0,0.06)",
             direction: "rtl",
         }}>
         {/* Header / Banner */}
         <div style={{
             background: data.headerBgImage
                 ? `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${data.headerBgImage}) center/cover no-repeat`
+                : (theme.headerStyle || "solid") === "gradient"
+                    ? `linear-gradient(135deg, ${colors.headerBg}, ${theme.headerGradient || colors.secondary})`
+                : (theme.headerStyle || "solid") === "diagonal"
+                    ? `linear-gradient(135deg, ${colors.headerBg} 60%, ${theme.headerGradient || colors.secondary} 60%)`
+                : (theme.headerStyle || "solid") === "minimal"
+                    ? colors.background
                 : colors.headerBg,
-            padding: isMobile ? "28px 24px 20px" : "36px 40px 24px",
+            padding: (theme.headerStyle || "solid") === "minimal"
+                ? `${isMobile ? "20px" : "24px"} ${isMobile ? "24px" : "40px"} ${isMobile ? "20px" : "24px"}`
+                : isMobile ? "28px 24px 20px" : "36px 40px 24px",
             textAlign: "center",
             position: "relative",
+            ...((theme.headerStyle || "solid") === "minimal" ? { borderTop: `4px solid ${colors.primary}` } : {}),
         }}>
+          {/* Decoration symbols in header corners */}
+          {theme.decorationSymbol && (
+              <>
+                  <span style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 10,
+                      opacity: 0.2,
+                      fontSize: "14px",
+                      color: headerTextColor,
+                      pointerEvents: "none",
+                  }}>{theme.decorationSymbol}</span>
+                  <span style={{
+                      position: "absolute",
+                      top: 8,
+                      left: 10,
+                      opacity: 0.2,
+                      fontSize: "14px",
+                      color: headerTextColor,
+                      pointerEvents: "none",
+                  }}>{theme.decorationSymbol}</span>
+              </>
+          )}
+
           {/* Dark mode indicator */}
           {data.darkMode && (
-              <div style={{ position: "absolute", top: 10, left: 10 }}>
+              <div style={{ position: "absolute", top: 10, left: theme.decorationSymbol ? 30 : 10 }}>
                   <Moon size={14} color={headerTextColor} strokeWidth={1.5} style={{ opacity: 0.6 }} />
               </div>
           )}
@@ -293,8 +334,13 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
           {data.avatarUrl ? (<div style={{
                 width: isMobile ? 72 : 90,
                 height: isMobile ? 72 : 90,
-                borderRadius: "50%",
-                border: `3px solid ${colors.primary}`,
+                borderRadius: (theme.avatarStyle || "circle") === "circle" ? "50%"
+                    : (theme.avatarStyle || "circle") === "square" ? "12px"
+                    : undefined,
+                clipPath: (theme.avatarStyle || "circle") === "hexagon"
+                    ? "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"
+                    : undefined,
+                border: (theme.avatarStyle || "circle") !== "hexagon" ? `3px solid ${colors.primary}` : undefined,
                 margin: "0 auto 12px",
                 overflow: "hidden",
                 background: colors.cardBg,
@@ -304,8 +350,13 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
             </div>) : (<div style={{
                 width: isMobile ? 72 : 90,
                 height: isMobile ? 72 : 90,
-                borderRadius: "50%",
-                border: `3px solid ${colors.primary}`,
+                borderRadius: (theme.avatarStyle || "circle") === "circle" ? "50%"
+                    : (theme.avatarStyle || "circle") === "square" ? "12px"
+                    : undefined,
+                clipPath: (theme.avatarStyle || "circle") === "hexagon"
+                    ? "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"
+                    : undefined,
+                border: (theme.avatarStyle || "circle") !== "hexagon" ? `3px solid ${colors.primary}` : undefined,
                 margin: "0 auto 12px",
                 background: colors.cardBg,
                 position: "relative",
@@ -353,6 +404,33 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
           })()}
         </div>
 
+        {/* Wave shape for wave headerStyle */}
+        {(theme.headerStyle || "solid") === "wave" && !data.headerBgImage && (
+            <div style={{ marginTop: -1, lineHeight: 0 }}>
+                <svg viewBox="0 0 500 30" preserveAspectRatio="none" style={{ display: "block", width: "100%", height: 30 }}>
+                    <path
+                        d="M0,0 L0,20 Q62.5,30 125,20 Q187.5,10 250,20 Q312.5,30 375,20 Q437.5,10 500,20 L500,0 Z"
+                        fill={colors.headerBg}
+                    />
+                </svg>
+            </div>
+        )}
+
+        {/* Centered decoration symbol between header and body */}
+        {theme.decorationSymbol && (
+            <div style={{
+                textAlign: "center",
+                padding: "4px 0",
+                opacity: 0.3,
+                fontSize: "14px",
+                color: colors.primary,
+                lineHeight: 1,
+                pointerEvents: "none",
+            }}>
+                {theme.decorationSymbol}
+            </div>
+        )}
+
         {/* Card Body */}
         <div style={{
             padding: isMobile ? "20px 20px 24px" : "28px 36px 32px",
@@ -360,18 +438,24 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
         }}>
           {/* Detail Fields */}
           {detailFields.length > 0 && (<div style={{ marginBottom: 20 }}>
-              {detailFields.map((field) => (<div key={field.id} style={{
+              {detailFields.map((field, fieldIdx) => (<div key={field.id}>
+                <div style={{
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
                     padding: "8px 0",
-                    borderBottom: `1px solid ${colors.border}`,
+                    borderBottom: (theme.dividerStyle || "line") === "line"
+                        ? `1px solid ${colors.border}`
+                        : (theme.dividerStyle || "line") === "dots"
+                            ? `2px dotted ${colors.border}`
+                            : "none",
                 }}>
                   <div style={{
                     width: 32,
                     height: 32,
-                    borderRadius: "8px",
-                    background: colors.socialBg,
+                    borderRadius: (theme.iconStyle || "filled") === "circle" ? "50%" : "8px",
+                    background: (theme.iconStyle || "filled") === "outline" ? "transparent" : colors.socialBg,
+                    border: (theme.iconStyle || "filled") === "outline" ? `1.5px solid ${colors.primary}` : "none",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -401,7 +485,15 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                       {field.value}
                     </p>
                   </div>
-                </div>))}
+                </div>
+                {/* Gradient divider between fields */}
+                {(theme.dividerStyle || "line") === "gradient" && fieldIdx < detailFields.length - 1 && (
+                    <div style={{
+                        height: 1,
+                        background: `linear-gradient(90deg, transparent, ${colors.primary}40, transparent)`,
+                    }} />
+                )}
+              </div>))}
             </div>)}
 
           {/* Social Links */}
@@ -849,10 +941,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                       style={{
                           width: "100%",
                           padding: "8px 14px",
-                          borderRadius: theme.cardStyle === "sharp" ? "4px" : "8px",
-                          background: colors.buttonBg,
-                          color: colors.buttonText,
-                          border: "none",
+                          borderRadius: (theme.buttonStyle || "solid") === "pill" ? "999px"
+                              : theme.cardStyle === "sharp" ? "4px" : "8px",
+                          background: (theme.buttonStyle || "solid") === "outline" ? "transparent" : colors.buttonBg,
+                          color: (theme.buttonStyle || "solid") === "outline" ? colors.primary : colors.buttonText,
+                          border: (theme.buttonStyle || "solid") === "outline" ? `2px solid ${colors.primary}` : "none",
                           fontSize: "0.8rem",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -922,10 +1015,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
             {hasGallery && (<button onClick={() => setShowGallery(true)} style={{
                 flex: 1,
                 padding: "10px 16px",
-                borderRadius: theme.cardStyle === "sharp" ? "4px" : "8px",
-                background: colors.buttonBg,
-                color: colors.buttonText,
-                border: "none",
+                borderRadius: (theme.buttonStyle || "solid") === "pill" ? "999px"
+                    : theme.cardStyle === "sharp" ? "4px" : "8px",
+                background: (theme.buttonStyle || "solid") === "outline" ? "transparent" : colors.buttonBg,
+                color: (theme.buttonStyle || "solid") === "outline" ? colors.primary : colors.buttonText,
+                border: (theme.buttonStyle || "solid") === "outline" ? `2px solid ${colors.primary}` : "none",
                 fontSize: "0.85rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -943,10 +1037,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
             {filledTestimonials.length > 0 && (<button onClick={() => setShowTestimonials(true)} style={{
                 flex: 1,
                 padding: "10px 16px",
-                borderRadius: theme.cardStyle === "sharp" ? "4px" : "8px",
-                background: "transparent",
-                color: colors.primary,
-                border: `2px solid ${colors.primary}`,
+                borderRadius: (theme.buttonStyle || "solid") === "pill" ? "999px"
+                    : theme.cardStyle === "sharp" ? "4px" : "8px",
+                background: (theme.buttonStyle || "solid") === "outline" ? "transparent" : colors.buttonBg,
+                color: (theme.buttonStyle || "solid") === "outline" ? colors.primary : colors.buttonText,
+                border: (theme.buttonStyle || "solid") === "outline" ? `2px solid ${colors.primary}` : "none",
                 fontSize: "0.85rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -969,10 +1064,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                       style={{
                           width: "100%",
                           padding: "10px 16px",
-                          borderRadius: theme.cardStyle === "sharp" ? "4px" : "8px",
-                          background: colors.buttonBg,
-                          color: colors.buttonText,
-                          border: "none",
+                          borderRadius: (theme.buttonStyle || "solid") === "pill" ? "999px"
+                              : theme.cardStyle === "sharp" ? "4px" : "8px",
+                          background: (theme.buttonStyle || "solid") === "outline" ? "transparent" : colors.buttonBg,
+                          color: (theme.buttonStyle || "solid") === "outline" ? colors.primary : colors.buttonText,
+                          border: (theme.buttonStyle || "solid") === "outline" ? `2px solid ${colors.primary}` : "none",
                           fontSize: "0.85rem",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -1001,10 +1097,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                       style={{
                           flex: 1,
                           padding: "10px 12px",
-                          borderRadius: theme.cardStyle === "sharp" ? "4px" : "8px",
-                          background: "transparent",
-                          color: colors.primary,
-                          border: `2px solid ${colors.primary}`,
+                          borderRadius: (theme.buttonStyle || "solid") === "pill" ? "999px"
+                              : theme.cardStyle === "sharp" ? "4px" : "8px",
+                          background: (theme.buttonStyle || "solid") === "outline" ? "transparent" : colors.buttonBg,
+                          color: (theme.buttonStyle || "solid") === "outline" ? colors.primary : colors.buttonText,
+                          border: (theme.buttonStyle || "solid") === "outline" ? `2px solid ${colors.primary}` : "none",
                           fontSize: "0.8rem",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -1023,10 +1120,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
                       style={{
                           flex: 1,
                           padding: "10px 12px",
-                          borderRadius: theme.cardStyle === "sharp" ? "4px" : "8px",
-                          background: "transparent",
-                          color: colors.primary,
-                          border: `2px solid ${colors.primary}`,
+                          borderRadius: (theme.buttonStyle || "solid") === "pill" ? "999px"
+                              : theme.cardStyle === "sharp" ? "4px" : "8px",
+                          background: (theme.buttonStyle || "solid") === "outline" ? "transparent" : colors.buttonBg,
+                          color: (theme.buttonStyle || "solid") === "outline" ? colors.primary : colors.buttonText,
+                          border: (theme.buttonStyle || "solid") === "outline" ? `2px solid ${colors.primary}` : "none",
                           fontSize: "0.8rem",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -1098,7 +1196,11 @@ export default function BusinessCardPreview({ data, viewMode, designerId }: Busi
         {/* Footer */}
         <div style={{
             padding: "12px 20px",
-            borderTop: `1px solid ${colors.border}`,
+            borderTop: (theme.dividerStyle || "line") === "line"
+                ? `1px solid ${colors.border}`
+                : (theme.dividerStyle || "line") === "dots"
+                    ? `2px dotted ${colors.border}`
+                    : "none",
             textAlign: "center",
             background: colors.cardBg,
         }}>

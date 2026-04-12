@@ -11,6 +11,15 @@ export interface CardTheme {
   fontStyle: "serif" | "sans" | "mixed";
   cardStyle: "rounded" | "sharp" | "soft";
   backgroundPattern?: string;
+  // === Visual personality properties ===
+  headerStyle: "solid" | "gradient" | "minimal" | "diagonal" | "wave";
+  avatarStyle: "circle" | "square" | "hexagon";
+  iconStyle: "filled" | "outline" | "circle";
+  buttonStyle: "solid" | "outline" | "pill";
+  shadowStyle: "none" | "soft" | "medium" | "dramatic";
+  dividerStyle: "line" | "dots" | "gradient" | "none";
+  headerGradient?: string; // second color for gradient/diagonal headers
+  decorationSymbol?: string; // decorative symbol shown in corners/accents
 }
 
 export interface CardColors {
@@ -36,6 +45,13 @@ export const cardThemes: CardTheme[] = [
     nameHe: "זהב אלגנטי",
     fontStyle: "serif",
     cardStyle: "rounded",
+    headerStyle: "solid",
+    avatarStyle: "circle",
+    iconStyle: "filled",
+    buttonStyle: "solid",
+    shadowStyle: "soft",
+    dividerStyle: "line",
+    decorationSymbol: "◆",
     colors: {
       primary: "#C9A84C",
       secondary: "#E8C97A",
@@ -58,6 +74,12 @@ export const cardThemes: CardTheme[] = [
     nameHe: "מינימלי מודרני",
     fontStyle: "sans",
     cardStyle: "sharp",
+    headerStyle: "minimal",
+    avatarStyle: "square",
+    iconStyle: "outline",
+    buttonStyle: "outline",
+    shadowStyle: "none",
+    dividerStyle: "none",
     colors: {
       primary: "#111111",
       secondary: "#555555",
@@ -80,6 +102,14 @@ export const cardThemes: CardTheme[] = [
     nameHe: "יוקרה כהה",
     fontStyle: "serif",
     cardStyle: "rounded",
+    headerStyle: "gradient",
+    avatarStyle: "hexagon",
+    iconStyle: "filled",
+    buttonStyle: "solid",
+    shadowStyle: "dramatic",
+    dividerStyle: "gradient",
+    headerGradient: "#1A1A1A",
+    decorationSymbol: "✦",
     colors: {
       primary: "#D4AF37",
       secondary: "#F0D060",
@@ -102,6 +132,14 @@ export const cardThemes: CardTheme[] = [
     nameHe: "כחול אוקיינוס",
     fontStyle: "sans",
     cardStyle: "rounded",
+    headerStyle: "wave",
+    avatarStyle: "circle",
+    iconStyle: "circle",
+    buttonStyle: "pill",
+    shadowStyle: "medium",
+    dividerStyle: "dots",
+    headerGradient: "#4DA8C4",
+    decorationSymbol: "〰",
     colors: {
       primary: "#1E6B8A",
       secondary: "#4DA8C4",
@@ -124,6 +162,14 @@ export const cardThemes: CardTheme[] = [
     nameHe: "גן ורדים",
     fontStyle: "mixed",
     cardStyle: "soft",
+    headerStyle: "gradient",
+    avatarStyle: "circle",
+    iconStyle: "filled",
+    buttonStyle: "pill",
+    shadowStyle: "soft",
+    dividerStyle: "dots",
+    headerGradient: "#E8B4BC",
+    decorationSymbol: "✿",
     colors: {
       primary: "#B76E79",
       secondary: "#E8B4BC",
@@ -146,6 +192,14 @@ export const cardThemes: CardTheme[] = [
     nameHe: "ירוק יער",
     fontStyle: "mixed",
     cardStyle: "rounded",
+    headerStyle: "diagonal",
+    avatarStyle: "hexagon",
+    iconStyle: "filled",
+    buttonStyle: "solid",
+    shadowStyle: "medium",
+    dividerStyle: "gradient",
+    headerGradient: "#6B9F7E",
+    decorationSymbol: "❧",
     colors: {
       primary: "#2D5A3D",
       secondary: "#6B9F7E",
@@ -168,6 +222,14 @@ export const cardThemes: CardTheme[] = [
     nameHe: "סגול מלכותי",
     fontStyle: "serif",
     cardStyle: "rounded",
+    headerStyle: "diagonal",
+    avatarStyle: "circle",
+    iconStyle: "circle",
+    buttonStyle: "solid",
+    shadowStyle: "dramatic",
+    dividerStyle: "line",
+    headerGradient: "#9B7EC8",
+    decorationSymbol: "♛",
     colors: {
       primary: "#5B3A8C",
       secondary: "#9B7EC8",
@@ -190,6 +252,14 @@ export const cardThemes: CardTheme[] = [
     nameHe: "שקיעה חמה",
     fontStyle: "sans",
     cardStyle: "soft",
+    headerStyle: "gradient",
+    avatarStyle: "square",
+    iconStyle: "filled",
+    buttonStyle: "pill",
+    shadowStyle: "soft",
+    dividerStyle: "dots",
+    headerGradient: "#F0A070",
+    decorationSymbol: "☀",
     colors: {
       primary: "#D4663A",
       secondary: "#F0A070",
@@ -212,6 +282,12 @@ export const cardThemes: CardTheme[] = [
     nameHe: "ארקטי נקי",
     fontStyle: "sans",
     cardStyle: "sharp",
+    headerStyle: "minimal",
+    avatarStyle: "square",
+    iconStyle: "outline",
+    buttonStyle: "outline",
+    shadowStyle: "none",
+    dividerStyle: "line",
     colors: {
       primary: "#3A8FB7",
       secondary: "#7DBBD4",
@@ -234,6 +310,13 @@ export const cardThemes: CardTheme[] = [
     nameHe: "טרקוטה",
     fontStyle: "mixed",
     cardStyle: "rounded",
+    headerStyle: "solid",
+    avatarStyle: "hexagon",
+    iconStyle: "circle",
+    buttonStyle: "solid",
+    shadowStyle: "medium",
+    dividerStyle: "line",
+    decorationSymbol: "✧",
     colors: {
       primary: "#B85C3A",
       secondary: "#D4956E",
