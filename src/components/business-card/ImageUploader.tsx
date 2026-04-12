@@ -9,8 +9,10 @@ interface ImageUploaderProps {
     /** Shape of preview: "square", "circle", "banner" */
     shape?: "square" | "circle" | "banner";
     folder?: string;
+    /** Allow sticker-style transparent images (shows checkerboard bg) */
+    sticker?: boolean;
 }
-export default function ImageUploader({ value, onChange, label, shape = "square", folder = "business-cards", }: ImageUploaderProps) {
+export default function ImageUploader({ value, onChange, label, shape = "square", folder = "business-cards", sticker = false }: ImageUploaderProps) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -71,15 +73,32 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
         : shape === "banner"
             ? "w-full aspect-[3/1] rounded-lg"
             : "w-24 h-24 rounded-lg";
+
+    // Checkerboard pattern for transparent/sticker images
+    const checkerboardStyle = sticker ? {
+        backgroundImage: `linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
+          linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
+          linear-gradient(-45deg, transparent 75%, #e0e0e0 75%)`,
+        backgroundSize: "12px 12px",
+        backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0px",
+    } : {};
+
+    // Accept types — sticker mode adds GIF
+    const acceptTypes = sticker
+        ? ".png,.webp,.svg,.gif,.jpg,.jpeg,image/png,image/webp,image/svg+xml,image/gif,image/jpeg"
+        : ".png,.webp,.svg,.jpg,.jpeg,image/png,image/webp,image/svg+xml,image/jpeg";
+
     return (<div>
       <label className="block text-text-primary text-xs font-medium mb-1.5">
         {label}
+        {sticker && <span className="text-text-muted font-normal mr-1">(PNG/SVG/WebP עם רקע שקוף)</span>}
       </label>
 
       {value ? (
         /* Preview with remove button */
         <div className="relative inline-block group">
-          <div className={`${previewClass} relative overflow-hidden border-2 border-border-subtle bg-bg-surface`}>
+          <div className={`${previewClass} relative overflow-hidden border-2 border-border-subtle`} style={checkerboardStyle}>
             <Image src={value} alt="" fill unoptimized className="object-contain" onError={(e) => {
                 (e.target as HTMLImageElement).src = "";
                 (e.target as HTMLImageElement).style.display = "none";
@@ -100,14 +119,12 @@ export default function ImageUploader({ value, onChange, label, shape = "square"
             disabled:opacity-50 disabled:cursor-not-allowed`}>
           {uploading ? (<Loader2 className="w-5 h-5 text-gold animate-spin"/>) : (<>
               <Upload className="w-5 h-5 text-text-muted"/>
-              <span className="text-text-muted text-[10px]">{"העלאת תמונה"}</span>
+              <span className="text-text-muted text-[10px]">{sticker ? "העלאת מדבקה/לוגו" : "העלאת תמונה"}</span>
             </>)}
         </button>)}
 
-      <input ref={inputRef} type="file" accept=".png,.webp,.svg,.jpg,.jpeg,image/png,image/webp,image/svg+xml,image/jpeg" onChange={handleUpload} className="hidden"/>
+      <input ref={inputRef} type="file" accept={acceptTypes} onChange={handleUpload} className="hidden"/>
 
       {error && (<p className="text-red-500 text-[10px] mt-1">{error}</p>)}
     </div>);
 }
-
-

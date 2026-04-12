@@ -554,7 +554,7 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
           <h3 className="text-base font-heading text-text-primary">{txt("src/components/business-card/BusinessCardEditor.tsx::059", "מיתוג")}</h3>
           <p className="text-text-muted text-xs">{txt("src/components/business-card/BusinessCardEditor.tsx::060", "העלו לוגו, תמונת פרופיל ותמונת רקע לכותרת הכרטיס. מקסימום 5MB לתמונה.")}</p>
 
-          <ImageUploader label="לוגו" value={data.logoUrl || ""} onChange={(url) => onChange({ ...data, logoUrl: url })} shape="square"/>
+          <ImageUploader label="לוגו" value={data.logoUrl || ""} onChange={(url) => onChange({ ...data, logoUrl: url })} shape="square" sticker/>
 
           <ImageUploader label="תמונת פרופיל" value={data.avatarUrl || ""} onChange={(url) => onChange({ ...data, avatarUrl: url })} shape="circle"/>
 
