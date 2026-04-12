@@ -369,10 +369,10 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
 
           <div className="grid grid-cols-2 gap-3">
             {data.galleryImages.map((url, index) => (<div key={index} className="relative group">
-                <div className="relative aspect-square rounded-btn overflow-hidden bg-bg-surface border border-border-subtle">
-                  {url ? (<Image src={url} alt="תמונת גלריה" fill unoptimized className="object-contain" onError={(e) => {
+                <div className="relative rounded-btn overflow-hidden bg-bg-surface border border-border-subtle">
+                  {url ? (<img src={url} alt="תמונת גלריה" className="w-full h-auto block" onError={(e) => {
                         (e.target as HTMLImageElement).style.display = "none";
-                    }}/>) : (<div className="w-full h-full flex items-center justify-center">
+                    }}/>) : (<div className="w-full py-8 flex items-center justify-center">
                       <ImageIcon className="w-8 h-8 text-text-muted opacity-20"/>
                     </div>)}
                 </div>
@@ -663,8 +663,8 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
                   <div>
                     <p className="text-text-muted text-[10px] mb-1">{txt("src/components/business-card/BusinessCardEditor.tsx::113", "לפני")}</p>
                     {item.beforeUrl ? (
-                      <div className="relative aspect-square rounded-btn overflow-hidden bg-bg-surface border border-border-subtle">
-                        <Image src={item.beforeUrl} alt="תמונה לפני" fill unoptimized className="object-contain"/>
+                      <div className="relative rounded-btn overflow-hidden bg-bg-surface border border-border-subtle">
+                        <img src={item.beforeUrl} alt="תמונה לפני" className="w-full h-auto block"/>
                         <button onClick={() => updateBeforeAfterItem(item.id, "beforeUrl", "")} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center">
                           <X className="w-3 h-3"/>
                         </button>
@@ -676,8 +676,8 @@ export default function BusinessCardEditor({ data, onChange }: BusinessCardEdito
                   <div>
                     <p className="text-text-muted text-[10px] mb-1">{txt("src/components/business-card/BusinessCardEditor.tsx::114", "אחרי")}</p>
                     {item.afterUrl ? (
-                      <div className="relative aspect-square rounded-btn overflow-hidden bg-bg-surface border border-border-subtle">
-                        <Image src={item.afterUrl} alt="תמונה אחרי" fill unoptimized className="object-contain"/>
+                      <div className="relative rounded-btn overflow-hidden bg-bg-surface border border-border-subtle">
+                        <img src={item.afterUrl} alt="תמונה אחרי" className="w-full h-auto block"/>
                         <button onClick={() => updateBeforeAfterItem(item.id, "afterUrl", "")} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center">
                           <X className="w-3 h-3"/>
                         </button>

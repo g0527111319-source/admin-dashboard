@@ -359,13 +359,13 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
                 {/* Before image */}
                 <div className="relative group">
                   <div
-                    className="bg-gray-100 rounded-lg h-36 flex flex-col items-center justify-center text-gray-400 cursor-pointer overflow-hidden"
+                    className="bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-400 cursor-pointer overflow-hidden"
                     onClick={() => set.beforeImageUrl && setLightbox({ index: setIndex, side: "before" })}
                   >
                     {set.beforeImageUrl ? (
-                      <div className="w-full h-full bg-contain bg-center bg-no-repeat rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.beforeImageUrl})` }} />
+                      <img src={set.beforeImageUrl} alt="לפני" className="w-full h-auto block rounded-lg transition-transform group-hover:scale-105" />
                     ) : (
-                      <><Image className="w-8 h-8 mb-1" /><span className="text-xs">לפני</span></>
+                      <div className="py-10 flex flex-col items-center"><Image className="w-8 h-8 mb-1" /><span className="text-xs">לפני</span></div>
                     )}
                   </div>
                   <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/80 text-white">
@@ -380,13 +380,13 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
                 {/* After image */}
                 <div className="relative group">
                   <div
-                    className="bg-gray-100 rounded-lg h-36 flex flex-col items-center justify-center text-gray-400 cursor-pointer overflow-hidden"
+                    className="bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-400 cursor-pointer overflow-hidden"
                     onClick={() => set.afterImageUrl && setLightbox({ index: setIndex, side: "after" })}
                   >
                     {set.afterImageUrl ? (
-                      <div className="w-full h-full bg-contain bg-center bg-no-repeat rounded-lg transition-transform group-hover:scale-105" style={{ backgroundImage: `url(${set.afterImageUrl})` }} />
+                      <img src={set.afterImageUrl} alt="אחרי" className="w-full h-auto block rounded-lg transition-transform group-hover:scale-105" />
                     ) : (
-                      <><Image className="w-8 h-8 mb-1" /><span className="text-xs">אחרי</span></>
+                      <div className="py-10 flex flex-col items-center"><Image className="w-8 h-8 mb-1" /><span className="text-xs">אחרי</span></div>
                     )}
                   </div>
                   <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/80 text-white">

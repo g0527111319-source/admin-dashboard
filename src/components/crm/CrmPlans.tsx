@@ -544,10 +544,10 @@ function PlanCard({
       {/* Preview */}
       <button
         onClick={onView}
-        className="w-full aspect-[4/3] bg-bg-surface flex items-center justify-center overflow-hidden relative"
+        className="w-full bg-bg-surface flex items-center justify-center overflow-hidden relative"
       >
         {pdf ? (
-          <div className="flex flex-col items-center gap-2 text-text-muted">
+          <div className="flex flex-col items-center gap-2 text-text-muted py-8">
             <FileText className="w-12 h-12 opacity-40" />
             <span className="text-xs">PDF</span>
           </div>
@@ -555,7 +555,7 @@ function PlanCard({
           <img
             src={plan.fileUrl}
             alt={plan.title || plan.fileName}
-            className="w-full h-full object-contain"
+            className="w-full h-auto block"
           />
         )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">

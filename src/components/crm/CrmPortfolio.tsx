@@ -718,9 +718,9 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
                   `}
                 >
                   {/* Image */}
-                  <div className="relative aspect-[4/3]">
+                  <div className="relative">
                     {brokenImages.has(image.id) ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-[#0a0a0a] border-2 border-red-500/40 rounded-t-xl gap-2">
+                      <div className="w-full py-8 flex flex-col items-center justify-center bg-[#0a0a0a] border-2 border-red-500/40 rounded-t-xl gap-2">
                         <span className="text-2xl">&#10060;</span>
                         <span className="text-red-400 text-xs font-medium">הלינק לא תקין</span>
                         <button
@@ -734,7 +734,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
                     <img
                       src={image.imageUrl}
                       alt={image.caption || ""}
-                      className="w-full h-full object-contain"
+                      className="w-full h-auto block"
                       loading="lazy"
                       onError={() => {
                         setBrokenImages((prev) => new Set(prev).add(image.id));
@@ -1133,18 +1133,18 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
             >
               {/* Cover Image */}
               <div
-                className="relative h-48 bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a] overflow-hidden cursor-pointer"
+                className="relative bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a] overflow-hidden cursor-pointer"
                 onClick={() => openImages(project)}
               >
                 {project.coverImageUrl ? (
                   <img
                     src={project.coverImageUrl}
                     alt={project.title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-full py-12 flex items-center justify-center">
                     <ImagePlus className="w-10 h-10 text-white/10" />
                   </div>
                 )}

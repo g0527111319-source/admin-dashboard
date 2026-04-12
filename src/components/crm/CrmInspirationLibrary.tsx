@@ -389,11 +389,11 @@ export default function CrmInspirationLibrary({ clientId }: { clientId?: string 
                           key={item.id}
                           className="rounded-lg overflow-hidden bg-white/5 hover:bg-white/10 transition group relative"
                         >
-                          <div className="aspect-square bg-white/10 relative">
+                          <div className="bg-white/10 relative">
                             <img
                               src={item.imageUrl}
                               alt={item.title}
-                              className="w-full h-full object-contain"
+                              className="w-full h-auto block"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = "none";
                               }}
