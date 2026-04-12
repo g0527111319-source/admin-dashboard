@@ -35,14 +35,24 @@ export default function BusinessCardBuilder({ initialData, designerId, userName 
     const [shareState, setShareState] = useState<"idle" | "copied">("idle");
     const handleSave = async () => {
         setIsSaving(true);
-        // TODO: API call to save business card
-        await new Promise(r => setTimeout(r, 800));
-        setIsSaving(false);
-        setLastSaved(new Date().toLocaleTimeString("he-IL"));
+        try {
+            if (designerId) {
+                await fetch(`/api/business-card/${designerId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(cardData),
+                });
+            }
+            setLastSaved(new Date().toLocaleTimeString("he-IL"));
+        } catch (err) {
+            console.error("Save error:", err);
+        } finally {
+            setIsSaving(false);
+        }
     };
     const handleShare = async () => {
         const shareUrl = designerId
-            ? `${window.location.origin}/projects?designer=${designerId}`
+            ? `${window.location.origin}/card/${designerId}`
             : window.location.href;
         const shareData = {
             title: `${userName} — כרטיס ביקור`,

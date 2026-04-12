@@ -29,6 +29,7 @@ const PUBLIC_PATHS = [
   "/events",
   "/terms",
   "/projects",
+  "/card",
 ];
 
 const API_PUBLIC_PATHS = [
@@ -50,6 +51,7 @@ const API_PUBLIC_PREFIXES = [
   "/api/client-portal/", // Client portal — own auth mechanism
   "/client-portal/",     // Client portal pages — own OTP auth
   "/api/public/",        // Public API endpoints (projects gallery, etc.)
+  "/api/business-card/", // Public business card data (GET only)
   "/api/image-proxy",    // Image proxy — public, fetches images server-side
   "/api/whatsapp/webhook", // WhatsApp bot webhook — Green API sends here
   "/api/webhooks/",      // Third-party webhooks (iCount, etc.) — own HMAC verification
