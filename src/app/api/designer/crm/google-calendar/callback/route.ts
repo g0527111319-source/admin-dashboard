@@ -7,18 +7,24 @@ const GOOGLE_CLIENT_ID = (process.env.GOOGLE_CLIENT_ID || "").trim();
 const GOOGLE_CLIENT_SECRET = (process.env.GOOGLE_CLIENT_SECRET || "").trim();
 
 export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const code = searchParams.get("code");
-    const state = searchParams.get("state"); // designerId
-    const error = searchParams.get("error");
+  const origin = new URL(req.url).origin;
+  const { searchParams } = new URL(req.url);
+  const code = searchParams.get("code");
+  const state = searchParams.get("state"); // designerId
+  const error = searchParams.get("error");
 
+  // Build redirect helper
+  const designerCalendarUrl = (designerId: string, status: string) =>
+    `${origin}/designer/${designerId}?google=${status}#calendar`;
+  const fallbackErrorUrl = `${origin}/login`;
+
+  try {
     if (error || !code || !state) {
-      return NextResponse.redirect(new URL("/#calendar?google=error", req.url));
+      console.error("Google Calendar callback: missing params", { error, hasCode: !!code, hasState: !!state });
+      return NextResponse.redirect(state ? designerCalendarUrl(state, "error") : fallbackErrorUrl);
     }
 
     // Exchange code for tokens
-    const origin = new URL(req.url).origin;
     const redirectUri = `${origin}/api/designer/crm/google-calendar/callback`;
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -33,7 +39,9 @@ export async function GET(req: NextRequest) {
     });
 
     if (!tokenRes.ok) {
-      return NextResponse.redirect(new URL("/#calendar?google=error", req.url));
+      const errorText = await tokenRes.text();
+      console.error("Google Calendar token exchange failed:", tokenRes.status, errorText);
+      return NextResponse.redirect(designerCalendarUrl(state, "error"));
     }
 
     const tokenData = await tokenRes.json();
@@ -58,9 +66,9 @@ export async function GET(req: NextRequest) {
     });
 
     // Redirect back to calendar with success
-    return NextResponse.redirect(`${origin}/designer/${state}#calendar?google=connected`);
-  } catch (error) {
-    console.error("Google Calendar callback error:", error);
-    return NextResponse.redirect(new URL("/#calendar?google=error", req.url));
+    return NextResponse.redirect(designerCalendarUrl(state, "connected"));
+  } catch (err) {
+    console.error("Google Calendar callback error:", err);
+    return NextResponse.redirect(state ? designerCalendarUrl(state, "error") : fallbackErrorUrl);
   }
 }
