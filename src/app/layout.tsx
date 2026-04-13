@@ -39,6 +39,7 @@ export default function RootLayout({ children, }: Readonly<{
     return (<html lang="he" dir="rtl" suppressHydrationWarning className={`${heebo.variable} ${assistant.variable} ${frankRuhlLibre.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <meta name="google-site-verification" content="yfcoIh96qYOARTamBbB2-Tq1ZTWaNmkdUce1stOym1s" />
         <meta name="theme-color" content="#C9A84C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/logo-sticker.webp" />
