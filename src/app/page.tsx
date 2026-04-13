@@ -402,7 +402,11 @@ export default function HomePage() {
             <Logo size="sm" variant="dark" />
             <p className="text-sm text-white/55">{siteText.brand.footer}</p>
           </div>
-          <p className="text-white/35 text-sm">{siteText.brand.copyright}</p>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="text-white/35 text-sm hover:text-white/60 transition-colors">מדיניות פרטיות</Link>
+            <Link href="/terms" className="text-white/35 text-sm hover:text-white/60 transition-colors">תנאי שימוש</Link>
+            <p className="text-white/35 text-sm">{siteText.brand.copyright}</p>
+          </div>
         </div>
       </footer>
     </div>
