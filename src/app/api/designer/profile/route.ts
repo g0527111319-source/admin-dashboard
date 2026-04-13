@@ -39,6 +39,21 @@ export async function GET(req: NextRequest) {
         lotteryEntriesTotal: true,
         lotteryWinsTotal: true,
         eventsAttended: true,
+        firstName: true,
+        lastName: true,
+        idNumber: true,
+        birthDate: true,
+        hebrewBirthDate: true,
+        whatsappPhone: true,
+        callOnlyPhone: true,
+        neighborhood: true,
+        street: true,
+        buildingNumber: true,
+        apartmentNumber: true,
+        floor: true,
+        employmentType: true,
+        yearsAsIndependent: true,
+        workTypes: true,
       },
     });
 
@@ -172,6 +187,22 @@ export async function GET(req: NextRequest) {
       instagram: designer.instagram || "",
       email: designer.email || "",
       phone: designer.phone || "",
+      firstName: designer.firstName || "",
+      lastName: designer.lastName || "",
+      idNumber: designer.idNumber || "",
+      birthDate: designer.birthDate ? designer.birthDate.toISOString().split("T")[0] : "",
+      hebrewBirthDate: designer.hebrewBirthDate || "",
+      whatsappPhone: designer.whatsappPhone || "",
+      callOnlyPhone: designer.callOnlyPhone || "",
+      neighborhood: designer.neighborhood || "",
+      street: designer.street || "",
+      buildingNumber: designer.buildingNumber || "",
+      apartmentNumber: designer.apartmentNumber || "",
+      floor: designer.floor || "",
+      employmentType: designer.employmentType || "FREELANCE",
+      yearsAsIndependent: designer.yearsAsIndependent || 0,
+      workTypes: designer.workTypes || [],
+      website: designer.website || "",
       totalDeals: designer.totalDealsReported,
       totalDealAmount: designer.totalDealAmount,
       lotteryEntries: designer.lotteryEntriesTotal,
@@ -194,5 +225,75 @@ export async function GET(req: NextRequest) {
       { error: "שגיאה בטעינת פרופיל" },
       { status: 500 }
     );
+  }
+}
+
+// PUT /api/designer/profile
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, ...updateData } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "חסר מזהה מעצב/ת" }, { status: 400 });
+    }
+
+    // Build the update object - only include provided fields
+    const update: Record<string, unknown> = {};
+
+    // Personal
+    if (updateData.firstName !== undefined) update.firstName = updateData.firstName;
+    if (updateData.lastName !== undefined) update.lastName = updateData.lastName;
+    if (updateData.firstName !== undefined && updateData.lastName !== undefined) {
+      update.fullName = `${updateData.firstName} ${updateData.lastName}`.trim();
+    }
+    if (updateData.gender !== undefined) update.gender = updateData.gender;
+    if (updateData.phone !== undefined) update.phone = updateData.phone;
+    if (updateData.email !== undefined) update.email = updateData.email;
+    if (updateData.idNumber !== undefined) update.idNumber = updateData.idNumber;
+    if (updateData.birthDate !== undefined) {
+      update.birthDate = updateData.birthDate ? new Date(updateData.birthDate) : null;
+    }
+    if (updateData.hebrewBirthDate !== undefined) update.hebrewBirthDate = updateData.hebrewBirthDate;
+    if (updateData.whatsappPhone !== undefined) update.whatsappPhone = updateData.whatsappPhone;
+    if (updateData.callOnlyPhone !== undefined) update.callOnlyPhone = updateData.callOnlyPhone;
+
+    // Address
+    if (updateData.city !== undefined) update.city = updateData.city;
+    if (updateData.neighborhood !== undefined) update.neighborhood = updateData.neighborhood;
+    if (updateData.street !== undefined) update.street = updateData.street;
+    if (updateData.buildingNumber !== undefined) update.buildingNumber = updateData.buildingNumber;
+    if (updateData.apartmentNumber !== undefined) update.apartmentNumber = updateData.apartmentNumber;
+    if (updateData.floor !== undefined) update.floor = updateData.floor;
+
+    // Professional
+    if (updateData.specialization !== undefined) update.specialization = updateData.specialization;
+    if (updateData.employmentType !== undefined) update.employmentType = updateData.employmentType;
+    if (updateData.yearsExperience !== undefined) update.yearsExperience = updateData.yearsExperience ? parseInt(updateData.yearsExperience) : null;
+    if (updateData.yearsAsIndependent !== undefined) update.yearsAsIndependent = updateData.yearsAsIndependent ? parseInt(updateData.yearsAsIndependent) : null;
+    if (updateData.workTypes !== undefined) update.workTypes = updateData.workTypes;
+
+    // Social
+    if (updateData.instagram !== undefined) update.instagram = updateData.instagram;
+    if (updateData.website !== undefined) update.website = updateData.website;
+    if (updateData.area !== undefined) update.area = updateData.area;
+
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ error: "לא התקבלו שדות לעדכון" }, { status: 400 });
+    }
+
+    const designer = await prisma.designer.update({
+      where: { id },
+      data: update,
+      select: { id: true, fullName: true, gender: true },
+    });
+
+    return NextResponse.json({ success: true, designer });
+  } catch (error: unknown) {
+    console.error("Profile update error:", error);
+    const msg = error instanceof Error && error.message.includes("Unique constraint")
+      ? "כתובת המייל כבר קיימת במערכת"
+      : "שגיאה בעדכון הפרופיל";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

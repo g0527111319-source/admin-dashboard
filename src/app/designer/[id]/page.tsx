@@ -3,7 +3,7 @@ import { txt } from "@/content/siteText";
 import { useState, useEffect } from "react";
 import Logo from "@/components/ui/Logo";
 import Image from "next/image";
-import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban } from "lucide-react";
+import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban, Loader2, Hash, Briefcase } from "lucide-react";
 import CrmClients from "@/components/crm/CrmClients";
 import CrmSettings from "@/components/crm/CrmSettings";
 import CrmSuppliers from "@/components/crm/CrmSuppliers";
@@ -43,6 +43,8 @@ import { g } from "@/lib/gender";
 const EMPTY_DESIGNER_DATA = {
     designerLogo: "",
     fullName: "",
+    firstName: "",
+    lastName: "",
     city: "",
     area: "",
     specialization: "",
@@ -57,7 +59,21 @@ const EMPTY_DESIGNER_DATA = {
     eventsAttended: 0,
     joinDate: "",
     rank: 0,
-    gender: "female" as const,
+    gender: "female" as string,
+    idNumber: "",
+    birthDate: "",
+    hebrewBirthDate: "",
+    whatsappPhone: "",
+    callOnlyPhone: "",
+    neighborhood: "",
+    street: "",
+    buildingNumber: "",
+    apartmentNumber: "",
+    floor: "",
+    employmentType: "FREELANCE" as string,
+    yearsAsIndependent: 0,
+    workTypes: [] as string[],
+    website: "",
 };
 
 // Suppliers populated from API
@@ -138,6 +154,13 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+const WORK_TYPES = [
+  "דירות מגורים", "בתים פרטיים", "פנטהאוזים / דופלקסים", "וילות",
+  "משרדים", "חנויות / מסחרי", "מסעדות / בתי קפה", "מלונות / צימרים",
+  "מרפאות / קליניקות", "גני ילדים / מוסדות חינוך", "מבני ציבור",
+  "שיפוצים", "סטיילינג", "תכנון מטבחים", "תכנון חדרי רחצה", "ליווי קבלנים",
+];
+
 const ALL_DESIGNER_FILTER = "__ALL__";
 
 export default function DesignerDashboard() {
@@ -205,6 +228,101 @@ export default function DesignerDashboard() {
     const [showDealModal, setShowDealModal] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
     const [projectView, setProjectView] = useState<"list" | "kanban">("list");
+
+    // Profile editing form state
+    const [profileForm, setProfileForm] = useState({
+      firstName: "", lastName: "", gender: "female" as "male" | "female",
+      email: "", phone: "", whatsappPhone: "", callOnlyPhone: "",
+      idNumber: "", birthDate: "", hebrewBirthDate: "",
+      city: "", neighborhood: "", street: "", buildingNumber: "", apartmentNumber: "", floor: "",
+      specialization: "", employmentType: "FREELANCE" as "SALARIED" | "FREELANCE",
+      yearsExperience: "", yearsAsIndependent: "",
+      workTypes: [] as string[], instagram: "", website: "",
+    });
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileMsg, setProfileMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+    // Sync profile form when designerData loads/changes
+    useEffect(() => {
+      if (designerData.fullName) {
+        setProfileForm({
+          firstName: designerData.firstName || designerData.fullName.split(" ")[0] || "",
+          lastName: designerData.lastName || designerData.fullName.split(" ").slice(1).join(" ") || "",
+          gender: (designerData.gender as "male" | "female") || "female",
+          email: designerData.email || "",
+          phone: designerData.phone || "",
+          whatsappPhone: designerData.whatsappPhone || "",
+          callOnlyPhone: designerData.callOnlyPhone || "",
+          idNumber: designerData.idNumber || "",
+          birthDate: designerData.birthDate || "",
+          hebrewBirthDate: designerData.hebrewBirthDate || "",
+          city: designerData.city || "",
+          neighborhood: designerData.neighborhood || "",
+          street: designerData.street || "",
+          buildingNumber: designerData.buildingNumber || "",
+          apartmentNumber: designerData.apartmentNumber || "",
+          floor: designerData.floor || "",
+          specialization: designerData.specialization || "",
+          employmentType: (designerData.employmentType as "SALARIED" | "FREELANCE") || "FREELANCE",
+          yearsExperience: designerData.yearsExperience ? String(designerData.yearsExperience) : "",
+          yearsAsIndependent: designerData.yearsAsIndependent ? String(designerData.yearsAsIndependent) : "",
+          workTypes: Array.isArray(designerData.workTypes) ? designerData.workTypes : [],
+          instagram: designerData.instagram || "",
+          website: designerData.website || "",
+        });
+      }
+    }, [designerData]);
+
+    // Save profile handler
+    const saveProfile = async () => {
+      setProfileSaving(true);
+      setProfileMsg(null);
+      try {
+        const res = await fetch("/api/designer/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: designerIdForGate, ...profileForm }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setProfileMsg({ type: "success", text: "הפרופיל עודכן בהצלחה!" });
+          setDesignerData(prev => ({
+            ...prev,
+            fullName: `${profileForm.firstName} ${profileForm.lastName}`.trim(),
+            firstName: profileForm.firstName,
+            lastName: profileForm.lastName,
+            gender: profileForm.gender as "female",
+            email: profileForm.email,
+            phone: profileForm.phone,
+            whatsappPhone: profileForm.whatsappPhone,
+            callOnlyPhone: profileForm.callOnlyPhone,
+            idNumber: profileForm.idNumber,
+            birthDate: profileForm.birthDate,
+            hebrewBirthDate: profileForm.hebrewBirthDate,
+            city: profileForm.city,
+            neighborhood: profileForm.neighborhood,
+            street: profileForm.street,
+            buildingNumber: profileForm.buildingNumber,
+            apartmentNumber: profileForm.apartmentNumber,
+            floor: profileForm.floor,
+            specialization: profileForm.specialization,
+            employmentType: profileForm.employmentType,
+            yearsExperience: profileForm.yearsExperience ? parseInt(profileForm.yearsExperience) : 0,
+            yearsAsIndependent: profileForm.yearsAsIndependent ? parseInt(profileForm.yearsAsIndependent) : 0,
+            workTypes: profileForm.workTypes,
+            instagram: profileForm.instagram,
+            website: profileForm.website,
+          }));
+          setTimeout(() => setProfileMsg(null), 4000);
+        } else {
+          setProfileMsg({ type: "error", text: data.error || "שגיאה בשמירת הפרופיל" });
+        }
+      } catch {
+        setProfileMsg({ type: "error", text: "שגיאת רשת, נסו שנית" });
+      } finally {
+        setProfileSaving(false);
+      }
+    };
 
     const gender = designerData.gender || "female";
 
@@ -1063,54 +1181,209 @@ export default function DesignerDashboard() {
                         <span className="text-3xl font-heading font-bold text-gold">{designerData.fullName.charAt(0)}</span>
                       </div>
                     )}
-                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gold text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                      {txt("src/app/designer/[id]/page.tsx::220", "בפרופיל הציבורי")}
-                    </span>
                   </div>
-                  <h2 className="text-lg font-heading font-bold text-text-primary mt-5">{designerData.fullName}</h2>
-                  <p className="text-sm text-text-muted">{designerData.specialization} &middot; {designerData.city}</p>
+                  <h2 className="text-lg font-heading font-bold text-text-primary mt-5">{profileForm.firstName} {profileForm.lastName}</h2>
+                  <p className="text-sm text-text-muted">{profileForm.specialization} &middot; {profileForm.city}</p>
                 </div>
 
+                {/* === Section: Personal Info === */}
                 <div className="card-static space-y-5">
+                  <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
+                    <User className="w-4 h-4 text-gold" />
+                    <h3 className="text-sm font-semibold text-gold">{g(gender, "פרטים אישיים", "פרטים אישיים")}</h3>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::110", "שם מלא")}</label>
-                      <input type="text" className="input-field" defaultValue={designerData.fullName} />
+                      <label className="form-label">שם פרטי</label>
+                      <input type="text" className="input-field" value={profileForm.firstName}
+                        onChange={e => setProfileForm(p => ({ ...p, firstName: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Phone className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::111", "טלפון")}</label>
-                      <input type="tel" className="input-field" defaultValue={designerData.phone} dir="ltr" />
+                      <label className="form-label">שם משפחה</label>
+                      <input type="text" className="input-field" value={profileForm.lastName}
+                        onChange={e => setProfileForm(p => ({ ...p, lastName: e.target.value }))} />
+                    </div>
+                    {/* Gender toggle */}
+                    <div className="sm:col-span-2">
+                      <label className="form-label">מגדר</label>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => setProfileForm(p => ({ ...p, gender: "female" }))}
+                          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${profileForm.gender === "female" ? "bg-gold text-white border-gold" : "bg-white text-text-muted border-border-default hover:border-gold/50"}`}>
+                          נקבה
+                        </button>
+                        <button type="button" onClick={() => setProfileForm(p => ({ ...p, gender: "male" }))}
+                          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${profileForm.gender === "male" ? "bg-gold text-white border-gold" : "bg-white text-text-muted border-border-default hover:border-gold/50"}`}>
+                          זכר
+                        </button>
+                      </div>
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Mail className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::112", "מייל")}</label>
-                      <input type="email" className="input-field" defaultValue={designerData.email} dir="ltr" />
+                      <label className="form-label flex items-center gap-1"><Hash className="w-3 h-3" />מספר ת.ז.</label>
+                      <input type="text" className="input-field" dir="ltr" value={profileForm.idNumber}
+                        onChange={e => setProfileForm(p => ({ ...p, idNumber: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><MapPin className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::113", "עיר")}</label>
-                      <input type="text" className="input-field" defaultValue={designerData.city} />
+                      <label className="form-label flex items-center gap-1"><CalendarIcon className="w-3 h-3" />תאריך לידה</label>
+                      <input type="date" className="input-field" dir="ltr" value={profileForm.birthDate}
+                        onChange={e => setProfileForm(p => ({ ...p, birthDate: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::114", "התמחות")}</label>
-                      <select className="select-field">
-                        {[txt("src/app/designer/[id]/page.tsx::115", "עיצוב פנים"), txt("src/app/designer/[id]/page.tsx::116", "אדריכלות"), txt("src/app/designer/[id]/page.tsx::117", "נוף"), txt("src/app/designer/[id]/page.tsx::118", "הכל")].map(s => <option key={s}>{s}</option>)}
+                      <label className="form-label flex items-center gap-1"><CalendarIcon className="w-3 h-3" />תאריך לידה עברי</label>
+                      <input type="text" className="input-field" placeholder="לדוגמה: ט׳ באדר תשנ״ה" value={profileForm.hebrewBirthDate}
+                        onChange={e => setProfileForm(p => ({ ...p, hebrewBirthDate: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="form-label flex items-center gap-1"><Mail className="w-3 h-3" />מייל</label>
+                      <input type="email" className="input-field" dir="ltr" value={profileForm.email}
+                        onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="form-label flex items-center gap-1"><Phone className="w-3 h-3" />טלפון (WhatsApp)</label>
+                      <input type="tel" className="input-field" dir="ltr" value={profileForm.whatsappPhone || profileForm.phone}
+                        onChange={e => setProfileForm(p => ({ ...p, whatsappPhone: e.target.value, phone: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="form-label flex items-center gap-1"><Phone className="w-3 h-3" />טלפון לשיחות בלבד</label>
+                      <input type="tel" className="input-field" dir="ltr" value={profileForm.callOnlyPhone}
+                        onChange={e => setProfileForm(p => ({ ...p, callOnlyPhone: e.target.value }))} placeholder="אופציונלי" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* === Section: Address === */}
+                <div className="card-static space-y-5">
+                  <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
+                    <Home className="w-4 h-4 text-gold" />
+                    <h3 className="text-sm font-semibold text-gold">כתובת</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label flex items-center gap-1"><MapPin className="w-3 h-3" />עיר</label>
+                      <input type="text" className="input-field" value={profileForm.city}
+                        onChange={e => setProfileForm(p => ({ ...p, city: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="form-label">שכונה</label>
+                      <input type="text" className="input-field" value={profileForm.neighborhood}
+                        onChange={e => setProfileForm(p => ({ ...p, neighborhood: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="form-label">רחוב</label>
+                      <input type="text" className="input-field" value={profileForm.street}
+                        onChange={e => setProfileForm(p => ({ ...p, street: e.target.value }))} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="form-label">בניין</label>
+                        <input type="text" className="input-field" value={profileForm.buildingNumber}
+                          onChange={e => setProfileForm(p => ({ ...p, buildingNumber: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="form-label">דירה</label>
+                        <input type="text" className="input-field" value={profileForm.apartmentNumber}
+                          onChange={e => setProfileForm(p => ({ ...p, apartmentNumber: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="form-label">קומה</label>
+                        <input type="text" className="input-field" value={profileForm.floor}
+                          onChange={e => setProfileForm(p => ({ ...p, floor: e.target.value }))} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* === Section: Professional === */}
+                <div className="card-static space-y-5">
+                  <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
+                    <Briefcase className="w-4 h-4 text-gold" />
+                    <h3 className="text-sm font-semibold text-gold">פרטים מקצועיים</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label">התמחות</label>
+                      <select className="select-field" value={profileForm.specialization}
+                        onChange={e => setProfileForm(p => ({ ...p, specialization: e.target.value }))}>
+                        <option value="">{g(gender, "בחר התמחות", "בחרי התמחות")}</option>
+                        <option value="עיצוב פנים">עיצוב פנים</option>
+                        <option value="אדריכלות">אדריכלות</option>
+                        <option value="נוף">נוף</option>
+                        <option value="אדריכלות ועיצוב פנים">אדריכלות ועיצוב פנים</option>
                       </select>
                     </div>
                     <div>
-                      <label className="form-label">{txt("src/app/designer/[id]/page.tsx::119", "שנות ניסיון")}</label>
-                      <input type="number" className="input-field" defaultValue={designerData.yearsExperience} />
+                      <label className="form-label">סוג העסקה</label>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => setProfileForm(p => ({ ...p, employmentType: "FREELANCE" }))}
+                          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${profileForm.employmentType === "FREELANCE" ? "bg-gold text-white border-gold" : "bg-white text-text-muted border-border-default hover:border-gold/50"}`}>
+                          {g(gender, "עצמאי", "עצמאית")}
+                        </button>
+                        <button type="button" onClick={() => setProfileForm(p => ({ ...p, employmentType: "SALARIED" }))}
+                          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${profileForm.employmentType === "SALARIED" ? "bg-gold text-white border-gold" : "bg-white text-text-muted border-border-default hover:border-gold/50"}`}>
+                          {g(gender, "שכיר", "שכירה")}
+                        </button>
+                      </div>
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Instagram className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::120", "אינסטגרם")}</label>
-                      <input type="text" className="input-field" defaultValue={designerData.instagram} dir="ltr" />
+                      <label className="form-label">שנות ניסיון</label>
+                      <input type="number" className="input-field" min="0" value={profileForm.yearsExperience}
+                        onChange={e => setProfileForm(p => ({ ...p, yearsExperience: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="form-label flex items-center gap-1"><Globe className="w-3 h-3" />{txt("src/app/designer/[id]/page.tsx::121", "אתר אישי")}</label>
-                      <input type="url" className="input-field" placeholder="https://..." dir="ltr" />
+                      <label className="form-label">{g(gender, "שנות ותק כ" + (profileForm.employmentType === "FREELANCE" ? "עצמאי" : "שכיר"), "שנות ותק כ" + (profileForm.employmentType === "FREELANCE" ? "עצמאית" : "שכירה"))}</label>
+                      <input type="number" className="input-field" min="0" value={profileForm.yearsAsIndependent}
+                        onChange={e => setProfileForm(p => ({ ...p, yearsAsIndependent: e.target.value }))} />
                     </div>
                   </div>
 
-                  <button className="btn-gold flex items-center justify-center gap-2 w-full sm:w-auto">
-                    <CheckCircle2 className="w-4 h-4" />{txt("src/app/designer/[id]/page.tsx::122", "שמור שינויים")}
+                  {/* Work Types */}
+                  <div>
+                    <label className="form-label">סוגי עבודות</label>
+                    <div className="flex flex-wrap gap-2">
+                      {WORK_TYPES.map(wt => (
+                        <button key={wt} type="button"
+                          onClick={() => setProfileForm(p => ({
+                            ...p,
+                            workTypes: p.workTypes.includes(wt) ? p.workTypes.filter(w => w !== wt) : [...p.workTypes, wt]
+                          }))}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${profileForm.workTypes.includes(wt) ? "bg-gold text-white border-gold" : "bg-white text-text-muted border-border-default hover:border-gold/50"}`}>
+                          {wt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* === Section: Social === */}
+                <div className="card-static space-y-5">
+                  <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
+                    <Globe className="w-4 h-4 text-gold" />
+                    <h3 className="text-sm font-semibold text-gold">רשתות חברתיות</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label flex items-center gap-1"><Instagram className="w-3 h-3" />אינסטגרם</label>
+                      <input type="text" className="input-field" dir="ltr" value={profileForm.instagram}
+                        onChange={e => setProfileForm(p => ({ ...p, instagram: e.target.value }))} placeholder="@username" />
+                    </div>
+                    <div>
+                      <label className="form-label flex items-center gap-1"><Globe className="w-3 h-3" />אתר אישי</label>
+                      <input type="url" className="input-field" dir="ltr" value={profileForm.website}
+                        onChange={e => setProfileForm(p => ({ ...p, website: e.target.value }))} placeholder="https://..." />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save button + message */}
+                <div className="flex flex-col items-center gap-3">
+                  {profileMsg && (
+                    <div className={`w-full text-center py-2 px-4 rounded-lg text-sm font-medium ${profileMsg.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                      {profileMsg.text}
+                    </div>
+                  )}
+                  <button onClick={saveProfile} disabled={profileSaving}
+                    className="btn-gold flex items-center justify-center gap-2 w-full sm:w-auto px-8">
+                    {profileSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    {profileSaving ? g(gender, "שומר...", "שומרת...") : g(gender, "שמור שינויים", "שמרי שינויים")}
                   </button>
                 </div>
               </div>
