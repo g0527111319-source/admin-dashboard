@@ -5,9 +5,6 @@ export const dynamic = "force-dynamic";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL
-  ? `${process.env.NEXT_PUBLIC_APP_URL}/api/designer/crm/google-calendar/callback`
-  : "http://localhost:3000/api/designer/crm/google-calendar/callback";
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,6 +18,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Exchange code for tokens
+    const origin = new URL(req.url).origin;
+    const redirectUri = `${origin}/api/designer/crm/google-calendar/callback`;
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -28,7 +27,7 @@ export async function GET(req: NextRequest) {
         code,
         client_id: GOOGLE_CLIENT_ID,
         client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: redirectUri,
         grant_type: "authorization_code",
       }),
     });
@@ -59,8 +58,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Redirect back to calendar with success
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    return NextResponse.redirect(`${baseUrl}/designer/${state}#calendar?google=connected`);
+    return NextResponse.redirect(`${origin}/designer/${state}#calendar?google=connected`);
   } catch (error) {
     console.error("Google Calendar callback error:", error);
     return NextResponse.redirect(new URL("/#calendar?google=error", req.url));

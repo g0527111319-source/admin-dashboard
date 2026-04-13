@@ -92,7 +92,7 @@ type DealHistoryItem = {
     status: string; rating: number | null;
 };
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks";
+type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks";
 
 interface NavGroup {
   title: string;
@@ -125,8 +125,7 @@ const navGroups: NavGroup[] = [
       { key: "tasks", label: "משימות", icon: ListChecks },
       { key: "contracts", label: "חוזים", icon: FileText },
       { key: "quotes", label: "הצעות מחיר", icon: CreditCard },
-      { key: "calendar", label: "יומן", icon: CalendarIcon },
-      { key: "scheduler", label: "לוח זמנים", icon: CalendarIcon },
+      { key: "calendar", label: "יומן ולוח זמנים", icon: CalendarIcon },
       { key: "time-tracking", label: "מעקב שעות", icon: Clock },
       { key: "chat", label: "צ׳אט", icon: MessageCircle },
     ]
@@ -230,6 +229,7 @@ export default function DesignerDashboard() {
     const [showDealModal, setShowDealModal] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
     const [projectView, setProjectView] = useState<"list" | "kanban">("list");
+    const [calendarView, setCalendarView] = useState<"events" | "schedule">("events");
 
     // Profile editing form state
     const [profileForm, setProfileForm] = useState({
@@ -1104,7 +1104,25 @@ export default function DesignerDashboard() {
               <FeatureGate feature="contracts" designerId={designerIdForGate}><CrmContracts gender={gender} /></FeatureGate>
             )}
             {activeTab === "calendar" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmCalendar gender={gender} /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}>
+              <div className="space-y-4 animate-in">
+                <div className="flex items-center gap-2 justify-end">
+                  <button
+                    onClick={() => setCalendarView("events")}
+                    className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${calendarView === "events" ? "bg-gold/15 text-gold font-semibold" : "text-text-muted hover:text-text-primary"}`}
+                  >
+                    <span className="flex items-center gap-1"><CalendarIcon className="w-3.5 h-3.5" /> יומן אירועים</span>
+                  </button>
+                  <button
+                    onClick={() => setCalendarView("schedule")}
+                    className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${calendarView === "schedule" ? "bg-gold/15 text-gold font-semibold" : "text-text-muted hover:text-text-primary"}`}
+                  >
+                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> לוח זמנים</span>
+                  </button>
+                </div>
+                {calendarView === "events" ? <CrmCalendar gender={gender} /> : <CrmScheduler gender={gender} />}
+              </div>
+              </FeatureGate>
             )}
             {activeTab === "projects" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}>
@@ -1127,9 +1145,6 @@ export default function DesignerDashboard() {
                 {projectView === "list" ? <CrmProjects gender={gender} /> : <CrmKanban gender={gender} />}
               </div>
               </FeatureGate>
-            )}
-            {activeTab === "scheduler" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmScheduler gender={gender} /></FeatureGate>
             )}
             {activeTab === "quotes" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmQuotes gender={gender} /></FeatureGate>

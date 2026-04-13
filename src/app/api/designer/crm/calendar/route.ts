@@ -108,3 +108,38 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// DELETE /api/designer/crm/calendar?eventId=xxx
+export async function DELETE(req: NextRequest) {
+  try {
+    const designerId = req.headers.get("x-user-id");
+    if (!designerId) {
+      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const eventId = searchParams.get("eventId");
+
+    if (!eventId) {
+      return NextResponse.json({ error: "חסר מזהה אירוע" }, { status: 400 });
+    }
+
+    const event = await prisma.crmCalendarEvent.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event || event.designerId !== designerId) {
+      return NextResponse.json({ error: "אירוע לא נמצא" }, { status: 404 });
+    }
+
+    await prisma.crmCalendarEvent.delete({ where: { id: eventId } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("CRM calendar event delete error:", error);
+    return NextResponse.json(
+      { error: "שגיאה במחיקת אירוע" },
+      { status: 500 }
+    );
+  }
+}

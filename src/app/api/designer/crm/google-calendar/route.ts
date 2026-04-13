@@ -5,9 +5,6 @@ export const dynamic = "force-dynamic";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL
-  ? `${process.env.NEXT_PUBLIC_APP_URL}/api/designer/crm/google-calendar/callback`
-  : "http://localhost:3000/api/designer/crm/google-calendar/callback";
 
 // GET — check sync status
 export async function GET(req: NextRequest) {
@@ -51,9 +48,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Google Calendar לא מוגדר במערכת" }, { status: 400 });
       }
 
+      const origin = new URL(req.url).origin;
+      const redirectUri = `${origin}/api/designer/crm/google-calendar/callback`;
       const scopes = encodeURIComponent("https://www.googleapis.com/auth/calendar");
       const state = encodeURIComponent(designerId);
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${state}`;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${state}`;
 
       return NextResponse.json({ authUrl });
     }
