@@ -140,6 +140,20 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
       .then(r => r.json())
       .then(setGcalStatus)
       .catch(() => {});
+    // Show feedback from Google Calendar OAuth redirect
+    const params = new URLSearchParams(window.location.search);
+    const googleStatus = params.get("google");
+    if (googleStatus === "connected") {
+      // Clean URL param silently
+      const url = new URL(window.location.href);
+      url.searchParams.delete("google");
+      window.history.replaceState({}, "", url.toString());
+    } else if (googleStatus === "error") {
+      alert("שגיאה בחיבור ל-Google Calendar. נסה שוב.");
+      const url = new URL(window.location.href);
+      url.searchParams.delete("google");
+      window.history.replaceState({}, "", url.toString());
+    }
   }, []);
 
   const handleGoogleAuth = async () => {
