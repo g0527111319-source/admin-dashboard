@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // GET /api/auth/google?role=designer|supplier
 // Redirects user to Google OAuth consent screen
 export async function GET(req: NextRequest) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
   if (!clientId) {
     return NextResponse.json(
       { error: "כניסה עם Google לא מוגדרת במערכת" },
