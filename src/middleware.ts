@@ -40,6 +40,7 @@ const API_PUBLIC_PATHS = [
   "/api/auth/magic-link",
   "/api/auth/google",
   "/api/auth/google/callback",
+  "/api/designer/crm/google-calendar/callback", // Google Calendar OAuth redirect — no session yet
   "/api/suppliers", // GET only — public directory
   "/api/admin/migrate-subscriptions", // Header-secret protected, one-time DDL
   "/api/admin/2fa/request",  // Pre-login admin 2FA flow
