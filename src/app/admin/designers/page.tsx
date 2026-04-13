@@ -1,9 +1,9 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Palette, Plus, Search, Download, MapPin, Phone, Instagram, Trophy, TrendingUp,
   Calendar, SortAsc, SortDesc, Mail, Star, Award, Crown, Flame, X, Filter,
-  Loader2, AlertTriangle,
+  Loader2, AlertTriangle, Briefcase, Home, Hash, ChevronDown, ChevronUp, Eye,
 } from "lucide-react";
 import { AREAS, SPECIALIZATIONS, formatCurrency } from "@/lib/utils";
 
@@ -17,6 +17,8 @@ type ActivityLevel = "high" | "medium" | "low" | "none";
 interface Designer {
   id: string;
   fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   city: string;
@@ -32,17 +34,41 @@ interface Designer {
   joinDate: string;
   isActive: boolean;
   postsCount: number;
+  // שדות מורחבים
+  idNumber: string;
+  whatsappPhone: string;
+  callOnlyPhone: string;
+  neighborhood: string;
+  street: string;
+  buildingNumber: string;
+  apartmentNumber: string;
+  floor: string;
+  birthDate: string;
+  hebrewBirthDate: string;
+  employmentType: string;
+  yearsAsIndependent: number | null;
+  workTypes: string[];
+  approvalStatus: string;
 }
 
 // ==========================================
 // Demo Data — 8 designers
 // ==========================================
 
+const WORK_TYPES_LIST = [
+  "דירות מגורים", "בתים פרטיים", "פנטהאוזים / דופלקסים", "וילות",
+  "משרדים", "חנויות / מסחרי", "מסעדות / בתי קפה", "מלונות / צימרים",
+  "מרפאות / קליניקות", "גני ילדים / מוסדות חינוך", "מבני ציבור",
+  "שיפוצים", "סטיילינג", "תכנון מטבחים", "תכנון חדרי רחצה", "ליווי קבלנים",
+];
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapDesignerFromApi(d: any): Designer {
   return {
     id: d.id,
     fullName: d.fullName || "",
+    firstName: d.firstName || "",
+    lastName: d.lastName || "",
     phone: d.phone || "",
     email: d.email || "",
     city: d.city || "",
@@ -58,6 +84,21 @@ function mapDesignerFromApi(d: any): Designer {
     joinDate: d.joinDate ? new Date(d.joinDate).toISOString().slice(0, 10) : "",
     isActive: d.isActive ?? true,
     postsCount: 0,
+    // שדות מורחבים
+    idNumber: d.idNumber || "",
+    whatsappPhone: d.whatsappPhone || "",
+    callOnlyPhone: d.callOnlyPhone || "",
+    neighborhood: d.neighborhood || "",
+    street: d.street || "",
+    buildingNumber: d.buildingNumber || "",
+    apartmentNumber: d.apartmentNumber || "",
+    floor: d.floor || "",
+    birthDate: d.birthDate ? new Date(d.birthDate).toISOString().slice(0, 10) : "",
+    hebrewBirthDate: d.hebrewBirthDate || "",
+    employmentType: d.employmentType || "FREELANCE",
+    yearsAsIndependent: d.yearsAsIndependent ?? null,
+    workTypes: Array.isArray(d.workTypes) ? d.workTypes : [],
+    approvalStatus: d.approvalStatus || "APPROVED",
   };
 }
 
@@ -158,16 +199,20 @@ export default function DesignersPage() {
   const [specFilter, setSpecFilter] = useState("הכל");
   const [cityFilter, setCityFilter] = useState("הכל");
   const [activityFilter, setActivityFilter] = useState("הכל");
+  const [employmentFilter, setEmploymentFilter] = useState("הכל");
+  const [workTypeFilter, setWorkTypeFilter] = useState("הכל");
+  const [statusFilter, setStatusFilter] = useState("הכל");
   const [dealsMin, setDealsMin] = useState("");
   const [dealsMax, setDealsMax] = useState("");
   const [sortField, setSortField] = useState<SortField>("totalDealsReported");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapData, setHeatmapData] = useState<Record<string, ActivityLevel[]>>({});
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/designers")
+    fetch("/api/designers?all=true")
       .then((res) => { if (!res.ok) throw new Error("fetch failed"); return res.json(); })
       .then((data) => {
         if (Array.isArray(data)) {
@@ -189,10 +234,13 @@ export default function DesignersPage() {
     if (specFilter !== "הכל") filters.push({ key: "spec", label: `התמחות: ${specFilter}`, clear: () => setSpecFilter("הכל") });
     if (cityFilter !== "הכל") filters.push({ key: "city", label: `עיר: ${cityFilter}`, clear: () => setCityFilter("הכל") });
     if (activityFilter !== "הכל") filters.push({ key: "activity", label: `פעילות: ${activityFilter}`, clear: () => setActivityFilter("הכל") });
+    if (employmentFilter !== "הכל") filters.push({ key: "employment", label: `סוג: ${employmentFilter === "FREELANCE" ? "עצמאית" : "שכירה"}`, clear: () => setEmploymentFilter("הכל") });
+    if (workTypeFilter !== "הכל") filters.push({ key: "workType", label: `עבודות: ${workTypeFilter}`, clear: () => setWorkTypeFilter("הכל") });
+    if (statusFilter !== "הכל") filters.push({ key: "status", label: `סטטוס: ${statusFilter}`, clear: () => setStatusFilter("הכל") });
     if (dealsMin) filters.push({ key: "dealsMin", label: `מינימום ${dealsMin} עסקאות`, clear: () => setDealsMin("") });
     if (dealsMax) filters.push({ key: "dealsMax", label: `מקסימום ${dealsMax} עסקאות`, clear: () => setDealsMax("") });
     return filters;
-  }, [areaFilter, specFilter, cityFilter, activityFilter, dealsMin, dealsMax]);
+  }, [areaFilter, specFilter, cityFilter, activityFilter, employmentFilter, workTypeFilter, statusFilter, dealsMin, dealsMax]);
 
   const clearAllFilters = () => {
     setSearch("");
@@ -200,25 +248,31 @@ export default function DesignersPage() {
     setSpecFilter("הכל");
     setCityFilter("הכל");
     setActivityFilter("הכל");
+    setEmploymentFilter("הכל");
+    setWorkTypeFilter("הכל");
+    setStatusFilter("הכל");
     setDealsMin("");
     setDealsMax("");
   };
 
   const filteredDesigners = useMemo(() => {
     const filtered = designers.filter((d) => {
-      const matchSearch = !search || d.fullName.includes(search) || d.city.includes(search) || d.email.includes(search);
+      const matchSearch = !search || d.fullName.includes(search) || d.city.includes(search) || d.email.includes(search) || d.phone.includes(search) || d.idNumber.includes(search);
       const matchArea = areaFilter === "הכל" || d.area === areaFilter;
       const matchSpec = specFilter === "הכל" || d.specialization === specFilter;
       const matchCity = cityFilter === "הכל" || d.city === cityFilter;
       const matchDealsMin = !dealsMin || d.totalDealsReported >= parseInt(dealsMin);
       const matchDealsMax = !dealsMax || d.totalDealsReported <= parseInt(dealsMax);
+      const matchEmployment = employmentFilter === "הכל" || d.employmentType === employmentFilter;
+      const matchWorkType = workTypeFilter === "הכל" || d.workTypes.includes(workTypeFilter);
+      const matchStatus = statusFilter === "הכל" || d.approvalStatus === statusFilter;
 
       let matchActivity = true;
       if (activityFilter === "גבוהה") matchActivity = d.totalDealsReported >= 10;
       else if (activityFilter === "בינונית") matchActivity = d.totalDealsReported >= 5 && d.totalDealsReported < 10;
       else if (activityFilter === "נמוכה") matchActivity = d.totalDealsReported < 5;
 
-      return matchSearch && matchArea && matchSpec && matchCity && matchDealsMin && matchDealsMax && matchActivity;
+      return matchSearch && matchArea && matchSpec && matchCity && matchDealsMin && matchDealsMax && matchActivity && matchEmployment && matchWorkType && matchStatus;
     });
     return filtered.sort((a, b) => {
       const aVal = a[sortField];
@@ -228,7 +282,7 @@ export default function DesignersPage() {
       }
       return sortDir === "asc" ? Number(aVal) - Number(bVal) : Number(bVal) - Number(aVal);
     });
-  }, [designers, search, areaFilter, specFilter, cityFilter, activityFilter, dealsMin, dealsMax, sortField, sortDir]);
+  }, [designers, search, areaFilter, specFilter, cityFilter, activityFilter, employmentFilter, workTypeFilter, statusFilter, dealsMin, dealsMax, sortField, sortDir]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -288,6 +342,11 @@ export default function DesignersPage() {
           </h1>
           <p className="text-text-muted text-sm mt-1">
             {designers.length} מעצבות רשומות — {designers.filter(d => d.isActive).length} פעילות
+            {designers.filter(d => d.approvalStatus === "PENDING").length > 0 && (
+              <span className="text-amber-600 mr-2">
+                ({designers.filter(d => d.approvalStatus === "PENDING").length} ממתינות לאישור)
+              </span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -367,10 +426,10 @@ export default function DesignersPage() {
           <Filter className="w-4 h-4 text-text-muted" />
           <h3 className="text-text-primary font-heading text-sm">סינון מתקדם</h3>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <div className="relative col-span-2 md:col-span-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-            <input type="text" placeholder="חיפוש שם / עיר / מייל..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-dark pr-10" />
+            <input type="text" placeholder="חיפוש שם / עיר / מייל / ת.ז. ..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-dark pr-10" />
           </div>
           <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="select-dark">
             <option value="הכל">כל האזורים</option>
@@ -386,9 +445,24 @@ export default function DesignersPage() {
           </select>
           <select value={activityFilter} onChange={(e) => setActivityFilter(e.target.value)} className="select-dark">
             <option value="הכל">כל רמות הפעילות</option>
-            <option value="גבוהה">🟢 גבוהה (10+)</option>
-            <option value="בינונית">🟡 בינונית (5-9)</option>
-            <option value="נמוכה">🔴 נמוכה (&lt;5)</option>
+            <option value="גבוהה">גבוהה (10+)</option>
+            <option value="בינונית">בינונית (5-9)</option>
+            <option value="נמוכה">נמוכה (&lt;5)</option>
+          </select>
+          <select value={employmentFilter} onChange={(e) => setEmploymentFilter(e.target.value)} className="select-dark">
+            <option value="הכל">סוג העסקה</option>
+            <option value="FREELANCE">עצמאית</option>
+            <option value="SALARIED">שכירה</option>
+          </select>
+          <select value={workTypeFilter} onChange={(e) => setWorkTypeFilter(e.target.value)} className="select-dark">
+            <option value="הכל">סוגי עבודות</option>
+            {WORK_TYPES_LIST.map((wt) => <option key={wt} value={wt}>{wt}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="select-dark">
+            <option value="הכל">כל הסטטוסים</option>
+            <option value="APPROVED">מאושרת</option>
+            <option value="PENDING">ממתינה</option>
+            <option value="REJECTED">נדחתה</option>
           </select>
           <div className="flex gap-2">
             <input type="number" placeholder="מינ׳ עסקאות" value={dealsMin} onChange={(e) => setDealsMin(e.target.value)} className="input-dark w-full" min="0" />
@@ -466,25 +540,20 @@ export default function DesignersPage() {
         <table className="w-full table-luxury">
           <thead>
             <tr>
+              <th style={{ width: 32 }}></th>
               <th className="cursor-pointer" onClick={() => handleSort("fullName")}>
                 <span className="flex items-center gap-1">שם<SortIcon field="fullName" /></span>
               </th>
               <th>טלפון</th>
               <th>מייל</th>
               <th>עיר</th>
-              <th>התמחות</th>
-              <th className="cursor-pointer" onClick={() => handleSort("yearsExperience")}>
-                <span className="flex items-center gap-1">ניסיון<SortIcon field="yearsExperience" /></span>
-              </th>
+              <th>סוג העסקה</th>
+              <th>סטטוס</th>
               <th className="cursor-pointer" onClick={() => handleSort("totalDealsReported")}>
                 <span className="flex items-center gap-1">עסקאות<SortIcon field="totalDealsReported" /></span>
               </th>
               <th className="cursor-pointer" onClick={() => handleSort("totalDealAmount")}>
                 <span className="flex items-center gap-1">סכום<SortIcon field="totalDealAmount" /></span>
-              </th>
-              <th>הגרלות</th>
-              <th className="cursor-pointer" onClick={() => handleSort("eventsAttended")}>
-                <span className="flex items-center gap-1">אירועים<SortIcon field="eventsAttended" /></span>
               </th>
               <th>תגים</th>
               <th>פעולות</th>
@@ -493,8 +562,17 @@ export default function DesignersPage() {
           <tbody>
             {filteredDesigners.map((d) => {
               const badges = computeBadges(d, designers);
+              const isExpanded = expandedRow === d.id;
+              const statusLabel = d.approvalStatus === "APPROVED" ? "מאושרת" : d.approvalStatus === "PENDING" ? "ממתינה" : "נדחתה";
+              const statusColor = d.approvalStatus === "APPROVED" ? "text-emerald-600 bg-emerald-50" : d.approvalStatus === "PENDING" ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50";
+              const fullAddress = [d.street, d.buildingNumber ? `${d.buildingNumber}` : "", d.neighborhood, d.city].filter(Boolean).join(", ");
+
               return (
-                <tr key={d.id}>
+                <React.Fragment key={d.id}>
+                <tr className="cursor-pointer" onClick={() => setExpandedRow(isExpanded ? null : d.id)}>
+                  <td>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gold" /> : <ChevronDown className="w-4 h-4 text-text-muted" />}
+                  </td>
                   <td>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold text-sm font-bold flex-shrink-0">
@@ -507,7 +585,12 @@ export default function DesignersPage() {
                     </div>
                   </td>
                   <td>
-                    <a href={`tel:${d.phone}`} className="text-text-primary hover:text-gold text-xs" dir="ltr">{d.phone}</a>
+                    <div className="space-y-0.5">
+                      <a href={`tel:${d.phone}`} className="text-text-primary hover:text-gold text-xs block" dir="ltr">{d.phone}</a>
+                      {d.whatsappPhone && d.whatsappPhone !== d.phone && (
+                        <span className="text-text-muted text-[10px]" dir="ltr">WA: {d.whatsappPhone}</span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <a href={`mailto:${d.email}`} className="text-text-primary hover:text-gold text-xs truncate block max-w-[140px]" dir="ltr">{d.email}</a>
@@ -515,23 +598,19 @@ export default function DesignersPage() {
                   <td>
                     <span className="flex items-center gap-1 text-sm"><MapPin className="w-3 h-3 text-text-muted" />{d.city}</span>
                   </td>
-                  <td><span className="badge-gold text-xs">{d.specialization}</span></td>
-                  <td className="font-mono text-text-muted">{d.yearsExperience} שנים</td>
+                  <td>
+                    <span className="text-xs text-text-muted">
+                      {d.employmentType === "FREELANCE" ? "עצמאית" : "שכירה"}
+                      {d.yearsAsIndependent != null && d.yearsAsIndependent > 0 ? ` (${d.yearsAsIndependent} שנים)` : ""}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
+                      {statusLabel}
+                    </span>
+                  </td>
                   <td><span className="font-mono text-gold font-bold">{d.totalDealsReported}</span></td>
                   <td className="font-mono">{formatCurrency(d.totalDealAmount)}</td>
-                  <td>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-gold" />
-                      <span className="font-mono">{d.lotteryWinsTotal}</span>
-                      <span className="text-text-muted text-xs">/ {d.lotteryEntriesTotal}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-text-muted" />
-                      <span className="font-mono">{d.eventsAttended}</span>
-                    </div>
-                  </td>
                   <td>
                     <div className="flex flex-wrap gap-1 max-w-[150px]">
                       {badges.map((b, bi) => {
@@ -546,13 +625,88 @@ export default function DesignersPage() {
                     </div>
                   </td>
                   <td>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <a href={`tel:${d.phone}`} className="text-text-muted hover:text-gold transition-colors"><Phone className="w-4 h-4" /></a>
                       <a href={`mailto:${d.email}`} className="text-text-muted hover:text-gold transition-colors"><Mail className="w-4 h-4" /></a>
                       {d.instagram && <span className="text-text-muted hover:text-gold transition-colors cursor-pointer"><Instagram className="w-4 h-4" /></span>}
                     </div>
                   </td>
                 </tr>
+                {/* שורת פרטים מורחבת */}
+                {isExpanded && (
+                  <tr>
+                    <td colSpan={11} className="!p-0">
+                      <div className="bg-bg-surface/50 border-t border-b border-border/30 p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          {/* פרטים אישיים */}
+                          <div>
+                            <h4 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
+                              <Hash className="w-3 h-3" />פרטים אישיים
+                            </h4>
+                            <div className="space-y-1 text-text-primary text-xs">
+                              {d.firstName && <p><span className="text-text-muted">שם פרטי:</span> {d.firstName}</p>}
+                              {d.lastName && <p><span className="text-text-muted">שם משפחה:</span> {d.lastName}</p>}
+                              {d.idNumber && <p><span className="text-text-muted">ת.ז.:</span> {d.idNumber}</p>}
+                              {d.birthDate && <p><span className="text-text-muted">תאריך לידה:</span> {d.birthDate}</p>}
+                              {d.hebrewBirthDate && <p><span className="text-text-muted">ת.ל. עברי:</span> {d.hebrewBirthDate}</p>}
+                            </div>
+                          </div>
+                          {/* כתובת */}
+                          <div>
+                            <h4 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
+                              <Home className="w-3 h-3" />כתובת מלאה
+                            </h4>
+                            <div className="space-y-1 text-text-primary text-xs">
+                              {fullAddress && <p>{fullAddress}</p>}
+                              {d.apartmentNumber && <p><span className="text-text-muted">דירה:</span> {d.apartmentNumber}</p>}
+                              {d.floor && <p><span className="text-text-muted">קומה:</span> {d.floor}</p>}
+                              {d.callOnlyPhone && <p><span className="text-text-muted">טלפון לשיחות:</span> <span dir="ltr">{d.callOnlyPhone}</span></p>}
+                            </div>
+                          </div>
+                          {/* מקצועי */}
+                          <div>
+                            <h4 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
+                              <Briefcase className="w-3 h-3" />פרטים מקצועיים
+                            </h4>
+                            <div className="space-y-1 text-text-primary text-xs">
+                              {d.specialization && <p><span className="text-text-muted">התמחות:</span> {d.specialization}</p>}
+                              <p><span className="text-text-muted">סוג העסקה:</span> {d.employmentType === "FREELANCE" ? "עצמאית" : "שכירה"}</p>
+                              {d.yearsAsIndependent != null && <p><span className="text-text-muted">שנות וותק:</span> {d.yearsAsIndependent}</p>}
+                              {d.yearsExperience > 0 && <p><span className="text-text-muted">ניסיון:</span> {d.yearsExperience} שנים</p>}
+                            </div>
+                          </div>
+                          {/* פעילות */}
+                          <div>
+                            <h4 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />נתוני פעילות
+                            </h4>
+                            <div className="space-y-1 text-text-primary text-xs">
+                              <p><span className="text-text-muted">הגרלות:</span> {d.lotteryWinsTotal} זכיות / {d.lotteryEntriesTotal} השתתפויות</p>
+                              <p><span className="text-text-muted">אירועים:</span> {d.eventsAttended}</p>
+                              <p><span className="text-text-muted">הצטרפות:</span> {d.joinDate}</p>
+                            </div>
+                          </div>
+                        </div>
+                        {/* סוגי עבודות */}
+                        {d.workTypes.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-border/20">
+                            <h4 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
+                              <Briefcase className="w-3 h-3" />סוגי עבודות
+                            </h4>
+                            <div className="flex flex-wrap gap-1.5">
+                              {d.workTypes.map((wt, wi) => (
+                                <span key={wi} className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold border border-gold/20">
+                                  {wt}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               );
             })}
           </tbody>

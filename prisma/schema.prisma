@@ -69,6 +69,8 @@ model Supplier {
 model Designer {
   id                   String   @id @default(uuid())
   fullName             String
+  firstName            String?
+  lastName             String?
   phone                String
   email                String?  @unique
   city                 String?
@@ -77,6 +79,23 @@ model Designer {
   yearsExperience      Int?
   instagram            String?
   website              String?
+
+  // פרטים אישיים מורחבים
+  idNumber             String?  // מס' ת.ז.
+  birthDate            DateTime? // תאריך לידה לועזי
+  hebrewBirthDate      String?  // תאריך לידה עברי
+  whatsappPhone        String?  // טלפון עם וואטסאפ
+  callOnlyPhone        String?  // טלפון לשיחות בלבד
+
+  // כתובת מלאה
+  neighborhood         String?  // שכונה
+  street               String?  // רחוב
+  buildingNumber       String?  // מספר בניין
+  apartmentNumber      String?  // מספר דירה
+  floor                String?  // קומה
+
+  // פרטים מקצועיים
+  workTypes            Json?    // סוגי עבודות שביצעה — JSON array
 
   // סוג העסקה
   employmentType       EmploymentType @default(FREELANCE) // שכירה / עצמאית

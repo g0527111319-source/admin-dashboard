@@ -287,9 +287,40 @@ export async function registerDesigner(data: {
   specialization?: string;
   employmentType?: "FREELANCE" | "SALARIED";
   yearsAsIndependent?: number;
+  // שדות מורחבים
+  firstName?: string;
+  lastName?: string;
+  idNumber?: string;
+  whatsappPhone?: string;
+  callOnlyPhone?: string;
+  neighborhood?: string;
+  street?: string;
+  buildingNumber?: string;
+  apartmentNumber?: string;
+  floor?: string;
+  birthDate?: string;
+  hebrewBirthDate?: string;
+  workTypes?: string[];
 }): Promise<{ success: boolean; designerId?: string; status?: string; error?: string }> {
   const passwordHash = await hashPassword(data.password);
   const loginToken = crypto.randomUUID();
+
+  // שדות מורחבים משותפים לכל הפעולות
+  const extendedFields = {
+    firstName: data.firstName || null,
+    lastName: data.lastName || null,
+    idNumber: data.idNumber || null,
+    whatsappPhone: data.whatsappPhone || null,
+    callOnlyPhone: data.callOnlyPhone || null,
+    neighborhood: data.neighborhood || null,
+    street: data.street || null,
+    buildingNumber: data.buildingNumber || null,
+    apartmentNumber: data.apartmentNumber || null,
+    floor: data.floor || null,
+    birthDate: data.birthDate ? new Date(data.birthDate) : null,
+    hebrewBirthDate: data.hebrewBirthDate || null,
+    workTypes: data.workTypes || undefined,
+  };
 
   // בדיקה אם האימייל כבר קיים
   const existing = await prisma.designer.findUnique({
@@ -315,6 +346,7 @@ export async function registerDesigner(data: {
           approvalStatus: "PENDING",
           passwordHash,
           loginToken,
+          ...extendedFields,
         },
       });
       return { success: true, designerId: updated.id, status: "reapplied" };
@@ -334,6 +366,7 @@ export async function registerDesigner(data: {
           approvalStatus: "PENDING",
           passwordHash,
           loginToken,
+          ...extendedFields,
         },
       });
       return { success: true, designerId: updated.id, status: "pending" };
@@ -352,6 +385,7 @@ export async function registerDesigner(data: {
       approvalStatus: "PENDING",
       passwordHash,
       loginToken,
+      ...extendedFields,
     },
   });
 

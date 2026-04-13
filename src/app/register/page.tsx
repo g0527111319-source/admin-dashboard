@@ -1,14 +1,33 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
 import {
   User, Mail, Phone, Lock, Eye, EyeOff, MapPin, Briefcase, Loader2,
-  CheckCircle2, Store, Palette, ArrowLeft,
+  CheckCircle2, Store, Palette, ArrowLeft, Hash, Calendar, Home, Building2,
 } from "lucide-react";
 
 type RegisterRole = "designer" | "supplier";
+
+const WORK_TYPES = [
+  "דירות מגורים",
+  "בתים פרטיים",
+  "פנטהאוזים / דופלקסים",
+  "וילות",
+  "משרדים",
+  "חנויות / מסחרי",
+  "מסעדות / בתי קפה",
+  "מלונות / צימרים",
+  "מרפאות / קליניקות",
+  "גני ילדים / מוסדות חינוך",
+  "מבני ציבור",
+  "שיפוצים",
+  "סטיילינג",
+  "תכנון מטבחים",
+  "תכנון חדרי רחצה",
+  "ליווי קבלנים",
+];
 
 export default function RegisterPage() {
   const [step, setStep] = useState<"choose" | "form">("choose");
@@ -16,15 +35,29 @@ export default function RegisterPage() {
   const t = siteText.auth.register;
 
   const [form, setForm] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
+    // Designer fields
+    whatsappPhone: "",
+    callOnlyPhone: "",
+    idNumber: "",
     city: "",
+    neighborhood: "",
+    street: "",
+    buildingNumber: "",
+    apartmentNumber: "",
+    floor: "",
+    birthDate: "",
+    hebrewBirthDate: "",
     specialization: "",
     employmentType: "FREELANCE" as "SALARIED" | "FREELANCE",
     yearsAsIndependent: "",
+    workTypes: [] as string[],
+    // Supplier fields
     businessName: "",
     category: "",
     website: "",
@@ -38,6 +71,15 @@ export default function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError("");
+  };
+
+  const toggleWorkType = (wt: string) => {
+    setForm(prev => ({
+      ...prev,
+      workTypes: prev.workTypes.includes(wt)
+        ? prev.workTypes.filter(w => w !== wt)
+        : [...prev.workTypes, wt],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,21 +96,39 @@ export default function RegisterPage() {
       return;
     }
 
+    if (role === "designer" && (!form.firstName.trim() || !form.lastName.trim())) {
+      setError("יש למלא שם פרטי ושם משפחה");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const body = role === "designer" ? {
-        fullName: form.fullName,
+        fullName: `${form.firstName.trim()} ${form.lastName.trim()}`,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
         email: form.email,
-        phone: form.phone,
+        phone: form.whatsappPhone || form.phone,
         password: form.password,
+        whatsappPhone: form.whatsappPhone || undefined,
+        callOnlyPhone: form.callOnlyPhone || undefined,
+        idNumber: form.idNumber || undefined,
         city: form.city || undefined,
+        neighborhood: form.neighborhood || undefined,
+        street: form.street || undefined,
+        buildingNumber: form.buildingNumber || undefined,
+        apartmentNumber: form.apartmentNumber || undefined,
+        floor: form.floor || undefined,
+        birthDate: form.birthDate || undefined,
+        hebrewBirthDate: form.hebrewBirthDate || undefined,
         specialization: form.specialization || undefined,
         employmentType: form.employmentType,
         yearsAsIndependent: form.yearsAsIndependent ? parseInt(form.yearsAsIndependent) : undefined,
+        workTypes: form.workTypes.length > 0 ? form.workTypes : undefined,
         role: "designer",
       } : {
-        fullName: form.fullName,
+        fullName: form.firstName.trim() + (form.lastName.trim() ? ` ${form.lastName.trim()}` : ""),
         email: form.email,
         phone: form.phone,
         password: form.password,
@@ -99,6 +159,14 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  // Section header helper
+  const SectionTitle = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
+    <div className="flex items-center gap-2 pt-4 pb-2 border-t border-border-subtle mt-2">
+      <Icon className="w-4 h-4 text-gold" />
+      <h3 className="text-sm font-semibold text-gold">{title}</h3>
+    </div>
+  );
 
   if (success) {
     return (
@@ -134,8 +202,8 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 overflow-y-auto">
-        <div className="w-full max-w-lg">
+      <div className="flex-1 flex items-start justify-center p-6 sm:p-12 overflow-y-auto">
+        <div className="w-full max-w-lg py-4">
           <div className="lg:hidden mb-6 text-center">
             <Logo size="lg" variant="light" />
           </div>
@@ -207,115 +275,213 @@ export default function RegisterPage() {
                 {role === "designer" ? t.designerSubtitle : t.supplierSubtitle}
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">
-                    {role === "designer" ? t.fullNameLabel : t.contactNameLabel} *
-                  </label>
-                  <div className="relative">
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={form.fullName}
-                      onChange={handleChange}
-                      placeholder={t.fullNamePlaceholder}
-                      required
-                      className="input-field pr-10"
-                    />
-                  </div>
-                </div>
-
-                {role === "supplier" && (
-                  <div>
-                    <label className="block text-sm font-medium text-text-primary mb-1.5">
-                      {t.businessNameLabel} *
-                    </label>
-                    <div className="relative">
-                      <Store className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                      <input
-                        type="text"
-                        name="businessName"
-                        value={form.businessName}
-                        onChange={handleChange}
-                        placeholder={t.businessNamePlaceholder}
-                        required
-                        className="input-field pr-10"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-text-primary mb-1.5">
-                      {siteText.auth.common.emailLabel} *
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                      <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="name@example.com" required className="input-field pr-10" dir="ltr" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-primary mb-1.5">
-                      {t.phoneLabel} *
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                      <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="052-1234567" required className="input-field pr-10" dir="ltr" />
-                    </div>
-                  </div>
-                </div>
+              <form onSubmit={handleSubmit} className="space-y-3">
 
                 {role === "designer" ? (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* ======= פרטים אישיים ======= */}
+                    <SectionTitle icon={User} title="פרטים אישיים" />
+
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1.5">{t.cityLabel}</label>
+                        <label className="block text-sm font-medium text-text-primary mb-1">שם פרטי *</label>
+                        <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="ישראלה" required className="input-field" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">שם משפחה *</label>
+                        <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="כהן" required className="input-field" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">מס׳ ת.ז.</label>
                         <div className="relative">
-                          <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                          <input type="text" name="city" value={form.city} onChange={handleChange} placeholder={t.cityPlaceholder} className="input-field pr-10" />
+                          <Hash className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                          <input type="text" name="idNumber" value={form.idNumber} onChange={handleChange} placeholder="000000000" className="input-field pr-9" dir="ltr" />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1.5">{t.specializationLabel}</label>
-                        <div className="relative">
-                          <Briefcase className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                          <select name="specialization" value={form.specialization} onChange={handleChange} className="select-field pr-10">
-                            <option value="">{t.specializationPlaceholder}</option>
-                            {t.specializations.map((item) => (
-                              <option key={item} value={item}>{item}</option>
-                            ))}
-                          </select>
+                        <label className="block text-sm font-medium text-text-primary mb-1">תאריך לידה לועזי</label>
+                        <input type="date" name="birthDate" value={form.birthDate} onChange={handleChange} className="input-field" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1">תאריך לידה עברי</label>
+                      <div className="relative">
+                        <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                        <input type="text" name="hebrewBirthDate" value={form.hebrewBirthDate} onChange={handleChange} placeholder={`ט"ו בשבט תשנ"ה`} className="input-field pr-9" />
+                      </div>
+                    </div>
+
+                    {/* ======= פרטי קשר ======= */}
+                    <SectionTitle icon={Phone} title="פרטי קשר" />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">טלפון עם וואטסאפ *</label>
+                        <input type="tel" name="whatsappPhone" value={form.whatsappPhone} onChange={handleChange} placeholder="052-1234567" required className="input-field" dir="ltr" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">טלפון לשיחות בלבד</label>
+                        <input type="tel" name="callOnlyPhone" value={form.callOnlyPhone} onChange={handleChange} placeholder="03-1234567" className="input-field" dir="ltr" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1">כתובת מייל *</label>
+                      <div className="relative">
+                        <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                        <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="name@example.com" required className="input-field pr-9" dir="ltr" />
+                      </div>
+                    </div>
+
+                    {/* ======= כתובת ======= */}
+                    <SectionTitle icon={Home} title="כתובת" />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">עיר *</label>
+                        <input type="text" name="city" value={form.city} onChange={handleChange} placeholder="תל אביב" required className="input-field" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">שכונה</label>
+                        <input type="text" name="neighborhood" value={form.neighborhood} onChange={handleChange} placeholder="פלורנטין" className="input-field" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">רחוב</label>
+                        <input type="text" name="street" value={form.street} onChange={handleChange} placeholder="הרצל" className="input-field" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-sm font-medium text-text-primary mb-1">בניין</label>
+                          <input type="text" name="buildingNumber" value={form.buildingNumber} onChange={handleChange} placeholder="12" className="input-field text-center" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-text-primary mb-1">דירה</label>
+                          <input type="text" name="apartmentNumber" value={form.apartmentNumber} onChange={handleChange} placeholder="5" className="input-field text-center" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-text-primary mb-1">קומה</label>
+                          <input type="text" name="floor" value={form.floor} onChange={handleChange} placeholder="3" className="input-field text-center" />
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* ======= פרטים מקצועיים ======= */}
+                    <SectionTitle icon={Briefcase} title="פרטים מקצועיים" />
+
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1.5">{t.employmentTypeLabel} *</label>
-                        <div className="flex gap-3">
-                          <button type="button" onClick={() => setForm({ ...form, employmentType: "FREELANCE" })} className={`flex-1 py-2.5 rounded-btn text-sm font-medium border transition-all ${form.employmentType === "FREELANCE" ? "bg-gold/10 border-gold text-gold" : "bg-white border-border-subtle text-text-muted hover:border-gold/50"}`}>
-                            {t.freelance}
+                        <label className="block text-sm font-medium text-text-primary mb-1">התמחות</label>
+                        <select name="specialization" value={form.specialization} onChange={handleChange} className="select-field">
+                          <option value="">בחרי התמחות</option>
+                          {t.specializations.map((item) => (
+                            <option key={item} value={item}>{item}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">שכירה או עצמאית *</label>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setForm({ ...form, employmentType: "FREELANCE" })} className={`flex-1 py-2 rounded-btn text-sm font-medium border transition-all ${form.employmentType === "FREELANCE" ? "bg-gold/10 border-gold text-gold" : "bg-white border-border-subtle text-text-muted hover:border-gold/50"}`}>
+                            עצמאית
                           </button>
-                          <button type="button" onClick={() => setForm({ ...form, employmentType: "SALARIED" })} className={`flex-1 py-2.5 rounded-btn text-sm font-medium border transition-all ${form.employmentType === "SALARIED" ? "bg-gold/10 border-gold text-gold" : "bg-white border-border-subtle text-text-muted hover:border-gold/50"}`}>
-                            {t.salaried}
+                          <button type="button" onClick={() => setForm({ ...form, employmentType: "SALARIED" })} className={`flex-1 py-2 rounded-btn text-sm font-medium border transition-all ${form.employmentType === "SALARIED" ? "bg-gold/10 border-gold text-gold" : "bg-white border-border-subtle text-text-muted hover:border-gold/50"}`}>
+                            שכירה
                           </button>
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1.5">
-                          {t.yearsExperienceLabelPrefix} {form.employmentType === "FREELANCE" ? t.freelanceSuffix : t.salariedSuffix}
-                        </label>
-                        <input type="number" name="yearsAsIndependent" value={form.yearsAsIndependent} onChange={handleChange} placeholder="0" min="0" max="50" className="input-field" dir="ltr" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1">
+                        כמה שנים את עובדת בתחום {form.employmentType === "FREELANCE" ? "כעצמאית" : "כשכירה"}?
+                      </label>
+                      <input type="number" name="yearsAsIndependent" value={form.yearsAsIndependent} onChange={handleChange} placeholder="0" min="0" max="50" className="input-field w-32" dir="ltr" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1.5">
+                        סמני עבודות שיצא לך לקבל במהלך השנים
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {WORK_TYPES.map((wt) => (
+                          <label
+                            key={wt}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all text-sm ${
+                              form.workTypes.includes(wt)
+                                ? "bg-gold/10 border-gold text-gold font-medium"
+                                : "bg-white border-border-subtle text-text-muted hover:border-gold/40"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={form.workTypes.includes(wt)}
+                              onChange={() => toggleWorkType(wt)}
+                              className="sr-only"
+                            />
+                            <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                              form.workTypes.includes(wt) ? "bg-gold border-gold" : "border-gray-300"
+                            }`}>
+                              {form.workTypes.includes(wt) && (
+                                <CheckCircle2 className="w-3 h-3 text-white" />
+                              )}
+                            </span>
+                            {wt}
+                          </label>
+                        ))}
                       </div>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* ======= Supplier form ======= */}
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1.5">{t.categoryLabel}</label>
+                        <label className="block text-sm font-medium text-text-primary mb-1">שם פרטי *</label>
+                        <input type="text" name="firstName" value={form.firstName} onChange={handleChange} required className="input-field" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">שם משפחה</label>
+                        <input type="text" name="lastName" value={form.lastName} onChange={handleChange} className="input-field" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1.5">
+                        {t.businessNameLabel} *
+                      </label>
+                      <div className="relative">
+                        <Store className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                        <input type="text" name="businessName" value={form.businessName} onChange={handleChange} placeholder={t.businessNamePlaceholder} required className="input-field pr-10" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">{siteText.auth.common.emailLabel} *</label>
+                        <div className="relative">
+                          <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                          <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="name@example.com" required className="input-field pr-9" dir="ltr" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">{t.phoneLabel} *</label>
+                        <div className="relative">
+                          <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                          <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="052-1234567" required className="input-field pr-9" dir="ltr" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-1">{t.categoryLabel}</label>
                         <select name="category" value={form.category} onChange={handleChange} className="select-field">
                           <option value="">{t.categoryPlaceholder}</option>
                           {t.supplierCategories.map((item) => (
@@ -324,40 +490,43 @@ export default function RegisterPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1.5">{t.websiteLabel}</label>
+                        <label className="block text-sm font-medium text-text-primary mb-1">{t.websiteLabel}</label>
                         <input type="url" name="website" value={form.website} onChange={handleChange} placeholder="https://example.co.il" className="input-field" dir="ltr" />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-text-primary mb-1.5">{t.descriptionLabel}</label>
+                      <label className="block text-sm font-medium text-text-primary mb-1">{t.descriptionLabel}</label>
                       <textarea name="description" value={form.description} onChange={handleChange} placeholder={t.descriptionPlaceholder} className="input-field h-20 resize-none" />
                     </div>
                   </>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* ======= סיסמה ======= */}
+                <SectionTitle icon={Lock} title="סיסמה" />
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-1.5">{siteText.auth.common.passwordLabel} *</label>
+                    <label className="block text-sm font-medium text-text-primary mb-1">{siteText.auth.common.passwordLabel} *</label>
                     <div className="relative">
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                      <input type={showPassword ? "text" : "password"} name="password" value={form.password} onChange={handleChange} placeholder={t.passwordPlaceholder} required minLength={6} className="input-field pr-10 pl-10" />
+                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                      <input type={showPassword ? "text" : "password"} name="password" value={form.password} onChange={handleChange} placeholder="לפחות 8 תווים" required minLength={6} className="input-field pr-9 pl-9" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-gold">
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-1.5">{t.confirmPasswordLabel} *</label>
+                    <label className="block text-sm font-medium text-text-primary mb-1">{t.confirmPasswordLabel} *</label>
                     <div className="relative">
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                      <input type={showPassword ? "text" : "password"} name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder={t.confirmPasswordPlaceholder} required minLength={6} className="input-field pr-10" />
+                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                      <input type={showPassword ? "text" : "password"} name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="אימות סיסמה" required minLength={6} className="input-field pr-9" />
                     </div>
                   </div>
                 </div>
 
                 {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-                <button type="submit" disabled={loading} className="w-full btn-gold py-3 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button type="submit" disabled={loading} className="w-full btn-gold py-3 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t.submitButton}
                 </button>
               </form>

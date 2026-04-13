@@ -83,6 +83,20 @@ export async function POST(req: NextRequest) {
             specialization: body.specialization,
             employmentType: body.employmentType || undefined,
             yearsAsIndependent: body.yearsAsIndependent != null ? Number(body.yearsAsIndependent) : undefined,
+            // שדות מורחבים
+            firstName: body.firstName || undefined,
+            lastName: body.lastName || undefined,
+            idNumber: body.idNumber || undefined,
+            whatsappPhone: body.whatsappPhone || undefined,
+            callOnlyPhone: body.callOnlyPhone || undefined,
+            neighborhood: body.neighborhood || undefined,
+            street: body.street || undefined,
+            buildingNumber: body.buildingNumber || undefined,
+            apartmentNumber: body.apartmentNumber || undefined,
+            floor: body.floor || undefined,
+            birthDate: body.birthDate || undefined,
+            hebrewBirthDate: body.hebrewBirthDate || undefined,
+            workTypes: body.workTypes || undefined,
         });
 
         if (!result.success) {

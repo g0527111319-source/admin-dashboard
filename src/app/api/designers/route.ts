@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
         const area = searchParams.get("area");
         const specialization = searchParams.get("specialization");
         const search = searchParams.get("search");
-        const where: Record<string, unknown> = { isActive: true };
+        const all = searchParams.get("all"); // admin — הצג גם לא פעילות
+        const where: Record<string, unknown> = all === "true" ? {} : { isActive: true };
         if (area)
             where.area = area;
         if (specialization)
