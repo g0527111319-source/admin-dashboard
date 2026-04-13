@@ -8,6 +8,7 @@ import prisma from "@/lib/prisma";
 import { sendMessage } from "./green-api";
 import { normalizePhone } from "./user-resolver";
 import type { WhatsAppUser } from "./user-resolver";
+import { g } from "@/lib/gender";
 
 // ==========================================
 // Types
@@ -211,7 +212,7 @@ async function executeReportDeal(
   });
 
   if (!supplier) {
-    return { success: false, message: `לא נמצא ספק בשם "${supplierName}" בקהילה. בדקי את השם ונסי שוב.` };
+    return { success: false, message: `לא נמצא ספק בשם "${supplierName}" בקהילה. ${g(user.gender, "בדוק", "בדקי")} את השם ${g(user.gender, "ונסה", "ונסי")} שוב.` };
   }
 
   // Create deal record
@@ -239,7 +240,7 @@ async function executeReportDeal(
   try {
     await sendMessage(
       supplier.phone,
-      `🏛️ *זירת האדריכלות*\n\nמעצבת *${user.name}* דיווחה על עסקה בסך *${amount.toLocaleString("he-IL")} ₪*.\n\nתיאור: ${description || "ללא תיאור"}\n\nהאם לאשר את העסקה?\nמזהה עסקה: ${deal.id}`
+      `🏛️ *זירת האדריכלות*\n\n${g(user.gender, "מעצב", "מעצבת")} *${user.name}* ${g(user.gender, "דיווח", "דיווחה")} על עסקה בסך *${amount.toLocaleString("he-IL")} ₪*.\n\nתיאור: ${description || "ללא תיאור"}\n\nהאם לאשר את העסקה?\nמזהה עסקה: ${deal.id}`
     );
   } catch (err) {
     console.error("[Tools] Failed to notify supplier:", err);
@@ -477,7 +478,7 @@ async function executeConfirmEventAttendance(
   });
 
   if (existing) {
-    return { success: true, message: `את כבר רשומה לאירוע "${event.title}"! נתראה שם.` };
+    return { success: true, message: `${g(user.gender, "אתה כבר רשום", "את כבר רשומה")} לאירוע "${event.title}"! נתראה שם.` };
   }
 
   // Register
@@ -692,7 +693,7 @@ async function executeAdminCreateEvent(
 
   const eventDate = new Date(dateStr);
   if (isNaN(eventDate.getTime())) {
-    return { success: false, message: `תאריך לא תקין: "${dateStr}". השתמשי בפורמט YYYY-MM-DD.` };
+    return { success: false, message: `תאריך לא תקין: "${dateStr}". השתמש בפורמט YYYY-MM-DD.` };
   }
 
   const event = await prisma.event.create({

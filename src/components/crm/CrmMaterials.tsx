@@ -6,6 +6,7 @@ import {
   Package, Trash2, Edit3, Eye, EyeOff, DollarSign,
 } from "lucide-react";
 import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
+import { g } from "@/lib/gender";
 
 type MaterialItem = {
   id: string;
@@ -32,7 +33,8 @@ type Project = {
   name: string;
 };
 
-export default function CrmMaterials({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmMaterials({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [categories, setCategories] = useState<MaterialCategory[]>([]);
@@ -225,7 +227,7 @@ export default function CrmMaterials({ clientId, projectId }: { clientId?: strin
     return (
       <div className="space-y-6 animate-in">
         <h2 className="text-xl font-heading text-text-primary">ניהול חומרים</h2>
-        <p className="text-text-muted text-sm">בחרי פרויקט לניהול חומרים ורכש:</p>
+        <p className="text-text-muted text-sm">{g(gdr, "בחר פרויקט לניהול חומרים ורכש:", "בחרי פרויקט לניהול חומרים ורכש:")}</p>
         {projects.length === 0 ? (
           <div className="card-static text-center py-12">
             <Package className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
@@ -320,7 +322,7 @@ export default function CrmMaterials({ clientId, projectId }: { clientId?: strin
       ) : categories.length === 0 ? (
         <div className="card-static text-center py-12">
           <Package className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
-          <p className="text-text-muted">אין קטגוריות חומרים עדיין. הוסיפי קטגוריה ראשונה!</p>
+          <p className="text-text-muted">{g(gdr, "אין קטגוריות חומרים עדיין. הוסף קטגוריה ראשונה!", "אין קטגוריות חומרים עדיין. הוסיפי קטגוריה ראשונה!")}</p>
         </div>
       ) : (
         <div className="space-y-4">

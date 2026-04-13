@@ -7,7 +7,7 @@ import {
   CheckCircle, AlertTriangle, Loader2,
 } from "lucide-react";
 
-type Trigger = "עסקה חדשה" | "מעצבת חדשה" | "דירוג הוזן" | "מנוי עומד לפוג" | "ספק לא פעיל";
+type Trigger = "עסקה חדשה" | "מעצב/ת חדש/ה" | "דירוג הוזן" | "מנוי עומד לפוג" | "ספק לא פעיל";
 type Action = "שלח WhatsApp" | "שלח מייל" | "הוסף תג" | "צור התראה";
 
 interface Rule {
@@ -20,12 +20,12 @@ interface Rule {
   executions: number;
 }
 
-const triggerOptions: Trigger[] = ["עסקה חדשה", "מעצבת חדשה", "דירוג הוזן", "מנוי עומד לפוג", "ספק לא פעיל"];
+const triggerOptions: Trigger[] = ["עסקה חדשה", "מעצב/ת חדש/ה", "דירוג הוזן", "מנוי עומד לפוג", "ספק לא פעיל"];
 const actionOptions: Action[] = ["שלח WhatsApp", "שלח מייל", "הוסף תג", "צור התראה"];
 
 const triggerIcons: Record<Trigger, React.ReactNode> = {
   "עסקה חדשה": <DollarSign className="w-5 h-5" />,
-  "מעצבת חדשה": <Users className="w-5 h-5" />,
+  "מעצב/ת חדש/ה": <Users className="w-5 h-5" />,
   "דירוג הוזן": <Star className="w-5 h-5" />,
   "מנוי עומד לפוג": <Calendar className="w-5 h-5" />,
   "ספק לא פעיל": <AlertTriangle className="w-5 h-5" />,
@@ -63,7 +63,7 @@ function buildPreview(trigger: Trigger, conditionValue: number | null, action: A
   const condPart = conditionValue !== null ? ` ${getConditionDescription(trigger, conditionValue)}` : "";
   const triggerMap: Record<Trigger, string> = {
     "עסקה חדשה": "כשמתקבלת עסקה חדשה",
-    "מעצבת חדשה": "כשמצטרפת מעצבת חדשה",
+    "מעצב/ת חדש/ה": "כשמצטרף/ת מעצב/ת חדש/ה",
     "דירוג הוזן": "כשמוזן דירוג",
     "מנוי עומד לפוג": "כשמנוי עומד לפוג",
     "ספק לא פעיל": "כשספק לא פעיל",
@@ -130,7 +130,7 @@ export default function AutomationsPage() {
     if (editingRule) {
       const updates = {
         trigger: formTrigger,
-        conditionValue: formTrigger === "מעצבת חדשה" ? null : formCondition,
+        conditionValue: formTrigger === "מעצב/ת חדש/ה" ? null : formCondition,
         action: formAction,
         actionDetail: formDetail,
       };
@@ -148,7 +148,7 @@ export default function AutomationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           trigger: formTrigger,
-          conditionValue: formTrigger === "מעצבת חדשה" ? null : formCondition,
+          conditionValue: formTrigger === "מעצב/ת חדש/ה" ? null : formCondition,
           action: formAction,
           actionDetail: formDetail,
         }),
@@ -180,7 +180,7 @@ export default function AutomationsPage() {
     });
   };
 
-  const needsCondition = formTrigger !== "מעצבת חדשה";
+  const needsCondition = formTrigger !== "מעצב/ת חדש/ה";
   const needsTextDetail = formAction === "שלח WhatsApp" || formAction === "שלח מייל";
   const needsTagInput = formAction === "הוסף תג";
 

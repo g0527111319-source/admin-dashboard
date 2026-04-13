@@ -472,7 +472,7 @@ export default function DesignerSubscriptionPage() {
             ) : (
               <div className="text-center py-6">
                 <p className="text-white/70 mb-2">אין מנוי פעיל</p>
-                <p className="text-white/50 text-sm">בחרי תוכנית למטה</p>
+                <p className="text-white/50 text-sm">ניתן לבחור תוכנית למטה</p>
               </div>
             )}
           </div>

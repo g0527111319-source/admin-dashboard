@@ -100,7 +100,7 @@ export default function ClientSignPage({ params }: { params: Promise<{ token: st
         <div className="card-static text-center max-w-md">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-lg font-heading font-bold text-text-primary">{error || "חוזה לא נמצא"}</h2>
-          <p className="text-sm text-text-muted mt-2">ודא שהקישור תקין או פנה למעצבת</p>
+          <p className="text-sm text-text-muted mt-2">יש לוודא שהקישור תקין או לפנות למעצב/ת</p>
         </div>
       </div>
     );
@@ -148,7 +148,7 @@ export default function ClientSignPage({ params }: { params: Promise<{ token: st
           <div className="card-static border-emerald-200 bg-emerald-50 mb-6 text-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
             <h2 className="text-lg font-heading font-bold text-emerald-800">החוזה נחתם בהצלחה!</h2>
-            <p className="text-sm text-emerald-600 mt-1">עותק נשלח אליך ולמעצבת באימייל</p>
+            <p className="text-sm text-emerald-600 mt-1">עותק נשלח אליך ולמעצב/ת באימייל</p>
           </div>
         )}
 
@@ -306,10 +306,10 @@ export default function ClientSignPage({ params }: { params: Promise<{ token: st
           <div className="mt-8 pt-6 border-t border-border-subtle">
             <div className="grid grid-cols-2 gap-8">
               <div className="text-center">
-                <p className="text-xs text-text-muted mb-3">חתימת מעצבת</p>
+                <p className="text-xs text-text-muted mb-3">חתימת מעצב/ת</p>
                 {contract.designerSignatureData ? (
                   <div className="border border-border-subtle rounded-lg p-3 bg-bg-surface">
-                    <img src={contract.designerSignatureData} alt="חתימת מעצבת" className="h-20 mx-auto" />
+                    <img src={contract.designerSignatureData} alt="חתימת מעצב/ת" className="h-20 mx-auto" />
                     <p className="text-xs text-emerald-600 mt-1 flex items-center justify-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       {contract.designerSignedAt && new Date(contract.designerSignedAt).toLocaleDateString("he-IL")}

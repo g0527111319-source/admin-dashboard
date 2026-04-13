@@ -10,6 +10,7 @@ import {
   Upload, FileImage, File, Move, Maximize2, MapPin,
   Home, ZoomIn, ZoomOut, MousePointer
 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 // ==========================
 // TYPES
@@ -277,11 +278,14 @@ function TemplateEditor({
   template,
   onSave,
   onCancel,
+  gender,
 }: {
   template: ContractTemplate | null;
   onSave: (data: Partial<ContractTemplate>) => void;
   onCancel: () => void;
+  gender?: string;
 }) {
+  const gdr = gender || "female";
   const [name, setName] = useState(template?.name || "");
   const [description, setDescription] = useState(template?.description || "");
   const [blocks, setBlocks] = useState<ContentBlock[]>(template?.contentBlocks || []);
@@ -679,7 +683,7 @@ function TemplateEditor({
 
             {fileBlocks.length === 0 ? (
               <p className="text-xs text-text-faint text-center py-4">
-                העלי קובץ חוזה כדי להתחיל להוסיף שדות
+                {g(gdr, "העלה", "העלי")} קובץ חוזה כדי להתחיל להוסיף שדות
               </p>
             ) : (
               <div className="space-y-4">
@@ -764,7 +768,7 @@ function TemplateEditor({
                     onChange={e => updateField(selectedField.id, { owner: e.target.value as FieldOwner })}
                     className="select-field text-sm"
                   >
-                    <option value="designer">מעצבת</option>
+                    <option value="designer">{g(gdr, "מעצב", "מעצבת")}</option>
                     <option value="client">לקוח</option>
                   </select>
                 </div>
@@ -831,7 +835,7 @@ function TemplateEditor({
                 >
                   <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getFieldDotColor(field)}`} />
                   <span className="text-xs text-text-primary truncate flex-1">{field.label || fieldTypeLabels[field.type]}</span>
-                  <span className="text-2xs text-text-faint">{field.owner === "designer" ? "מעצבת" : "לקוח"}</span>
+                  <span className="text-2xs text-text-faint">{field.owner === "designer" ? g(gdr, "מעצב", "מעצבת") : "לקוח"}</span>
                 </div>
               ))}
             </div>
@@ -840,7 +844,7 @@ function TemplateEditor({
           {/* Legend */}
           <div className="card-static">
             <div className="grid grid-cols-2 gap-2 text-2xs text-text-muted">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-amber-500 bg-amber-500/15" /> מעצבת</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-amber-500 bg-amber-500/15" /> {g(gdr, "מעצב", "מעצבת")}</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-blue-500 bg-blue-500/15" /> לקוח</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-emerald-500 bg-emerald-500/15" /> אוטומטי</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-purple-500 bg-purple-500/15" /> חתימה</span>
@@ -862,13 +866,16 @@ function ContractPreview({
   onClose,
   onSign,
   isDesigner = true,
+  gender,
 }: {
   contract: Contract;
   template: ContractTemplate | null;
   onClose: () => void;
   onSign?: () => void;
   isDesigner?: boolean;
+  gender?: string;
 }) {
+  const gdr = gender || "female";
   const designerValues = contract.designerFieldValues || {};
   const clientValues = contract.clientFieldValues || {};
   const allFields = template?.fields || [];
@@ -983,10 +990,10 @@ function ContractPreview({
         <div className="mt-8 pt-6 border-t border-border-subtle">
           <div className="grid grid-cols-2 gap-8">
             <div className="text-center">
-              <p className="text-xs text-text-muted mb-3">חתימת מעצבת</p>
+              <p className="text-xs text-text-muted mb-3">{g(gdr, "חתימת מעצב", "חתימת מעצבת")}</p>
               {contract.designerSignatureData ? (
                 <div className="border border-border-subtle rounded-lg p-3 bg-bg-surface">
-                  <img src={contract.designerSignatureData} alt="חתימת מעצבת" className="h-20 mx-auto" />
+                  <img src={contract.designerSignatureData} alt={g(gdr, "חתימת מעצב", "חתימת מעצבת")} className="h-20 mx-auto" />
                   <p className="text-2xs text-emerald-600 mt-1 flex items-center justify-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
                     {contract.designerSignedAt && new Date(contract.designerSignedAt).toLocaleDateString("he-IL")}
@@ -1030,12 +1037,15 @@ function SendContractModal({
   projects,
   onSend,
   onClose,
+  gender,
 }: {
   template: ContractTemplate;
   projects: Project[];
   onSend: (data: Record<string, unknown>) => void;
   onClose: () => void;
+  gender?: string;
 }) {
+  const gdr = gender || "female";
   const [projectId, setProjectId] = useState("");
   const [title, setTitle] = useState(template.name);
   const [amount, setAmount] = useState("");
@@ -1122,7 +1132,7 @@ function SendContractModal({
           <div>
             <label className="form-label">פרויקט *</label>
             <select value={projectId} onChange={e => handleProjectChange(e.target.value)} className="select-field">
-              <option value="">— בחרי פרויקט —</option>
+              <option value="">— {g(gdr, "בחר", "בחרי")} פרויקט —</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name} {p.client ? `(${p.client.name})` : ""}
@@ -1190,7 +1200,7 @@ function SendContractModal({
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-gold" />
-                שדות למילוי (מעצבת)
+                {`שדות למילוי (${g(gdr, "מעצב", "מעצבת")})`}
               </h4>
               <div className="grid grid-cols-2 gap-3">
                 {designerFields.map(field => (
@@ -1237,13 +1247,16 @@ function ContractFillForm({
   projects,
   onSave,
   onCancel,
+  gender,
 }: {
   contract: Contract | null;
   template: ContractTemplate | null;
   projects: Project[];
   onSave: (data: Record<string, unknown>) => void;
   onCancel: () => void;
+  gender?: string;
 }) {
+  const gdr = gender || "female";
   const [title, setTitle] = useState(contract?.title || (template?.name || ""));
   const [projectId, setProjectId] = useState(contract?.projectId || "");
   const [amount, setAmount] = useState(contract?.totalAmount?.toString() || "");
@@ -1336,7 +1349,7 @@ function ContractFillForm({
           <div>
             <label className="form-label">פרויקט *</label>
             <select value={projectId} onChange={e => handleProjectChange(e.target.value)} className="select-field">
-              <option value="">— בחרי פרויקט —</option>
+              <option value="">— {g(gdr, "בחר", "בחרי")} פרויקט —</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name} {p.client ? `(${p.client.name})` : ""}
@@ -1401,7 +1414,7 @@ function ContractFillForm({
         <div className="card-static space-y-4">
           <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-gold" />
-            שדות למילוי (מעצבת)
+            {`שדות למילוי (${g(gdr, "מעצב", "מעצבת")})`}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {designerFields.map(field => (
@@ -1439,7 +1452,8 @@ function ContractFillForm({
 // MAIN COMPONENT
 // ==========================
 
-export default function CrmContracts({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmContracts({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [templates, setTemplates] = useState<ContractTemplate[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -1586,6 +1600,7 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
         template={editingTemplate}
         onSave={saveTemplate}
         onCancel={() => { setView("templates"); setEditingTemplate(null); }}
+        gender={gdr}
       />
     );
   }
@@ -1600,6 +1615,7 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
         projects={projects}
         onSave={saveContract}
         onCancel={() => { setView("contracts"); setEditingContract(null); }}
+        gender={gdr}
       />
     );
   }
@@ -1613,6 +1629,7 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
         template={template}
         onClose={() => { setView("contracts"); setPreviewContract(null); }}
         onSign={() => setShowSignature(previewContract.id)}
+        gender={gdr}
       />
     );
   }
@@ -1624,7 +1641,7 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
         <SignatureCanvas
           onSign={designerSign}
           onCancel={() => setShowSignature(null)}
-          title="חתימת מעצבת"
+          title={g(gdr, "חתימת מעצב", "חתימת מעצבת")}
         />
       )}
 
@@ -1635,6 +1652,7 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
           projects={projects}
           onSend={saveContract}
           onClose={() => setShowSendModal(null)}
+          gender={gdr}
         />
       )}
 
@@ -1739,11 +1757,11 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
                         {c.designerSignedAt ? (
                           <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
                             {c.designerSignatureData && (
-                              <img src={c.designerSignatureData} alt="חתימת מעצבת" className="h-8 w-auto opacity-80" />
+                              <img src={c.designerSignatureData} alt={g(gdr, "חתימת מעצב", "חתימת מעצבת")} className="h-8 w-auto opacity-80" />
                             )}
                             <div>
                               <span className="text-emerald-700 text-xs font-medium flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> מעצבת חתמה
+                                <CheckCircle2 className="w-3 h-3" /> {g(gdr, "מעצב חתם", "מעצבת חתמה")}
                               </span>
                               <span className="text-emerald-600/70 text-[10px] block">
                                 {new Date(c.designerSignedAt).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
@@ -1871,12 +1889,12 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
             <div className="empty-state">
               <FileSignature className="empty-state-icon" />
               <p className="font-medium text-text-secondary">אין חוזים עדיין</p>
-              <p className="text-sm mt-1 mb-4">צרי תבנית חוזה ושלחי ללקוחות לחתימה דיגיטלית</p>
+              <p className="text-sm mt-1 mb-4">{g(gdr, "צור", "צרי")} תבנית חוזה {g(gdr, "ושלח", "ושלחי")} ללקוחות לחתימה דיגיטלית</p>
               <button
                 onClick={() => { setEditingContract(null); setView("contract-fill"); }}
                 className="btn-gold"
               >
-                <Plus className="w-4 h-4 inline ml-1" /> צרי חוזה ראשון
+                <Plus className="w-4 h-4 inline ml-1" /> {g(gdr, "צור", "צרי")} חוזה ראשון
               </button>
             </div>
           )}
@@ -1947,12 +1965,12 @@ export default function CrmContracts({ clientId, projectId }: { clientId?: strin
             <div className="empty-state">
               <LayoutTemplate className="empty-state-icon" />
               <p className="font-medium text-text-secondary">אין תבניות חוזה</p>
-              <p className="text-sm mt-1 mb-4">צרי תבנית עם שדות למילוי על גבי מסמך החוזה</p>
+              <p className="text-sm mt-1 mb-4">{g(gdr, "צור", "צרי")} תבנית עם שדות למילוי על גבי מסמך החוזה</p>
               <button
                 onClick={() => { setEditingTemplate(null); setView("template-edit"); }}
                 className="btn-gold"
               >
-                <Plus className="w-4 h-4 inline ml-1" /> צרי תבנית ראשונה
+                <Plus className="w-4 h-4 inline ml-1" /> {g(gdr, "צור", "צרי")} תבנית ראשונה
               </button>
             </div>
           )}

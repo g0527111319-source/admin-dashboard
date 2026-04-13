@@ -7,6 +7,7 @@ import {
   TreePine, Scaling, File, Download, ChevronDown,
   Maximize2, ToggleLeft, ToggleRight,
 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type Plan = {
   id: string;
@@ -41,7 +42,8 @@ const getCategoryInfo = (key: string) =>
 
 const isPdf = (url: string) => url.toLowerCase().endsWith(".pdf");
 
-export default function CrmPlans({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmPlans({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [plans, setPlans] = useState<Plan[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,7 +199,7 @@ export default function CrmPlans({ clientId, projectId }: { clientId?: string; p
             תכניות
           </h2>
           <p className="text-sm text-text-muted mt-0.5">
-            תכניות חשמל, אינסטלציה, ריהוט ועוד — העלי וסדרי לפי קטגוריה
+            {g(gdr, "תכניות חשמל, אינסטלציה, ריהוט ועוד — העלה וסדר לפי קטגוריה", "תכניות חשמל, אינסטלציה, ריהוט ועוד — העלי וסדרי לפי קטגוריה")}
           </p>
         </div>
         {selectedProjectId && (
@@ -216,7 +218,7 @@ export default function CrmPlans({ clientId, projectId }: { clientId?: string; p
         value={selectedProjectId}
         onChange={(e) => setSelectedProjectId(e.target.value)}
       >
-        <option value="">בחרי פרויקט...</option>
+        <option value="">{g(gdr, "בחר פרויקט...", "בחרי פרויקט...")}</option>
         {projects.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name} — {p.client?.name}
@@ -248,7 +250,7 @@ export default function CrmPlans({ clientId, projectId }: { clientId?: string; p
             {!selectedFile ? (
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border-subtle rounded-xl cursor-pointer hover:border-gold/50 hover:bg-gold/5 transition-all">
                 <Upload className="w-8 h-8 text-text-muted mb-2" />
-                <span className="text-sm text-text-muted">לחצי לבחירת קובץ</span>
+                <span className="text-sm text-text-muted">{g(gdr, "לחץ לבחירת קובץ", "לחצי לבחירת קובץ")}</span>
                 <span className="text-xs text-text-faint mt-1">
                   JPG, PNG, PDF — עד 15MB
                 </span>
@@ -400,7 +402,7 @@ export default function CrmPlans({ clientId, projectId }: { clientId?: string; p
       {/* Plans grid by category */}
       {!selectedProjectId ? (
         <div className="card-static text-center py-12 text-text-muted">
-          בחרי פרויקט כדי לראות תכניות
+          {g(gdr, "בחר פרויקט כדי לראות תכניות", "בחרי פרויקט כדי לראות תכניות")}
         </div>
       ) : loading ? (
         <div className="flex justify-center py-16">
@@ -411,7 +413,7 @@ export default function CrmPlans({ clientId, projectId }: { clientId?: string; p
           <Ruler className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
           <p className="font-medium text-text-secondary mb-1">אין תכניות עדיין</p>
           <p className="text-sm text-text-muted mb-4">
-            העלי תכניות חשמל, אינסטלציה, ריהוט ועוד
+            {g(gdr, "העלה תכניות חשמל, אינסטלציה, ריהוט ועוד", "העלי תכניות חשמל, אינסטלציה, ריהוט ועוד")}
           </p>
           <button
             onClick={() => setShowUpload(true)}

@@ -11,6 +11,7 @@ import {
   Home, ZoomIn, ZoomOut, MousePointer, ChevronLeft
 } from "lucide-react";
 import PdfExportButton from "@/components/PdfExportButton";
+import { g } from "@/lib/gender";
 
 // ==========================
 // TYPES
@@ -169,11 +170,14 @@ function QuoteTemplateEditor({
   template,
   onSave,
   onCancel,
+  gender,
 }: {
   template: QuoteTemplate | null;
   onSave: (data: Partial<QuoteTemplate>) => void;
   onCancel: () => void;
+  gender?: string;
 }) {
+  const gdr = gender || "female";
   const [name, setName] = useState(template?.name || "");
   const [description, setDescription] = useState(template?.description || "");
   const [blocks, setBlocks] = useState<ContentBlock[]>(template?.contentBlocks || []);
@@ -565,7 +569,7 @@ function QuoteTemplateEditor({
 
             {fileBlocks.length === 0 ? (
               <p className="text-xs text-text-faint text-center py-4">
-                העלי קובץ הצעת מחיר כדי להתחיל להוסיף שדות
+                {g(gdr, "העלה", "העלי")} קובץ הצעת מחיר כדי להתחיל להוסיף שדות
               </p>
             ) : (
               <div className="space-y-4">
@@ -648,7 +652,7 @@ function QuoteTemplateEditor({
                     onChange={e => updateField(selectedField.id, { owner: e.target.value as FieldOwner })}
                     className="select-field text-sm"
                   >
-                    <option value="designer">מעצבת</option>
+                    <option value="designer">{g(gdr, "מעצב", "מעצבת")}</option>
                     <option value="client">לקוח</option>
                   </select>
                 </div>
@@ -713,7 +717,7 @@ function QuoteTemplateEditor({
                 >
                   <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getFieldDotColor(field)}`} />
                   <span className="text-xs text-text-primary truncate flex-1">{field.label || fieldTypeLabels[field.type]}</span>
-                  <span className="text-2xs text-text-faint">{field.owner === "designer" ? "מעצבת" : "לקוח"}</span>
+                  <span className="text-2xs text-text-faint">{field.owner === "designer" ? g(gdr, "מעצב", "מעצבת") : "לקוח"}</span>
                 </div>
               ))}
             </div>
@@ -722,7 +726,7 @@ function QuoteTemplateEditor({
           {/* Legend */}
           <div className="card-static">
             <div className="grid grid-cols-2 gap-2 text-2xs text-text-muted">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-amber-500 bg-amber-500/15" /> מעצבת</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-amber-500 bg-amber-500/15" /> {g(gdr, "מעצב", "מעצבת")}</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-blue-500 bg-blue-500/15" /> לקוח</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border-2 border-emerald-500 bg-emerald-500/15" /> אוטומטי</span>
             </div>
@@ -744,6 +748,7 @@ function QuoteForm({
   selectedProjectId: initialProjectId,
   onSave,
   onCancel,
+  gender,
 }: {
   quote: Quote | null;
   template: QuoteTemplate | null;
@@ -751,7 +756,9 @@ function QuoteForm({
   selectedProjectId?: string;
   onSave: (data: Record<string, unknown>) => void;
   onCancel: () => void;
+  gender?: string;
 }) {
+  const gdr = gender || "female";
   const [title, setTitle] = useState(quote?.title || (template?.name || ""));
   const [projectId, setProjectId] = useState(quote?.projectId || initialProjectId || "");
   const [paymentTerms, setPaymentTerms] = useState(quote?.paymentTerms || "");
@@ -840,7 +847,7 @@ function QuoteForm({
           <div>
             <label className="form-label">פרויקט *</label>
             <select value={projectId} onChange={e => handleProjectChange(e.target.value)} className="select-field">
-              <option value="">-- בחרי פרויקט --</option>
+              <option value="">-- {g(gdr, "בחר", "בחרי")} פרויקט --</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name} {p.client ? `(${p.client.name})` : ""}
@@ -922,7 +929,7 @@ function QuoteForm({
         <div className="card-static space-y-4">
           <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-gold" />
-            שדות למילוי (מעצבת)
+            {`שדות למילוי (${g(gdr, "מעצב", "מעצבת")})`}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {designerFields.map(field => (
@@ -960,7 +967,8 @@ function QuoteForm({
 // MAIN COMPONENT
 // ==========================
 
-export default function CrmQuotes({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmQuotes({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -1112,6 +1120,7 @@ export default function CrmQuotes({ clientId, projectId }: { clientId?: string; 
         template={editingTemplate}
         onSave={saveTemplate}
         onCancel={() => { setView("templates"); setEditingTemplate(null); }}
+        gender={gdr}
       />
     );
   }
@@ -1127,6 +1136,7 @@ export default function CrmQuotes({ clientId, projectId }: { clientId?: string; 
         selectedProjectId={selectedProjectId}
         onSave={saveQuote}
         onCancel={() => { setView("quotes"); setEditingQuote(null); }}
+        gender={gdr}
       />
     );
   }
@@ -1188,17 +1198,17 @@ export default function CrmQuotes({ clientId, projectId }: { clientId?: string; 
         <>
           {/* Project selector */}
           <select className="select-field" value={selectedProjectId} onChange={e => setSelectedProjectId(e.target.value)}>
-            <option value="">בחרי פרויקט...</option>
+            <option value="">{g(gdr, "בחר", "בחרי")} פרויקט...</option>
             {projects.map(p => <option key={p.id} value={p.id}>{p.name} {p.client ? `— ${p.client.name}` : ""}</option>)}
           </select>
 
           {!selectedProjectId ? (
-            <div className="card-static text-center py-12 text-text-muted">בחרי פרויקט</div>
+            <div className="card-static text-center py-12 text-text-muted">{g(gdr, "בחר", "בחרי")} פרויקט</div>
           ) : quotes.length === 0 ? (
             <div className="empty-state">
               <FileText className="empty-state-icon" />
               <p className="font-medium text-text-secondary">אין הצעות מחיר עדיין</p>
-              <p className="text-sm mt-1 mb-4">צרי הצעת מחיר חדשה או השתמשי בתבנית</p>
+              <p className="text-sm mt-1 mb-4">{g(gdr, "צור", "צרי")} הצעת מחיר חדשה {g(gdr, "או השתמש", "או השתמשי")} בתבנית</p>
               <button
                 onClick={() => { setEditingQuote(null); setView("quote-create"); }}
                 className="btn-gold"
@@ -1339,12 +1349,12 @@ export default function CrmQuotes({ clientId, projectId }: { clientId?: string; 
             <div className="empty-state">
               <LayoutTemplate className="empty-state-icon" />
               <p className="font-medium text-text-secondary">אין תבניות הצעת מחיר</p>
-              <p className="text-sm mt-1 mb-4">צרי תבנית עם שדות למילוי על גבי מסמך ההצעה</p>
+              <p className="text-sm mt-1 mb-4">{g(gdr, "צור", "צרי")} תבנית עם שדות למילוי על גבי מסמך ההצעה</p>
               <button
                 onClick={() => { setEditingTemplate(null); setView("template-edit"); }}
                 className="btn-gold"
               >
-                <Plus className="w-4 h-4 inline ml-1" /> צרי תבנית ראשונה
+                <Plus className="w-4 h-4 inline ml-1" /> {g(gdr, "צור", "צרי")} תבנית ראשונה
               </button>
             </div>
           )}

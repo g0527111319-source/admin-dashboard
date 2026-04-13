@@ -5,6 +5,7 @@ import {
   UserPlus, Check, X, Phone, Mail, MapPin, Clock, Search,
   Briefcase, Loader2, AlertCircle, RefreshCw,
 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 interface WaitlistDesigner {
   id: string;
@@ -17,6 +18,7 @@ interface WaitlistDesigner {
   yearsAsIndependent: number | null;
   createdAt: string;
   approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
+  gender: string;
 }
 
 const ALL_WAITLIST_FILTER = "ALL";
@@ -230,10 +232,10 @@ export default function WaitlistPage() {
                   }`}
                 >
                   {d.approvalStatus === "PENDING"
-                    ? "ממתינה"
+                    ? g(d.gender, "ממתין", "ממתינה")
                     : d.approvalStatus === "APPROVED"
-                    ? "אושרה"
-                    : "נדחתה"}
+                    ? g(d.gender, "אושר", "אושרה")
+                    : g(d.gender, "נדחה", "נדחתה")}
                 </span>
               </div>
 
@@ -272,7 +274,7 @@ export default function WaitlistPage() {
               {/* Employment info */}
               <div className="flex gap-2 mb-4 text-xs">
                 <span className="bg-bg-surface rounded px-2 py-1 text-text-primary">
-                  {d.employmentType === "FREELANCE" ? "עצמאית" : "שכירה"}
+                  {d.employmentType === "FREELANCE" ? g(d.gender, "עצמאי", "עצמאית") : g(d.gender, "שכיר", "שכירה")}
                 </span>
                 {d.yearsAsIndependent != null && (
                   <span className="bg-bg-surface rounded px-2 py-1 text-text-primary">

@@ -37,6 +37,7 @@ import AccountSettings from "@/components/designer/AccountSettings";
 import { useParams } from "next/navigation";
 
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
+import { g } from "@/lib/gender";
 
 // Default empty profile — populated from API
 const EMPTY_DESIGNER_DATA = {
@@ -56,6 +57,7 @@ const EMPTY_DESIGNER_DATA = {
     eventsAttended: 0,
     joinDate: "",
     rank: 0,
+    gender: "female" as const,
 };
 
 // Suppliers populated from API
@@ -204,6 +206,8 @@ export default function DesignerDashboard() {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
     const [projectView, setProjectView] = useState<"list" | "kanban">("list");
 
+    const gender = designerData.gender || "female";
+
     const filteredSuppliers = suppliers
         .filter((s) => {
             const matchSearch = !search || s.name.includes(search) || s.description.includes(search) || s.city.includes(search);
@@ -218,7 +222,7 @@ export default function DesignerDashboard() {
         });
 
     // Find active tab label for header
-    const activeLabel = navGroups.flatMap(g => g.items).find(i => i.key === activeTab)?.label || "";
+    const activeLabel = navGroups.flatMap(grp => grp.items).find(i => i.key === activeTab)?.label || "";
 
     if (profileLoading) {
       return (
@@ -439,8 +443,8 @@ export default function DesignerDashboard() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { icon: HandCoins, color: "text-gold", bg: "bg-gradient-to-br from-gold/15 to-gold/5", label: txt("src/app/designer/[id]/page.tsx::052", "העסקאות שלי"), value: designerData.totalDeals, sub: formatCurrency(designerData.totalDealAmount), trend: "+3" },
-                    { icon: Trophy, color: "text-purple-600", bg: "bg-gradient-to-br from-purple-100 to-purple-50", label: txt("src/app/designer/[id]/page.tsx::053", "הגרלות"), value: designerData.lotteryEntries, sub: designerData.lotteryWins > 0 ? `זכית ${designerData.lotteryWins} פעמים!` : txt("src/app/designer/[id]/page.tsx::054", "בהצלחה בהגרלה הבאה!"), trend: "+2" },
-                    { icon: CalendarIcon, color: "text-blue-600", bg: "bg-gradient-to-br from-blue-100 to-blue-50", label: txt("src/app/designer/[id]/page.tsx::055", "אירועים קרובים"), value: "2", sub: txt("src/app/designer/[id]/page.tsx::056", "הירשמי עכשיו"), trend: null },
+                    { icon: Trophy, color: "text-purple-600", bg: "bg-gradient-to-br from-purple-100 to-purple-50", label: txt("src/app/designer/[id]/page.tsx::053", "הגרלות"), value: designerData.lotteryEntries, sub: designerData.lotteryWins > 0 ? `${g(gender, "זכית", "זכית")} ${designerData.lotteryWins} פעמים!` : txt("src/app/designer/[id]/page.tsx::054", "בהצלחה בהגרלה הבאה!"), trend: "+2" },
+                    { icon: CalendarIcon, color: "text-blue-600", bg: "bg-gradient-to-br from-blue-100 to-blue-50", label: txt("src/app/designer/[id]/page.tsx::055", "אירועים קרובים"), value: "2", sub: g(gender, "הירשם עכשיו", "הירשמי עכשיו"), trend: null },
                     { icon: Heart, color: "text-pink-600", bg: "bg-gradient-to-br from-pink-100 to-pink-50", label: txt("src/app/designer/[id]/page.tsx::057", "אני ובקהילה"), value: `#${designerData.rank}`, sub: `מאז ${designerData.joinDate}`, trend: null },
                   ].map((card, i) => (
                     <div key={i} className={`card-premium text-center stagger-${i + 1} animate-in hover-lift`}>
@@ -564,8 +568,8 @@ export default function DesignerDashboard() {
                   <h3 className="text-sm font-semibold text-text-muted mb-3">פעולות מהירות</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { key: "suppliers" as TabKey, icon: Search, label: txt("src/app/designer/[id]/page.tsx::058", "חפשי ספק") },
-                      { key: "deals" as TabKey, icon: Plus, label: txt("src/app/designer/[id]/page.tsx::059", "דווחי על עסקה") },
+                      { key: "suppliers" as TabKey, icon: Search, label: g(gender, "חפש ספק", "חפשי ספק") },
+                      { key: "deals" as TabKey, icon: Plus, label: g(gender, "דווח על עסקה", "דווחי על עסקה") },
                       { key: "clients" as TabKey, icon: Users, label: "הלקוחות שלי" },
                       { key: "whatsapp" as TabKey, icon: MessageCircle, label: "WhatsApp" },
                     ].map((action) => (
@@ -600,7 +604,7 @@ export default function DesignerDashboard() {
                         {/* Logo Watermark */}
                         {designerData.designerLogo && (
                           <div style={{ position: 'absolute', bottom: 8, right: 8, opacity: 0.15, width: 40, height: 40 }}>
-                            <Image src={designerData.designerLogo} alt="לוגו המעצבת" width={40} height={40} className="w-full h-full object-contain" />
+                            <Image src={designerData.designerLogo} alt={g(gender, "לוגו המעצב", "לוגו המעצבת")} width={40} height={40} className="w-full h-full object-contain" />
                           </div>
                         )}
                         {!designerData.designerLogo && (
@@ -662,7 +666,7 @@ export default function DesignerDashboard() {
                   <div className="space-y-3">
                     {[
                       { text: txt("src/app/designer/[id]/page.tsx::064b", "עסקה חדשה עם סטון דיזיין"), time: txt("src/app/designer/[id]/page.tsx::065b", "לפני 3 שעות"), color: "bg-gold" },
-                      { text: txt("src/app/designer/[id]/page.tsx::066b", "נרשמת לאירוע נטוורקינג"), time: txt("src/app/designer/[id]/page.tsx::067b", "אתמול"), color: "bg-blue-500" },
+                      { text: g(gender, "נרשמת לאירוע נטוורקינג", "נרשמת לאירוע נטוורקינג"), time: txt("src/app/designer/[id]/page.tsx::067b", "אתמול"), color: "bg-blue-500" },
                       { text: txt("src/app/designer/[id]/page.tsx::068b", "דירוג 5 כוכבים לקיטשן פלוס"), time: txt("src/app/designer/[id]/page.tsx::069b", "אתמול"), color: "bg-emerald-500" },
                     ].map((activity, i) => (
                       <div key={i} className="flex items-center gap-3 group">
@@ -689,7 +693,7 @@ export default function DesignerDashboard() {
                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                     <input
                       type="text"
-                      placeholder="חפשי ספק לפי שם, מוצר, או עיר..."
+                      placeholder={g(gender, "חפש ספק לפי שם, מוצר, או עיר...", "חפשי ספק לפי שם, מוצר, או עיר...")}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="input-field pr-12 text-base py-3"
@@ -845,7 +849,7 @@ export default function DesignerDashboard() {
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::083", "ספק")}</label>
                     <select className="select-field">
-                      <option value="">{txt("src/app/designer/[id]/page.tsx::084", "בחרי ספק...")}</option>
+                      <option value="">{g(gender, "בחר ספק...", "בחרי ספק...")}</option>
                       {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
@@ -863,10 +867,10 @@ export default function DesignerDashboard() {
                   </div>
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::090", "הערות (אופציונלי — אנונימי)")}</label>
-                    <textarea className="input-field h-20 resize-none" placeholder="שתפי את החוויה שלך..." />
+                    <textarea className="input-field h-20 resize-none" placeholder={g(gender, "שתף את החוויה שלך...", "שתפי את החוויה שלך...")} />
                   </div>
                   <button className="btn-gold w-full">{txt("src/app/designer/[id]/page.tsx::092", "שלח דיווח")}</button>
-                  <p className="text-text-muted text-xs text-center">{txt("src/app/designer/[id]/page.tsx::093", "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנסי להגרלה החודשית!")}</p>
+                  <p className="text-text-muted text-xs text-center">{g(gender, "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנס להגרלה החודשית!", "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנסי להגרלה החודשית!")}</p>
                 </div>
               </div>
             )}
@@ -932,7 +936,7 @@ export default function DesignerDashboard() {
                           <p className="text-text-faint text-xs">{txt("src/app/designer/[id]/page.tsx::104", "שובר ספא 500 ₪")}</p>
                         </div>
                       </div>
-                      <span className="badge-gold">{txt("src/app/designer/[id]/page.tsx::105", "משתתפת")}</span>
+                      <span className="badge-gold">{g(gender, "משתתף", "משתתפת")}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-bg-surface rounded-lg">
                       <div className="flex items-center gap-3">
@@ -944,7 +948,7 @@ export default function DesignerDashboard() {
                           <p className="text-text-faint text-xs">{txt("src/app/designer/[id]/page.tsx::107", "כרטיס מתנה 300 ₪")}</p>
                         </div>
                       </div>
-                      <span className="badge bg-gold text-white text-xs font-bold px-3 py-1 rounded-full">{txt("src/app/designer/[id]/page.tsx::108", "זכית!")}</span>
+                      <span className="badge bg-gold text-white text-xs font-bold px-3 py-1 rounded-full">{g(gender, "זכית!", "זכית!")}</span>
                     </div>
                   </div>
                 </div>
@@ -953,31 +957,31 @@ export default function DesignerDashboard() {
 
             {/* ===== CRM TABS ===== */}
             {activeTab === "clients" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmClients /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmClients gender={gender} /></FeatureGate>
             )}
             {activeTab === "crm-suppliers" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSuppliers /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSuppliers gender={gender} /></FeatureGate>
             )}
             {activeTab === "whatsapp" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWhatsApp /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWhatsApp gender={gender} /></FeatureGate>
             )}
             {activeTab === "webhooks" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWebhooks /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWebhooks gender={gender} /></FeatureGate>
             )}
             {activeTab === "templates" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTemplates /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTemplates gender={gender} /></FeatureGate>
             )}
             {activeTab === "crm-settings" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSettings /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSettings gender={gender} /></FeatureGate>
             )}
             {activeTab === "workflows" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWorkflowTemplates /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWorkflowTemplates gender={gender} /></FeatureGate>
             )}
             {activeTab === "contracts" && (
-              <FeatureGate feature="contracts" designerId={designerIdForGate}><CrmContracts /></FeatureGate>
+              <FeatureGate feature="contracts" designerId={designerIdForGate}><CrmContracts gender={gender} /></FeatureGate>
             )}
             {activeTab === "calendar" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmCalendar /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmCalendar gender={gender} /></FeatureGate>
             )}
             {activeTab === "projects" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}>
@@ -997,51 +1001,51 @@ export default function DesignerDashboard() {
                     <span className="flex items-center gap-1"><Grid3X3 className="w-3.5 h-3.5" /> קנבן</span>
                   </button>
                 </div>
-                {projectView === "list" ? <CrmProjects /> : <CrmKanban />}
+                {projectView === "list" ? <CrmProjects gender={gender} /> : <CrmKanban gender={gender} />}
               </div>
               </FeatureGate>
             )}
             {activeTab === "scheduler" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmScheduler /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmScheduler gender={gender} /></FeatureGate>
             )}
             {activeTab === "quotes" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmQuotes /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmQuotes gender={gender} /></FeatureGate>
             )}
             {activeTab === "time-tracking" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTimeTracking /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTimeTracking gender={gender} /></FeatureGate>
             )}
             {activeTab === "surveys" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSurveys /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSurveys gender={gender} /></FeatureGate>
             )}
             {activeTab === "approvals" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmApprovals /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmApprovals gender={gender} /></FeatureGate>
             )}
             {activeTab === "before-after" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmBeforeAfter /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmBeforeAfter gender={gender} /></FeatureGate>
             )}
             {activeTab === "handoff" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmHandoffChecklist /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmHandoffChecklist gender={gender} /></FeatureGate>
             )}
             {activeTab === "onboarding" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmOnboarding /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmOnboarding gender={gender} /></FeatureGate>
             )}
             {activeTab === "style-quiz" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmStyleQuiz designerId={designerIdForGate || ""} /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmStyleQuiz designerId={designerIdForGate || ""} gender={gender} /></FeatureGate>
             )}
             {activeTab === "chat" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmChat /></FeatureGate>
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmChat gender={gender} /></FeatureGate>
             )}
             {activeTab === "portfolio" && (
               <FeatureGate feature="portfolio" designerId={designerIdForGate}>
                 <div>
-                  <CrmPortfolio onSwitchToCard={() => setActiveTab("card")} />
+                  <CrmPortfolio onSwitchToCard={() => setActiveTab("card")} gender={gender} />
                 </div>
               </FeatureGate>
             )}
 
             {/* ===== ACCOUNT SETTINGS TAB ===== */}
             {activeTab === "account-settings" && (
-              <AccountSettings designerId={designerIdForGate || ""} />
+              <AccountSettings designerId={designerIdForGate || ""} gender={gender} />
             )}
 
             {/* ===== PROFILE TAB ===== */}
@@ -1165,6 +1169,7 @@ export default function DesignerDashboard() {
           lotteryEntries: designerData.lotteryEntries,
           eventsAttended: designerData.eventsAttended,
           joinDate: designerData.joinDate,
+          gender,
         } as DesignerContext} />
       </div>
     );

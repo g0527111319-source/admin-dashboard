@@ -2,17 +2,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import PlanComparisonTable, { Plan } from "./PlanComparisonTable";
+import { g } from "@/lib/gender";
 
 type Props = {
   designerId: string;
   plans: Plan[];
+  gender?: string;
 };
 
 const GOLD = "#C9A84C";
 const GOLD_SOFT = "#e0c068";
 const DARK_BG = "#1a1a2e";
 
-export default function OnboardingWizard({ designerId, plans }: Props) {
+export default function OnboardingWizard({ designerId, plans, gender }: Props) {
   const [step, setStep] = useState(1);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -153,7 +155,7 @@ export default function OnboardingWizard({ designerId, plans }: Props) {
               lineHeight: 1.7,
             }}
           >
-            שמחות שהצטרפת לקהילת זירת. נעזור לך להתחיל בכמה צעדים פשוטים — נכיר
+            {g(gender, "שמחים שהצטרפת", "שמחות שהצטרפת")} לקהילת זירת. נעזור לך להתחיל בכמה צעדים פשוטים — נכיר
             את התוכניות הזמינות, נבחר את המתאימה לך, ונפעיל לך תקופת ניסיון
             חינם.
           </p>
@@ -189,7 +191,7 @@ export default function OnboardingWizard({ designerId, plans }: Props) {
               fontWeight: 700,
             }}
           >
-            בחרי את התוכנית שלך
+            {g(gender, "בחר", "בחרי")} את התוכנית שלך
           </h2>
           <p
             style={{
@@ -380,7 +382,7 @@ export default function OnboardingWizard({ designerId, plans }: Props) {
               marginBottom: 32,
             }}
           >
-            תקופת הניסיון שלך פעילה. עכשיו את יכולה ליהנות מכל הפיצ'רים של המנוי.
+            תקופת הניסיון שלך פעילה. עכשיו {g(gender, "אתה יכול", "את יכולה")} ליהנות מכל הפיצ׳רים של המנוי.
           </p>
           <Link
             href={`/designer/${designerId}`}

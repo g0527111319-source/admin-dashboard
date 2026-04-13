@@ -33,7 +33,7 @@ type Client = {
 
 type ConnectionState = "disconnected" | "connecting" | "qr_ready" | "connected";
 
-export default function CrmWhatsApp() {
+export default function CrmWhatsApp({ gender }: { gender?: string }) {
   const [view, setView] = useState<"messages" | "settings" | "unofficial">("messages");
   const [config, setConfig] = useState<WhatsAppConfig>({ phoneNumberId: null, accessToken: null, webhookSecret: null, isActive: false });
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);

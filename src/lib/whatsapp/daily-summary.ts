@@ -6,6 +6,7 @@
 
 import prisma from "@/lib/prisma";
 import { sendMessage } from "./green-api";
+import { g } from "@/lib/gender";
 
 // ==========================================
 // Configuration
@@ -101,13 +102,13 @@ async function fetchDailyData(): Promise<DailySummaryData> {
       isActive: true,
       updatedAt: { lt: inactiveThreshold },
     },
-    select: { fullName: true },
+    select: { fullName: true, gender: true },
     take: 5,
   });
 
   for (const designer of inactiveDesigners) {
     alerts.push(
-      `מעצבת "${designer.fullName}" לא פעילה ${INACTIVE_DESIGNER_DAYS} יום`
+      `${g(designer.gender, "מעצב", "מעצבת")} "${designer.fullName}" לא ${g(designer.gender, "פעיל", "פעילה")} ${INACTIVE_DESIGNER_DAYS} יום`
     );
   }
 

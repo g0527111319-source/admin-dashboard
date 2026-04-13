@@ -5,6 +5,7 @@ import {
   Search, Plus, ChevronLeft, FolderOpen, CheckCircle2, Clock, PauseCircle,
   XCircle, MessageCircle, FileText, Image, Send, Trash2, Edit3,
 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type Phase = {
   id: string;
@@ -210,11 +211,14 @@ export default function CrmProjects({
   initialProjectId,
   onClearProjectId,
   clientId,
+  gender,
 }: {
   initialProjectId?: string | null;
   onClearProjectId?: () => void;
   clientId?: string;
+  gender?: string;
 }) {
+  const gdr = gender || "female";
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -694,7 +698,7 @@ export default function CrmProjects({
                   >
                     <p className="text-sm text-text-primary">{msg.content}</p>
                     <p className="text-xs text-text-muted mt-1">
-                      {msg.senderType === "designer" ? "את" : "לקוח"} •{" "}
+                      {msg.senderType === "designer" ? g(gdr, "אתה", "את") : "לקוח"} •{" "}
                       {new Date(msg.createdAt).toLocaleString("he-IL")}
                     </p>
                   </div>
@@ -705,7 +709,7 @@ export default function CrmProjects({
               <input
                 type="text"
                 className="input-field flex-1"
-                placeholder="כתבי הודעה..."
+                placeholder={g(gdr, "כתוב הודעה...", "כתבי הודעה...")}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
@@ -745,7 +749,7 @@ export default function CrmProjects({
               onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
               required
             >
-              <option value="">בחרי לקוח...</option>
+              <option value="">{g(gdr, "בחר לקוח...", "בחרי לקוח...")}</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -862,7 +866,7 @@ export default function CrmProjects({
         <div className="card-static text-center py-12">
           <FolderOpen className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
           <p className="text-text-muted">
-            {search || statusFilter !== "ALL" ? "לא נמצאו פרויקטים" : "עדיין אין פרויקטים. צרי את הראשון!"}
+            {search || statusFilter !== "ALL" ? "לא נמצאו פרויקטים" : g(gdr, "עדיין אין פרויקטים. צור את הראשון!", "עדיין אין פרויקטים. צרי את הראשון!")}
           </p>
         </div>
       ) : (

@@ -15,6 +15,7 @@ export async function GET() {
                 role: session.role,
                 email: session.email,
                 name: session.name,
+                gender: session.gender || "female",
             },
         });
     }

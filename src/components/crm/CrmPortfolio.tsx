@@ -9,6 +9,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
+import { g } from "@/lib/gender";
 
 // ===== PORTFOLIO LIMITS =====
 const MAX_IMAGES_PER_PROJECT = 7;
@@ -126,9 +127,11 @@ function extractUrls(text: string): string[] {
 // ===== COMPONENT =====
 interface CrmPortfolioProps {
   onSwitchToCard?: () => void;
+  gender?: string;
 }
 
-export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {}) {
+export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioProps = {}) {
+  const gdr = gender || "female";
   const [projects, setProjects] = useState<Project[]>([]);
   const [suppliers, setSuppliers] = useState<CrmSupplier[]>([]);
   const [designerId, setDesignerId] = useState<string | null>(null);
@@ -199,7 +202,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
   // ===== FORM ACTIONS =====
   const openCreate = () => {
     if (projects.length >= MAX_PROJECTS_PER_DESIGNER) {
-      alert(`הגעת למקסימום ${MAX_PROJECTS_PER_DESIGNER} פרויקטים. מחקי פרויקט קיים כדי להוסיף חדש.`);
+      alert(`הגעת למקסימום ${MAX_PROJECTS_PER_DESIGNER} פרויקטים. ${g(gdr, "מחק פרויקט קיים כדי להוסיף חדש.", "מחקי פרויקט קיים כדי להוסיף חדש.")}`);
       return;
     }
     setEditingProject(null);
@@ -467,7 +470,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
     // Validate file size (2MB max)
     const MAX_SIZE = 2 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      setUploadError("גודל הקובץ מוגבל ל-2MB. נסי לכווץ את התמונה.");
+      setUploadError(g(gdr, "גודל הקובץ מוגבל ל-2MB. נסה לכווץ את התמונה.", "גודל הקובץ מוגבל ל-2MB. נסי לכווץ את התמונה."));
       return;
     }
 
@@ -640,7 +643,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
           {projectImages.length >= MAX_IMAGES_PER_PROJECT ? (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              הגעת למקסימום {MAX_IMAGES_PER_PROJECT} תמונות לפרויקט. מחקי תמונה קיימת כדי להוסיף חדשה.
+              הגעת למקסימום {MAX_IMAGES_PER_PROJECT} תמונות לפרויקט. {g(gdr, "מחק תמונה קיימת כדי להוסיף חדשה.", "מחקי תמונה קיימת כדי להוסיף חדשה.")}
             </div>
           ) : (
             <FileUpload
@@ -848,7 +851,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="תארי את הפרויקט..."
+              placeholder={g(gdr, "תאר את הפרויקט...", "תארי את הפרויקט...")}
               rows={4}
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors resize-none"
             />
@@ -1123,7 +1126,7 @@ export default function CrmPortfolio({ onSwitchToCard }: CrmPortfolioProps = {})
               onClick={openCreate}
               className="px-5 py-2.5 bg-[#C9A84C] text-black text-sm font-bold rounded-xl hover:bg-[#e0c068] transition-colors"
             >
-              צרי את הפרויקט הראשון
+              {g(gdr, "צור את הפרויקט הראשון", "צרי את הפרויקט הראשון")}
             </button>
           )}
         </div>

@@ -57,7 +57,7 @@ function formatPrice(v: string | number, currency = "ILS"): string {
   return `${n.toLocaleString("he-IL")} ${symbol}`;
 }
 
-export default function AccountSettings({ designerId }: { designerId: string }) {
+export default function AccountSettings({ designerId }: { designerId: string; gender?: string }) {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -352,7 +352,7 @@ export default function AccountSettings({ designerId }: { designerId: string }) 
       {!subscription && (
         <div className="card-glass text-center py-8">
           <Crown className="w-10 h-10 text-gold/40 mx-auto mb-3" />
-          <p className="text-text-muted mb-4">אין מנוי פעיל. בחרי תוכנית כדי להתחיל.</p>
+          <p className="text-text-muted mb-4">אין מנוי פעיל. ניתן לבחור תוכנית כדי להתחיל.</p>
           <Link
             href={`/designer/${designerId}/subscription`}
             className="btn-gold inline-flex items-center gap-2 text-sm px-6 py-2"

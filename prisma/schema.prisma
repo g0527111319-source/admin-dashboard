@@ -71,6 +71,7 @@ model Designer {
   fullName             String
   firstName            String?
   lastName             String?
+  gender               String   @default("female") // "male" | "female"
   phone                String
   email                String?  @unique
   city                 String?

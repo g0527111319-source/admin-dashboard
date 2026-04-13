@@ -77,7 +77,7 @@ export async function handlePaymentFailure(
     userId: sub.designerId,
     type: "payment_failed",
     title: `כשל בחיוב המנוי (ניסיון ${newCount}/3)`,
-    body: `החיוב החודשי נכשל. ננסה שוב ב־${nextRetryAt.toLocaleDateString("he-IL")}. אנא ודאי שפרטי התשלום מעודכנים.`,
+    body: `החיוב החודשי נכשל. ננסה שוב ב־${nextRetryAt.toLocaleDateString("he-IL")}. יש לוודא שפרטי התשלום מעודכנים.`,
     linkUrl: `/designer/${sub.designerId}/subscription`,
   });
 
@@ -148,7 +148,7 @@ export async function handlePaymentSuccess(
     userId: sub.designerId,
     type: "payment_success",
     title: "התשלום התקבל בהצלחה",
-    body: `חויבת ₪${amount.toFixed(2)} עבור המנוי החודשי. תקפות עד ${nextPeriodEnd.toLocaleDateString("he-IL")}.`,
+    body: `בוצע חיוב של ₪${amount.toFixed(2)} עבור המנוי החודשי. תקפות עד ${nextPeriodEnd.toLocaleDateString("he-IL")}.`,
     linkUrl: `/designer/${sub.designerId}/subscription`,
   });
 }
@@ -288,8 +288,8 @@ function paymentFailedEmailHtml(name: string, attempt: number, nextRetryAt: Date
       <p>לא הצלחנו לחייב את המנוי שלך בזירת האדריכלות.</p>
       <p><strong>ניסיון מס': ${attempt}</strong></p>
       <p>ננסה שוב אוטומטית בתאריך <strong>${nextRetryAt.toLocaleDateString("he-IL")}</strong>.</p>
-      <p>כדי להימנע מסגירת המנוי, אנא ודאי שפרטי כרטיס האשראי מעודכנים:</p>
-      <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || ""}/designer" style="display:inline-block;background:#C9A84C;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">עדכני פרטי תשלום</a></p>
+      <p>כדי להימנע מסגירת המנוי, יש לוודא שפרטי כרטיס האשראי מעודכנים:</p>
+      <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || ""}/designer" style="display:inline-block;background:#C9A84C;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">עדכון פרטי תשלום</a></p>
       <p style="color:#888;font-size:12px;margin-top:30px;">אם החיוב ימשיך להיכשל, המנוי יעבור למצב קריאה בלבד עם 30 ימים להוריד את כל המידע שלך.</p>
     </div>`;
 }
@@ -300,7 +300,7 @@ function readOnlyEmailHtml(name: string, readOnlyUntil: Date): string {
       <h2 style="color:#C9A84C;">שלום ${name},</h2>
       <p>המנוי שלך עבר למצב <strong>קריאה בלבד</strong> לאחר ניסיונות חיוב חוזרים שנכשלו.</p>
       <p>יש לך זמן עד <strong>${readOnlyUntil.toLocaleDateString("he-IL")}</strong> להיכנס למערכת ולהוריד את כל המידע שלך — לקוחות, פרויקטים, חוזים וקבצים.</p>
-      <p>כדי להחזיר את המנוי לפעילות מלאה, עדכני את פרטי התשלום:</p>
-      <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || ""}/designer" style="display:inline-block;background:#C9A84C;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">הפעלי מחדש</a></p>
+      <p>כדי להחזיר את המנוי לפעילות מלאה, יש לעדכן את פרטי התשלום:</p>
+      <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || ""}/designer" style="display:inline-block;background:#C9A84C;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">הפעלה מחדש</a></p>
     </div>`;
 }

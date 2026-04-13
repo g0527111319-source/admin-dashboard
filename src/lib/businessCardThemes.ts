@@ -411,7 +411,7 @@ export interface FontOption {
 // ===== 30 גופני דפוס עבריים =====
 const printFonts: FontOption[] = [
   // --- גופני Google (עברית) ---
-  { id: "heebo", nameHe: "חיבו", family: "'Heebo', sans-serif", category: "print", sampleText: "שלום, אני מעצבת פנים" },
+  { id: "heebo", nameHe: "חיבו", family: "'Heebo', sans-serif", category: "print", sampleText: "שלום, אני מעצב/ת פנים" },
   { id: "assistant", nameHe: "אסיסטנט", family: "'Assistant', sans-serif", category: "print", sampleText: "עיצוב שמדבר אליך" },
   { id: "alef", nameHe: "אלף", family: "'Alef', sans-serif", category: "print", sampleText: "עברית ברורה ונקייה" },
   { id: "frank-ruhl", nameHe: "פרנק רוהל", family: "'Frank Ruhl Libre', serif", category: "print", sampleText: "אלגנטיות קלאסית" },

@@ -31,7 +31,7 @@ const AVAILABLE_EVENTS = [
   { value: "survey.completed", label: "סקר שביעות רצון הושלם" },
 ];
 
-export default function CrmWebhooks() {
+export default function CrmWebhooks({ gender }: { gender?: string }) {
   const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

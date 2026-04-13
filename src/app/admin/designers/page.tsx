@@ -6,6 +6,7 @@ import {
   Loader2, AlertTriangle, Briefcase, Home, Hash, ChevronDown, ChevronUp, Eye,
 } from "lucide-react";
 import { AREAS, SPECIALIZATIONS, formatCurrency } from "@/lib/utils";
+import { g } from "@/lib/gender";
 
 // ==========================================
 // Types
@@ -49,6 +50,7 @@ interface Designer {
   yearsAsIndependent: number | null;
   workTypes: string[];
   approvalStatus: string;
+  gender: string;
 }
 
 // ==========================================
@@ -99,6 +101,7 @@ function mapDesignerFromApi(d: any): Designer {
     yearsAsIndependent: d.yearsAsIndependent ?? null,
     workTypes: Array.isArray(d.workTypes) ? d.workTypes : [],
     approvalStatus: d.approvalStatus || "APPROVED",
+    gender: d.gender || "female",
   };
 }
 
@@ -157,22 +160,22 @@ function computeBadges(designer: Designer, allDesigners: Designer[]): Badge[] {
 
   // Star of the month — most deals
   if (sorted[0]?.id === designer.id) {
-    badges.push({ label: "כוכבת החודש", icon: Crown, color: "text-amber-600", bgColor: "bg-amber-100" });
+    badges.push({ label: g(designer.gender, "כוכב החודש", "כוכבת החודש"), icon: Crown, color: "text-amber-600", bgColor: "bg-amber-100" });
   }
 
   // Expert — most experience (15+ years)
   if (designer.yearsExperience >= 15) {
-    badges.push({ label: "מומחית", icon: Award, color: "text-purple-600", bgColor: "bg-purple-100" });
+    badges.push({ label: g(designer.gender, "מומחה", "מומחית"), icon: Award, color: "text-purple-600", bgColor: "bg-purple-100" });
   }
 
   // Active contributor — 10+ deals
   if (designer.totalDealsReported >= 10) {
-    badges.push({ label: "תורמת פעילה", icon: Flame, color: "text-orange-600", bgColor: "bg-orange-100" });
+    badges.push({ label: g(designer.gender, "תורם פעיל", "תורמת פעילה"), icon: Flame, color: "text-orange-600", bgColor: "bg-orange-100" });
   }
 
   // Lottery winner
   if (designer.lotteryWinsTotal > 0) {
-    badges.push({ label: "זוכת הגרלה", icon: Trophy, color: "text-gold", bgColor: "bg-gold/10" });
+    badges.push({ label: g(designer.gender, "זוכה הגרלה", "זוכת הגרלה"), icon: Trophy, color: "text-gold", bgColor: "bg-gold/10" });
   }
 
   return badges;
@@ -563,7 +566,7 @@ export default function DesignersPage() {
             {filteredDesigners.map((d) => {
               const badges = computeBadges(d, designers);
               const isExpanded = expandedRow === d.id;
-              const statusLabel = d.approvalStatus === "APPROVED" ? "מאושרת" : d.approvalStatus === "PENDING" ? "ממתינה" : "נדחתה";
+              const statusLabel = d.approvalStatus === "APPROVED" ? g(d.gender, "מאושר", "מאושרת") : d.approvalStatus === "PENDING" ? g(d.gender, "ממתין", "ממתינה") : g(d.gender, "נדחה", "נדחתה");
               const statusColor = d.approvalStatus === "APPROVED" ? "text-emerald-600 bg-emerald-50" : d.approvalStatus === "PENDING" ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50";
               const fullAddress = [d.street, d.buildingNumber ? `${d.buildingNumber}` : "", d.neighborhood, d.city].filter(Boolean).join(", ");
 
@@ -600,7 +603,7 @@ export default function DesignersPage() {
                   </td>
                   <td>
                     <span className="text-xs text-text-muted">
-                      {d.employmentType === "FREELANCE" ? "עצמאית" : "שכירה"}
+                      {d.employmentType === "FREELANCE" ? g(d.gender, "עצמאי", "עצמאית") : g(d.gender, "שכיר", "שכירה")}
                       {d.yearsAsIndependent != null && d.yearsAsIndependent > 0 ? ` (${d.yearsAsIndependent} שנים)` : ""}
                     </span>
                   </td>
@@ -670,7 +673,7 @@ export default function DesignersPage() {
                             </h4>
                             <div className="space-y-1 text-text-primary text-xs">
                               {d.specialization && <p><span className="text-text-muted">התמחות:</span> {d.specialization}</p>}
-                              <p><span className="text-text-muted">סוג העסקה:</span> {d.employmentType === "FREELANCE" ? "עצמאית" : "שכירה"}</p>
+                              <p><span className="text-text-muted">סוג העסקה:</span> {d.employmentType === "FREELANCE" ? g(d.gender, "עצמאי", "עצמאית") : g(d.gender, "שכיר", "שכירה")}</p>
                               {d.yearsAsIndependent != null && <p><span className="text-text-muted">שנות וותק:</span> {d.yearsAsIndependent}</p>}
                               {d.yearsExperience > 0 && <p><span className="text-text-muted">ניסיון:</span> {d.yearsExperience} שנים</p>}
                             </div>

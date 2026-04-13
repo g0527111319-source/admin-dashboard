@@ -1,5 +1,6 @@
 "use client";
 import { useMemo } from "react";
+import { g } from "@/lib/gender";
 
 export type Plan = {
   id: string;
@@ -17,6 +18,7 @@ type Props = {
   highlightedPlanSlug?: string;
   onSelect?: (planId: string) => void;
   loading?: boolean;
+  gender?: string;
 };
 
 const GOLD = "#C9A84C";
@@ -49,6 +51,7 @@ export default function PlanComparisonTable({
   highlightedPlanSlug,
   onSelect,
   loading = false,
+  gender,
 }: Props) {
   const visiblePlans = useMemo(() => plans.slice(0, 4), [plans]);
 
@@ -258,8 +261,8 @@ export default function PlanComparisonTable({
                   : loading
                   ? "מעבד..."
                   : isHighlighted
-                  ? "שדרגי"
-                  : "בחרי תוכנית"}
+                  ? g(gender, "שדרג", "שדרגי")
+                  : g(gender, "בחר תוכנית", "בחרי תוכנית")}
               </button>
             </div>
           );

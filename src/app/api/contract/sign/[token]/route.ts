@@ -191,7 +191,7 @@ export async function POST(
               <p>חתימתך על <strong>${contractTitle}</strong> התקבלה בהצלחה.</p>
               ${bothSigned
                 ? '<p style="color: #4CAF50; font-weight: bold;">החוזה נחתם על ידי שני הצדדים ונכנס לתוקף.</p>'
-                : "<p>ממתינים לחתימת המעצבת להשלמת התהליך.</p>"
+                : "<p>ממתינים לחתימת המעצב/ת להשלמת התהליך.</p>"
               }
               <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">זירת האדריכלות</p>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { ClipboardCheck, Plus, X, Check, Camera, MessageSquare, ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 interface HandoffItem {
   id: string;
@@ -103,7 +104,8 @@ const DEFAULT_ITEMS: { label: string; category: string; assignee: "designer" | "
   { label: "שלטים — מזגנים, תריסים, שערים", category: "כללי", assignee: "client" },
 ];
 
-export default function CrmHandoffChecklist({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmHandoffChecklist({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -219,13 +221,13 @@ export default function CrmHandoffChecklist({ clientId, projectId }: { clientId?
       {/* Create form */}
       {creating && (
         <div className="card-static space-y-3 animate-in">
-          <label className="form-label">בחרי פרויקט</label>
+          <label className="form-label">{g(gdr, "בחר", "בחרי")} פרויקט</label>
           <select value={newProjectId} onChange={e => setNewProjectId(e.target.value)} className="select-field">
-            <option value="">— בחרי —</option>
+            <option value="">— {g(gdr, "בחר", "בחרי")} —</option>
             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           <div className="flex gap-2">
-            <button onClick={createChecklist} disabled={!newProjectId} className="btn-gold disabled:opacity-40">צרי עם פריטי ברירת מחדל</button>
+            <button onClick={createChecklist} disabled={!newProjectId} className="btn-gold disabled:opacity-40">{g(gdr, "צור", "צרי")} עם פריטי ברירת מחדל</button>
             <button onClick={() => setCreating(false)} className="btn-ghost">ביטול</button>
           </div>
         </div>
@@ -291,7 +293,7 @@ export default function CrmHandoffChecklist({ clientId, projectId }: { clientId?
                 <div>
                   <p className="text-xs font-semibold text-gold mb-2 flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-gold" />
-                    לביצוע המעצבת ({designerItems.filter(i => i.isChecked).length}/{designerItems.length})
+                    {`לביצוע ${g(gdr, "המעצב", "המעצבת")} (${designerItems.filter(i => i.isChecked).length}/${designerItems.length})`}
                   </p>
                   <div className="space-y-1">
                     {designerItems.map(item => (
@@ -311,7 +313,7 @@ export default function CrmHandoffChecklist({ clientId, projectId }: { clientId?
                     </select>
                     <select value={newItem.assignee} onChange={e => setNewItem(p => ({ ...p, assignee: e.target.value as "designer" | "client" }))} className="select-field text-sm w-28">
                       <option value="client">לקוח</option>
-                      <option value="designer">מעצבת</option>
+                      <option value="designer">{g(gdr, "מעצב", "מעצבת")}</option>
                     </select>
                     <button onClick={() => addItem(cl.id)} className="btn-gold text-sm">הוסף</button>
                     <button onClick={() => setAddingItem(null)} className="btn-ghost text-sm">ביטול</button>
@@ -331,9 +333,9 @@ export default function CrmHandoffChecklist({ clientId, projectId }: { clientId?
         <div className="empty-state">
           <ClipboardCheck className="empty-state-icon" />
           <p className="font-medium text-text-secondary">אין צ&apos;קליסטים עדיין</p>
-          <p className="text-sm mt-1 mb-4">צרי צ&apos;קליסט מסירה כשפרויקט מגיע לסיום</p>
+          <p className="text-sm mt-1 mb-4">{g(gdr, "צור", "צרי")} צ&apos;קליסט מסירה כשפרויקט מגיע לסיום</p>
           <button onClick={() => setCreating(true)} className="btn-gold">
-            <Plus className="w-4 h-4 inline ml-1" /> צרי צ&apos;קליסט ראשון
+            <Plus className="w-4 h-4 inline ml-1" /> {g(gdr, "צור", "צרי")} צ&apos;קליסט ראשון
           </button>
         </div>
       )}

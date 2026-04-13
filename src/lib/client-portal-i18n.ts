@@ -59,13 +59,13 @@ const translations = {
     whatsappUpdatesDesc: "התראות מיידיות בוואטסאפ",
 
     // Messages/Chat
-    messagesToDesigner: "הודעות למעצבת",
-    typeMessage: "כתבו הודעה למעצבת...",
+    messagesToDesigner: "הודעות למעצב/ת",
+    typeMessage: "כתבו הודעה למעצב/ת...",
     send: "שלחו",
     noMessages: "אין הודעות עדיין",
-    sendFirstMessage: "שלחו הודעה ראשונה למעצבת",
-    sendMessageSubtitle: "שלחו הודעה וקבלו מענה מהמעצבת",
-    designer: "המעצבת",
+    sendFirstMessage: "שלחו הודעה ראשונה למעצב/ת",
+    sendMessageSubtitle: "שלחו הודעה וקבלו מענה מהמעצב/ת",
+    designer: "המעצב/ת",
     me: "אני",
 
     // Documents & files

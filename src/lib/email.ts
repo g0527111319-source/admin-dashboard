@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { g } from "@/lib/gender";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -40,9 +41,9 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
 
 // --- Email Templates ---
 
-export function welcomeDesignerEmail(name: string) {
+export function welcomeDesignerEmail(name: string, gender?: string) {
   return {
-    subject: `ברוכה הבאה לזירת האדריכלות, ${name}!`,
+    subject: `${g(gender, "ברוך הבא", "ברוכה הבאה")} לזירת האדריכלות, ${name}!`,
     html: `
       <div dir="rtl" style="font-family: Heebo, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #e5e5e5; padding: 40px; border-radius: 12px;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -51,7 +52,7 @@ export function welcomeDesignerEmail(name: string) {
         </div>
         <h2 style="color: #fff;">שלום ${name}! 👋</h2>
         <p>שמחים שהצטרפת לקהילת מעצבות הפנים המובילה בישראל.</p>
-        <p>באזור האישי שלך תוכלי:</p>
+        <p>באזור האישי שלך ${g(gender, "תוכל", "תוכלי")}:</p>
         <ul style="color: #C9A84C;">
           <li style="color: #e5e5e5; margin-bottom: 8px;">לנהל לקוחות ופרויקטים</li>
           <li style="color: #e5e5e5; margin-bottom: 8px;">לדווח עסקאות ולצבור נקודות</li>
@@ -72,14 +73,14 @@ export function welcomeDesignerEmail(name: string) {
   };
 }
 
-export function dealNotificationEmail(designerName: string, supplierName: string, amount: number) {
+export function dealNotificationEmail(designerName: string, supplierName: string, amount: number, gender?: string) {
   return {
     subject: `עסקה חדשה דווחה — ${supplierName}`,
     html: `
       <div dir="rtl" style="font-family: Heebo, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #e5e5e5; padding: 40px; border-radius: 12px;">
         <h1 style="color: #C9A84C; text-align: center;">עסקה חדשה 🤝</h1>
         <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid #C9A84C33;">
-          <p><strong>מעצבת:</strong> ${designerName}</p>
+          <p><strong>${g(gender, "מעצב", "מעצבת")}:</strong> ${designerName}</p>
           <p><strong>ספק:</strong> ${supplierName}</p>
           <p><strong>סכום:</strong> ₪${amount.toLocaleString()}</p>
           <p><strong>תאריך:</strong> ${new Date().toLocaleDateString("he-IL")}</p>
@@ -133,7 +134,8 @@ export function subscriptionReceiptEmail(
   planName: string,
   amount: number,
   invoiceNumber: string | null,
-  periodEnd: Date
+  periodEnd: Date,
+  gender?: string
 ) {
   return {
     subject: `קבלה על תשלום מנוי — ${planName}`,
@@ -148,13 +150,13 @@ export function subscriptionReceiptEmail(
         <p style="margin:6px 0;"><strong>תוקף עד:</strong> ${periodEnd.toLocaleDateString("he-IL")}</p>
       </div>
       <p style="color:#999;font-size:13px;">החשבונית המלאה תישלח אוטומטית ממערכת iCount.</p>
-      ${brandButton("צפי בפרטי המנוי", `${BRAND_URL}/designer`)}
+      ${brandButton(g(gender, "צפה בפרטי המנוי", "צפי בפרטי המנוי"), `${BRAND_URL}/designer`)}
       `
     ),
   };
 }
 
-export function trialEndingEmail(name: string, daysLeft: number, trialEndsAt: Date) {
+export function trialEndingEmail(name: string, daysLeft: number, trialEndsAt: Date, gender?: string) {
   return {
     subject: `תקופת הניסיון שלך מסתיימת בעוד ${daysLeft} ימים`,
     html: brandWrap(
@@ -162,28 +164,28 @@ export function trialEndingEmail(name: string, daysLeft: number, trialEndsAt: Da
       `
       <p>תקופת הניסיון החינמית שלך בזירת האדריכלות תסתיים ב־<strong>${trialEndsAt.toLocaleDateString("he-IL")}</strong>.</p>
       <p>כדי להמשיך ליהנות מכל הכלים המתקדמים — CRM, כרטיס ביקור דיגיטלי, חוזים, ופורטפוליו — הזינו פרטי תשלום כבר עכשיו:</p>
-      ${brandButton("המשיכי למנוי בתשלום", `${BRAND_URL}/designer`)}
-      <p style="color:#999;font-size:13px;">אם לא תמשיכי, החשבון יעבור אוטומטית למנוי החינמי ותוכלי להמשיך ליהנות מהקהילה, האירועים וההגרלות.</p>
+      ${brandButton(g(gender, "המשך למנוי בתשלום", "המשיכי למנוי בתשלום"), `${BRAND_URL}/designer`)}
+      <p style="color:#999;font-size:13px;">אם לא ${g(gender, "תמשיך", "תמשיכי")}, החשבון יעבור אוטומטית למנוי החינמי ${g(gender, "ותוכל", "ותוכלי")} להמשיך ליהנות מהקהילה, האירועים וההגרלות.</p>
       `
     ),
   };
 }
 
-export function renewalReminderEmail(name: string, amount: number, renewAt: Date) {
+export function renewalReminderEmail(name: string, amount: number, renewAt: Date, gender?: string) {
   return {
     subject: `תזכורת: החיוב החודשי יתבצע ב־${renewAt.toLocaleDateString("he-IL")}`,
     html: brandWrap(
       `שלום ${name},`,
       `
       <p>זוהי תזכורת ידידותית: בתאריך <strong>${renewAt.toLocaleDateString("he-IL")}</strong> יתבצע חיוב אוטומטי של <strong>₪${amount.toFixed(2)}</strong> עבור חידוש המנוי החודשי שלך.</p>
-      <p>אם את רוצה לעדכן את פרטי התשלום, לשדרג/לשנמך תוכנית, או לבטל את המנוי — את מוזמנת לעשות זאת בכל עת:</p>
+      <p>אם ${g(gender, "אתה רוצה", "את רוצה")} לעדכן את פרטי התשלום, לשדרג/לשנמך תוכנית, או לבטל את המנוי — ${g(gender, "אתה מוזמן", "את מוזמנת")} לעשות זאת בכל עת:</p>
       ${brandButton("לניהול המנוי", `${BRAND_URL}/designer`)}
       `
     ),
   };
 }
 
-export function paymentFailedEmail(name: string, attempt: number, maxAttempts: number, nextRetry: Date) {
+export function paymentFailedEmail(name: string, attempt: number, maxAttempts: number, nextRetry: Date, gender?: string) {
   return {
     subject: `⚠️ כשל בחיוב המנוי (ניסיון ${attempt}/${maxAttempts})`,
     html: brandWrap(
@@ -194,15 +196,15 @@ export function paymentFailedEmail(name: string, attempt: number, maxAttempts: n
         <p style="margin:4px 0;"><strong>ניסיון:</strong> ${attempt} מתוך ${maxAttempts}</p>
         <p style="margin:4px 0;"><strong>ניסיון חוזר ב־:</strong> ${nextRetry.toLocaleDateString("he-IL")}</p>
       </div>
-      <p style="margin-top:16px;">אנא ודאי שפרטי כרטיס האשראי מעודכנים כדי להימנע מסגירת המנוי.</p>
-      ${brandButton("עדכני פרטי תשלום", `${BRAND_URL}/designer`)}
+      <p style="margin-top:16px;">אנא ${g(gender, "ודא", "ודאי")} שפרטי כרטיס האשראי מעודכנים כדי להימנע מסגירת המנוי.</p>
+      ${brandButton(g(gender, "עדכן פרטי תשלום", "עדכני פרטי תשלום"), `${BRAND_URL}/designer`)}
       <p style="color:#999;font-size:12px;">אם החיוב ימשיך להיכשל לאחר ${maxAttempts} ניסיונות, המנוי יעבור למצב "קריאה בלבד" עם 30 ימים להוריד את כל המידע שלך.</p>
       `
     ),
   };
 }
 
-export function subscriptionCancelledEmail(name: string, effectiveDate: Date, downloadUntil: Date) {
+export function subscriptionCancelledEmail(name: string, effectiveDate: Date, downloadUntil: Date, gender?: string) {
   return {
     subject: `אישור ביטול המנוי שלך`,
     html: brandWrap(
@@ -213,36 +215,36 @@ export function subscriptionCancelledEmail(name: string, effectiveDate: Date, do
         <p style="margin:6px 0;"><strong>הביטול ייכנס לתוקף ב־:</strong> ${effectiveDate.toLocaleDateString("he-IL")}</p>
         <p style="margin:6px 0;"><strong>חלון הורדת מידע עד:</strong> ${downloadUntil.toLocaleDateString("he-IL")}</p>
       </div>
-      <p>עד לתאריך הנ"ל תוכלי להיכנס לחשבון ולהוריד את כל המידע שלך — לקוחות, פרויקטים, חוזים וקבצים.</p>
+      <p>עד לתאריך הנ"ל ${g(gender, "תוכל", "תוכלי")} להיכנס לחשבון ולהוריד את כל המידע שלך — לקוחות, פרויקטים, חוזים וקבצים.</p>
       ${brandButton("להורדת המידע", `${BRAND_URL}/designer`)}
-      <p style="color:#999;font-size:13px;">חבל שאת עוזבת — אם תחליטי לחזור, החשבון שלך יהיה כאן מחכה לך.</p>
+      <p style="color:#999;font-size:13px;">חבל ${g(gender, "שאתה עוזב", "שאת עוזבת")} — אם ${g(gender, "תחליט", "תחליטי")} לחזור, החשבון שלך יהיה כאן ${g(gender, "מחכה", "מחכה")} לך.</p>
       `
     ),
   };
 }
 
-export function subscriptionPausedEmail(name: string, resumeAt: Date) {
+export function subscriptionPausedEmail(name: string, resumeAt: Date, gender?: string) {
   return {
     subject: `המנוי שלך הושהה`,
     html: brandWrap(
       `שלום ${name},`,
       `
-      <p>המנוי שלך הושהה בהצלחה ולא תחויבי עד להפעלה מחדש.</p>
+      <p>המנוי שלך הושהה בהצלחה ולא ${g(gender, "תחויב", "תחויבי")} עד להפעלה מחדש.</p>
       <p><strong>השהיה מתוכננת עד:</strong> ${resumeAt.toLocaleDateString("he-IL")}</p>
       <p>באפשרותך להפעיל את המנוי מחדש בכל עת:</p>
-      ${brandButton("הפעילי מחדש", `${BRAND_URL}/designer`)}
+      ${brandButton(g(gender, "הפעל מחדש", "הפעילי מחדש"), `${BRAND_URL}/designer`)}
       `
     ),
   };
 }
 
-export function promotionNearEmail(name: string, currentCount: number, needed: number) {
+export function promotionNearEmail(name: string, currentCount: number, needed: number, gender?: string) {
   return {
     subject: `🌟 עוד ${needed - currentCount} שיתופי פעולה למנוי מופחת!`,
     html: brandWrap(
       `כמעט שם, ${name}!`,
       `
-      <p>עוד <strong>${needed - currentCount}</strong> שיתופי פעולה עם ספקי הקהילה — ותזכי אוטומטית למנוי המקצועי <strong>במחיר מופחת</strong>!</p>
+      <p>עוד <strong>${needed - currentCount}</strong> שיתופי פעולה עם ספקי הקהילה — ${g(gender, "ותזכה", "ותזכי")} אוטומטית למנוי המקצועי <strong>במחיר מופחת</strong>!</p>
       <div style="background:#1a1a1a;padding:20px;border-radius:8px;text-align:center;">
         <div style="font-size:32px;color:#C9A84C;font-weight:bold;">${currentCount} / ${needed}</div>
         <div style="color:#999;font-size:13px;margin-top:4px;">שיתופי פעולה ב־30 הימים האחרונים</div>
@@ -253,30 +255,30 @@ export function promotionNearEmail(name: string, currentCount: number, needed: n
   };
 }
 
-export function promotionGrantedEmail(name: string, newPlanName: string, savedAmount: number) {
+export function promotionGrantedEmail(name: string, newPlanName: string, savedAmount: number, gender?: string) {
   return {
     subject: `🎉 שודרגת למנוי ${newPlanName}!`,
     html: brandWrap(
       `מזל טוב, ${name}!`,
       `
       <p>בזכות שיתוף הפעולה שלך עם ספקי הקהילה, שודרגת אוטומטית למנוי <strong>${newPlanName}</strong>.</p>
-      <p>את חוסכת עכשיו <strong>₪${savedAmount.toFixed(2)} כל חודש</strong> 💰</p>
-      ${brandButton("צפי במנוי החדש", `${BRAND_URL}/designer`)}
+      <p>${g(gender, "אתה חוסך", "את חוסכת")} עכשיו <strong>₪${savedAmount.toFixed(2)} כל חודש</strong> 💰</p>
+      ${brandButton(g(gender, "צפה במנוי החדש", "צפי במנוי החדש"), `${BRAND_URL}/designer`)}
       `
     ),
   };
 }
 
-export function downgradeReminderEmail(name: string, downgradeAt: Date) {
+export function downgradeReminderEmail(name: string, downgradeAt: Date, gender?: string) {
   return {
     subject: `תזכורת: שינמוך תוכנית מתקרב`,
     html: brandWrap(
       `שלום ${name},`,
       `
       <p>בתאריך <strong>${downgradeAt.toLocaleDateString("he-IL")}</strong> תוכנית המנוי שלך תשונמך אוטומטית לתוכנית חינמית.</p>
-      <p>אחרי המעבר, תקבלי חודש גישה של "קריאה בלבד" כדי להוריד את כל המידע שלך.</p>
+      <p>אחרי המעבר, ${g(gender, "תקבל", "תקבלי")} חודש גישה של "קריאה בלבד" כדי להוריד את כל המידע שלך.</p>
       <p>אם ברצונך לבטל את השינוי:</p>
-      ${brandButton("בטלי את השינמוך", `${BRAND_URL}/designer`)}
+      ${brandButton(g(gender, "בטל את השינמוך", "בטלי את השינמוך"), `${BRAND_URL}/designer`)}
       `
     ),
   };

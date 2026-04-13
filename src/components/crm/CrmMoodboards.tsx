@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Image, Link, Type, Palette, Trash2, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
+import { g } from "@/lib/gender";
 
 type MoodboardItem = {
   id: string;
@@ -25,7 +26,8 @@ type Moodboard = {
 
 type Project = { id: string; name: string; client: { name: string } };
 
-export default function CrmMoodboards({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmMoodboards({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [moodboards, setMoodboards] = useState<Moodboard[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,7 +204,7 @@ export default function CrmMoodboards({ clientId, projectId }: { clientId?: stri
       </div>
 
       <select className="select-field" value={selectedProjectId} onChange={e => setSelectedProjectId(e.target.value)}>
-        <option value="">בחרי פרויקט...</option>
+        <option value="">{g(gdr, "בחר פרויקט...", "בחרי פרויקט...")}</option>
         {projects.map(p => <option key={p.id} value={p.id}>{p.name} — {p.client.name}</option>)}
       </select>
 
@@ -218,7 +220,7 @@ export default function CrmMoodboards({ clientId, projectId }: { clientId?: stri
       )}
 
       {!selectedProjectId ? (
-        <div className="card-static text-center py-12 text-text-muted">בחרי פרויקט</div>
+        <div className="card-static text-center py-12 text-text-muted">{g(gdr, "בחר פרויקט", "בחרי פרויקט")}</div>
       ) : loading ? (
         <div className="text-center py-12 text-text-muted">טוען...</div>
       ) : moodboards.length === 0 ? (

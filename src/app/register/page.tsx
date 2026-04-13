@@ -37,6 +37,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
+    gender: "female" as "male" | "female",
     email: "",
     phone: "",
     password: "",
@@ -108,6 +109,7 @@ export default function RegisterPage() {
         fullName: `${form.firstName.trim()} ${form.lastName.trim()}`,
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
+        gender: form.gender,
         email: form.email,
         phone: form.whatsappPhone || form.phone,
         password: form.password,
@@ -285,11 +287,25 @@ export default function RegisterPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-text-primary mb-1">שם פרטי *</label>
-                        <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="ישראלה" required className="input-field" />
+                        <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder={form.gender === "male" ? "ישראל" : "ישראלה"} required className="input-field" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-text-primary mb-1">שם משפחה *</label>
                         <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="כהן" required className="input-field" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1">מגדר *</label>
+                      <div className="flex gap-3">
+                        <button type="button" onClick={() => setForm({ ...form, gender: "female" })}
+                          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${form.gender === "female" ? "bg-gold/20 text-gold border-gold/40" : "bg-bg-surface text-text-muted border-border hover:border-gold/30"}`}>
+                          נקבה
+                        </button>
+                        <button type="button" onClick={() => setForm({ ...form, gender: "male" })}
+                          className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${form.gender === "male" ? "bg-gold/20 text-gold border-gold/40" : "bg-bg-surface text-text-muted border-border hover:border-gold/30"}`}>
+                          זכר
+                        </button>
                       </div>
                     </div>
 
@@ -386,13 +402,13 @@ export default function RegisterPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-text-primary mb-1">שכירה או עצמאית *</label>
+                        <label className="block text-sm font-medium text-text-primary mb-1">{form.gender === "male" ? "שכיר או עצמאי" : "שכירה או עצמאית"} *</label>
                         <div className="flex gap-2">
                           <button type="button" onClick={() => setForm({ ...form, employmentType: "FREELANCE" })} className={`flex-1 py-2 rounded-btn text-sm font-medium border transition-all ${form.employmentType === "FREELANCE" ? "bg-gold/10 border-gold text-gold" : "bg-white border-border-subtle text-text-muted hover:border-gold/50"}`}>
-                            עצמאית
+                            {form.gender === "male" ? "עצמאי" : "עצמאית"}
                           </button>
                           <button type="button" onClick={() => setForm({ ...form, employmentType: "SALARIED" })} className={`flex-1 py-2 rounded-btn text-sm font-medium border transition-all ${form.employmentType === "SALARIED" ? "bg-gold/10 border-gold text-gold" : "bg-white border-border-subtle text-text-muted hover:border-gold/50"}`}>
-                            שכירה
+                            {form.gender === "male" ? "שכיר" : "שכירה"}
                           </button>
                         </div>
                       </div>
@@ -400,14 +416,14 @@ export default function RegisterPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-1">
-                        כמה שנים את עובדת בתחום {form.employmentType === "FREELANCE" ? "כעצמאית" : "כשכירה"}?
+                        כמה שנים {form.gender === "male" ? "אתה עובד" : "את עובדת"} בתחום {form.employmentType === "FREELANCE" ? (form.gender === "male" ? "כעצמאי" : "כעצמאית") : (form.gender === "male" ? "כשכיר" : "כשכירה")}?
                       </label>
                       <input type="number" name="yearsAsIndependent" value={form.yearsAsIndependent} onChange={handleChange} placeholder="0" min="0" max="50" className="input-field w-32" dir="ltr" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-1.5">
-                        סמני עבודות שיצא לך לקבל במהלך השנים
+                        {form.gender === "male" ? "סמן עבודות שיצא לך לקבל במהלך השנים" : "סמני עבודות שיצא לך לקבל במהלך השנים"}
                       </label>
                       <div className="grid grid-cols-2 gap-1.5">
                         {WORK_TYPES.map((wt) => (

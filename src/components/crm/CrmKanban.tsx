@@ -44,7 +44,7 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString("he-IL", { day: "numeric", month: "short" });
 }
 
-export default function CrmKanban() {
+export default function CrmKanban({ gender }: { gender?: string }) {
   const [cards, setCards] = useState<KanbanCard[]>(INITIAL_CARDS);
   const [draggedId, setDraggedId] = useState<string | null>(null);
 

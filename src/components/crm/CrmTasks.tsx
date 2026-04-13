@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, CheckCircle2, Circle, Clock, Trash2, Calendar, Sparkles, FileDown, Layers } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type Task = {
   id: string;
@@ -113,7 +114,8 @@ const DEFAULT_TASK_SETS: { name: string; icon: string; tasks: { title: string; d
   },
 ];
 
-export default function CrmTasks({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmTasks({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
@@ -263,7 +265,7 @@ export default function CrmTasks({ clientId, projectId }: { clientId?: string; p
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
         >
-          <option value="">בחרי פרויקט...</option>
+          <option value="">{g(gdr, "בחר פרויקט...", "בחרי פרויקט...")}</option>
           {projects.map(p => (
             <option key={p.id} value={p.id}>{p.name} — {p.client.name}</option>
           ))}
@@ -366,7 +368,7 @@ export default function CrmTasks({ clientId, projectId }: { clientId?: string; p
       )}
 
       {!selectedProjectId ? (
-        <div className="card-static text-center py-12 text-text-muted">בחרי פרויקט כדי לראות משימות</div>
+        <div className="card-static text-center py-12 text-text-muted">{g(gdr, "בחר פרויקט כדי לראות משימות", "בחרי פרויקט כדי לראות משימות")}</div>
       ) : loading ? (
         <div className="text-center py-12 text-text-muted">טוען...</div>
       ) : tasks.length === 0 ? (

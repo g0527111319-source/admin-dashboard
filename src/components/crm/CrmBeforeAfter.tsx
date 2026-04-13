@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, X, Image, Eye, EyeOff, Globe, Trash2, Edit3, ChevronLeft, ChevronRight, Upload, ZoomIn } from "lucide-react";
 import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
+import { g } from "@/lib/gender";
 
 type BeforeAfterSet = {
   id: string;
@@ -156,7 +157,8 @@ function Lightbox({
   );
 }
 
-export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmBeforeAfter({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [sets, setSets] = useState<BeforeAfterSet[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -255,10 +257,10 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-heading text-text-primary">לפני ואחרי</h2>
-          <p className="text-sm text-text-muted mt-1">גלריית השוואה -- הציגי את העבודה שלך</p>
+          <p className="text-sm text-text-muted mt-1">{g(gdr, "גלריית השוואה -- הצג את העבודה שלך", "גלריית השוואה -- הציגי את העבודה שלך")}</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-gold flex items-center gap-2">
-          <Plus className="w-4 h-4" /> הוסיפי סט
+          <Plus className="w-4 h-4" /> {g(gdr, "הוסף סט", "הוסיפי סט")}
         </button>
       </div>
 
@@ -326,7 +328,7 @@ export default function CrmBeforeAfter({ clientId, projectId }: { clientId?: str
 
           <div className="flex gap-2 justify-end">
             <button onClick={resetForm} className="px-4 py-2 text-sm text-text-muted">ביטול</button>
-            <button onClick={handleSubmit} disabled={!form.title} className="btn-gold">{editingId ? "עדכני" : "הוסיפי"}</button>
+            <button onClick={handleSubmit} disabled={!form.title} className="btn-gold">{editingId ? g(gdr, "עדכן", "עדכני") : g(gdr, "הוסף", "הוסיפי")}</button>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Send, MessageCircle, Loader2, Bell, User } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type Message = {
   id: string;
@@ -53,7 +54,8 @@ const DEMO_MESSAGES: Message[] = [
   },
 ];
 
-export default function CrmChat() {
+export default function CrmChat({ gender }: { gender?: string } = {}) {
+  const gdr = gender || "female";
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -141,7 +143,7 @@ export default function CrmChat() {
         const demoMsg: Message = {
           id: `local-${Date.now()}`,
           senderType: "designer",
-          senderName: "המעצבת",
+          senderName: g(gdr, "המעצב", "המעצבת"),
           content: newMessage.trim(),
           isRead: true,
           createdAt: new Date().toISOString(),
@@ -154,7 +156,7 @@ export default function CrmChat() {
       const demoMsg: Message = {
         id: `local-${Date.now()}`,
         senderType: "designer",
-        senderName: "המעצבת",
+        senderName: g(gdr, "המעצב", "המעצבת"),
         content: newMessage.trim(),
         isRead: true,
         createdAt: new Date().toISOString(),
@@ -204,7 +206,7 @@ export default function CrmChat() {
         value={selectedProjectId}
         onChange={(e) => setSelectedProjectId(e.target.value)}
       >
-        <option value="">בחרי פרויקט...</option>
+        <option value="">{g(gdr, "בחר", "בחרי")} פרויקט...</option>
         {projects.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name} -- {p.client?.name}
@@ -215,7 +217,7 @@ export default function CrmChat() {
       {!selectedProjectId ? (
         <div className="card-static text-center py-12 text-text-muted">
           <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>בחרי פרויקט כדי לצפות בהודעות</p>
+          <p>{g(gdr, "בחר", "בחרי")} פרויקט כדי לצפות בהודעות</p>
         </div>
       ) : loading ? (
         <div className="flex justify-center py-12">
@@ -229,7 +231,7 @@ export default function CrmChat() {
               <div className="text-center py-12">
                 <MessageCircle className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-30" />
                 <p className="text-text-muted text-sm">אין הודעות עדיין</p>
-                <p className="text-text-muted text-xs mt-1">שלחי הודעה ראשונה ללקוח</p>
+                <p className="text-text-muted text-xs mt-1">{g(gdr, "שלח", "שלחי")} הודעה ראשונה ללקוח</p>
               </div>
             ) : (
               messages.map((msg) => (
@@ -282,7 +284,7 @@ export default function CrmChat() {
             <input
               type="text"
               className="input-field flex-1"
-              placeholder="כתבי הודעה..."
+              placeholder={g(gdr, "כתוב הודעה...", "כתבי הודעה...")}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               dir="rtl"
@@ -297,7 +299,7 @@ export default function CrmChat() {
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  <span className="text-sm">שלחי</span>
+                  <span className="text-sm">{g(gdr, "שלח", "שלחי")}</span>
                 </>
               )}
             </button>

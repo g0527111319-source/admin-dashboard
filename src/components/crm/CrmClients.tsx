@@ -108,7 +108,7 @@ const EMPTY_FORM = {
   notes: "",
 };
 
-export default function CrmClients() {
+export default function CrmClients({ gender }: { gender?: string }) {
   const [clients, setClients] = useState<CrmClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

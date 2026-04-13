@@ -14,6 +14,7 @@ export interface WhatsAppUser {
   id: string;
   name: string;
   phone: string;
+  gender?: string;
   data: Record<string, unknown>;
 }
 
@@ -125,6 +126,7 @@ export async function resolveUser(phoneNumber: string): Promise<WhatsAppUser | n
         email: true,
         city: true,
         specialization: true,
+        gender: true,
         totalDealsReported: true,
         totalDealAmount: true,
         eventsAttended: true,
@@ -137,6 +139,7 @@ export async function resolveUser(phoneNumber: string): Promise<WhatsAppUser | n
         id: designer.id,
         name: designer.fullName,
         phone: normalized,
+        gender: designer.gender || "female",
         data: {
           email: designer.email,
           city: designer.city,

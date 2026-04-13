@@ -9,6 +9,7 @@ import makeWASocket, {
   WASocket,
 } from "@whiskeysockets/baileys";
 import { EventEmitter } from "events";
+import { g } from "@/lib/gender";
 
 let sock: WASocket | null = null;
 
@@ -192,8 +193,8 @@ export const templates = {
     `👋 שלום! עברו ${days} ימים מאז הפרסום האחרון שלך בזירת האדריכלות.\n\nהמעצבות ממתינות לתוכן חדש! 📸\nשלח פרסום מהדשבורד שלך.`,
 
   /** דיווח עסקה לאישור ספק */
-  dealConfirmation: (designerName: string, amount: number) =>
-    `🏛️ *זירת האדריכלות*\n\nמעצבת *${designerName}* מדווחת על עסקה בסך *₪${amount.toLocaleString()}*.\n\nהאם לאשר?\n✅ אשר\n❌ דחה`,
+  dealConfirmation: (designerName: string, amount: number, gender?: string) =>
+    `🏛️ *זירת האדריכלות*\n\n${g(gender, "מעצב", "מעצבת")} *${designerName}* ${g(gender, "מדווח", "מדווחת")} על עסקה בסך *₪${amount.toLocaleString()}*.\n\nהאם לאשר?\n✅ אשר\n❌ דחה`,
 
   /** הודעת זכייה בהגרלה */
   lotteryWinner: (prize: string) =>

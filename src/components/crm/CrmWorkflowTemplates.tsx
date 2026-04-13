@@ -19,6 +19,7 @@ import {
   DollarSign,
   Sparkles,
 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type PhaseTask = {
   title: string;
@@ -477,7 +478,8 @@ const PRESET_TEMPLATES: Record<string, typeof emptyForm & { name: string; descri
   },
 };
 
-export default function CrmWorkflowTemplates() {
+export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {}) {
+  const gdr = gender || "female";
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -702,7 +704,7 @@ export default function CrmWorkflowTemplates() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-gold" />
-              תבניות מוכנות — בחרי והתאימי לצרכייך
+              {`תבניות מוכנות — ${g(gdr, "בחר", "בחרי")} ${g(gdr, "והתאם", "והתאימי")} לצרכייך`}
             </h3>
             <button onClick={() => setShowPresets(false)} className="p-1 rounded hover:bg-white/10">
               <X className="w-4 h-4 text-white/40" />
@@ -741,13 +743,13 @@ export default function CrmWorkflowTemplates() {
         <div className="empty-state">
           <Workflow className="empty-state-icon" />
           <p className="font-medium text-text-secondary">אין תבניות תהליך עדיין</p>
-          <p className="text-sm mt-1 mb-4 text-text-muted">בחרי תבנית מוכנה או צרי חדשה מאפס</p>
+          <p className="text-sm mt-1 mb-4 text-text-muted">{g(gdr, "בחר", "בחרי")} תבנית מוכנה {g(gdr, "או צור", "או צרי")} חדשה מאפס</p>
           <button
             onClick={() => setShowPresets(true)}
             className="btn-gold"
           >
             <Sparkles className="w-4 h-4 inline ml-1" />
-            בחרי מתבניות מוכנות
+            {g(gdr, "בחר", "בחרי")} מתבניות מוכנות
           </button>
         </div>
       ) : (
@@ -925,7 +927,7 @@ export default function CrmWorkflowTemplates() {
                       value={form.projectType}
                       onChange={(e) => setForm({ ...form, projectType: e.target.value })}
                     >
-                      <option value="">בחר סוג</option>
+                      <option value="">{g(gdr, "בחר", "בחרי")} סוג</option>
                       {projectTypes.map((pt) => (
                         <option key={pt} value={pt}>{pt}</option>
                       ))}
@@ -1095,7 +1097,7 @@ export default function CrmWorkflowTemplates() {
                         value={msg.phase}
                         onChange={(e) => updateAutoMessage(idx, "phase", e.target.value)}
                       >
-                        <option value="">בחר שלב</option>
+                        <option value="">{g(gdr, "בחר", "בחרי")} שלב</option>
                         {form.phases.map((p, pIdx) => (
                           <option key={pIdx} value={p.name}>{p.name}</option>
                         ))}

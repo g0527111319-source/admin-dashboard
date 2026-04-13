@@ -410,7 +410,7 @@ export default function SupplierDashboard() {
               <h3 className="text-base font-heading text-text-primary mb-3">{txt("src/app/supplier/[id]/page.tsx::048", "כל העסקאות")}</h3>
               <div className="overflow-x-auto">
                 <table className="w-full table-luxury text-sm">
-                  <thead><tr><th>{txt("src/app/supplier/[id]/page.tsx::049", "מעצבת")}</th><th>{txt("src/app/supplier/[id]/page.tsx::050", "סכום")}</th><th>{txt("src/app/supplier/[id]/page.tsx::051", "תאריך")}</th><th>{txt("src/app/supplier/[id]/page.tsx::052", "סטטוס")}</th></tr></thead>
+                  <thead><tr><th>{txt("src/app/supplier/[id]/page.tsx::049", "מעצב/ת")}</th><th>{txt("src/app/supplier/[id]/page.tsx::050", "סכום")}</th><th>{txt("src/app/supplier/[id]/page.tsx::051", "תאריך")}</th><th>{txt("src/app/supplier/[id]/page.tsx::052", "סטטוס")}</th></tr></thead>
                   <tbody>
                     {recentDeals.map((deal) => (<tr key={deal.id}>
                         <td className="font-medium">
@@ -608,7 +608,7 @@ export default function SupplierDashboard() {
                 {recommenders.length < 3 && (<>
                     {showAddRecommender ? (<div className="border border-border-subtle rounded-card p-3 space-y-3">
                         <div className="grid grid-cols-2 gap-2">
-                          <input type="text" placeholder="שם המעצבת" value={newRecommender.name} onChange={(e) => setNewRecommender({ ...newRecommender, name: e.target.value })} className="input-field text-sm"/>
+                          <input type="text" placeholder="שם המעצב/ת" value={newRecommender.name} onChange={(e) => setNewRecommender({ ...newRecommender, name: e.target.value })} className="input-field text-sm"/>
                           <input type="tel" placeholder="טלפון" value={newRecommender.phone} onChange={(e) => setNewRecommender({ ...newRecommender, phone: e.target.value })} className="input-field text-sm" dir="ltr"/>
                         </div>
                         <div className="flex gap-2">
@@ -616,7 +616,7 @@ export default function SupplierDashboard() {
                           <button onClick={() => { setShowAddRecommender(false); setNewRecommender({ name: "", phone: "" }); }} className="btn-outline text-sm py-1.5 flex-1">{txt("src/app/supplier/[id]/page.tsx::093", "ביטול")}</button>
                         </div>
                       </div>) : (<button onClick={() => setShowAddRecommender(true)} className="btn-outline text-sm w-full flex items-center justify-center gap-1 py-2">
-                        <Plus className="w-4 h-4"/>{txt("src/app/supplier/[id]/page.tsx::094", "הוסף מעצבת ממליצה (")}{recommenders.length}/3)
+                        <Plus className="w-4 h-4"/>{txt("src/app/supplier/[id]/page.tsx::094", "הוסף מעצב/ת ממליצ/ה (")}{recommenders.length}/3)
                       </button>)}
                   </>)}
               </div>

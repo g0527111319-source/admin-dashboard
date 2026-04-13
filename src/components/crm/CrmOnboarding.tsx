@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   CheckCircle2, Circle, Plus, X, Settings, GripVertical, Trash2, Users
 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type OnboardingTemplate = {
   id: string;
@@ -23,7 +24,8 @@ type OnboardingItem = {
 
 type Client = { id: string; name: string };
 
-export default function CrmOnboarding({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmOnboarding({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [view, setView] = useState<"templates" | "clients">("clients");
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -131,7 +133,7 @@ export default function CrmOnboarding({ clientId, projectId }: { clientId?: stri
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-heading text-text-primary">צ׳קליסט כניסה</h2>
-          <p className="text-sm text-text-muted mt-1">נהלי את תהליך הקליטה של לקוחות חדשים</p>
+          <p className="text-sm text-text-muted mt-1">{g(gdr, "נהל", "נהלי")} את תהליך הקליטה של לקוחות חדשים</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setView("clients")} className={`px-3 py-1.5 rounded-lg text-sm ${view === "clients" ? "bg-gold text-white" : "bg-bg text-text-muted"}`}>
@@ -206,7 +208,7 @@ export default function CrmOnboarding({ clientId, projectId }: { clientId?: stri
                 </span>
                 {item.completedAt && (
                   <span className="text-xs text-text-muted">
-                    {item.completedBy === "client" ? "✓ לקוח" : "✓ מעצבת"} • {new Date(item.completedAt).toLocaleDateString("he-IL")}
+                    {item.completedBy === "client" ? "✓ לקוח" : `✓ ${g(gdr, "מעצב", "מעצבת")}`} • {new Date(item.completedAt).toLocaleDateString("he-IL")}
                   </span>
                 )}
                 <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -215,7 +217,7 @@ export default function CrmOnboarding({ clientId, projectId }: { clientId?: stri
           </div>
 
           <div className="flex gap-2">
-            <input value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder="הוסיפי פריט לצ׳קליסט..." className="flex-1 border border-border-subtle rounded-lg px-3 py-2 text-sm" />
+            <input value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={g(gdr, "הוסף פריט לצ׳קליסט...", "הוסיפי פריט לצ׳קליסט...")} className="flex-1 border border-border-subtle rounded-lg px-3 py-2 text-sm" />
             <button onClick={addItem} disabled={!newTitle.trim()} className="btn-gold"><Plus className="w-4 h-4" /></button>
           </div>
         </div>

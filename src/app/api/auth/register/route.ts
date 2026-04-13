@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
             birthDate: body.birthDate || undefined,
             hebrewBirthDate: body.hebrewBirthDate || undefined,
             workTypes: body.workTypes || undefined,
+            gender: body.gender || "female",
         });
 
         if (!result.success) {

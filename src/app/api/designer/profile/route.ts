@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         fullName: true,
+        gender: true,
         phone: true,
         email: true,
         city: true,
@@ -163,6 +164,7 @@ export async function GET(req: NextRequest) {
     const profile = {
       designerLogo: "",
       fullName: designer.fullName,
+      gender: designer.gender || "female",
       city: designer.city || "",
       area: designer.area || "",
       specialization: designer.specialization || "",

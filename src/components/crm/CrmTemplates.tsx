@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, X, Edit3, Trash2, Copy, FileText, ChevronLeft, Tag } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type MessageTemplate = {
   id: string;
@@ -32,7 +33,8 @@ const AVAILABLE_VARIABLES = [
   { key: "{{שם_מעצבת}}", label: "שם המעצבת" },
 ];
 
-export default function CrmTemplates() {
+export default function CrmTemplates({ gender }: { gender?: string } = {}) {
+  const gdr = gender || "female";
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -193,7 +195,7 @@ export default function CrmTemplates() {
             <label className="text-text-secondary text-sm font-medium block mb-1">תוכן ההודעה *</label>
             <textarea
               className="input-field h-40 resize-none"
-              placeholder="כתבי את תוכן ההודעה... ניתן להשתמש במשתנים דינמיים"
+              placeholder={g(gdr, "כתוב את תוכן ההודעה... ניתן להשתמש במשתנים דינמיים", "כתבי את תוכן ההודעה... ניתן להשתמש במשתנים דינמיים")}
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               required
@@ -274,7 +276,7 @@ export default function CrmTemplates() {
         <div className="card-static text-center py-12">
           <FileText className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
           <p className="text-text-muted">
-            {templates.length === 0 ? "אין תבניות הודעה עדיין. צרי תבנית ראשונה!" : "אין תבניות בקטגוריה זו"}
+            {templates.length === 0 ? g(gdr, "אין תבניות הודעה עדיין. צור תבנית ראשונה!", "אין תבניות הודעה עדיין. צרי תבנית ראשונה!") : "אין תבניות בקטגוריה זו"}
           </p>
         </div>
       ) : (

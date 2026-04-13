@@ -544,7 +544,7 @@ export default function SubscriptionsAdminPage() {
                   <div>
                     <p className="font-bold">{r.name}</p>
                     <p className="text-sm text-white/60">
-                      מעצבת ששיתפה פעולה עם {r.minSupplierCount} ספקים תוך {r.timeWindowDays} ימים
+                      מעצב/ת ששיתף/ה פעולה עם {r.minSupplierCount} ספקים תוך {r.timeWindowDays} ימים
                       תקבל את תוכנית {target?.name || "—"}
                     </p>
                   </div>

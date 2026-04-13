@@ -74,7 +74,7 @@ function addDays(d: string, n: number) {
   return dt.toISOString().slice(0, 10);
 }
 
-export default function CrmScheduler({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmScheduler({ clientId, projectId }: { clientId?: string; projectId?: string; gender?: string } = {}) {
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

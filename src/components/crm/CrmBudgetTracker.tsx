@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { DollarSign, Plus, X, Edit3, Trash2, AlertTriangle, TrendingUp, PieChart, CheckCircle2 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 interface BudgetItem {
   id: string;
@@ -25,7 +26,8 @@ const STATUS_OPTIONS = [
   { value: "paid", label: "שולם", color: "badge-green" },
 ];
 
-export default function CrmBudgetTracker({ clientId, projectId }: { clientId?: string; projectId?: string } = {}) {
+export default function CrmBudgetTracker({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
+  const gdr = gender || "female";
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -270,7 +272,7 @@ export default function CrmBudgetTracker({ clientId, projectId }: { clientId?: s
         <div className="empty-state">
           <PieChart className="empty-state-icon" />
           <p className="font-medium text-text-secondary">אין פריטי תקציב</p>
-          <p className="text-sm mt-1 mb-4">הוסיפי שורות תקציב לפרויקט למעקב חי</p>
+          <p className="text-sm mt-1 mb-4">{g(gdr, "הוסף שורות תקציב לפרויקט למעקב חי", "הוסיפי שורות תקציב לפרויקט למעקב חי")}</p>
         </div>
       )}
     </div>

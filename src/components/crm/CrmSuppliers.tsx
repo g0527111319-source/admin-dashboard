@@ -17,7 +17,7 @@ type CrmSupplier = {
 
 const SUPPLIER_CATEGORIES = ["ריצוף וחיפוי", "תאורה", "מטבחים", "חוץ ונוף", "דלתות וחלונות", "נגרות", "סנטרייה", "חשמל", "צבע ושפכטל", "ריהוט", "טקסטיל", "מוצרי אמבטיה", "מיזוג אוויר", "אחר"];
 
-export default function CrmSuppliers() {
+export default function CrmSuppliers({ gender }: { gender?: string }) {
   const [suppliers, setSuppliers] = useState<CrmSupplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

@@ -9,6 +9,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import type { WhatsAppUser } from "./user-resolver";
 import { executeTool, getAnthropicTools } from "./tools";
+import { g } from "@/lib/gender";
 
 // ==========================================
 // Configuration
@@ -332,8 +333,9 @@ function getSystemPrompt(
   // Build the base prompt per role
   let basePrompt: string;
   switch (user.type) {
-    case "designer":
-      basePrompt = `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם ${user.name}, מעצבת פנים.
+    case "designer": {
+      const dGender = user.gender;
+      basePrompt = `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם ${user.name}, ${g(dGender, "מעצב פנים", "מעצבת פנים")}.
 את יכולה לעזור ב:
 - שאלות על השימוש באתר ובאזור האישי
 - דיווח על עסקה חדשה (שם ספק, סכום, תיאור) — השתמשי בכלי report_deal
@@ -346,9 +348,11 @@ function getSystemPrompt(
 - אסור לך לחשוף מידע על מעצבות אחרות, ספקים אחרים, או דירוגים של ספקים
 - ענה תמיד בעברית, בצורה חמה ומקצועית
 - כשמדווחים על עסקה, וודא שיש שם ספק וסכום
+- ${g(dGender, "כשאתה פונה למשתמש, פנה בלשון זכר", "כשאת פונה למשתמשת, פני בלשון נקבה")}
 - אם המשתמש שואל משהו שאינך יודעת, הפנה למנהלת הקהילה
 - הודעות קצרות ותמציתיות — זה וואטסאפ, לא מייל`;
       break;
+    }
 
     case "supplier":
       basePrompt = `את עוזרת דיגיטלית של זירת האדריכלות. את מדברת עם ${user.name}, ספק בקהילה.
@@ -494,7 +498,7 @@ function getMockResponse(user: WhatsAppUser, message: string): string {
     return `שלום ${user.name}! 👋\nאני העוזרת הדיגיטלית של זירת האדריכלות.\n[מצב מדומה — ANTHROPIC_API_KEY לא מוגדר]`;
   }
 
-  return `שלום ${user.name}, קיבלתי את ההודעה שלך.\n[מצב מדומה — הגדירי ANTHROPIC_API_KEY להפעלה מלאה]`;
+  return `שלום ${user.name}, קיבלתי את ההודעה שלך.\n[מצב מדומה — ${g(user.gender, "הגדר", "הגדירי")} ANTHROPIC_API_KEY להפעלה מלאה]`;
 }
 
 // ==========================================
@@ -549,7 +553,7 @@ export async function processMessage(
     if (overLimit) {
       console.log(`[ConversationEngine] Cost limit exceeded — using fallback response for ${user.phone}`);
       return {
-        response: "מצטערת, כרגע אני עובדת במצב מוגבל. נסה שוב מחר או פנה למנהלת הקהילה.",
+        response: `מצטערת, כרגע אני עובדת במצב מוגבל. ${g(user.gender, "נסה שוב מחר או פנה", "נסי שוב מחר או פני")} למנהלת הקהילה.`,
       };
     }
   } catch (costError) {
@@ -672,7 +676,7 @@ export async function processMessage(
 
     // Return a user-friendly error message
     return {
-      response: "מצטערת, נתקלתי בשגיאה בעיבוד ההודעה. נסה שוב בעוד רגע.",
+      response: `מצטערת, נתקלתי בשגיאה בעיבוד ההודעה. ${g(user.gender, "נסה", "נסי")} שוב בעוד רגע.`,
     };
   }
 }

@@ -14,6 +14,7 @@ export interface SessionPayload {
   role: UserRole;
   email: string;
   name: string;
+  gender?: string; // "male" | "female"
 }
 
 // DEMO_USERS with hardcoded credentials removed.
@@ -232,8 +233,11 @@ export async function loginWithEmail(
         if (!isValid) return { success: false, error: "פרטי כניסה שגויים" };
 
         // בדיקת סטטוס אישור — רשימת המתנה
+        const dGender = designer.gender || "female";
         if (designer.approvalStatus === "PENDING") {
-          return { success: false, error: "הבקשה שלך עדיין ממתינה לאישור מנהלת הקהילה. נעדכן אותך ברגע שתאושר!" };
+          return { success: false, error: dGender === "male"
+            ? "הבקשה שלך עדיין ממתינה לאישור מנהלת הקהילה. נעדכן אותך ברגע שתאושר!"
+            : "הבקשה שלך עדיין ממתינה לאישור מנהלת הקהילה. נעדכן אותך ברגע שתאושרי!" };
         }
         if (designer.approvalStatus === "REJECTED") {
           return { success: false, error: "הבקשה שלך נדחתה. ניתן לפנות למנהלת הקהילה לפרטים נוספים." };
@@ -246,6 +250,7 @@ export async function loginWithEmail(
             role: "designer",
             email: designer.email!,
             name: designer.fullName,
+            gender: dGender,
           },
         };
       }
@@ -301,12 +306,14 @@ export async function registerDesigner(data: {
   birthDate?: string;
   hebrewBirthDate?: string;
   workTypes?: string[];
+  gender?: string;
 }): Promise<{ success: boolean; designerId?: string; status?: string; error?: string }> {
   const passwordHash = await hashPassword(data.password);
   const loginToken = crypto.randomUUID();
 
   // שדות מורחבים משותפים לכל הפעולות
   const extendedFields = {
+    gender: data.gender || "female",
     firstName: data.firstName || null,
     lastName: data.lastName || null,
     idNumber: data.idNumber || null,

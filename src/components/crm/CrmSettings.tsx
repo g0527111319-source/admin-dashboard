@@ -5,6 +5,7 @@ import {
   Settings, Plus, X, Save, Palette, Bell, Clock, Mail, Eye,
   CalendarDays, AlertTriangle, FileText, Star, Zap
 } from "lucide-react";
+import { g } from "@/lib/gender";
 
 type CrmSettingsData = {
   id: string;
@@ -47,6 +48,7 @@ const AUTOMATION_TYPES = [
   {
     ruleType: "office_hours",
     label: "שעות קבלה דיגיטליות",
+    descriptionMale: "הודעות מחוץ לשעות מסומנות — הלקוח יודע מתי אתה זמין",
     description: "הודעות מחוץ לשעות מסומנות — הלקוח יודע מתי את זמינה",
     icon: Clock,
     defaultConfig: { days: [0, 1, 2, 3, 4], start: "10:00", end: "17:00" },
@@ -54,6 +56,7 @@ const AUTOMATION_TYPES = [
   {
     ruleType: "pending_reminder",
     label: "תזכורות לפעולות ממתינות",
+    descriptionMale: "תזכורת אוטומטית ללקוח שלא אישר תוך 48 שעות, והתראה למעצב אחרי 5 ימים",
     description: "תזכורת אוטומטית ללקוח שלא אישר תוך 48 שעות, והתראה למעצבת אחרי 5 ימים",
     icon: AlertTriangle,
     defaultConfig: { hoursBeforeFirst: 48, hoursBeforeSecond: 120, notifyDesigner: true },
@@ -67,6 +70,7 @@ const AUTOMATION_TYPES = [
   },
   {
     ruleType: "smart_alerts",
+    labelMale: "התראות חכמות למעצב",
     label: "התראות חכמות למעצבת",
     description: "אינסייטים: הלקוח נכנס לפורטל, צפה בהדמיה, לא נכנס שבועיים",
     icon: Eye,
@@ -90,7 +94,8 @@ const AUTOMATION_TYPES = [
 
 const DAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
-export default function CrmSettings() {
+export default function CrmSettings({ gender }: { gender?: string } = {}) {
+  const gdr = gender || "female";
   const [settings, setSettings] = useState<CrmSettingsData | null>(null);
   const [automations, setAutomations] = useState<AutomationRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -397,7 +402,7 @@ export default function CrmSettings() {
             שלבי פרויקט ברירת מחדל
           </h3>
           <p className="text-text-muted text-xs">
-            השלבים האלה ייווצרו אוטומטית כשתפתחי פרויקט חדש. ניתן לשנות בכל פרויקט בנפרד.
+            {g(gdr, "השלבים האלה ייווצרו אוטומטית כשתפתח פרויקט חדש. ניתן לשנות בכל פרויקט בנפרד.", "השלבים האלה ייווצרו אוטומטית כשתפתחי פרויקט חדש. ניתן לשנות בכל פרויקט בנפרד.")}
           </p>
           <div className="space-y-2">
             {formData.defaultPhases.map((phase, index) => (
@@ -498,7 +503,7 @@ export default function CrmSettings() {
           </div>
 
           <p className="text-text-muted text-xs">
-            הלקוח רואה בפורטל מתי את זמינה. הודעות מחוץ לשעות מסומנות כ&ldquo;תיענה בשעות הפעילות&rdquo;.
+            {g(gdr, "הלקוח רואה בפורטל מתי אתה זמין. הודעות מחוץ לשעות מסומנות כ\u201Cתיענה בשעות הפעילות\u201D.", "הלקוח רואה בפורטל מתי את זמינה. הודעות מחוץ לשעות מסומנות כ\u201Cתיענה בשעות הפעילות\u201D.")}
           </p>
 
           {formData.officeHoursEnabled && (
@@ -550,7 +555,7 @@ export default function CrmSettings() {
             העדפות התראות
           </h3>
           <p className="text-text-muted text-xs">
-            בחרי באילו ערוצים את רוצה לקבל עדכונים על פעילות לקוחות ופרויקטים.
+            {g(gdr, "בחר באילו ערוצים אתה רוצה לקבל עדכונים על פעילות לקוחות ופרויקטים.", "בחרי באילו ערוצים את רוצה לקבל עדכונים על פעילות לקוחות ופרויקטים.")}
           </p>
 
           <div className="space-y-3">
@@ -602,7 +607,7 @@ export default function CrmSettings() {
             <Zap className="w-5 h-5 text-gold" />
             <div>
               <h3 className="text-base font-heading text-text-primary">אוטומציות</h3>
-              <p className="text-text-muted text-xs">הפעילי אוטומציות כברירת מחדל — ניתן לכבות בכל פרויקט בנפרד</p>
+              <p className="text-text-muted text-xs">{g(gdr, "הפעל אוטומציות כברירת מחדל — ניתן לכבות בכל פרויקט בנפרד", "הפעילי אוטומציות כברירת מחדל — ניתן לכבות בכל פרויקט בנפרד")}</p>
             </div>
           </div>
 
@@ -622,7 +627,7 @@ export default function CrmSettings() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-medium text-gray-800 text-sm">{at.label}</h4>
+                      <h4 className="font-medium text-gray-800 text-sm">{at.labelMale ? g(gdr, at.labelMale, at.label) : at.label}</h4>
                       <div
                         onClick={() => toggleAutomation(at.ruleType)}
                         className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${isEnabled ? "bg-blue-600" : "bg-gray-300"}`}
@@ -630,7 +635,7 @@ export default function CrmSettings() {
                         <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${isEnabled ? "right-0.5" : "right-[22px]"}`} />
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{at.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{at.descriptionMale ? g(gdr, at.descriptionMale, at.description) : at.description}</p>
                   </div>
                 </div>
               </div>
