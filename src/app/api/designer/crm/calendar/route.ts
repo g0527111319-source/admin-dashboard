@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const start = searchParams.get("start");
     const end = searchParams.get("end");
+    const clientId = searchParams.get("clientId");
+    const projectId = searchParams.get("projectId");
 
     const where: Record<string, unknown> = { designerId };
 
@@ -26,6 +28,9 @@ export async function GET(req: NextRequest) {
         (where.startAt as Record<string, unknown>).lte = new Date(end);
       }
     }
+
+    if (clientId) where.clientId = clientId;
+    if (projectId) where.projectId = projectId;
 
     const events = await prisma.crmCalendarEvent.findMany({
       where,

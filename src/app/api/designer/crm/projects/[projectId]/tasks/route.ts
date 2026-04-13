@@ -69,7 +69,9 @@ export async function POST(
 
     const task = await prisma.crmTask.create({
       data: {
+        designerId,
         projectId,
+        clientId: project.clientId,
         title: title.trim(),
         ...(description !== undefined && { description: description.trim() }),
         ...(assignee !== undefined && { assignee: assignee.trim() }),

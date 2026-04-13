@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, Link2, Download } from "lucide-react";
+import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, Link2, Download, CheckCircle2, Loader2 } from "lucide-react";
+import { getHebrewDateStr, getMonthHolidays } from "@/lib/hebrew-calendar";
 
 type CalendarEvent = {
   id: string;
@@ -37,15 +38,25 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     projectId: "",
   });
 
+  const [holidays, setHolidays] = useState<{ date: string; name: string; isYomTov: boolean; emoji: string }[]>([]);
+
+  useEffect(() => {
+    const h = getMonthHolidays(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
+    setHolidays(h);
+  }, [currentMonth]);
+
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString();
     const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString();
     try {
-      const res = await fetch(`/api/designer/crm/calendar?start=${start}&end=${end}`);
+      const params = new URLSearchParams({ start, end });
+      if (clientId) params.set("clientId", clientId);
+      if (projectId) params.set("projectId", projectId);
+      const res = await fetch(`/api/designer/crm/calendar?${params}`);
       if (res.ok) setEvents(await res.json());
     } catch { /* */ } finally { setLoading(false); }
-  }, [currentMonth]);
+  }, [currentMonth, clientId, projectId]);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -121,8 +132,50 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     URL.revokeObjectURL(url);
   };
 
-  const handleGoogleSync = () => {
-    alert("לסנכרון עם Google Calendar יש להגדיר GOOGLE_CLIENT_ID בהגדרות המערכת");
+  const [gcalStatus, setGcalStatus] = useState<{ configured: boolean; connected: boolean; syncEnabled: boolean; lastSyncAt: string | null } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/designer/crm/google-calendar")
+      .then(r => r.json())
+      .then(setGcalStatus)
+      .catch(() => {});
+  }, []);
+
+  const handleGoogleAuth = async () => {
+    const res = await fetch("/api/designer/crm/google-calendar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "auth" }),
+    });
+    const data = await res.json();
+    if (data.authUrl) window.location.href = data.authUrl;
+  };
+
+  const handleGoogleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/designer/crm/google-calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync" }),
+      });
+      const data = await res.json();
+      if (data.synced !== undefined) {
+        alert(`סונכרנו ${data.synced} אירועים ל-Google Calendar`);
+        setGcalStatus(prev => prev ? { ...prev, connected: true, syncEnabled: true, lastSyncAt: new Date().toISOString() } : prev);
+      }
+    } catch { /* */ }
+    finally { setSyncing(false); }
+  };
+
+  const handleGoogleDisconnect = async () => {
+    await fetch("/api/designer/crm/google-calendar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "disconnect" }),
+    });
+    setGcalStatus(prev => prev ? { ...prev, connected: false, syncEnabled: false } : prev);
   };
 
   const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
@@ -144,9 +197,22 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
           <Calendar className="w-5 h-5 text-gold" /> יומן
         </h2>
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={handleGoogleSync} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-subtle hover:border-gold hover:text-gold transition-all">
-            <Link2 className="w-3.5 h-3.5" /> סנכרון עם Google Calendar
-          </button>
+          {gcalStatus?.connected ? (
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-600 text-xs flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> מחובר ל-Google
+              </span>
+              <button onClick={handleGoogleSync} disabled={syncing} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-all">
+                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+                {syncing ? "מסנכרן..." : "סנכרן עכשיו"}
+              </button>
+              <button onClick={handleGoogleDisconnect} className="text-xs text-red-500 hover:underline">נתק</button>
+            </div>
+          ) : (
+            <button onClick={handleGoogleAuth} disabled={!gcalStatus?.configured} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-subtle hover:border-gold hover:text-gold transition-all">
+              <Link2 className="w-3.5 h-3.5" /> {gcalStatus?.configured ? "התחבר ל-Google Calendar" : "Google Calendar לא מוגדר"}
+            </button>
+          )}
           <button onClick={() => setShowAdd(!showAdd)} className="btn-gold text-sm flex items-center gap-1">
             <Plus className="w-4 h-4" /> אירוע חדש
           </button>
@@ -159,6 +225,9 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         <h3 className="text-lg font-heading text-text-primary">{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
         <button onClick={nextMonth} className="p-2 hover:bg-bg-surface rounded-btn"><ChevronLeft className="w-5 h-5" /></button>
       </div>
+      <p className="text-sm text-text-muted text-center">
+        {getHebrewDateStr(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1))} — {getHebrewDateStr(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0))}
+      </p>
 
       {/* Add form */}
       {showAdd && (
@@ -187,6 +256,23 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         </div>
       )}
 
+      {/* Jewish holidays */}
+      {holidays.length > 0 && (
+        <div className="card-static space-y-2">
+          <h4 className="text-sm font-medium text-gold flex items-center gap-1.5">
+            <Calendar className="w-4 h-4" /> חגים ואירועים
+          </h4>
+          {holidays.map((h, i) => (
+            <div key={i} className={`flex items-center gap-2 text-sm px-3 py-2 rounded-btn ${h.isYomTov ? "bg-amber-50 border border-amber-200" : "bg-blue-50 border border-blue-100"}`}>
+              {h.emoji && <span>{h.emoji}</span>}
+              <span className="font-medium">{h.name}</span>
+              <span className="text-text-muted mr-auto">{new Date(h.date + "T00:00:00").toLocaleDateString("he-IL", { day: "numeric", month: "long" })}</span>
+              <span className="text-xs text-text-muted">{getHebrewDateStr(new Date(h.date + "T00:00:00"))}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Events list */}
       {loading ? (
         <div className="text-center py-12 text-text-muted">טוען...</div>
@@ -196,7 +282,12 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         <div className="space-y-4">
           {Object.entries(eventsByDate).sort(([a], [b]) => a.localeCompare(b)).map(([date, dayEvents]) => (
             <div key={date}>
-              <h4 className="text-sm font-medium text-text-muted mb-2">{date}</h4>
+              <h4 className="text-sm font-medium text-text-muted mb-2">
+                {date}
+                <span className="text-xs text-gold mr-2">
+                  {getHebrewDateStr(new Date(dayEvents[0].startAt))}
+                </span>
+              </h4>
               <div className="space-y-2">
                 {dayEvents.map(evt => (
                   <div key={evt.id} className="flex items-start gap-3 p-3 rounded-btn border border-border-subtle bg-white">

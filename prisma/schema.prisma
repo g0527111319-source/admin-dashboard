@@ -143,6 +143,7 @@ model Designer {
   // CRM
   crmClients           CrmClient[]
   crmProjects          CrmProject[]
+  crmTasks             CrmTask[]
   crmSettings          DesignerCrmSettings?
   crmQuotes            CrmQuote[]
   crmContracts         CrmContract[]
@@ -592,6 +593,7 @@ model CrmClient {
   deletedAt      DateTime? // מחיקה רכה
 
   projects           CrmProject[]
+  tasks              CrmTask[]
   portalTokens       ClientPortalToken[]
   whatsAppMessages   WhatsAppMessage[]    @relation("ClientWhatsAppMessages")
   clientSettings     ClientCrmSettings?
@@ -996,8 +998,12 @@ enum CrmReminderType {
 
 model CrmTask {
   id          String        @id @default(uuid())
-  projectId   String
-  project     CrmProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  designerId  String
+  designer    Designer      @relation(fields: [designerId], references: [id])
+  projectId   String?
+  project     CrmProject?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId    String?
+  client      CrmClient?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
   title       String
   description String?
   assignee    String?
@@ -1008,7 +1014,9 @@ model CrmTask {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  @@index([designerId])
   @@index([projectId])
+  @@index([clientId])
   @@index([status])
   @@index([dueDate])
 }

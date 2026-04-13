@@ -75,138 +75,6 @@ const statusColor: Record<string, string> = {
   CANCELLED: "bg-red-50 text-red-700",
 };
 
-// ===== DEMO DATA =====
-const DEMO_PHASES_RENOVATION: Phase[] = [
-  { id: "dp1", name: "פגישת היכרות", sortOrder: 1, isCurrent: false, isCompleted: true, completedAt: "2026-02-05T10:00:00Z" },
-  { id: "dp2", name: "מדידות באתר", sortOrder: 2, isCurrent: false, isCompleted: true, completedAt: "2026-02-10T10:00:00Z" },
-  { id: "dp3", name: "תכנון אדריכלי", sortOrder: 3, isCurrent: false, isCompleted: true, completedAt: "2026-02-25T10:00:00Z" },
-  { id: "dp4", name: "בחירת חומרי גמר", sortOrder: 4, isCurrent: true, isCompleted: false, completedAt: null },
-  { id: "dp5", name: "הריסות ושלד", sortOrder: 5, isCurrent: false, isCompleted: false, completedAt: null },
-  { id: "dp6", name: "אינסטלציה וחשמל", sortOrder: 6, isCurrent: false, isCompleted: false, completedAt: null },
-  { id: "dp7", name: "ריצוף וחיפוי", sortOrder: 7, isCurrent: false, isCompleted: false, completedAt: null },
-  { id: "dp8", name: "נגרות ומטבח", sortOrder: 8, isCurrent: false, isCompleted: false, completedAt: null },
-  { id: "dp9", name: "צבע ותאורה", sortOrder: 9, isCurrent: false, isCompleted: false, completedAt: null },
-  { id: "dp10", name: "ריהוט ואביזרים", sortOrder: 10, isCurrent: false, isCompleted: false, completedAt: null },
-  { id: "dp11", name: "מסירה ופאנץ׳ ליסט", sortOrder: 11, isCurrent: false, isCompleted: false, completedAt: null },
-];
-
-const DEMO_MESSAGES: Message[] = [
-  { id: "dm1", senderType: "designer", content: "שלום רונית, שמחה שהתחלנו! מצורף לוח זמנים ראשוני.", isRead: true, createdAt: "2026-02-01T09:00:00Z" },
-  { id: "dm2", senderType: "client", content: "תודה רבה! מתרגשים. מתי נוכל לבוא לראות דוגמאות אריחים?", isRead: true, createdAt: "2026-02-01T14:30:00Z" },
-  { id: "dm3", senderType: "designer", content: "ביום שלישי הקרוב ב-10:00 באולם תצוגה של פורצלנוזה. מתאים?", isRead: true, createdAt: "2026-02-02T10:00:00Z" },
-  { id: "dm4", senderType: "client", content: "מושלם! נהיה שם ✨", isRead: true, createdAt: "2026-02-02T11:15:00Z" },
-];
-
-const DEMO_PROJECTS: Project[] = [
-  {
-    id: "demo-proj-1",
-    name: "שיפוץ דירת 4 חדרים — הרצל 42",
-    projectType: "RENOVATION",
-    status: "ACTIVE",
-    estimatedBudget: 280000,
-    address: "רחוב הרצל 42, תל אביב",
-    notes: "שיפוץ מלא כולל מטבח, 2 חדרי אמבטיה, סלון וחדרי שינה.",
-    startDate: "2026-02-01",
-    endDate: null,
-    createdAt: "2025-12-15T10:00:00Z",
-    client: { id: "demo-client-1", name: "רונית ואבי כהן", phone: "054-1234567" },
-    phases: DEMO_PHASES_RENOVATION,
-    messages: DEMO_MESSAGES,
-    _count: { messages: 4, documents: 2, photos: 3 },
-  },
-  {
-    id: "demo-proj-2",
-    name: "עיצוב דירה חדשה — רוטשילד 15",
-    projectType: "HOME_STYLING",
-    status: "ACTIVE",
-    estimatedBudget: 150000,
-    address: "שדרות רוטשילד 15, רמת גן",
-    notes: "דירת 3 חדרים חדשה מקבלן. עיצוב מלא כולל ריהוט ואביזרים.",
-    startDate: "2026-03-01",
-    endDate: null,
-    createdAt: "2026-01-20T14:30:00Z",
-    client: { id: "demo-client-2", name: "יוסי ומיכל לוי", phone: "052-9876543" },
-    phases: [
-      { id: "dp2-1", name: "פגישת היכרות", sortOrder: 1, isCurrent: false, isCompleted: true, completedAt: "2026-03-02T10:00:00Z" },
-      { id: "dp2-2", name: "שאלון סגנון", sortOrder: 2, isCurrent: true, isCompleted: false, completedAt: null },
-      { id: "dp2-3", name: "מוּדבּוֹרד", sortOrder: 3, isCurrent: false, isCompleted: false, completedAt: null },
-      { id: "dp2-4", name: "בחירת חומרי גמר", sortOrder: 4, isCurrent: false, isCompleted: false, completedAt: null },
-      { id: "dp2-5", name: "תכנון ריהוט", sortOrder: 5, isCurrent: false, isCompleted: false, completedAt: null },
-      { id: "dp2-6", name: "הזמנות", sortOrder: 6, isCurrent: false, isCompleted: false, completedAt: null },
-      { id: "dp2-7", name: "יום סידור", sortOrder: 7, isCurrent: false, isCompleted: false, completedAt: null },
-    ],
-    messages: [],
-    _count: { messages: 0, documents: 1, photos: 0 },
-  },
-  {
-    id: "demo-proj-3",
-    name: "שיפוץ מטבח — נחלת בנימין 8",
-    projectType: "RENOVATION",
-    status: "ACTIVE",
-    estimatedBudget: 85000,
-    address: "נחלת בנימין 8, תל אביב",
-    notes: "שיפוץ מטבח בסגנון תעשייתי. ברזל שחור, בטון ועץ אלון.",
-    startDate: "2026-03-10",
-    endDate: null,
-    createdAt: "2026-02-05T09:15:00Z",
-    client: { id: "demo-client-3", name: "דנה אברהם", phone: "050-5555123" },
-    phases: [
-      { id: "dp3-1", name: "פגישת היכרות", sortOrder: 1, isCurrent: false, isCompleted: true, completedAt: "2026-03-11T10:00:00Z" },
-      { id: "dp3-2", name: "מדידות מטבח", sortOrder: 2, isCurrent: true, isCompleted: false, completedAt: null },
-      { id: "dp3-3", name: "תכנון מטבח", sortOrder: 3, isCurrent: false, isCompleted: false, completedAt: null },
-      { id: "dp3-4", name: "הזמנת מטבח", sortOrder: 4, isCurrent: false, isCompleted: false, completedAt: null },
-      { id: "dp3-5", name: "התקנה", sortOrder: 5, isCurrent: false, isCompleted: false, completedAt: null },
-    ],
-    messages: [],
-    _count: { messages: 0, documents: 0, photos: 0 },
-  },
-  {
-    id: "demo-proj-4",
-    name: "שיפוץ דירת גן — אלנבי 120",
-    projectType: "RENOVATION",
-    status: "ON_HOLD",
-    estimatedBudget: 320000,
-    address: "אלנבי 120, תל אביב",
-    notes: "בהמתנה לאישור תקציב מהבנק.",
-    startDate: null,
-    endDate: null,
-    createdAt: "2026-02-28T11:00:00Z",
-    client: { id: "demo-client-4", name: "משפחת ברק", phone: "053-7771234" },
-    phases: [],
-    messages: [],
-    _count: { messages: 0, documents: 0, photos: 0 },
-  },
-  {
-    id: "demo-proj-5a",
-    name: "עיצוב מרפאת שיניים — דרך השלום 50",
-    projectType: "COMMERCIAL",
-    status: "ACTIVE",
-    estimatedBudget: 210000,
-    address: "דרך השלום 50, גבעתיים",
-    notes: "מרפאת שיניים חדשה. עיצוב מודרני, נקי, עם תחושה מרגיעה.",
-    startDate: "2026-01-15",
-    endDate: null,
-    createdAt: "2026-03-01T16:45:00Z",
-    client: { id: "demo-client-5", name: 'ד"ר שרה מזרחי', phone: "058-6669876" },
-    phases: [
-      { id: "dp5-1", name: "תכנון חלל", sortOrder: 1, isCurrent: false, isCompleted: true, completedAt: "2026-01-25T10:00:00Z" },
-      { id: "dp5-2", name: "בחירת צבעים וחומרים", sortOrder: 2, isCurrent: false, isCompleted: true, completedAt: "2026-02-10T10:00:00Z" },
-      { id: "dp5-3", name: "ריהוט ותאורה", sortOrder: 3, isCurrent: true, isCompleted: false, completedAt: null },
-      { id: "dp5-4", name: "שילוט ומיתוג", sortOrder: 4, isCurrent: false, isCompleted: false, completedAt: null },
-    ],
-    messages: [],
-    _count: { messages: 2, documents: 3, photos: 1 },
-  },
-];
-
-const DEMO_CLIENTS: Client[] = [
-  { id: "demo-client-1", name: "רונית ואבי כהן" },
-  { id: "demo-client-2", name: "יוסי ומיכל לוי" },
-  { id: "demo-client-3", name: "דנה אברהם" },
-  { id: "demo-client-4", name: "משפחת ברק" },
-  { id: "demo-client-5", name: 'ד"ר שרה מזרחי' },
-];
-
 export default function CrmProjects({
   initialProjectId,
   onClearProjectId,
@@ -231,7 +99,6 @@ export default function CrmProjects({
   const [sendingMessage, setSendingMessage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [isUsingDemo, setIsUsingDemo] = useState(false);
   const [formData, setFormData] = useState({
     clientId: "",
     name: "",
@@ -241,59 +108,29 @@ export default function CrmProjects({
     notes: "",
   });
 
-  const loadDemoProjects = useCallback(() => {
-    setIsUsingDemo(true);
-    let filtered = DEMO_PROJECTS;
-    if (search) {
-      const s = search.toLowerCase();
-      filtered = filtered.filter(
-        (p) => p.name.toLowerCase().includes(s) || p.client.name.toLowerCase().includes(s)
-      );
-    }
-    if (statusFilter !== "ALL") {
-      filtered = filtered.filter((p) => p.status === statusFilter);
-    }
-    setProjects(filtered);
-    setClients(DEMO_CLIENTS);
-    setLoading(false);
-  }, [search, statusFilter]);
-
   const fetchProjects = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
+      if (clientId) params.set("clientId", clientId);
       const res = await fetch(`/api/designer/crm/projects?${params}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.length > 0) {
-          setProjects(data);
-          setIsUsingDemo(false);
-          setLoading(false);
-          return;
-        }
+        setProjects(Array.isArray(data) ? data : data.data || []);
       }
-      // API failed or empty — use demo
-      loadDemoProjects();
-    } catch {
-      loadDemoProjects();
-    }
-  }, [search, statusFilter, loadDemoProjects]);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [search, statusFilter, clientId]);
 
   const fetchClients = useCallback(async () => {
     try {
       const res = await fetch("/api/designer/crm/clients");
       if (res.ok) {
         const data = await res.json();
-        if (data.length > 0) {
-          setClients(data);
-          return;
-        }
+        setClients(Array.isArray(data) ? data : []);
       }
-      setClients(DEMO_CLIENTS);
-    } catch {
-      setClients(DEMO_CLIENTS);
-    }
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
@@ -311,22 +148,14 @@ export default function CrmProjects({
   }, [initialProjectId, projects]);
 
   const openProject = async (projectId: string) => {
-    // Try API first
     try {
       const res = await fetch(`/api/designer/crm/projects/${projectId}`);
       if (res.ok) {
         setSelectedProject(await res.json());
         setProjectDetailTab("phases");
-        return;
       }
     } catch {
       // ignore
-    }
-    // Fallback to demo data
-    const demo = DEMO_PROJECTS.find((p) => p.id === projectId);
-    if (demo) {
-      setSelectedProject(demo);
-      setProjectDetailTab("phases");
     }
   };
 
@@ -335,31 +164,6 @@ export default function CrmProjects({
     if (!formData.name.trim() || !formData.clientId) return;
     setSaving(true);
     setError("");
-
-    if (isUsingDemo) {
-      const client = clients.find((c) => c.id === formData.clientId);
-      const newProj: Project = {
-        id: `demo-new-${Date.now()}`,
-        name: formData.name,
-        projectType: formData.projectType,
-        status: "ACTIVE",
-        estimatedBudget: formData.estimatedBudget ? Number(formData.estimatedBudget) : null,
-        address: formData.address || null,
-        notes: formData.notes || null,
-        startDate: new Date().toISOString(),
-        endDate: null,
-        createdAt: new Date().toISOString(),
-        client: { id: formData.clientId, name: client?.name || "לקוח" },
-        phases: [],
-        messages: [],
-        _count: { messages: 0, documents: 0, photos: 0 },
-      };
-      setProjects((prev) => [newProj, ...prev]);
-      setShowAddForm(false);
-      setFormData({ clientId: "", name: "", projectType: "RENOVATION", estimatedBudget: "", address: "", notes: "" });
-      setSaving(false);
-      return;
-    }
 
     try {
       const res = await fetch("/api/designer/crm/projects", {
@@ -388,21 +192,6 @@ export default function CrmProjects({
   const handlePhaseToggle = async (phase: Phase) => {
     if (!selectedProject) return;
 
-    if (isUsingDemo) {
-      setSelectedProject((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          phases: prev.phases.map((p) =>
-            p.id === phase.id
-              ? { ...p, isCompleted: !p.isCompleted, isCurrent: !p.isCompleted ? false : p.isCurrent, completedAt: !p.isCompleted ? new Date().toISOString() : null }
-              : p
-          ),
-        };
-      });
-      return;
-    }
-
     try {
       await fetch(`/api/designer/crm/projects/${selectedProject.id}/phases/${phase.id}`, {
         method: "PATCH",
@@ -421,20 +210,6 @@ export default function CrmProjects({
   const handleSetCurrentPhase = async (phase: Phase) => {
     if (!selectedProject) return;
 
-    if (isUsingDemo) {
-      setSelectedProject((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          phases: prev.phases.map((p) => ({
-            ...p,
-            isCurrent: p.id === phase.id,
-          })),
-        };
-      });
-      return;
-    }
-
     try {
       await fetch(`/api/designer/crm/projects/${selectedProject.id}/phases/${phase.id}`, {
         method: "PATCH",
@@ -449,22 +224,6 @@ export default function CrmProjects({
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedProject) return;
-
-    if (isUsingDemo) {
-      const msg: Message = {
-        id: `demo-msg-${Date.now()}`,
-        senderType: "designer",
-        content: newMessage.trim(),
-        isRead: true,
-        createdAt: new Date().toISOString(),
-      };
-      setSelectedProject((prev) => {
-        if (!prev) return prev;
-        return { ...prev, messages: [...(prev.messages || []), msg] };
-      });
-      setNewMessage("");
-      return;
-    }
 
     setSendingMessage(true);
     try {
@@ -485,12 +244,6 @@ export default function CrmProjects({
   const handleUpdateStatus = async (status: string) => {
     if (!selectedProject) return;
 
-    if (isUsingDemo) {
-      setSelectedProject((prev) => prev ? { ...prev, status } : prev);
-      setProjects((prev) => prev.map((p) => p.id === selectedProject.id ? { ...p, status } : p));
-      return;
-    }
-
     try {
       await fetch(`/api/designer/crm/projects/${selectedProject.id}`, {
         method: "PATCH",
@@ -506,12 +259,6 @@ export default function CrmProjects({
 
   const handleDeleteProject = async (projectId: string) => {
     if (!confirm("למחוק את הפרויקט?")) return;
-
-    if (isUsingDemo) {
-      setProjects((prev) => prev.filter((p) => p.id !== projectId));
-      if (selectedProject?.id === projectId) setSelectedProject(null);
-      return;
-    }
 
     try {
       await fetch(`/api/designer/crm/projects/${projectId}`, { method: "DELETE" });

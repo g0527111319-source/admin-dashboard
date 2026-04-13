@@ -3,7 +3,7 @@ import { txt } from "@/content/siteText";
 import { useState, useEffect } from "react";
 import Logo from "@/components/ui/Logo";
 import Image from "next/image";
-import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban, Loader2, Hash, Briefcase } from "lucide-react";
+import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban, Loader2, Hash, Briefcase, ListChecks } from "lucide-react";
 import CrmClients from "@/components/crm/CrmClients";
 import CrmSettings from "@/components/crm/CrmSettings";
 import CrmSuppliers from "@/components/crm/CrmSuppliers";
@@ -31,6 +31,7 @@ import TermsConsentModal from "@/components/TermsConsentModal";
 import PushNotificationManager from "@/components/PushNotificationManager";
 import CrmKanban from "@/components/crm/CrmKanban";
 import CrmPortfolio from "@/components/crm/CrmPortfolio";
+import CrmTasks from "@/components/crm/CrmTasks";
 import FeatureGate from "@/components/FeatureGate";
 import NotificationBell from "@/components/NotificationBell";
 import AccountSettings from "@/components/designer/AccountSettings";
@@ -91,7 +92,7 @@ type DealHistoryItem = {
     status: string; rating: number | null;
 };
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio";
+type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "scheduler" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks";
 
 interface NavGroup {
   title: string;
@@ -121,6 +122,7 @@ const navGroups: NavGroup[] = [
     items: [
       { key: "clients", label: "לקוחות", icon: Users },
       { key: "projects", label: "פרויקטים", icon: FileText },
+      { key: "tasks", label: "משימות", icon: ListChecks },
       { key: "contracts", label: "חוזים", icon: FileText },
       { key: "quotes", label: "הצעות מחיר", icon: CreditCard },
       { key: "calendar", label: "יומן", icon: CalendarIcon },
@@ -1094,6 +1096,9 @@ export default function DesignerDashboard() {
             )}
             {activeTab === "workflows" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmWorkflowTemplates gender={gender} /></FeatureGate>
+            )}
+            {activeTab === "tasks" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTasks gender={gender} /></FeatureGate>
             )}
             {activeTab === "contracts" && (
               <FeatureGate feature="contracts" designerId={designerIdForGate}><CrmContracts gender={gender} /></FeatureGate>

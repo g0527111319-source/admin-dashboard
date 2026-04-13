@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, CheckCircle2, Circle, Clock, Trash2, Calendar, Sparkles, FileDown, Layers } from "lucide-react";
+import { Plus, CheckCircle2, Circle, Clock, Trash2, Calendar, Sparkles, FileDown, Layers, Users, FolderOpen, Filter } from "lucide-react";
 import { g } from "@/lib/gender";
 
 type Task = {
   id: string;
-  projectId: string;
+  projectId: string | null;
+  clientId?: string | null;
   title: string;
   description: string | null;
   assignee: string | null;
@@ -14,8 +15,11 @@ type Task = {
   status: string;
   completedAt: string | null;
   createdAt: string;
+  project?: { id: string; name: string } | null;
+  client?: { id: string; name: string } | null;
 };
 
+type Client = { id: string; name: string };
 type Project = { id: string; name: string; client: { name: string } };
 type WorkflowTemplate = { id: string; name: string; phases: { name: string; tasks: { title: string; description?: string }[] }[] };
 
@@ -116,42 +120,55 @@ const DEFAULT_TASK_SETS: { name: string; icon: string; tasks: { title: string; d
 
 export default function CrmTasks({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
   const gdr = gender || "female";
+  // General mode = no clientId and no projectId props passed
+  const isGeneralMode = !clientId && !projectId;
+
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+
+  // For project-specific mode (legacy)
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || "");
+
+  // For general mode filters
+  const [filterClientId, setFilterClientId] = useState<string>("");
+  const [filterProjectId, setFilterProjectId] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+
   const [showAdd, setShowAdd] = useState(false);
   const [showLoadTemplate, setShowLoadTemplate] = useState(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", description: "", dueDate: "" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", dueDate: "", clientId: "", projectId: "" });
   const [saving, setSaving] = useState(false);
 
-  const DEMO_PROJECTS: Project[] = [
-    { id: "demo-proj-1", name: "שיפוץ דירת 4 חדרים — הרצל 42", client: { name: "רונית ואבי כהן" } },
-    { id: "demo-proj-2", name: "עיצוב דירה חדשה — רוטשילד 15", client: { name: "יוסי ומיכל לוי" } },
-    { id: "demo-proj-3", name: "שיפוץ מטבח — נחלת בנימין 8", client: { name: "דנה אברהם" } },
-  ];
+  // Fetch clients (for general mode)
+  const fetchClients = useCallback(async () => {
+    if (!isGeneralMode) return;
+    try {
+      const res = await fetch("/api/designer/crm/clients");
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : data.data || [];
+        setClients(list);
+      }
+    } catch { /* ignore */ }
+  }, [isGeneralMode]);
 
   const fetchProjects = useCallback(async () => {
     try {
-      const res = await fetch("/api/designer/crm/projects");
+      const params = new URLSearchParams();
+      if (clientId) params.set("clientId", clientId);
+      const res = await fetch(`/api/designer/crm/projects?${params}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.length > 0) {
-          setProjects(data);
-          if (!selectedProjectId) setSelectedProjectId(data[0].id);
-          return;
-        }
+        const list = Array.isArray(data) ? data : data.data || [];
+        setProjects(list);
+        if (!isGeneralMode && !selectedProjectId && list.length > 0) setSelectedProjectId(list[0].id);
       }
-      // Fallback to demo
-      setProjects(DEMO_PROJECTS);
-      if (!selectedProjectId) setSelectedProjectId(DEMO_PROJECTS[0].id);
-    } catch {
-      setProjects(DEMO_PROJECTS);
-      if (!selectedProjectId) setSelectedProjectId(DEMO_PROJECTS[0].id);
-    }
-  }, [selectedProjectId]);
+    } catch { /* ignore */ }
+  }, [clientId, isGeneralMode, selectedProjectId]);
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -163,28 +180,68 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
     } catch { /* ignore */ }
   }, []);
 
+  // Fetch tasks — general mode uses /api/designer/crm/tasks, project mode uses per-project endpoint
   const fetchTasks = useCallback(async () => {
-    if (!selectedProjectId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks`);
-      if (res.ok) setTasks(await res.json());
-    } catch { /* ignore */ } finally { setLoading(false); }
-  }, [selectedProjectId]);
+      if (isGeneralMode) {
+        // General mode: fetch all tasks with optional filters
+        const params = new URLSearchParams();
+        if (filterClientId) params.set("clientId", filterClientId);
+        if (filterProjectId) params.set("projectId", filterProjectId);
+        if (filterStatus) params.set("status", filterStatus);
+        const res = await fetch(`/api/designer/crm/tasks?${params}`);
+        if (res.ok) setTasks(await res.json());
+      } else {
+        // Project-specific mode (legacy)
+        if (!selectedProjectId) { setLoading(false); return; }
+        const res = await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks`);
+        if (res.ok) setTasks(await res.json());
+      }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [isGeneralMode, selectedProjectId, filterClientId, filterProjectId, filterStatus]);
 
-  useEffect(() => { fetchProjects(); fetchTemplates(); }, [fetchProjects, fetchTemplates]);
+  useEffect(() => { fetchClients(); fetchProjects(); fetchTemplates(); }, [fetchClients, fetchProjects, fetchTemplates]);
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
+  // Projects filtered by selected client in add form
+  const filteredProjectsForForm = newTask.clientId
+    ? projects.filter(p => p.client && projects.find(pp => pp.id === p.id))
+    : projects;
+
   const handleAddTask = async () => {
-    if (!newTask.title.trim() || !selectedProjectId) return;
+    if (!newTask.title.trim()) return;
+    // In project mode, require a project
+    if (!isGeneralMode && !selectedProjectId) return;
     setSaving(true);
     try {
-      await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTask),
-      });
-      setNewTask({ title: "", description: "", dueDate: "" });
+      if (isGeneralMode) {
+        // General mode: use the new API
+        await fetch("/api/designer/crm/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newTask.title,
+            description: newTask.description || null,
+            dueDate: newTask.dueDate || null,
+            clientId: newTask.clientId || null,
+            projectId: newTask.projectId || null,
+          }),
+        });
+      } else {
+        // Project-specific mode (legacy)
+        await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: newTask.title,
+            description: newTask.description || null,
+            dueDate: newTask.dueDate || null,
+          }),
+        });
+      }
+      setNewTask({ title: "", description: "", dueDate: "", clientId: "", projectId: "" });
       setShowAdd(false);
       fetchTasks();
     } catch { /* ignore */ } finally { setSaving(false); }
@@ -220,18 +277,30 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
   const toggleStatus = async (task: Task) => {
     const nextStatus = task.status === "DONE" ? "TODO" : task.status === "TODO" ? "IN_PROGRESS" : "DONE";
     try {
-      await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
+      if (isGeneralMode) {
+        await fetch("/api/designer/crm/tasks", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: task.id, status: nextStatus }),
+        });
+      } else {
+        await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks/${task.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: nextStatus }),
+        });
+      }
       fetchTasks();
     } catch { /* ignore */ }
   };
 
   const deleteTask = async (taskId: string) => {
     try {
-      await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks/${taskId}`, { method: "DELETE" });
+      if (isGeneralMode) {
+        await fetch(`/api/designer/crm/tasks?id=${taskId}`, { method: "DELETE" });
+      } else {
+        await fetch(`/api/designer/crm/projects/${selectedProjectId}/tasks/${taskId}`, { method: "DELETE" });
+      }
       fetchTasks();
     } catch { /* ignore */ }
   };
@@ -242,12 +311,13 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
     DONE: tasks.filter(t => t.status === "DONE"),
   };
 
+  // =========== RENDER ===========
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-heading text-text-primary">משימות</h2>
         <div className="flex gap-2">
-          {selectedProjectId && (
+          {!isGeneralMode && selectedProjectId && (
             <button onClick={() => setShowLoadTemplate(!showLoadTemplate)} className="btn-ghost text-sm flex items-center gap-1">
               <FileDown className="w-4 h-4" /> טען תבנית
             </button>
@@ -258,21 +328,61 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
         </div>
       </div>
 
-      {/* Project selector */}
-      <div className="relative">
-        <select
-          className="select-field"
-          value={selectedProjectId}
-          onChange={(e) => setSelectedProjectId(e.target.value)}
-        >
-          <option value="">{g(gdr, "בחר פרויקט...", "בחרי פרויקט...")}</option>
-          {projects.map(p => (
-            <option key={p.id} value={p.id}>{p.name} — {p.client.name}</option>
-          ))}
-        </select>
-      </div>
+      {/* ===== GENERAL MODE: Filters ===== */}
+      {isGeneralMode && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <Filter className="w-4 h-4 text-text-muted flex-shrink-0" />
+          <select
+            className="select-field text-sm flex-1 min-w-[140px]"
+            value={filterClientId}
+            onChange={e => { setFilterClientId(e.target.value); setFilterProjectId(""); }}
+          >
+            <option value="">כל הלקוחות</option>
+            {clients.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <select
+            className="select-field text-sm flex-1 min-w-[140px]"
+            value={filterProjectId}
+            onChange={e => setFilterProjectId(e.target.value)}
+          >
+            <option value="">כל הפרויקטים</option>
+            {(filterClientId ? projects.filter(p => p.client && projects.find(pp => pp.id === p.id)) : projects).map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <select
+            className="select-field text-sm flex-1 min-w-[100px]"
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+          >
+            <option value="">כל הסטטוסים</option>
+            <option value="TODO">לביצוע</option>
+            <option value="IN_PROGRESS">בתהליך</option>
+            <option value="DONE">הושלם</option>
+            <option value="CANCELLED">בוטל</option>
+          </select>
+        </div>
+      )}
 
-      {/* Add task form */}
+      {/* ===== PROJECT MODE: Project selector ===== */}
+      {!isGeneralMode && (
+        <div className="relative">
+          <select
+            className="select-field"
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+          >
+            <option value="">{g(gdr, "בחר פרויקט...", "בחרי פרויקט...")}</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.name} — {p.client.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* ===== Add task form ===== */}
       {showAdd && (
         <div className="card-static space-y-3">
           <input
@@ -296,14 +406,39 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
             onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
             dir="ltr"
           />
-          <button onClick={handleAddTask} disabled={saving} className="btn-gold w-full">
+          {/* Client + Project selectors in general mode */}
+          {isGeneralMode && (
+            <>
+              <select
+                className="select-field text-sm"
+                value={newTask.clientId}
+                onChange={e => setNewTask({ ...newTask, clientId: e.target.value, projectId: "" })}
+              >
+                <option value="">ללא לקוח</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <select
+                className="select-field text-sm"
+                value={newTask.projectId}
+                onChange={e => setNewTask({ ...newTask, projectId: e.target.value })}
+              >
+                <option value="">ללא פרויקט</option>
+                {filteredProjectsForForm.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+          <button onClick={handleAddTask} disabled={saving || (!isGeneralMode && !selectedProjectId)} className="btn-gold w-full">
             {saving ? "שומר..." : "הוסף משימה"}
           </button>
         </div>
       )}
 
-      {/* Load from template */}
-      {showLoadTemplate && selectedProjectId && (
+      {/* ===== Load from template (project mode only) ===== */}
+      {!isGeneralMode && showLoadTemplate && selectedProjectId && (
         <div className="card-static space-y-4 animate-in">
           <div className="flex items-center justify-between">
             <h3 className="font-medium text-text-primary flex items-center gap-2">
@@ -367,7 +502,8 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
         </div>
       )}
 
-      {!selectedProjectId ? (
+      {/* ===== Task list ===== */}
+      {!isGeneralMode && !selectedProjectId ? (
         <div className="card-static text-center py-12 text-text-muted">{g(gdr, "בחר פרויקט כדי לראות משימות", "בחרי פרויקט כדי לראות משימות")}</div>
       ) : loading ? (
         <div className="text-center py-12 text-text-muted">טוען...</div>
@@ -378,9 +514,11 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
             <button onClick={() => setShowAdd(true)} className="btn-ghost text-sm flex items-center gap-1">
               <Plus className="w-4 h-4" /> הוסף ידנית
             </button>
-            <button onClick={() => setShowLoadTemplate(true)} className="btn-gold text-sm flex items-center gap-1">
-              <Sparkles className="w-4 h-4" /> טען מתבנית
-            </button>
+            {!isGeneralMode && (
+              <button onClick={() => setShowLoadTemplate(true)} className="btn-gold text-sm flex items-center gap-1">
+                <Sparkles className="w-4 h-4" /> טען מתבנית
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -415,6 +553,23 @@ export default function CrmTasks({ clientId, projectId, gender }: { clientId?: s
                           {task.title}
                         </p>
                         {task.description && <p className="text-xs text-text-muted mt-0.5">{task.description}</p>}
+                        {/* Badges for client/project in general mode */}
+                        {isGeneralMode && (task.client || task.project) && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {task.client && (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                                <Users className="w-2.5 h-2.5" />
+                                {task.client.name}
+                              </span>
+                            )}
+                            {task.project && (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100">
+                                <FolderOpen className="w-2.5 h-2.5" />
+                                {task.project.name}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {task.dueDate && (
                           <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
