@@ -110,7 +110,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<void> {
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     maxAge: 60 * 60 * 6, // 6 שעות — תואם ל-JWT_EXPIRY
     path: "/",
   });
