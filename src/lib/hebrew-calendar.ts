@@ -1,5 +1,5 @@
 // Hebrew date conversion utility
-// Based on astronomical calculations for the Hebrew calendar
+// Civil month ordering: 1=Tishrei, 2=Cheshvan, ... 7=Nisan (non-leap) or 8=Nisan (leap)
 
 type HebrewDate = {
   year: number;
@@ -18,6 +18,7 @@ const HEBREW_NUMERALS: Record<number, string> = {
   100: "\u05E7", 200: "\u05E8", 300: "\u05E9", 400: "\u05EA",
 };
 
+// Civil ordering: index 0 = Tishrei (month 1)
 const HEBREW_MONTHS = [
   "\u05EA\u05E9\u05E8\u05D9", "\u05D7\u05E9\u05D5\u05D5\u05DF", "\u05DB\u05E1\u05DC\u05D5", "\u05D8\u05D1\u05EA", "\u05E9\u05D1\u05D8", "\u05D0\u05D3\u05E8",
   "\u05E0\u05D9\u05E1\u05DF", "\u05D0\u05D9\u05D9\u05E8", "\u05E1\u05D9\u05D5\u05D5\u05DF", "\u05EA\u05DE\u05D5\u05D6", "\u05D0\u05D1", "\u05D0\u05DC\u05D5\u05DC",
@@ -76,38 +77,34 @@ function hebrewYearDays(year: number): number {
   return hebrewDelay1(year + 1) - hebrewDelay1(year) + hebrewDelay2(year + 1) - hebrewDelay2(year);
 }
 
+// Month days in civil ordering (1=Tishrei)
 function hebrewMonthDays(year: number, month: number): number {
-  // month is 1-based: 1=Tishrei ... 12/13=Elul
   const totalDays = hebrewYearDays(year);
-  if (month === 2) { // Cheshvan
-    return totalDays % 10 === 5 ? 30 : 29;
+  if (month === 1) return 30; // Tishrei
+  if (month === 2) return totalDays % 10 === 5 ? 30 : 29; // Cheshvan
+  if (month === 3) return totalDays % 10 === 3 ? 29 : 30; // Kislev
+  if (month === 4) return 29; // Tevet
+  if (month === 5) return 30; // Shevat
+  // Months 6+ differ between leap and non-leap years
+  if (!isHebrewLeapYear(year)) {
+    // Non-leap: 6=Adar(29), 7=Nisan(30), 8=Iyar(29), 9=Sivan(30), 10=Tammuz(29), 11=Av(30), 12=Elul(29)
+    return month % 2 === 0 ? 29 : 30;
+  } else {
+    // Leap: 6=Adar I(30), 7=Adar II(29), 8=Nisan(30), 9=Iyar(29), 10=Sivan(30), 11=Tammuz(29), 12=Av(30), 13=Elul(29)
+    return month % 2 === 0 ? 30 : 29;
   }
-  if (month === 3) { // Kislev
-    return totalDays % 10 === 3 ? 29 : 30;
-  }
-  if (month === 6 && !isHebrewLeapYear(year)) return 29; // Adar in non-leap
-  if (month === 6 && isHebrewLeapYear(year)) return 30; // Adar I in leap
-  if (month === 7 && isHebrewLeapYear(year)) return 29; // Adar II in leap
-  // Standard months
-  const monthDays = [0, 30, 0, 0, 29, 30, 0, 30, 29, 30, 29, 30, 29, 29]; // 0-indexed adjustment
-  if (month <= 13 && monthDays[month]) return monthDays[month];
-  return month % 2 === 0 ? 29 : 30;
 }
 
-// Hebrew epoch (Julian Day Number of 1 Tishrei 1)
+// Hebrew epoch (Julian Day Number)
 const HEBREW_EPOCH = 347995.5;
 
+// Convert Hebrew date to Julian Day Number
+// Civil ordering: month 1 = Tishrei (start of year)
 function hebrewToJD(year: number, month: number, day: number): number {
-  const months = hebrewYearMonths(year);
-  let jd = HEBREW_EPOCH + hebrewDelay1(year) + hebrewDelay2(year) + day + 1;
-
-  if (month < 7) {
-    for (let m = 7; m <= months; m++) jd += hebrewMonthDays(year, m);
-    for (let m = 1; m < month; m++) jd += hebrewMonthDays(year, m);
-  } else {
-    for (let m = 7; m < month; m++) jd += hebrewMonthDays(year, m);
+  let jd = HEBREW_EPOCH + hebrewDelay1(year) + hebrewDelay2(year) + day + 2;
+  for (let m = 1; m < month; m++) {
+    jd += hebrewMonthDays(year, m);
   }
-
   return jd;
 }
 
@@ -118,26 +115,20 @@ function gregorianToJD(year: number, month: number, day: number): number {
   return day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
 }
 
+// Convert Julian Day Number to Hebrew date (civil ordering)
 function jdToHebrew(jd: number): { year: number; month: number; day: number } {
   jd = Math.floor(jd) + 0.5;
   const count = Math.floor(((jd - HEBREW_EPOCH) * 98496.0) / 35975351.0);
   let year = count - 1;
 
   for (let i = count - 1; i <= count + 2; i++) {
-    if (hebrewToJD(i, 7, 1) <= jd) year = i;
+    if (hebrewToJD(i, 1, 1) <= jd) year = i;
   }
 
   const months = hebrewYearMonths(year);
-  let first = jd < hebrewToJD(year, 1, 1) ? 7 : 1;
-  let month = first;
-
-  for (let m = first; m <= (first === 7 ? months : 6); m++) {
-    if (jd > hebrewToJD(year, m, hebrewMonthDays(year, m))) month = m + 1;
-  }
-  if (first === 7 && month > months) {
-    for (let m = 1; m <= 6; m++) {
-      if (jd > hebrewToJD(year, m, hebrewMonthDays(year, m))) month = m + 1;
-    }
+  let month = 1;
+  while (month < months && hebrewToJD(year, month + 1, 1) <= jd) {
+    month++;
   }
 
   const day = Math.floor(jd - hebrewToJD(year, month, 1)) + 1;
@@ -198,6 +189,16 @@ function formatDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+// Leap-year-aware month numbers (civil ordering)
+// In non-leap: 6=Adar, 7=Nisan, 8=Iyar, 9=Sivan, 10=Tammuz, 11=Av, 12=Elul
+// In leap: 6=Adar I, 7=Adar II, 8=Nisan, 9=Iyar, 10=Sivan, 11=Tammuz, 12=Av, 13=Elul
+const nisanMonth = (hy: number) => isHebrewLeapYear(hy) ? 8 : 7;
+const iyarMonth = (hy: number) => isHebrewLeapYear(hy) ? 9 : 8;
+const sivanMonth = (hy: number) => isHebrewLeapYear(hy) ? 10 : 9;
+const tammuzMonth = (hy: number) => isHebrewLeapYear(hy) ? 11 : 10;
+const avMonth = (hy: number) => isHebrewLeapYear(hy) ? 12 : 11;
+const purimAdarMonth = (hy: number) => isHebrewLeapYear(hy) ? 7 : 6; // Adar II in leap
+
 export function getJewishHolidays(gYear: number): JewishHoliday[] {
   // Hebrew year that starts in the fall of gYear
   const hYear = gYear + 3761;
@@ -215,7 +216,7 @@ export function getJewishHolidays(gYear: number): JewishHoliday[] {
     } catch { /* skip invalid dates */ }
   };
 
-  // Tishrei holidays (from previous Hebrew year cycle, in Sept/Oct of gYear)
+  // === TISHREI holidays (month 1) — fall of gYear ===
   // Rosh Hashana
   add(hYear, 1, 1, "\u05E8\u05D0\u05E9 \u05D4\u05E9\u05E0\u05D4 \u05D0\u05F3", true, "\uD83C\uDF4E");
   add(hYear, 1, 2, "\u05E8\u05D0\u05E9 \u05D4\u05E9\u05E0\u05D4 \u05D1\u05F3", true, "\uD83C\uDF4E");
@@ -233,88 +234,87 @@ export function getJewishHolidays(gYear: number): JewishHoliday[] {
   add(hYear, 1, 21, "\u05D4\u05D5\u05E9\u05E2\u05E0\u05D0 \u05E8\u05D1\u05D4", false, "\uD83C\uDF3F");
   add(hYear, 1, 22, "\u05E9\u05DE\u05D9\u05E0\u05D9 \u05E2\u05E6\u05E8\u05EA / \u05E9\u05DE\u05D7\u05EA \u05EA\u05D5\u05E8\u05D4", true, "\uD83D\uDCDC");
 
-  // Chanukah (Kislev 25 - Tevet 2)
+  // === CHANUKAH — Kislev 25 (month 3) ===
   add(hYear, 3, 25, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05E8\u05D0\u05E9\u05D5\u05DF", false, "\uD83D\uDD4E");
   add(hYear, 3, 26, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05E9\u05E0\u05D9", false, "\uD83D\uDD4E");
   add(hYear, 3, 27, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05E9\u05DC\u05D9\u05E9\u05D9", false, "\uD83D\uDD4E");
   add(hYear, 3, 28, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05E8\u05D1\u05D9\u05E2\u05D9", false, "\uD83D\uDD4E");
   add(hYear, 3, 29, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05D7\u05DE\u05D9\u05E9\u05D9", false, "\uD83D\uDD4E");
-  // Kislev can be 29 or 30 days
   add(hYear, 3, 30, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05E9\u05D9\u05E9\u05D9", false, "\uD83D\uDD4E");
   add(hYear, 4, 1, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05E9\u05D1\u05D9\u05E2\u05D9", false, "\uD83D\uDD4E");
   add(hYear, 4, 2, "\u05D7\u05E0\u05D5\u05DB\u05D4 \u2014 \u05E0\u05E8 \u05E9\u05DE\u05D9\u05E0\u05D9 (\u05D6\u05D0\u05EA \u05D7\u05E0\u05D5\u05DB\u05D4)", false, "\uD83D\uDD4E");
 
-  // Tzom 10 Tevet
+  // === TEVET — Tzom 10 (month 4) ===
+  // Can fall in Dec of gYear (from hYear) or Jan of gYear (from hYearPrev)
   add(hYear, 4, 10, "\u05E6\u05D5\u05DD \u05E2\u05E9\u05E8\u05D4 \u05D1\u05D8\u05D1\u05EA", false, "");
+  add(hYearPrev, 4, 10, "\u05E6\u05D5\u05DD \u05E2\u05E9\u05E8\u05D4 \u05D1\u05D8\u05D1\u05EA", false, "");
 
-  // Tu B'Shvat
+  // === SHEVAT — Tu B'Shvat (month 5) ===
+  // Falls in Jan/Feb — from hYearPrev
+  add(hYearPrev, 5, 15, "\u05D8\u05F4\u05D5 \u05D1\u05E9\u05D1\u05D8", false, "\uD83C\uDF33");
   add(hYear, 5, 15, "\u05D8\u05F4\u05D5 \u05D1\u05E9\u05D1\u05D8", false, "\uD83C\uDF33");
 
-  // Purim (Adar 14, or Adar II in leap year)
-  const purimMonth = isHebrewLeapYear(hYearPrev) ? 7 : 6;
-  add(hYearPrev, purimMonth, 13, "\u05EA\u05E2\u05E0\u05D9\u05EA \u05D0\u05E1\u05EA\u05E8", false, "");
-  add(hYearPrev, purimMonth, 14, "\u05E4\u05D5\u05E8\u05D9\u05DD", false, "\uD83C\uDFAD");
-  add(hYearPrev, purimMonth, 15, "\u05E9\u05D5\u05E9\u05DF \u05E4\u05D5\u05E8\u05D9\u05DD", false, "\uD83C\uDFAD");
-
-  // Also check current hYear for Purim (in case it falls in this year)
-  const purimMonth2 = isHebrewLeapYear(hYear) ? 7 : 6;
-  add(hYear, purimMonth2, 13, "\u05EA\u05E2\u05E0\u05D9\u05EA \u05D0\u05E1\u05EA\u05E8", false, "");
-  add(hYear, purimMonth2, 14, "\u05E4\u05D5\u05E8\u05D9\u05DD", false, "\uD83C\uDFAD");
-  add(hYear, purimMonth2, 15, "\u05E9\u05D5\u05E9\u05DF \u05E4\u05D5\u05E8\u05D9\u05DD", false, "\uD83C\uDFAD");
-
-  // Pesach (Nisan 15-22)
-  // These can be in hYearPrev (March/April of gYear)
+  // === PURIM — Adar 14 (or Adar II in leap year) ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 7, 14, "\u05E2\u05E8\u05D1 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
-    add(hy, 7, 15, "\u05E4\u05E1\u05D7 \u05D0\u05F3", true, "\uD83C\uDF77");
-    add(hy, 7, 16, "\u05E4\u05E1\u05D7 \u05D1\u05F3", true, "\uD83C\uDF77");
-    add(hy, 7, 17, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
-    add(hy, 7, 18, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
-    add(hy, 7, 19, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
-    add(hy, 7, 20, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
-    add(hy, 7, 21, "\u05E9\u05D1\u05D9\u05E2\u05D9 \u05E9\u05DC \u05E4\u05E1\u05D7", true, "\uD83C\uDF77");
+    const pm = purimAdarMonth(hy);
+    add(hy, pm, 13, "\u05EA\u05E2\u05E0\u05D9\u05EA \u05D0\u05E1\u05EA\u05E8", false, "");
+    add(hy, pm, 14, "\u05E4\u05D5\u05E8\u05D9\u05DD", false, "\uD83C\uDFAD");
+    add(hy, pm, 15, "\u05E9\u05D5\u05E9\u05DF \u05E4\u05D5\u05E8\u05D9\u05DD", false, "\uD83C\uDFAD");
   }
 
-  // Yom HaShoah (Nisan 27)
+  // === PESACH — Nisan 14-21 ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 7, 27, "\u05D9\u05D5\u05DD \u05D4\u05E9\u05D5\u05D0\u05D4", false, "\uD83D\uDD6F\uFE0F");
+    const nm = nisanMonth(hy);
+    add(hy, nm, 14, "\u05E2\u05E8\u05D1 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
+    add(hy, nm, 15, "\u05E4\u05E1\u05D7 \u05D0\u05F3", true, "\uD83C\uDF77");
+    add(hy, nm, 16, "\u05E4\u05E1\u05D7 \u05D1\u05F3", true, "\uD83C\uDF77");
+    add(hy, nm, 17, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
+    add(hy, nm, 18, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
+    add(hy, nm, 19, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
+    add(hy, nm, 20, "\u05D7\u05D5\u05DC \u05D4\u05DE\u05D5\u05E2\u05D3 \u05E4\u05E1\u05D7", false, "\uD83C\uDF77");
+    add(hy, nm, 21, "\u05E9\u05D1\u05D9\u05E2\u05D9 \u05E9\u05DC \u05E4\u05E1\u05D7", true, "\uD83C\uDF77");
   }
 
-  // Yom HaZikaron + Yom HaAtzmaut (Iyar 4-5)
+  // === YOM HASHOAH — Nisan 27 ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 8, 4, "\u05D9\u05D5\u05DD \u05D4\u05D6\u05D9\u05DB\u05E8\u05D5\u05DF", false, "\uD83D\uDD6F\uFE0F");
-    add(hy, 8, 5, "\u05D9\u05D5\u05DD \u05D4\u05E2\u05E6\u05DE\u05D0\u05D5\u05EA", false, "\uD83C\uDDEE\uD83C\uDDF1");
+    add(hy, nisanMonth(hy), 27, "\u05D9\u05D5\u05DD \u05D4\u05E9\u05D5\u05D0\u05D4", false, "\uD83D\uDD6F\uFE0F");
   }
 
-  // Lag BaOmer (Iyar 18)
+  // === YOM HAZIKARON + YOM HAATZMAUT — Iyar 4-5 ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 8, 18, "\u05DC\u05F4\u05D2 \u05D1\u05E2\u05D5\u05DE\u05E8", false, "\uD83D\uDD25");
+    add(hy, iyarMonth(hy), 4, "\u05D9\u05D5\u05DD \u05D4\u05D6\u05D9\u05DB\u05E8\u05D5\u05DF", false, "\uD83D\uDD6F\uFE0F");
+    add(hy, iyarMonth(hy), 5, "\u05D9\u05D5\u05DD \u05D4\u05E2\u05E6\u05DE\u05D0\u05D5\u05EA", false, "\uD83C\uDDEE\uD83C\uDDF1");
   }
 
-  // Yom Yerushalayim (Iyar 28)
+  // === LAG BAOMER — Iyar 18 ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 8, 28, "\u05D9\u05D5\u05DD \u05D9\u05E8\u05D5\u05E9\u05DC\u05D9\u05DD", false, "\uD83C\uDFDB\uFE0F");
+    add(hy, iyarMonth(hy), 18, "\u05DC\u05F4\u05D2 \u05D1\u05E2\u05D5\u05DE\u05E8", false, "\uD83D\uDD25");
   }
 
-  // Shavuot (Sivan 6-7)
+  // === YOM YERUSHALAYIM — Iyar 28 ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 9, 6, "\u05E9\u05D1\u05D5\u05E2\u05D5\u05EA", true, "\uD83D\uDCDC");
-    add(hy, 9, 7, "\u05E9\u05D1\u05D5\u05E2\u05D5\u05EA \u05D1\u05F3", true, "\uD83D\uDCDC");
+    add(hy, iyarMonth(hy), 28, "\u05D9\u05D5\u05DD \u05D9\u05E8\u05D5\u05E9\u05DC\u05D9\u05DD", false, "\uD83C\uDFDB\uFE0F");
   }
 
-  // Tzom 17 Tammuz
+  // === SHAVUOT — Sivan 6-7 ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 10, 17, "\u05E6\u05D5\u05DD \u05D9\u05F4\u05D6 \u05D1\u05EA\u05DE\u05D5\u05D6", false, "");
+    add(hy, sivanMonth(hy), 6, "\u05E9\u05D1\u05D5\u05E2\u05D5\u05EA", true, "\uD83D\uDCDC");
+    add(hy, sivanMonth(hy), 7, "\u05E9\u05D1\u05D5\u05E2\u05D5\u05EA \u05D1\u05F3", true, "\uD83D\uDCDC");
   }
 
-  // Tisha B'Av (Av 9)
+  // === TZOM 17 TAMMUZ ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 11, 9, "\u05EA\u05E9\u05E2\u05D4 \u05D1\u05D0\u05D1", false, "");
+    add(hy, tammuzMonth(hy), 17, "\u05E6\u05D5\u05DD \u05D9\u05F4\u05D6 \u05D1\u05EA\u05DE\u05D5\u05D6", false, "");
   }
 
-  // Tu B'Av (Av 15)
+  // === TISHA B'AV — Av 9 ===
   for (const hy of [hYearPrev, hYear]) {
-    add(hy, 11, 15, "\u05D8\u05F4\u05D5 \u05D1\u05D0\u05D1", false, "\u2764\uFE0F");
+    add(hy, avMonth(hy), 9, "\u05EA\u05E9\u05E2\u05D4 \u05D1\u05D0\u05D1", false, "");
+  }
+
+  // === TU B'AV — Av 15 ===
+  for (const hy of [hYearPrev, hYear]) {
+    add(hy, avMonth(hy), 15, "\u05D8\u05F4\u05D5 \u05D1\u05D0\u05D1", false, "\u2764\uFE0F");
   }
 
   // Deduplicate (same date might appear from both hYear cycles)
