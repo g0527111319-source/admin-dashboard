@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, Link2, Download, CheckCircle2, Loader2, Users, FolderOpen, X, Eye, Bell, Circle, ListChecks } from "lucide-react";
+import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Link2, Download, CheckCircle2, Loader2, Users, FolderOpen, X, Eye, Bell, Circle, ListChecks, CalendarSearch } from "lucide-react";
 import { getHebrewDateStr, getMonthHolidays, gregorianToHebrew } from "@/lib/hebrew-calendar";
 
 type CalendarEvent = {
@@ -56,6 +56,7 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [showJumpTo, setShowJumpTo] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -272,7 +273,21 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     else d.setDate(d.getDate() + dir);
     setCurrentDate(d);
   };
+  const navigateMonths = (count: number) => {
+    const d = new Date(currentDate);
+    d.setMonth(d.getMonth() + count);
+    setCurrentDate(d);
+  };
   const goToday = () => setCurrentDate(new Date());
+  const jumpToDate = (dateStr: string) => {
+    if (!dateStr) return;
+    const d = new Date(dateStr + "T12:00:00");
+    if (!isNaN(d.getTime())) { setCurrentDate(d); setShowJumpTo(false); }
+  };
+  const jumpToMonthYear = (month: number, year: number) => {
+    setCurrentDate(new Date(year, month, 1));
+    setShowJumpTo(false);
+  };
 
   const monthGrid = useMemo(() => {
     const year = currentDate.getFullYear(), month = currentDate.getMonth();
@@ -377,12 +392,99 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-bg-surface rounded-btn transition-colors"><ChevronRight className="w-5 h-5" /></button>
+        <div className="flex items-center gap-1">
+          {viewMode === "month" && (
+            <button onClick={() => navigateMonths(-12)} className="p-1.5 hover:bg-bg-surface rounded-btn transition-colors text-text-muted hover:text-text-primary" title="שנה אחורה">
+              <ChevronsRight className="w-4 h-4" />
+            </button>
+          )}
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-bg-surface rounded-btn transition-colors" title={viewMode === "month" ? "חודש אחורה" : viewMode === "week" ? "שבוע אחורה" : "יום אחורה"}>
+            <ChevronRight className="w-5 h-5" />
+          </button>
           <button onClick={goToday} className="px-3 py-1.5 text-xs border border-border-subtle rounded-lg hover:border-gold hover:text-gold transition-all">היום</button>
-          <button onClick={() => navigate(1)} className="p-2 hover:bg-bg-surface rounded-btn transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+          <button onClick={() => navigate(1)} className="p-2 hover:bg-bg-surface rounded-btn transition-colors" title={viewMode === "month" ? "חודש קדימה" : viewMode === "week" ? "שבוע קדימה" : "יום קדימה"}>
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          {viewMode === "month" && (
+            <button onClick={() => navigateMonths(12)} className="p-1.5 hover:bg-bg-surface rounded-btn transition-colors text-text-muted hover:text-text-primary" title="שנה קדימה">
+              <ChevronsLeft className="w-4 h-4" />
+            </button>
+          )}
+          <button onClick={() => setShowJumpTo(!showJumpTo)}
+            className={`p-2 rounded-btn transition-colors mr-1 ${showJumpTo ? "bg-gold/10 text-gold" : "hover:bg-bg-surface text-text-muted hover:text-text-primary"}`}
+            title="קפיצה לתאריך">
+            <CalendarSearch className="w-4.5 h-4.5" />
+          </button>
         </div>
       </div>
+
+      {/* Jump to date panel */}
+      {showJumpTo && (
+        <div className="card-static border border-gold/20 p-3 space-y-3 animate-in">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-text-primary flex items-center gap-1.5">
+              <CalendarSearch className="w-4 h-4 text-gold" /> קפיצה לתאריך
+            </h4>
+            <button onClick={() => setShowJumpTo(false)} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Date picker */}
+            <div>
+              <label className="text-text-secondary text-xs block mb-1">תאריך מדויק</label>
+              <input
+                type="date"
+                className="input-field text-sm py-1.5 px-2 w-40"
+                dir="ltr"
+                onChange={e => jumpToDate(e.target.value)}
+              />
+            </div>
+            {/* Month + Year selectors */}
+            <div>
+              <label className="text-text-secondary text-xs block mb-1">חודש</label>
+              <select
+                className="select-field text-sm py-1.5 px-2"
+                value={currentDate.getMonth()}
+                onChange={e => jumpToMonthYear(parseInt(e.target.value), currentDate.getFullYear())}
+              >
+                {monthNames.map((name, idx) => (
+                  <option key={idx} value={idx}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs block mb-1">שנה</label>
+              <select
+                className="select-field text-sm py-1.5 px-2"
+                value={currentDate.getFullYear()}
+                onChange={e => jumpToMonthYear(currentDate.getMonth(), parseInt(e.target.value))}
+              >
+                {Array.from({ length: 21 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {/* Quick jump buttons */}
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: "-6 חודשים", months: -6 },
+              { label: "-3 חודשים", months: -3 },
+              { label: "+3 חודשים", months: 3 },
+              { label: "+6 חודשים", months: 6 },
+              { label: "+שנה", months: 12 },
+              { label: "+שנתיים", months: 24 },
+            ].map(btn => (
+              <button
+                key={btn.months}
+                onClick={() => { navigateMonths(btn.months); setShowJumpTo(false); }}
+                className="px-2.5 py-1 text-xs rounded-lg border border-border-subtle hover:border-gold hover:text-gold transition-all"
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="text-center">
         <h3 className="text-lg font-heading text-text-primary">{viewTitle}</h3>
