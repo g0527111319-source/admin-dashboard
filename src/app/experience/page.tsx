@@ -59,6 +59,8 @@ import PinnedHorizontalScroll from "@/components/gallery/PinnedHorizontalScroll"
 import SupplierPremiumCard, {
   type SupplierCardData,
 } from "@/components/gallery/SupplierPremiumCard";
+import DepthSection from "@/components/motion/DepthSection";
+import { DEPTH_IMAGES } from "@/lib/depth-images";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -414,11 +416,18 @@ function HeroSection() {
   const bgScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
 
   return (
+    <DepthSection
+      image={DEPTH_IMAGES.minimalHall}
+      speed={0.4}
+      opacity={0.18}
+      overlayTone="none"
+      fullHeight
+    >
     <section
       ref={ref}
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
     >
-      {/* Background layers with parallax */}
+      {/* Background layers with parallax (layered on top of DepthSection's architectural backdrop) */}
       <motion.div
         aria-hidden
         style={{ y: reduced ? 0 : y, scale: reduced ? 1 : bgScale }}
@@ -502,6 +511,7 @@ function HeroSection() {
         </motion.div>
       </motion.div>
     </section>
+    </DepthSection>
   );
 }
 
@@ -519,6 +529,12 @@ function IntroSection() {
   const underlineWidth = useTransform(scrollYProgress, [0.2, 0.8], ["0%", "100%"]);
 
   return (
+    <DepthSection
+      image={DEPTH_IMAGES.warmWood}
+      speed={0.3}
+      opacity={0.09}
+      overlayTone="dark"
+    >
     <section
       ref={ref}
       className="relative py-32 sm:py-44 px-4 sm:px-6 max-w-5xl mx-auto"
@@ -554,6 +570,7 @@ function IntroSection() {
         </p>
       </RevealStagger>
     </section>
+    </DepthSection>
   );
 }
 
@@ -618,6 +635,12 @@ function GallerySection({
 
 function StatsSection() {
   return (
+    <DepthSection
+      image={DEPTH_IMAGES.concreteFacade}
+      speed={0.35}
+      opacity={0.08}
+      overlayTone="dark"
+    >
     <section className="relative py-24 sm:py-36 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <Reveal variant="up" amount={0.3}>
@@ -643,6 +666,7 @@ function StatsSection() {
         </div>
       </div>
     </section>
+    </DepthSection>
   );
 }
 
@@ -708,6 +732,13 @@ function StatCard({
 
 function ClosingCTA() {
   return (
+    <DepthSection
+      image={DEPTH_IMAGES.marble}
+      speed={0.5}
+      opacity={0.14}
+      overlayTone="brand"
+      blur
+    >
     <section className="relative py-32 sm:py-44 px-4 sm:px-6 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(201,168,76,0.15),transparent_55%)] pointer-events-none" />
 
@@ -747,6 +778,7 @@ function ClosingCTA() {
         </Reveal>
       </div>
     </section>
+    </DepthSection>
   );
 }
 

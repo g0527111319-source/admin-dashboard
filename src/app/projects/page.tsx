@@ -10,6 +10,8 @@ import Reveal, { RevealStagger } from "@/components/motion/Reveal";
 import MasonryGallery, { type MasonryItem } from "@/components/gallery/MasonryGallery";
 import Lightbox, { type LightboxImage } from "@/components/gallery/Lightbox";
 import MagneticButton from "@/components/motion/MagneticButton";
+import DepthSection from "@/components/motion/DepthSection";
+import { DEPTH_IMAGES } from "@/lib/depth-images";
 
 type ProjectImage = {
   id: string;
@@ -186,7 +188,13 @@ function ProjectsContent() {
         </div>
       </header>
 
-      {/* Hero — parallax + reveal */}
+      {/* Hero — parallax + reveal + architectural depth backdrop */}
+      <DepthSection
+        image={DEPTH_IMAGES.staircase}
+        speed={0.4}
+        opacity={0.12}
+        overlayTone="dark"
+      >
       <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden">
         {/* Decorative layers */}
         <motion.div
@@ -251,6 +259,7 @@ function ProjectsContent() {
           )}
         </div>
       </section>
+      </DepthSection>
 
       {/* Filters */}
       <Reveal variant="fade" amount={0.1}>
@@ -308,7 +317,13 @@ function ProjectsContent() {
         </section>
       </Reveal>
 
-      {/* Masonry Gallery */}
+      {/* Masonry Gallery — very subtle material backdrop behind the whole grid */}
+      <DepthSection
+        image={DEPTH_IMAGES.marble}
+        speed={0.3}
+        opacity={0.07}
+        overlayTone="dark"
+      >
       <section className="px-4 sm:px-6 pb-24">
         <div className="max-w-7xl mx-auto">
           {loading ? (
@@ -372,6 +387,7 @@ function ProjectsContent() {
           )}
         </div>
       </section>
+      </DepthSection>
 
       {/* Footer */}
       <footer className="bg-[#050505] py-8 px-4 border-t border-white/5">

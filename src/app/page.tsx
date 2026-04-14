@@ -16,6 +16,8 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import DepthSection from "@/components/motion/DepthSection";
+import { DEPTH_IMAGES } from "@/lib/depth-images";
 
 const entryCards = [
   {
@@ -85,15 +87,20 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-bg text-text-primary overflow-hidden">
       {/* ─── HERO ─── */}
-      <section className="relative isolate min-h-screen bg-[#050505] text-white">
-        {/* Background with parallax-style image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-fixed opacity-25 scale-105"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=2400&q=80')",
-          }}
-        />
+      {/*
+        HERO uses DepthSection for the backdrop (parallax architecture at 18%
+        opacity on black). The `bg-fixed` hack is gone — iOS-safe, GPU-friendly,
+        tied to the Lenis-driven scroll so the hall recedes as you scroll down.
+      */}
+      <DepthSection
+        image={DEPTH_IMAGES.minimalHall}
+        speed={0.35}
+        opacity={0.18}
+        overlayTone="none"
+        fullHeight
+        className="bg-[#050505] text-white"
+      >
+        <section className="relative isolate min-h-screen">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,168,76,0.28),transparent_32%),linear-gradient(135deg,rgba(5,5,5,0.92),rgba(5,5,5,0.65)_45%,rgba(15,15,15,0.88))]" />
         <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:90px_90px]" />
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[82vw] h-[82vw] max-w-[860px] max-h-[860px] rounded-full border border-gold/15" />
@@ -218,10 +225,21 @@ export default function HomePage() {
             <path d="M0 89C109 57 219 40 328 45C496 52 609 118 783 118C952 118 1088 23 1280 8C1334 4 1387 5 1440 12V120H0V89Z" fill="#FAF9F6" />
           </svg>
         </div>
-      </section>
+        </section>
+      </DepthSection>
 
       {/* ─── IMAGE GALLERY STRIP ─── */}
-      <section className="relative bg-bg py-14 sm:py-16 px-4 sm:px-6 overflow-hidden">
+      {/*
+        Light-themed strip. A very subtle warm-wood backdrop at 7% peeks through
+        the cream overlay — depth without competing with the cards.
+      */}
+      <DepthSection
+        image={DEPTH_IMAGES.warmWood}
+        speed={0.3}
+        opacity={0.07}
+        overlayTone="light"
+      >
+      <section className="relative py-14 sm:py-16 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(201,168,76,0.06),transparent)]" />
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10">
@@ -256,9 +274,20 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </DepthSection>
 
       {/* ─── FEATURES SECTION ─── */}
-      <section className="relative py-20 sm:py-24 px-4 sm:px-6 bg-bg">
+      {/*
+        Features & lobby showcase. Natural-light interior is the bg, softly
+        visible at 8% so the cards feel like they sit on a real space.
+      */}
+      <DepthSection
+        image={DEPTH_IMAGES.naturalLight}
+        speed={0.35}
+        opacity={0.08}
+        overlayTone="light"
+      >
+      <section className="relative py-20 sm:py-24 px-4 sm:px-6">
         <div className="relative max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start mb-14">
             <div>
@@ -363,18 +392,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── PROJECTS GALLERY CTA ─── */}
-      <section className="relative py-16 px-4 sm:px-6 overflow-hidden">
-        {/* Full-bleed background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-fixed"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=2400&q=80')",
-          }}
-        />
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+      </DepthSection>
 
+      {/* ─── PROJECTS GALLERY CTA ─── */}
+      {/*
+        Full-bleed promo card over a parallax lobby backdrop. The image now
+        recedes as the user scrolls — much more premium than the old bg-fixed.
+      */}
+      <DepthSection
+        image={DEPTH_IMAGES.lobby}
+        speed={0.45}
+        opacity={0.22}
+        overlayTone="dark"
+        blur
+      >
+      <section className="relative py-16 px-4 sm:px-6 overflow-hidden">
         <div className="relative max-w-7xl mx-auto">
           <div className="rounded-[28px] border border-gold/25 bg-white/5 backdrop-blur-md p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
@@ -394,6 +426,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </DepthSection>
 
       {/* ─── FOOTER ─── */}
       <footer className="bg-[#050505] py-8 px-4 border-t border-white/5">
