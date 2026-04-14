@@ -36,6 +36,8 @@ import FeatureGate from "@/components/FeatureGate";
 import NotificationBell from "@/components/NotificationBell";
 import AccountSettings from "@/components/designer/AccountSettings";
 import { useParams } from "next/navigation";
+import DepthSection from "@/components/motion/DepthSection";
+import { DEPTH_IMAGES } from "@/lib/depth-images";
 
 import { SUPPLIER_CATEGORIES, AREAS, formatCurrency } from "@/lib/utils";
 import { g } from "@/lib/gender";
@@ -544,6 +546,19 @@ export default function DesignerDashboard() {
           ${sidebarOpen ? "mr-[260px]" : "mr-[72px]"}
           max-md:mr-0
         `}>
+          {/*
+            Ambient depth layer — warm-wood backdrop at 8% opacity gives the
+            workspace a subtle "studio" atmosphere without competing with CRM
+            data. Confined to the main area (the sidebar is outside this <main>
+            block, so its scroll is untouched).
+          */}
+          <DepthSection
+            image={DEPTH_IMAGES.warmWood}
+            opacity={0.08}
+            overlayTone="dark"
+            speed={0.25}
+            className="min-h-[calc(100vh-4rem)]"
+          >
           <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
 
             {/* ===== HOME TAB ===== */}
@@ -1427,6 +1442,7 @@ export default function DesignerDashboard() {
               </FeatureGate>
             )}
           </div>
+          </DepthSection>
         </main>
 
         {/* Deal Modal */}
