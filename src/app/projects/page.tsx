@@ -190,9 +190,9 @@ function ProjectsContent() {
 
       {/* Hero — parallax + reveal + architectural depth backdrop */}
       <DepthSection
-        image={DEPTH_IMAGES.staircase}
+        image={DEPTH_IMAGES.designerHome}
         speed={0.4}
-        opacity={0.12}
+        opacity={0.16}
         overlayTone="dark"
       >
       <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden">
@@ -317,11 +317,11 @@ function ProjectsContent() {
         </section>
       </Reveal>
 
-      {/* Masonry Gallery — very subtle material backdrop behind the whole grid */}
+      {/* Masonry Gallery — beautiful marble material peeks through behind the whole grid */}
       <DepthSection
-        image={DEPTH_IMAGES.marble}
+        image={DEPTH_IMAGES.marbleCounter}
         speed={0.3}
-        opacity={0.07}
+        opacity={0.12}
         overlayTone="dark"
       >
       <section className="px-4 sm:px-6 pb-24">

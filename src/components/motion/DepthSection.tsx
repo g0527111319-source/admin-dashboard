@@ -41,7 +41,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 
-type OverlayTone = "dark" | "light" | "brand" | "none";
+type OverlayTone = "dark" | "light" | "airy" | "brand" | "none";
 
 type Props = {
   children: ReactNode;
@@ -62,7 +62,9 @@ type Props = {
   /**
    * Overlay tone — colored scrim on top of the bg image.
    *   - "dark"  : black→transparent→black (for dark sections / white text)
-   *   - "light" : white→transparent→white (for light sections / dark text)
+   *   - "light" : cream wash — legible on light UI (stronger mute than "airy")
+   *   - "airy"  : soft cream wash that keeps the image visible — use on light
+   *              UI when you want the design photo to actually read
    *   - "brand" : subtle gold radial + dark scrim (hero sections)
    *   - "none"  : no overlay (only use if opacity ≤ 0.08)
    */
@@ -84,6 +86,11 @@ const OVERLAY_STYLES: Record<OverlayTone, string> = {
     "linear-gradient(180deg, rgba(5,5,5,0.80) 0%, rgba(5,5,5,0.55) 45%, rgba(5,5,5,0.85) 100%)",
   light:
     "linear-gradient(180deg, rgba(250,249,246,0.92) 0%, rgba(250,249,246,0.80) 45%, rgba(250,249,246,0.95) 100%)",
+  // "airy" is a much softer cream wash than "light" — it keeps text legible
+  // but lets the underlying design photo actually show through, so the
+  // beautiful homes / materials we put behind the section are visible.
+  airy:
+    "linear-gradient(180deg, rgba(250,249,246,0.72) 0%, rgba(250,249,246,0.42) 45%, rgba(250,249,246,0.78) 100%)",
   brand:
     "radial-gradient(60% 60% at 70% 20%, rgba(201,168,76,0.18), transparent 55%), linear-gradient(180deg, rgba(5,5,5,0.78) 0%, rgba(5,5,5,0.55) 50%, rgba(5,5,5,0.88) 100%)",
   none: "transparent",

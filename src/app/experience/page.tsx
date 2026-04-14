@@ -417,9 +417,9 @@ function HeroSection() {
 
   return (
     <DepthSection
-      image={DEPTH_IMAGES.minimalHall}
+      image={DEPTH_IMAGES.archHouse}
       speed={0.4}
-      opacity={0.18}
+      opacity={0.22}
       overlayTone="none"
       fullHeight
     >
@@ -530,9 +530,9 @@ function IntroSection() {
 
   return (
     <DepthSection
-      image={DEPTH_IMAGES.warmWood}
+      image={DEPTH_IMAGES.designerHome}
       speed={0.3}
-      opacity={0.09}
+      opacity={0.13}
       overlayTone="dark"
     >
     <section
@@ -636,9 +636,9 @@ function GallerySection({
 function StatsSection() {
   return (
     <DepthSection
-      image={DEPTH_IMAGES.concreteFacade}
+      image={DEPTH_IMAGES.modernVilla}
       speed={0.35}
-      opacity={0.08}
+      opacity={0.12}
       overlayTone="dark"
     >
     <section className="relative py-24 sm:py-36 px-4 sm:px-6">

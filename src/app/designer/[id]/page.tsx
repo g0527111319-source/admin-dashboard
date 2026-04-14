@@ -547,15 +547,16 @@ export default function DesignerDashboard() {
           max-md:mr-0
         `}>
           {/*
-            Ambient depth layer — warm-wood backdrop at 8% opacity gives the
-            workspace a subtle "studio" atmosphere without competing with CRM
-            data. Confined to the main area (the sidebar is outside this <main>
-            block, so its scroll is untouched).
+            Ambient depth layer — a bright design-world photo (natural-light
+            interior) at 14% opacity under a soft cream "airy" overlay. This
+            gives the workspace a studio/design-magazine atmosphere without
+            competing with CRM data. Confined to the main area — the sidebar
+            is outside this <main> block, so its scroll is untouched.
           */}
           <DepthSection
-            image={DEPTH_IMAGES.warmWood}
-            opacity={0.08}
-            overlayTone="dark"
+            image={DEPTH_IMAGES.naturalLight}
+            opacity={0.14}
+            overlayTone="airy"
             speed={0.25}
             className="min-h-[calc(100vh-4rem)]"
           >

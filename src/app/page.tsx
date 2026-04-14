@@ -93,9 +93,9 @@ export default function HomePage() {
         tied to the Lenis-driven scroll so the hall recedes as you scroll down.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.minimalHall}
+        image={DEPTH_IMAGES.archHouse}
         speed={0.35}
-        opacity={0.18}
+        opacity={0.22}
         overlayTone="none"
         fullHeight
         className="bg-[#050505] text-white"
@@ -230,14 +230,15 @@ export default function HomePage() {
 
       {/* ─── IMAGE GALLERY STRIP ─── */}
       {/*
-        Light-themed strip. A very subtle warm-wood backdrop at 7% peeks through
-        the cream overlay — depth without competing with the cards.
+        Light-themed strip. Beautiful marble counter peeks through a soft
+        "airy" cream wash — the design material actually reads now, not
+        a whisper under a heavy overlay.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.warmWood}
+        image={DEPTH_IMAGES.marbleCounter}
         speed={0.3}
-        opacity={0.07}
-        overlayTone="light"
+        opacity={0.14}
+        overlayTone="airy"
       >
       <section className="relative py-14 sm:py-16 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(201,168,76,0.06),transparent)]" />
@@ -278,14 +279,15 @@ export default function HomePage() {
 
       {/* ─── FEATURES SECTION ─── */}
       {/*
-        Features & lobby showcase. Natural-light interior is the bg, softly
-        visible at 8% so the cards feel like they sit on a real space.
+        Features section. A bright designer home peeks through a soft cream
+        wash at 12% — the cards feel like they sit inside a real, beautiful
+        interior instead of floating on flat cream.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.naturalLight}
+        image={DEPTH_IMAGES.designerHome}
         speed={0.35}
-        opacity={0.08}
-        overlayTone="light"
+        opacity={0.12}
+        overlayTone="airy"
       >
       <section className="relative py-20 sm:py-24 px-4 sm:px-6">
         <div className="relative max-w-7xl mx-auto">
@@ -396,14 +398,15 @@ export default function HomePage() {
 
       {/* ─── PROJECTS GALLERY CTA ─── */}
       {/*
-        Full-bleed promo card over a parallax lobby backdrop. The image now
-        recedes as the user scrolls — much more premium than the old bg-fixed.
+        Full-bleed promo card over a parallax villa backdrop. A gold radial
+        "brand" overlay accents the image without muting it entirely, so a
+        real designer home is visible behind the CTA.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.lobby}
+        image={DEPTH_IMAGES.modernVilla}
         speed={0.45}
-        opacity={0.22}
-        overlayTone="dark"
+        opacity={0.26}
+        overlayTone="brand"
         blur
       >
       <section className="relative py-16 px-4 sm:px-6 overflow-hidden">
