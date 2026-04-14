@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Link2, Download, CheckCircle2, Loader2, Users, FolderOpen, X, Eye, Bell, Circle, ListChecks, CalendarSearch } from "lucide-react";
 import { getHebrewDateStr, getMonthHolidays, gregorianToHebrew } from "@/lib/hebrew-calendar";
 
@@ -57,6 +57,7 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showJumpTo, setShowJumpTo] = useState(false);
+  const addFormRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -77,6 +78,13 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     const h = getMonthHolidays(currentDate.getFullYear(), currentDate.getMonth() + 1);
     setHolidays(h);
   }, [currentDate]);
+
+  // Scroll to form when opened
+  useEffect(() => {
+    if (showAdd && addFormRef.current) {
+      setTimeout(() => addFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+    }
+  }, [showAdd]);
 
   // Fetch local CRM events
   const fetchEvents = useCallback(async () => {
@@ -197,10 +205,11 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
 
   // Create event
   const handleCreate = async () => {
-    if (!formData.title.trim() || !formData.startAt) return;
+    if (!formData.title.trim()) { alert("יש להזין כותרת"); return; }
+    if (!formData.startAt) { alert("יש להזין זמן התחלה"); return; }
     setSaving(true);
     try {
-      await fetch("/api/designer/crm/calendar", {
+      const res = await fetch("/api/designer/crm/calendar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -211,18 +220,23 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
           reminderMin: formData.reminderMin ? parseInt(formData.reminderMin) : null,
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "שגיאה ביצירת אירוע");
+        return;
+      }
       setShowAdd(false);
       resetForm();
       fetchEvents();
-    } catch { /* */ } finally { setSaving(false); }
+    } catch { alert("שגיאת רשת"); } finally { setSaving(false); }
   };
 
   // Create task
   const handleCreateTask = async () => {
-    if (!taskFormData.title.trim()) return;
+    if (!taskFormData.title.trim()) { alert("יש להזין כותרת"); return; }
     setSaving(true);
     try {
-      await fetch("/api/designer/crm/tasks", {
+      const res = await fetch("/api/designer/crm/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -233,10 +247,15 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
           projectId: taskFormData.projectId || null,
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "שגיאה ביצירת משימה");
+        return;
+      }
       setShowAdd(false);
       setTaskFormData({ title: "", description: "", dueDate: "", clientId: "", projectId: "" });
       fetchTasks();
-    } catch { /* */ } finally { setSaving(false); }
+    } catch { alert("שגיאת רשת"); } finally { setSaving(false); }
   };
 
   const resetForm = () => setFormData({ title: "", description: "", startAt: "", endAt: "", location: "", isAllDay: false, color: "#2563eb", projectId: "", clientId: "", reminderMin: "" });
@@ -493,7 +512,7 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
 
       {/* ======== ADD FORM ======== */}
       {showAdd && (
-        <div className="card-static space-y-3 border border-gold/30">
+        <div ref={addFormRef} className="card-static space-y-3 border border-gold/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 bg-bg-surface rounded-lg p-1">
               <button onClick={() => setAddMode("event")} className={`px-3 py-1 text-xs rounded-md ${addMode === "event" ? "bg-white shadow-sm text-gold font-medium" : "text-text-muted"}`}>
