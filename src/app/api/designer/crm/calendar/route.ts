@@ -99,6 +99,33 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Log activity for client/project history
+    if (clientId || projectId) {
+      try {
+        const eventDate = new Date(startAt);
+        const dateStr = eventDate.toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
+        const timeStr = (isAllDay ?? false) ? "כל היום" : eventDate.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+        await prisma.crmActivityLog.create({
+          data: {
+            designerId,
+            action: "meeting_scheduled",
+            projectId: projectId || null,
+            clientId: clientId || null,
+            entityType: "calendar_event",
+            entityId: event.id,
+            metadata: {
+              title: title.trim(),
+              date: dateStr,
+              time: timeStr,
+              ...(location?.trim() ? { location: location.trim() } : {}),
+            },
+          },
+        });
+      } catch (logErr) {
+        console.error("Activity log creation failed:", logErr);
+      }
+    }
+
     // Auto-sync to Google Calendar if connected
     try {
       const gcalConfig = await prisma.designerGoogleCalendar.findUnique({

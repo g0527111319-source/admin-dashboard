@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import {
   Clock, CheckCircle2, Send, Image, MessageSquare, FileText,
-  Upload, Star, Palette, Eye, UserCheck, Calendar, Filter
+  Upload, Star, Palette, Eye, UserCheck, Calendar, Filter,
+  CalendarPlus, MapPin, ListChecks
 } from "lucide-react";
 
 type ActivityLog = {
@@ -34,6 +35,8 @@ const ACTION_CONFIG: Record<string, { label: string; icon: typeof Clock; color: 
   moodboard_shared: { label: "מודבורד שותף", icon: Palette, color: "text-pink-500 bg-pink-50" },
   survey_completed: { label: "סקר שביעות רצון", icon: Star, color: "text-yellow-500 bg-yellow-50" },
   recommendation_received: { label: "המלצה התקבלה", icon: Star, color: "text-gold bg-amber-50" },
+  meeting_scheduled: { label: "פגישה/אירוע נקבעו", icon: CalendarPlus, color: "text-gold bg-amber-50" },
+  task_created: { label: "משימה נוצרה", icon: ListChecks, color: "text-orange-600 bg-orange-50" },
 };
 
 const DEFAULT_ACTION = { label: "פעולה", icon: Clock, color: "text-gray-500 bg-gray-50" };
@@ -143,9 +146,25 @@ export default function CrmTimeline({ clientId, projectId }: { clientId?: string
                             )}
                           </div>
                           {log.metadata && typeof log.metadata === "object" && Object.keys(log.metadata).length > 0 && (
-                            <p className="text-xs text-text-muted mt-1">
-                              {Object.entries(log.metadata).map(([k, v]) => `${k}: ${v}`).join(" • ")}
-                            </p>
+                            log.action === "meeting_scheduled" ? (
+                              <div className="text-xs text-text-muted mt-1.5 space-y-0.5">
+                                {(log.metadata as Record<string, string>).title && (
+                                  <p className="font-medium text-text-primary">{(log.metadata as Record<string, string>).title}</p>
+                                )}
+                                <p>
+                                  <Calendar className="w-3 h-3 inline ml-1" />
+                                  {(log.metadata as Record<string, string>).date}
+                                  {(log.metadata as Record<string, string>).time && ` • ${(log.metadata as Record<string, string>).time}`}
+                                </p>
+                                {(log.metadata as Record<string, string>).location && (
+                                  <p><MapPin className="w-3 h-3 inline ml-1" />{(log.metadata as Record<string, string>).location}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-text-muted mt-1">
+                                {Object.entries(log.metadata).map(([k, v]) => `${k}: ${v}`).join(" • ")}
+                              </p>
+                            )
                           )}
                         </div>
                       </div>

@@ -62,6 +62,29 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Log activity for client/project history
+    if (clientId || projectId) {
+      try {
+        const dueDateStr = dueDate ? new Date(dueDate).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" }) : null;
+        await prisma.crmActivityLog.create({
+          data: {
+            designerId,
+            action: "task_created",
+            projectId: projectId || null,
+            clientId: clientId || null,
+            entityType: "task",
+            entityId: task.id,
+            metadata: {
+              title: title.trim(),
+              ...(dueDateStr ? { dueDate: dueDateStr } : {}),
+            },
+          },
+        });
+      } catch (logErr) {
+        console.error("Activity log creation failed:", logErr);
+      }
+    }
+
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
     console.error("Task create error:", error);
