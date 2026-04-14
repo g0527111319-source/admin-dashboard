@@ -38,7 +38,7 @@ export const DEFAULT_PLANS: Array<{
   },
   {
     slug: "pro",
-    name: "מקצועי",
+    name: "מנוי בתשלום",
     price: 149,
     description: "גישה מלאה — CRM, ניהול לקוחות, כרטיס ביקור וחוזים",
     features: {
@@ -53,41 +53,10 @@ export const DEFAULT_PLANS: Array<{
     },
     sortOrder: 2,
   },
-  {
-    slug: "pro-discounted",
-    name: "מקצועי מופחת",
-    price: 79,
-    description: "מחיר מופחת למעצבות ששיתפו פעולה עם ספקים",
-    features: {
-      events: true,
-      suppliers: true,
-      raffles: true,
-      crm: true,
-      businessCard: true,
-      contracts: true,
-      portfolio: true,
-      messages: true,
-    },
-    sortOrder: 3,
-  },
-  {
-    slug: "premium-free",
-    name: "פרימיום חינם",
-    price: 0,
-    description: "שדרוג חינם למעצבות המובילות בשיתופי פעולה",
-    features: {
-      events: true,
-      suppliers: true,
-      raffles: true,
-      crm: true,
-      businessCard: true,
-      contracts: true,
-      portfolio: true,
-      messages: true,
-    },
-    sortOrder: 4,
-  },
 ];
+
+/** Legacy plan slugs that should be deactivated to keep only free + pro visible */
+const LEGACY_PLAN_SLUGS = ["pro-discounted", "premium-free"];
 
 export async function seedSubscriptionPlans() {
   const results = [];
@@ -111,8 +80,34 @@ export async function seedSubscriptionPlans() {
       });
       results.push({ created: true, plan: created });
     } else {
-      results.push({ created: false, plan: existing });
+      // Keep name/description/price/features aligned with current defaults
+      const updated = await prisma.subscriptionPlan.update({
+        where: { slug: plan.slug },
+        data: {
+          name: plan.name,
+          description: plan.description,
+          price: plan.price,
+          features: plan.features as unknown as object,
+          sortOrder: plan.sortOrder,
+          isActive: true,
+        },
+      });
+      results.push({ created: false, plan: updated });
     }
   }
+
+  // Deactivate legacy plans that were replaced by the simplified two-tier system.
+  // Existing subscriptions still keep their plan association, but new users only see free + pro.
+  for (const slug of LEGACY_PLAN_SLUGS) {
+    try {
+      await prisma.subscriptionPlan.updateMany({
+        where: { slug, isActive: true },
+        data: { isActive: false },
+      });
+    } catch {
+      // plan may not exist — ignore
+    }
+  }
+
   return results;
 }

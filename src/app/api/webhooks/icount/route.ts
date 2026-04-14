@@ -25,11 +25,12 @@ type IcountWebhookEvent = {
 };
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
   try {
     // 1. Rate limit (item 15) — 60 requests/min per IP
-    const ip = getClientIp(req);
     const rl = await rateLimit(`webhook:icount:${ip}`, 60, 60);
     if (!rl.allowed) {
+      console.warn(`[iCount webhook] rate-limited ip=${ip}`);
       return NextResponse.json({ error: "rate limited" }, { status: 429 });
     }
 
@@ -40,7 +41,14 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-signature") ||
       null;
 
+    console.info(
+      `[iCount webhook] received ip=${ip} signatureProvided=${!!signature} bodyLen=${rawBody.length}`
+    );
+
     if (!verifyWebhookSignature(rawBody, signature)) {
+      console.error(
+        `[iCount webhook] signature verification failed ip=${ip} hasSignature=${!!signature}`
+      );
       return NextResponse.json({ error: "invalid signature" }, { status: 401 });
     }
 
@@ -48,11 +56,15 @@ export async function POST(req: NextRequest) {
     try {
       event = JSON.parse(rawBody);
     } catch {
+      console.error("[iCount webhook] invalid JSON body");
       return NextResponse.json({ error: "invalid json" }, { status: 400 });
     }
 
     const eventType = (event.event || event.type || "").toLowerCase();
     const eventId = event.event_id || event.id || null;
+    console.info(
+      `[iCount webhook] event=${eventType} eventId=${eventId} subscriptionId=${event.subscription_id || "-"} clientId=${event.client_id || "-"} amount=${event.amount || "-"}`
+    );
 
     // 3. Idempotency check (item 2)
     if (eventId) {

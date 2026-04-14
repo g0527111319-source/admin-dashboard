@@ -22,6 +22,14 @@ export async function POST(
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
     }
 
+    // SECURITY: verify that the category belongs to this designer's project.
+    const category = await prisma.crmMaterialCategory.findFirst({
+      where: { id: categoryId, projectId },
+    });
+    if (!category) {
+      return NextResponse.json({ error: "קטגוריה לא נמצאה" }, { status: 404 });
+    }
+
     const body = await req.json();
     const { productName, supplierName, price, notes, imageUrl, isVisibleToClient } = body;
 
@@ -59,7 +67,7 @@ export async function PATCH(
       return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
     }
 
-    const { projectId } = await params;
+    const { projectId, categoryId } = await params;
 
     const project = await prisma.crmProject.findFirst({
       where: { id: projectId, designerId, deletedAt: null },
@@ -73,6 +81,19 @@ export async function PATCH(
 
     if (!itemId) {
       return NextResponse.json({ error: "מזהה פריט הוא שדה חובה" }, { status: 400 });
+    }
+
+    // SECURITY: verify that the item belongs to the category within this
+    // designer's project. Prevents cross-tenant writes via guessed itemId.
+    const existingItem = await prisma.crmMaterialItem.findFirst({
+      where: {
+        id: itemId,
+        categoryId,
+        category: { projectId },
+      },
+    });
+    if (!existingItem) {
+      return NextResponse.json({ error: "פריט לא נמצא" }, { status: 404 });
     }
 
     const item = await prisma.crmMaterialItem.update({
@@ -112,6 +133,14 @@ export async function DELETE(
     });
     if (!project) {
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
+    }
+
+    // SECURITY: verify that the category belongs to this project before deletion.
+    const category = await prisma.crmMaterialCategory.findFirst({
+      where: { id: categoryId, projectId },
+    });
+    if (!category) {
+      return NextResponse.json({ error: "קטגוריה לא נמצאה" }, { status: 404 });
     }
 
     // Cascade delete handled by Prisma schema (onDelete: Cascade on items)

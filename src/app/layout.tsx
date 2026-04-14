@@ -3,6 +3,7 @@ import { Heebo, Assistant, Frank_Ruhl_Libre } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import AccessibilityWidget from "@/components/AccessibilityWidget";
 import GlobalSearch from "@/components/GlobalSearch";
+import SmoothScrollProvider from "@/components/motion/SmoothScrollProvider";
 import "./globals.css";
 
 const heebo = Heebo({
@@ -46,7 +47,7 @@ export default function RootLayout({ children, }: Readonly<{
         {/* i18n: client portal uses its own language switcher via client-portal-lang key */}
       </head>
       <body className="font-body antialiased min-h-screen bg-bg text-text-primary">
-        {children}
+        <SmoothScrollProvider>{children}</SmoothScrollProvider>
         <GlobalSearch />
         <AccessibilityWidget />
         <Analytics />

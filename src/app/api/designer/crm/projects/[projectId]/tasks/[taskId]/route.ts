@@ -22,6 +22,14 @@ export async function PATCH(
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
     }
 
+    // SECURITY: verify the task belongs to this designer AND this project.
+    const existingTask = await prisma.crmTask.findFirst({
+      where: { id: taskId, projectId, designerId },
+    });
+    if (!existingTask) {
+      return NextResponse.json({ error: "משימה לא נמצאה" }, { status: 404 });
+    }
+
     const body = await req.json();
     const { title, description, assignee, dueDate, status } = body;
 
@@ -64,6 +72,14 @@ export async function DELETE(
     });
     if (!project) {
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
+    }
+
+    // SECURITY: verify the task belongs to this designer AND this project.
+    const existingTask = await prisma.crmTask.findFirst({
+      where: { id: taskId, projectId, designerId },
+    });
+    if (!existingTask) {
+      return NextResponse.json({ error: "משימה לא נמצאה" }, { status: 404 });
     }
 
     await prisma.crmTask.delete({ where: { id: taskId } });

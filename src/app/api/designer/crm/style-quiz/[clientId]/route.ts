@@ -44,7 +44,22 @@ export async function POST(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
+    // SECURITY: verify authenticated designer owns this client before
+    // accepting / upserting any quiz response.
+    const designerId = req.headers.get("x-user-id");
+    if (!designerId) {
+      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    }
+
     const { clientId } = await params;
+
+    const client = await prisma.crmClient.findFirst({
+      where: { id: clientId, designerId, deletedAt: null },
+    });
+    if (!client) {
+      return NextResponse.json({ error: "לקוח לא נמצא" }, { status: 404 });
+    }
+
     const body = await req.json();
     const { questionId, answer } = body;
 

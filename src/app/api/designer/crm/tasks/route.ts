@@ -102,6 +102,14 @@ export async function PATCH(req: NextRequest) {
     const { id, ...updates } = body;
     if (!id) return NextResponse.json({ error: "חסר מזהה" }, { status: 400 });
 
+    // SECURITY: ensure the task belongs to the authenticated designer.
+    const existingTask = await prisma.crmTask.findFirst({
+      where: { id, designerId },
+    });
+    if (!existingTask) {
+      return NextResponse.json({ error: "משימה לא נמצאה" }, { status: 404 });
+    }
+
     // Status change logic
     if (updates.status === "DONE") updates.completedAt = new Date();
     if (updates.status && updates.status !== "DONE") updates.completedAt = null;
@@ -132,6 +140,14 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const taskId = searchParams.get("id");
     if (!taskId) return NextResponse.json({ error: "חסר מזהה" }, { status: 400 });
+
+    // SECURITY: ensure the task belongs to the authenticated designer.
+    const existingTask = await prisma.crmTask.findFirst({
+      where: { id: taskId, designerId },
+    });
+    if (!existingTask) {
+      return NextResponse.json({ error: "משימה לא נמצאה" }, { status: 404 });
+    }
 
     await prisma.crmTask.delete({ where: { id: taskId } });
     return NextResponse.json({ success: true });

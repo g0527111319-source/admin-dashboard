@@ -466,18 +466,9 @@ export default function SubscriptionsAdminPage() {
                             </button>
                           </>
                         )}
-                        <button
-                          onClick={() => promoteTo(d, "pro-discounted")}
-                          className="px-2 py-1 bg-[#C9A84C]/20 hover:bg-[#C9A84C]/30 text-[#C9A84C] rounded text-xs"
-                        >
-                          מופחת
-                        </button>
-                        <button
-                          onClick={() => promoteTo(d, "premium-free")}
-                          className="px-2 py-1 bg-[#C9A84C]/20 hover:bg-[#C9A84C]/30 text-[#C9A84C] rounded text-xs"
-                        >
-                          פרימיום חינם
-                        </button>
+                        {/* Legacy promotion tiers (pro-discounted / premium-free) were removed
+                            when the subscription model was simplified to free + pro. Discounts
+                            for supplier collaborators are now applied via coupons (see /admin/coupons). */}
                         {d.subscription && (
                           <button
                             onClick={() =>

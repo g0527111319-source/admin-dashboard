@@ -167,9 +167,33 @@ export default function DesignerSubscriptionPage() {
   useEffect(() => {
     const paymentStatus = searchParams?.get("payment");
     const planId = searchParams?.get("planId");
+    const cardStatus = searchParams?.get("card");
+
     if (paymentStatus === "callback" && planId && designerId) {
-      // Payment was already completed on iCount PayPage — skip re-charging
-      handleSubscribe(planId, "paypage");
+      // Payment was already completed on iCount PayPage — activate subscription,
+      // then verify with iCount directly as a safety net in case the IPN webhook
+      // was delayed or misconfigured.
+      (async () => {
+        try {
+          await handleSubscribe(planId, "paypage");
+        } catch {
+          // error already set
+        }
+        // Safety-net verification: query iCount for the recent doc to confirm payment
+        try {
+          await fetch("/api/designer/subscription/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-user-id": designerId },
+            body: JSON.stringify({ planId }),
+          });
+        } catch {
+          // verification best-effort only
+        }
+      })();
+    } else if (cardStatus === "updated") {
+      setSuccessMsg("כרטיס האשראי עודכן בהצלחה. הכרטיס החדש ישמש לחיובים הבאים.");
+    } else if (cardStatus === "cancelled") {
+      setError("החלפת הכרטיס בוטלה");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -315,6 +339,35 @@ export default function DesignerSubscriptionPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "שגיאה בשינוי המנוי");
       throw e;
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleUpdateCard() {
+    setActionLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/designer/subscription/update-card`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-user-id": designerId },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "שגיאה בהחלפת כרטיס");
+      }
+      if (data.mock) {
+        setError(
+          data.message ||
+            "מצב בדיקה — מערכת iCount לא מחוברת. יש להגדיר את פרטי iCount בהגדרות המערכת.",
+        );
+        return;
+      }
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "שגיאה בהחלפת כרטיס");
     } finally {
       setActionLoading(false);
     }
@@ -488,6 +541,19 @@ export default function DesignerSubscriptionPage() {
             onSelect={(planId) => handlePlanSelect(planId)}
             loading={actionLoading}
           />
+
+          {/* Supplier collaboration discount notice */}
+          <div className="mt-6 bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-2xl p-5 flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-[#C9A84C] flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[#C9A84C] font-bold text-sm mb-1">
+                מעצב/ת שמשתפ/ת פעולה עם ספקי קהילת זירת האדריכלות זכאי/ת להנחה משמעותית
+              </p>
+              <p className="text-white/70 text-xs leading-relaxed">
+                הפרטים המלאים בקהילת זירת האדריכלות. שיתוף פעולה עם ספקי הקהילה מזכה בקופון הנחה על המנוי בתשלום.
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* ==================== Payment Method ==================== */}
@@ -498,29 +564,50 @@ export default function DesignerSubscriptionPage() {
               אמצעי תשלום
             </h2>
             <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-10 rounded-md bg-gradient-to-br from-[#C9A84C] to-[#8a6f2a] flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-black" />
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-10 rounded-md bg-gradient-to-br from-[#C9A84C] to-[#8a6f2a] flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-black" />
+                  </div>
+                  {hasRealPayment ? (
+                    <div>
+                      <p className="text-white font-medium">כרטיס אשראי שמור ב-iCount</p>
+                      <p className="text-white/50 text-xs">
+                        חיוב אחרון: {formatDate(subscription.lastPaymentAt)}
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-amber-400 font-medium flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        מערכת סליקה לא מחוברת
+                      </p>
+                      <p className="text-white/50 text-xs">
+                        יש להגדיר פרטי iCount בהגדרות המערכת כדי לאפשר חיובים אמיתיים
+                      </p>
+                    </div>
+                  )}
                 </div>
-                {hasRealPayment ? (
-                  <div>
-                    <p className="text-white font-medium">כרטיס אשראי שמור ב-iCount</p>
-                    <p className="text-white/50 text-xs">
-                      חיוב אחרון: {formatDate(subscription.lastPaymentAt)}
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-amber-400 font-medium flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      מערכת סליקה לא מחוברת
-                    </p>
-                    <p className="text-white/50 text-xs">
-                      יש להגדיר פרטי iCount בהגדרות המערכת כדי לאפשר חיובים אמיתיים
-                    </p>
-                  </div>
+                {hasRealPayment && (
+                  <button
+                    onClick={handleUpdateCard}
+                    disabled={actionLoading}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#C9A84C]/40 text-[#C9A84C] hover:bg-[#C9A84C]/10 transition-colors text-sm disabled:opacity-50"
+                  >
+                    {actionLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4" />
+                    )}
+                    החלף כרטיס אשראי
+                  </button>
                 )}
               </div>
+              {hasRealPayment && (
+                <p className="text-white/40 text-xs mt-4 leading-relaxed">
+                  החלפת הכרטיס מתבצעת דרך דף מאובטח של iCount. לצורך אימות הכרטיס החדש יתבצע חיוב סמלי (1₪) שמאמת את הכרטיס לחיובי המנוי הבאים.
+                </p>
+              )}
             </div>
           </section>
         )}

@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Logo from "@/components/ui/Logo";
-import { Filter, ArrowLeft, Loader2 } from "lucide-react";
+import { Filter, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import Reveal, { RevealStagger } from "@/components/motion/Reveal";
+import MasonryGallery, { type MasonryItem } from "@/components/gallery/MasonryGallery";
+import Lightbox, { type LightboxImage } from "@/components/gallery/Lightbox";
+import MagneticButton from "@/components/motion/MagneticButton";
 
 type ProjectImage = {
   id: string;
@@ -67,7 +72,13 @@ function proxyImageUrl(url: string): string {
 
 export default function ProjectsGalleryPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#050505] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#C9A84C]" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[#C9A84C]" />
+        </div>
+      }
+    >
       <ProjectsContent />
     </Suspense>
   );
@@ -82,6 +93,12 @@ function ProjectsContent() {
   const [styleFilter, setStyleFilter] = useState("all");
   const [designerName, setDesignerName] = useState<string | null>(null);
   const [designerLogo, setDesignerLogo] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Parallax on hero image/gradient — gentle
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 400], [0, 80]);
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.35]);
 
   useEffect(() => {
     async function load() {
@@ -94,7 +111,6 @@ function ProjectsContent() {
         if (res.ok) {
           const data = await res.json();
           setProjects(data);
-          // Extract designer name when filtered by designer
           if (designerParam && data.length > 0 && data[0].designer?.fullName) {
             setDesignerName(data[0].designer.fullName);
             setDesignerLogo(data[0].designer?.crmSettings?.logoUrl || null);
@@ -110,196 +126,249 @@ function ProjectsContent() {
     load();
   }, [categoryFilter, styleFilter, designerParam]);
 
+  // Map projects → masonry tiles (for the grid) and → lightbox images (full list).
+  const masonryItems: MasonryItem[] = useMemo(
+    () =>
+      projects.map((p) => {
+        const src = p.coverImageUrl
+          ? proxyImageUrl(p.coverImageUrl)
+          : p.images[0]
+          ? proxyImageUrl(p.images[0].imageUrl)
+          : "";
+        return {
+          src,
+          alt: p.title,
+          caption: p.title,
+          href: `/projects/${p.id}`,
+          badge: getCategoryLabel(p.category),
+          overlay: (
+            <p className="text-white/80 text-xs mt-1">
+              {p.designer.fullName}
+              {p.designer.city && ` · ${p.designer.city}`}
+            </p>
+          ),
+        };
+      }),
+    [projects]
+  );
+
+  const lightboxImages: LightboxImage[] = useMemo(
+    () =>
+      projects.map((p) => ({
+        src: p.coverImageUrl
+          ? proxyImageUrl(p.coverImageUrl)
+          : p.images[0]
+          ? proxyImageUrl(p.images[0].imageUrl)
+          : "",
+        alt: p.title,
+        caption: `${p.title} · ${p.designer.fullName}`,
+      })),
+    [projects]
+  );
+
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden">
       {/* Header */}
-      <header className="border-b border-white/5">
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#050505]/70 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link href="/">
             <Logo size="sm" variant="dark" />
           </Link>
-          <Link
+          <MagneticButton
+            as="a"
             href="/"
-            className="flex items-center gap-2 text-sm text-[#C9A84C] hover:text-[#e0c068] transition-colors"
+            className="group flex items-center gap-2 text-sm text-[#C9A84C] hover:text-[#e0c068] transition-colors"
+            strength={0.4}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             חזרה לדף הבית
-          </Link>
+          </MagneticButton>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto text-center">
+      {/* Hero — parallax + reveal */}
+      <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden">
+        {/* Decorative layers */}
+        <motion.div
+          aria-hidden
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="absolute inset-0 pointer-events-none"
+        >
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[radial-gradient(ellipse_at_center,rgba(201,168,76,0.18),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px] opacity-30" />
+        </motion.div>
+
+        <div className="relative max-w-7xl mx-auto text-center">
           {designerParam && designerName ? (
             <>
               {designerLogo && (
-                <div className="mb-6">
+                <Reveal variant="scale" duration={0.8}>
                   <img
                     src={designerLogo}
                     alt={`לוגו ${designerName}`}
-                    className="mx-auto h-20 sm:h-28 w-auto object-contain rounded-xl"
+                    className="mx-auto h-20 sm:h-28 w-auto object-contain rounded-xl mb-6"
                   />
-                </div>
+                </Reveal>
               )}
-              <h1 className="text-3xl sm:text-5xl font-heading font-bold mb-4">
-                תיק העבודות של <span className="text-[#C9A84C]">{designerName}</span>
-              </h1>
-              <p className="text-white/50 text-sm sm:text-base max-w-xl mx-auto">
-                עבודות עיצוב נבחרות
-              </p>
+              <Reveal variant="up" delay={0.1}>
+                <p className="text-[11px] tracking-[0.3em] uppercase text-[#C9A84C]/80 mb-3 font-semibold inline-flex items-center gap-2">
+                  <Sparkles className="w-3 h-3" /> תיק עבודות אישי
+                </p>
+              </Reveal>
+              <Reveal variant="up" delay={0.15}>
+                <h1 className="text-4xl sm:text-6xl font-heading font-bold mb-4 tracking-tight">
+                  תיק העבודות של{" "}
+                  <span className="bg-gradient-to-r from-[#C9A84C] via-[#E8C97A] to-[#C9A84C] bg-clip-text text-transparent">
+                    {designerName}
+                  </span>
+                </h1>
+              </Reveal>
+              <Reveal variant="up" delay={0.25}>
+                <p className="text-white/50 text-base max-w-xl mx-auto">עבודות עיצוב נבחרות</p>
+              </Reveal>
             </>
           ) : (
             <>
-              <h1 className="text-3xl sm:text-5xl font-heading font-bold mb-4">
-                גלריית <span className="text-[#C9A84C]">פרויקטים</span>
-              </h1>
-              <p className="text-white/50 text-sm sm:text-base max-w-xl mx-auto">
-                גלו עבודות עיצוב מרהיבות של מעצבות הפנים בקהילת זירת האדריכלות
-              </p>
+              <Reveal variant="up">
+                <p className="text-[11px] tracking-[0.3em] uppercase text-[#C9A84C]/80 mb-3 font-semibold inline-flex items-center gap-2">
+                  <Sparkles className="w-3 h-3" /> גלריה אוצרתית
+                </p>
+              </Reveal>
+              <Reveal variant="up" delay={0.1}>
+                <h1 className="text-4xl sm:text-7xl font-heading font-bold mb-5 tracking-tight leading-[1.05]">
+                  גלריית{" "}
+                  <span className="bg-gradient-to-r from-[#C9A84C] via-[#E8C97A] to-[#C9A84C] bg-clip-text text-transparent">
+                    פרויקטים
+                  </span>
+                </h1>
+              </Reveal>
+              <Reveal variant="up" delay={0.2}>
+                <p className="text-white/50 text-base sm:text-lg max-w-2xl mx-auto">
+                  גלו עבודות עיצוב מרהיבות של מעצבות הפנים בקהילת זירת האדריכלות
+                </p>
+              </Reveal>
             </>
           )}
         </div>
       </section>
 
       {/* Filters */}
-      <section className="px-4 sm:px-6 pb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <Filter className="w-4 h-4 text-[#C9A84C]" />
-            <span className="text-xs text-white/40 font-semibold">קטגוריה:</span>
-          </div>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              onClick={() => setCategoryFilter("all")}
-              className={`px-4 py-2 rounded-full text-xs font-medium border transition-all ${
-                categoryFilter === "all"
-                  ? "bg-[#C9A84C]/20 border-[#C9A84C] text-[#C9A84C]"
-                  : "bg-white/5 border-white/10 text-white/50 hover:border-white/30"
-              }`}
-            >
-              הכל
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setCategoryFilter(cat.value)}
-                className={`px-4 py-2 rounded-full text-xs font-medium border transition-all ${
-                  categoryFilter === cat.value
-                    ? "bg-[#C9A84C]/20 border-[#C9A84C] text-[#C9A84C]"
-                    : "bg-white/5 border-white/10 text-white/50 hover:border-white/30"
-                }`}
+      <Reveal variant="fade" amount={0.1}>
+        <section className="px-4 sm:px-6 pb-10">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <Filter className="w-4 h-4 text-[#C9A84C]" />
+              <span className="text-xs text-white/40 font-semibold tracking-widest uppercase">
+                קטגוריה
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-6">
+              <FilterPill
+                active={categoryFilter === "all"}
+                onClick={() => setCategoryFilter("all")}
               >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+                הכל
+              </FilterPill>
+              {CATEGORIES.map((cat) => (
+                <FilterPill
+                  key={cat.value}
+                  active={categoryFilter === cat.value}
+                  onClick={() => setCategoryFilter(cat.value)}
+                >
+                  {cat.label}
+                </FilterPill>
+              ))}
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="text-xs text-white/40 font-semibold">סגנון:</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setStyleFilter("all")}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                styleFilter === "all"
-                  ? "bg-[#C9A84C]/20 border-[#C9A84C] text-[#C9A84C]"
-                  : "bg-white/5 border-white/10 text-white/50 hover:border-white/30"
-              }`}
-            >
-              הכל
-            </button>
-            {STYLE_TAGS.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setStyleFilter(tag)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                  styleFilter === tag
-                    ? "bg-[#C9A84C]/20 border-[#C9A84C] text-[#C9A84C]"
-                    : "bg-white/5 border-white/10 text-white/50 hover:border-white/30"
-                }`}
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <span className="text-xs text-white/40 font-semibold tracking-widest uppercase">
+                סגנון
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterPill
+                active={styleFilter === "all"}
+                onClick={() => setStyleFilter("all")}
+                small
               >
-                {tag}
-              </button>
-            ))}
+                הכל
+              </FilterPill>
+              {STYLE_TAGS.map((tag) => (
+                <FilterPill
+                  key={tag}
+                  active={styleFilter === tag}
+                  onClick={() => setStyleFilter(tag)}
+                  small
+                >
+                  {tag}
+                </FilterPill>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Reveal>
 
-      {/* Grid */}
-      <section className="px-4 sm:px-6 pb-20">
+      {/* Masonry Gallery */}
+      <section className="px-4 sm:px-6 pb-24">
         <div className="max-w-7xl mx-auto">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="bg-[#1a1a2e] rounded-xl h-72 animate-pulse" />
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-5">
+              {[
+                "h-72", "h-96", "h-64", "h-80", "h-72", "h-96",
+                "h-64", "h-80", "h-72",
+              ].map((h, i) => (
+                <div
+                  key={i}
+                  className={`bg-[#1a1a2e] rounded-xl mb-5 animate-pulse ${h} break-inside-avoid`}
+                />
               ))}
             </div>
           ) : projects.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-white/30 text-sm">אין פרויקטים להצגה</p>
-            </div>
+            <Reveal variant="fade">
+              <div className="text-center py-24 border border-dashed border-white/10 rounded-2xl">
+                <p className="text-white/30 text-sm">אין פרויקטים להצגה</p>
+              </div>
+            </Reveal>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {projects.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/projects/${project.id}`}
-                  className="group relative block rounded-xl overflow-hidden border border-white/5 hover:border-[#C9A84C]/30 transition-all bg-[#1a1a2e]"
-                  style={{ borderRadius: "12px" }}
+            <>
+              <MasonryGallery
+                items={masonryItems}
+                onItemClick={(i) => setLightboxIndex(i)}
+                columns={{ base: 1, sm: 2, lg: 3 }}
+                layoutIdPrefix="portfolio"
+              />
+              <Lightbox
+                images={lightboxImages}
+                index={lightboxIndex}
+                onClose={() => setLightboxIndex(null)}
+                onChange={(i) => setLightboxIndex(i)}
+                layoutIdPrefix="portfolio"
+              />
+
+              {/* CTA strip */}
+              <RevealStagger
+                className="mt-20 max-w-4xl mx-auto text-center"
+                stagger={0.12}
+              >
+                <p className="text-[11px] tracking-[0.3em] uppercase text-[#C9A84C]/80 mb-3 font-semibold">
+                  הצטרפו לקהילה
+                </p>
+                <h3 className="text-3xl sm:text-5xl font-heading font-bold text-white mb-4 tracking-tight">
+                  הפרויקט שלכם יכול להיות כאן
+                </h3>
+                <p className="text-white/60 text-base mb-8 max-w-lg mx-auto">
+                  מעצבות וספקים בקהילת זירת האדריכלות חולקים פרויקטים, יוצרים קשרים,
+                  ומובילים את עולם העיצוב בישראל.
+                </p>
+                <MagneticButton
+                  as="a"
+                  href="/"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#C9A84C] hover:bg-[#E8C97A] text-black font-bold text-sm transition-colors shadow-lg shadow-[#C9A84C]/20"
                 >
-                  {/* Cover */}
-                  <div className="relative overflow-hidden">
-                    {project.coverImageUrl ? (
-                      <img
-                        src={proxyImageUrl(project.coverImageUrl)}
-                        alt={project.title}
-                        className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
-                        loading="lazy"
-                      />
-                    ) : project.images[0] ? (
-                      <img
-                        src={proxyImageUrl(project.images[0].imageUrl)}
-                        alt={project.title}
-                        className="w-full h-auto block group-hover:scale-105 transition-transform duration-700"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full py-16 flex items-center justify-center bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a]">
-                        <span className="text-white/10 text-4xl font-heading">{project.title.charAt(0)}</span>
-                      </div>
-                    )}
-
-                    {/* Category badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className="px-2.5 py-1 bg-[#C9A84C]/90 text-black text-[10px] font-bold rounded-full">
-                        {getCategoryLabel(project.category)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Info below image */}
-                  <div className="p-4 bg-gradient-to-b from-[#1a1a2e] to-[#111]">
-                    <h3 className="text-base font-bold text-white mb-1 line-clamp-1">
-                      {project.title}
-                    </h3>
-                    <p className="text-xs text-white/60">
-                      {project.designer.fullName}
-                      {project.designer.city && ` \u00B7 ${project.designer.city}`}
-                    </p>
-                    {project.styleTags && project.styleTags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {project.styleTags.slice(0, 3).map((tag: string) => (
-                          <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-[#C9A84C]/20 text-[#C9A84C] border border-[#C9A84C]/30">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  גלו את הקהילה
+                </MagneticButton>
+              </RevealStagger>
+            </>
           )}
         </div>
       </section>
@@ -311,9 +380,37 @@ function ProjectsContent() {
             <Logo size="sm" variant="dark" />
             <p className="text-sm text-white/55">זירת האדריכלות</p>
           </div>
-          <p className="text-white/35 text-sm">&copy; {new Date().getFullYear()} כל הזכויות שמורות</p>
+          <p className="text-white/35 text-sm">
+            &copy; {new Date().getFullYear()} כל הזכויות שמורות
+          </p>
         </div>
       </footer>
     </div>
+  );
+}
+
+function FilterPill({
+  children,
+  active,
+  onClick,
+  small,
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+  small?: boolean;
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.96 }}
+      className={`${small ? "px-3 py-1.5 text-[11px]" : "px-4 py-2 text-xs"} rounded-full font-medium border transition-all ${
+        active
+          ? "bg-[#C9A84C]/20 border-[#C9A84C] text-[#C9A84C] shadow-[0_0_20px_-6px_rgba(201,168,76,0.5)]"
+          : "bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white"
+      }`}
+    >
+      {children}
+    </motion.button>
   );
 }

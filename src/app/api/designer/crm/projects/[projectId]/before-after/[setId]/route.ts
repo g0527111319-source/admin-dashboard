@@ -22,6 +22,14 @@ export async function PATCH(
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
     }
 
+    // SECURITY: verify the set belongs to this project before updating.
+    const existingSet = await prisma.crmBeforeAfter.findFirst({
+      where: { id: setId, projectId },
+    });
+    if (!existingSet) {
+      return NextResponse.json({ error: "סט לא נמצא" }, { status: 404 });
+    }
+
     const body = await req.json();
     const { title, beforeImageUrl, afterImageUrl, beforeCaption, afterCaption, isVisibleInPortal, isPublic } = body;
 
@@ -63,6 +71,14 @@ export async function DELETE(
     });
     if (!project) {
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });
+    }
+
+    // SECURITY: verify the set belongs to this project before deletion.
+    const existingSet = await prisma.crmBeforeAfter.findFirst({
+      where: { id: setId, projectId },
+    });
+    if (!existingSet) {
+      return NextResponse.json({ error: "סט לא נמצא" }, { status: 404 });
     }
 
     await prisma.crmBeforeAfter.delete({ where: { id: setId } });

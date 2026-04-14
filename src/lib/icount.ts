@@ -314,6 +314,9 @@ export async function generatePaymentUrl(data: {
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ") || "";
 
+  // iCount accepts several aliases for the webhook/callback URL — pass both
+  // `ipn_url` (legacy) and `notify_url` (v3) to maximise compatibility across
+  // account configurations.
   const result = await icountPost(
     "/paypage/generate_sale",
     {
@@ -321,6 +324,7 @@ export async function generatePaymentUrl(data: {
       lang: "he",
       doc_type: "invrec",           // Invoice-receipt — required for payment pages
       ipn_url: data.ipnUrl,
+      notify_url: data.ipnUrl,
       success_url: data.successUrl,
       cancel_url: data.cancelUrl || data.successUrl,
       fail_url: data.cancelUrl || data.successUrl,
@@ -348,7 +352,7 @@ export async function generatePaymentUrl(data: {
     throw new Error("iCount לא החזיר קישור תשלום");
   }
 
-  console.log(`[iCount] Generated sale URL: ${saleUrl}`);
+  console.log(`[iCount] Generated sale URL: ${saleUrl} | ipn=${data.ipnUrl}`);
   return saleUrl;
 }
 
@@ -360,8 +364,16 @@ export function verifyWebhookSignature(
 ): boolean {
   const secret = process.env.ICOUNT_WEBHOOK_SECRET;
   if (!secret) {
-    console.log(
-      "[iCount] No webhook secret configured — accepting webhook (dev mode)"
+    // SECURITY: in production we require a secret. Dev mode skips verification
+    // only for local development.
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "[iCount] ICOUNT_WEBHOOK_SECRET not configured in production — rejecting webhook"
+      );
+      return false;
+    }
+    console.warn(
+      "[iCount] No webhook secret configured — accepting webhook (dev mode only)"
     );
     return true;
   }
@@ -373,11 +385,63 @@ export function verifyWebhookSignature(
       .createHmac("sha256", secret)
       .update(rawBody)
       .digest("hex");
-    return crypto.timingSafeEqual(
-      Buffer.from(expected),
-      Buffer.from(signature)
-    );
+    const expectedBuf = Buffer.from(expected);
+    const signatureBuf = Buffer.from(signature);
+    if (expectedBuf.length !== signatureBuf.length) return false;
+    return crypto.timingSafeEqual(expectedBuf, signatureBuf);
   } catch {
     return false;
+  }
+}
+
+// ─── Payment verification (fallback when webhook is delayed / missing) ───
+
+/**
+ * Search iCount for recent documents (invoices/receipts) for a given customer.
+ * Used as a safety net: after the user returns from the hosted PayPage, we
+ * verify payment directly with iCount rather than waiting for the IPN webhook.
+ *
+ * POST /doc/search → { docs: [{ doc_id, doc_number, sum, ... }] }
+ */
+export async function findRecentDocsForCustomer(
+  customerId: string,
+  sinceMinutes = 120
+): Promise<Array<{
+  doc_id: string;
+  doc_number?: string;
+  doc_type?: string;
+  sum?: number;
+  paid?: boolean;
+  created?: string;
+}>> {
+  const cfg = await getIcountConfig();
+  if (configIsMock(cfg)) return [];
+
+  const since = new Date(Date.now() - sinceMinutes * 60 * 1000);
+  const sinceStr = since.toISOString().split("T")[0]; // YYYY-MM-DD
+
+  try {
+    const result = await icountPost(
+      "/doc/search",
+      {
+        client_id: customerId,
+        date_from: sinceStr,
+        limit: 10,
+      },
+      cfg
+    );
+
+    const docs = (result?.docs || result?.data || []) as Array<Record<string, unknown>>;
+    return docs.map((d) => ({
+      doc_id: String(d.doc_id || d.id || ""),
+      doc_number: d.doc_number ? String(d.doc_number) : undefined,
+      doc_type: d.doc_type ? String(d.doc_type) : undefined,
+      sum: d.sum ? Number(d.sum) : undefined,
+      paid: d.paid !== undefined ? Boolean(d.paid) : undefined,
+      created: d.created ? String(d.created) : undefined,
+    }));
+  } catch (err) {
+    console.error("[iCount] findRecentDocsForCustomer failed:", err);
+    return [];
   }
 }
