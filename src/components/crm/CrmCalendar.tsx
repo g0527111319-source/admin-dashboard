@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, Link2, Download, CheckCircle2, Loader2, Users, FolderOpen, X, Eye } from "lucide-react";
+import { Plus, Calendar, Clock, MapPin, Trash2, ChevronLeft, ChevronRight, Link2, Download, CheckCircle2, Loader2, Users, FolderOpen, X, Eye, Bell, Circle, ListChecks } from "lucide-react";
 import { getHebrewDateStr, getMonthHolidays, gregorianToHebrew } from "@/lib/hebrew-calendar";
 
 type CalendarEvent = {
@@ -19,17 +19,39 @@ type CalendarEvent = {
   source?: "local" | "google";
 };
 
+type CrmTask = {
+  id: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  status: string;
+  projectId: string | null;
+  clientId: string | null;
+  project?: { id: string; name: string } | null;
+  client?: { id: string; name: string } | null;
+};
+
 type Project = { id: string; name: string; client: { name: string } };
 type Client = { id: string; name: string };
 type ViewMode = "month" | "week" | "day";
+type AddMode = "event" | "task";
+
+const taskStatusColors: Record<string, string> = {
+  TODO: "bg-orange-100 text-orange-800 border-orange-200",
+  IN_PROGRESS: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  DONE: "bg-emerald-100 text-emerald-800 border-emerald-200",
+};
+const taskStatusLabel: Record<string, string> = { TODO: "לביצוע", IN_PROGRESS: "בתהליך", DONE: "הושלם" };
 
 export default function CrmCalendar({ clientId, projectId, gender }: { clientId?: string; projectId?: string; gender?: string } = {}) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
+  const [tasks, setTasks] = useState<CrmTask[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [addMode, setAddMode] = useState<AddMode>("event");
   const [saving, setSaving] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -44,7 +66,9 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     color: "#2563eb",
     projectId: "",
     clientId: "",
+    reminderMin: "",
   });
+  const [taskFormData, setTaskFormData] = useState({ title: "", description: "", dueDate: "", clientId: "", projectId: "" });
 
   const [holidays, setHolidays] = useState<{ date: string; name: string; isYomTov: boolean; emoji: string }[]>([]);
 
@@ -84,17 +108,28 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     } catch { /* */ } finally { setLoading(false); }
   }, [currentDate, viewMode, clientId, projectId]);
 
+  // Fetch tasks
+  const fetchTasks = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (clientId) params.set("clientId", clientId);
+      if (projectId) params.set("projectId", projectId);
+      const res = await fetch(`/api/designer/crm/tasks?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTasks(data.filter((t: CrmTask) => t.dueDate && t.status !== "DONE" && t.status !== "CANCELLED"));
+      }
+    } catch { /* */ }
+  }, [clientId, projectId]);
+
   // Fetch Google Calendar events
   const fetchGoogleEvents = useCallback(async () => {
     try {
       const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
       const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59).toISOString();
       const res = await fetch(`/api/designer/crm/google-calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setGoogleEvents(data);
-      }
-    } catch { /* Google events fetch is optional */ }
+      if (res.ok) setGoogleEvents(await res.json());
+    } catch { /* */ }
   }, [currentDate]);
 
   const fetchProjects = useCallback(async () => {
@@ -115,29 +150,22 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
   }, []);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
   useEffect(() => { fetchProjects(); fetchClients(); }, [fetchProjects, fetchClients]);
 
-  // Fetch google events when connected
+  // Google Calendar status
   const [gcalStatus, setGcalStatus] = useState<{ configured: boolean; connected: boolean; syncEnabled: boolean; lastSyncAt: string | null } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetch("/api/designer/crm/google-calendar")
       .then(r => r.json())
-      .then(data => {
-        setGcalStatus(data);
-        if (data.connected) fetchGoogleEvents();
-      })
+      .then(data => { setGcalStatus(data); if (data.connected) fetchGoogleEvents(); })
       .catch(() => {});
-    // Show feedback from Google Calendar OAuth redirect
     const params = new URLSearchParams(window.location.search);
-    const googleStatus = params.get("google");
-    if (googleStatus === "connected") {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("google");
-      window.history.replaceState({}, "", url.toString());
-    } else if (googleStatus === "error") {
-      alert("שגיאה בחיבור ל-Google Calendar. נסה שוב.");
+    const gs = params.get("google");
+    if (gs) {
+      if (gs === "error") alert("שגיאה בחיבור ל-Google Calendar. נסה שוב.");
       const url = new URL(window.location.href);
       url.searchParams.delete("google");
       window.history.replaceState({}, "", url.toString());
@@ -145,48 +173,28 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (gcalStatus?.connected) fetchGoogleEvents();
-  }, [gcalStatus?.connected, fetchGoogleEvents]);
+  useEffect(() => { if (gcalStatus?.connected) fetchGoogleEvents(); }, [gcalStatus?.connected, fetchGoogleEvents]);
 
   const handleGoogleAuth = async () => {
-    const res = await fetch("/api/designer/crm/google-calendar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "auth" }),
-    });
+    const res = await fetch("/api/designer/crm/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "auth" }) });
     const data = await res.json();
     if (data.authUrl) window.location.href = data.authUrl;
   };
-
   const handleGoogleSync = async () => {
     setSyncing(true);
     try {
-      const res = await fetch("/api/designer/crm/google-calendar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sync" }),
-      });
+      const res = await fetch("/api/designer/crm/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "sync" }) });
       const data = await res.json();
-      if (data.synced !== undefined) {
-        alert(`סונכרנו ${data.synced} אירועים ל-Google Calendar`);
-        setGcalStatus(prev => prev ? { ...prev, connected: true, syncEnabled: true, lastSyncAt: new Date().toISOString() } : prev);
-        fetchGoogleEvents();
-      }
-    } catch { /* */ }
-    finally { setSyncing(false); }
+      if (data.synced !== undefined) { alert(`סונכרנו ${data.synced} אירועים ל-Google Calendar`); setGcalStatus(prev => prev ? { ...prev, connected: true, syncEnabled: true, lastSyncAt: new Date().toISOString() } : prev); fetchGoogleEvents(); }
+    } catch { /* */ } finally { setSyncing(false); }
   };
-
   const handleGoogleDisconnect = async () => {
-    await fetch("/api/designer/crm/google-calendar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "disconnect" }),
-    });
+    await fetch("/api/designer/crm/google-calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "disconnect" }) });
     setGcalStatus(prev => prev ? { ...prev, connected: false, syncEnabled: false } : prev);
     setGoogleEvents([]);
   };
 
+  // Create event
   const handleCreate = async () => {
     if (!formData.title.trim() || !formData.startAt) return;
     setSaving(true);
@@ -199,59 +207,64 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
           projectId: formData.projectId || null,
           clientId: formData.clientId || null,
           endAt: formData.endAt || formData.startAt,
+          reminderMin: formData.reminderMin ? parseInt(formData.reminderMin) : null,
         }),
       });
       setShowAdd(false);
-      setFormData({ title: "", description: "", startAt: "", endAt: "", location: "", isAllDay: false, color: "#2563eb", projectId: "", clientId: "" });
+      resetForm();
       fetchEvents();
     } catch { /* */ } finally { setSaving(false); }
   };
 
-  const deleteEvent = async (eventId: string) => {
+  // Create task
+  const handleCreateTask = async () => {
+    if (!taskFormData.title.trim()) return;
+    setSaving(true);
     try {
-      await fetch(`/api/designer/crm/calendar?eventId=${eventId}`, { method: "DELETE" });
-      fetchEvents();
-    } catch { /* */ }
+      await fetch("/api/designer/crm/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: taskFormData.title,
+          description: taskFormData.description || null,
+          dueDate: taskFormData.dueDate || null,
+          clientId: taskFormData.clientId || null,
+          projectId: taskFormData.projectId || null,
+        }),
+      });
+      setShowAdd(false);
+      setTaskFormData({ title: "", description: "", dueDate: "", clientId: "", projectId: "" });
+      fetchTasks();
+    } catch { /* */ } finally { setSaving(false); }
+  };
+
+  const resetForm = () => setFormData({ title: "", description: "", startAt: "", endAt: "", location: "", isAllDay: false, color: "#2563eb", projectId: "", clientId: "", reminderMin: "" });
+
+  const deleteEvent = async (eventId: string) => {
+    await fetch(`/api/designer/crm/calendar?eventId=${eventId}`, { method: "DELETE" });
+    fetchEvents();
   };
 
   const generateIcs = (evt: CalendarEvent): string => {
-    const formatIcsDate = (dateStr: string) => {
-      const d = new Date(dateStr);
-      return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-    };
-    const now = formatIcsDate(new Date().toISOString());
-    const lines = [
-      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Zirat//CRM Calendar//HE",
-      "BEGIN:VEVENT", `UID:${evt.id}@zirat-crm`, `DTSTAMP:${now}`,
-      `DTSTART:${formatIcsDate(evt.startAt)}`, `DTEND:${formatIcsDate(evt.endAt)}`,
-      `SUMMARY:${evt.title}`,
-      ...(evt.description ? [`DESCRIPTION:${evt.description}`] : []),
-      ...(evt.location ? [`LOCATION:${evt.location}`] : []),
-      "END:VEVENT", "END:VCALENDAR",
-    ];
-    return lines.join("\r\n");
+    const fmt = (s: string) => new Date(s).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Zirat//CRM//HE","BEGIN:VEVENT",`UID:${evt.id}@zirat`,`DTSTAMP:${fmt(new Date().toISOString())}`,`DTSTART:${fmt(evt.startAt)}`,`DTEND:${fmt(evt.endAt)}`,`SUMMARY:${evt.title}`,
+      ...(evt.description?[`DESCRIPTION:${evt.description}`]:[]),
+      ...(evt.location?[`LOCATION:${evt.location}`]:[]),
+      "END:VEVENT","END:VCALENDAR"].join("\r\n");
   };
-
   const downloadIcs = (evt: CalendarEvent) => {
-    const icsContent = generateIcs(evt);
-    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const blob = new Blob([generateIcs(evt)], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${evt.title.replace(/\s+/g, "_")}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const a = document.createElement("a"); a.href = url; a.download = `${evt.title.replace(/\s+/g, "_")}.ics`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
-  // All events merged
+  // All events + tasks merged
   const allEvents = useMemo(() => [...events, ...googleEvents], [events, googleEvents]);
 
   const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
   const dayNames = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
-  // Navigation
   const navigate = (dir: -1 | 1) => {
     const d = new Date(currentDate);
     if (viewMode === "month") d.setMonth(d.getMonth() + dir);
@@ -261,107 +274,73 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
   };
   const goToday = () => setCurrentDate(new Date());
 
-  // Build month grid
   const monthGrid = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDay = firstDay.getDay(); // 0=Sun
-    const totalDays = lastDay.getDate();
-
+    const year = currentDate.getFullYear(), month = currentDate.getMonth();
+    const startDay = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
     const cells: { date: Date; isCurrentMonth: boolean }[] = [];
-    // Previous month padding
-    for (let i = startDay - 1; i >= 0; i--) {
-      const d = new Date(year, month, -i);
-      cells.push({ date: d, isCurrentMonth: false });
-    }
-    // Current month
-    for (let i = 1; i <= totalDays; i++) {
-      cells.push({ date: new Date(year, month, i), isCurrentMonth: true });
-    }
-    // Next month padding
-    const remaining = 7 - (cells.length % 7);
-    if (remaining < 7) {
-      for (let i = 1; i <= remaining; i++) {
-        cells.push({ date: new Date(year, month + 1, i), isCurrentMonth: false });
-      }
-    }
+    for (let i = startDay - 1; i >= 0; i--) cells.push({ date: new Date(year, month, -i), isCurrentMonth: false });
+    for (let i = 1; i <= totalDays; i++) cells.push({ date: new Date(year, month, i), isCurrentMonth: true });
+    const rem = 7 - (cells.length % 7);
+    if (rem < 7) for (let i = 1; i <= rem; i++) cells.push({ date: new Date(year, month + 1, i), isCurrentMonth: false });
     return cells;
   }, [currentDate]);
 
-  // Build week grid
   const weekDays = useMemo(() => {
-    const dayOfWeek = currentDate.getDay();
-    const sunday = new Date(currentDate);
-    sunday.setDate(currentDate.getDate() - dayOfWeek);
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(sunday);
-      d.setDate(sunday.getDate() + i);
-      return d;
-    });
+    const dow = currentDate.getDay();
+    const sun = new Date(currentDate); sun.setDate(currentDate.getDate() - dow);
+    return Array.from({ length: 7 }, (_, i) => { const d = new Date(sun); d.setDate(sun.getDate() + i); return d; });
   }, [currentDate]);
 
-  // Get events for a specific date
-  const getEventsForDate = (date: Date) => {
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    return allEvents.filter(evt => {
-      const evtDate = new Date(evt.startAt);
-      const evtStr = `${evtDate.getFullYear()}-${String(evtDate.getMonth() + 1).padStart(2, "0")}-${String(evtDate.getDate()).padStart(2, "0")}`;
-      return evtStr === dateStr;
-    });
-  };
+  const fmtDateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const getEventsForDate = (date: Date) => { const k = fmtDateKey(date); return allEvents.filter(e => fmtDateKey(new Date(e.startAt)) === k); };
+  const getTasksForDate = (date: Date) => { const k = fmtDateKey(date); return tasks.filter(t => t.dueDate && fmtDateKey(new Date(t.dueDate)) === k); };
+  const getHolidayForDate = (date: Date) => { const k = fmtDateKey(date); return holidays.filter(h => h.date === k); };
 
-  // Get holidays for a specific date
-  const getHolidayForDate = (date: Date) => {
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    return holidays.filter(h => h.date === dateStr);
-  };
+  const isToday = (d: Date) => { const t = new Date(); return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear(); };
+  const isSameDay = (a: Date, b: Date) => a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-  };
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
-
-  // Open add form with pre-filled date
-  const openAddForDate = (date: Date) => {
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T09:00`;
-    const endStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T10:00`;
-    setFormData({ ...formData, startAt: dateStr, endAt: endStr, title: "", description: "", location: "", isAllDay: false, color: "#2563eb", projectId: "", clientId: "" });
+  const openAddForDate = (date: Date, mode: AddMode = "event", hour?: number) => {
+    const h = hour ?? 9;
+    const ds = `${fmtDateKey(date)}T${String(h).padStart(2, "0")}:00`;
+    const es = `${fmtDateKey(date)}T${String(h + 1).padStart(2, "0")}:00`;
+    if (mode === "event") {
+      setFormData({ title: "", description: "", startAt: ds, endAt: es, location: "", isAllDay: false, color: "#2563eb", projectId: "", clientId: "", reminderMin: "" });
+    } else {
+      setTaskFormData({ title: "", description: "", dueDate: fmtDateKey(date), clientId: "", projectId: "" });
+    }
+    setAddMode(mode);
     setShowAdd(true);
   };
 
-  // View title
   const viewTitle = useMemo(() => {
     if (viewMode === "month") return `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
     if (viewMode === "week") {
-      const start = weekDays[0];
-      const end = weekDays[6];
-      if (start.getMonth() === end.getMonth()) return `${start.getDate()}-${end.getDate()} ${monthNames[start.getMonth()]} ${start.getFullYear()}`;
-      return `${start.getDate()} ${monthNames[start.getMonth()]} — ${end.getDate()} ${monthNames[end.getMonth()]}`;
+      const s = weekDays[0], e = weekDays[6];
+      return s.getMonth() === e.getMonth() ? `${s.getDate()}-${e.getDate()} ${monthNames[s.getMonth()]} ${s.getFullYear()}` : `${s.getDate()} ${monthNames[s.getMonth()]} — ${e.getDate()} ${monthNames[e.getMonth()]}`;
     }
     return `${currentDate.getDate()} ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate, viewMode, weekDays]);
 
   const hebrewRange = useMemo(() => {
-    if (viewMode === "month") {
-      const first = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const last = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-      return `${getHebrewDateStr(first)} — ${getHebrewDateStr(last)}`;
-    }
-    if (viewMode === "week") {
-      return `${getHebrewDateStr(weekDays[0])} — ${getHebrewDateStr(weekDays[6])}`;
-    }
+    if (viewMode === "month") { const f = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1); const l = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); return `${getHebrewDateStr(f)} — ${getHebrewDateStr(l)}`; }
+    if (viewMode === "week") return `${getHebrewDateStr(weekDays[0])} — ${getHebrewDateStr(weekDays[6])}`;
     return getHebrewDateStr(currentDate);
   }, [currentDate, viewMode, weekDays]);
 
-  // Get project/client name for display
   const getProjectName = (pid: string | null) => projects.find(p => p.id === pid)?.name;
   const getClientName = (cid: string | null) => clients.find(c => c.id === cid)?.name;
+
+  // Quick add button component
+  const QuickAdd = ({ date, hour, className = "" }: { date: Date; hour?: number; className?: string }) => (
+    <button
+      onClick={e => { e.stopPropagation(); openAddForDate(date, "event", hour); }}
+      className={`opacity-0 group-hover:opacity-100 transition-opacity text-gold/60 hover:text-gold hover:bg-gold/10 rounded-full w-5 h-5 flex items-center justify-center text-xs ${className}`}
+      title="הוסף אירוע או משימה">
+      <Plus className="w-3 h-3" />
+    </button>
+  );
 
   return (
     <div className="space-y-4 animate-in">
@@ -373,27 +352,22 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         <div className="flex items-center gap-2 flex-wrap">
           {gcalStatus?.connected ? (
             <div className="flex items-center gap-2">
-              <span className="text-emerald-600 text-xs flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> מחובר ל-Google
-              </span>
+              <span className="text-emerald-600 text-xs flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Google</span>
               <button onClick={handleGoogleSync} disabled={syncing} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-all">
-                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
-                {syncing ? "מסנכרן..." : "סנכרן עכשיו"}
+                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}{syncing ? "מסנכרן..." : "סנכרן"}
               </button>
               <button onClick={handleGoogleDisconnect} className="text-xs text-red-500 hover:underline">נתק</button>
             </div>
           ) : (
             <button onClick={handleGoogleAuth} disabled={!gcalStatus?.configured} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-subtle hover:border-gold hover:text-gold transition-all">
-              <Link2 className="w-3.5 h-3.5" /> {gcalStatus?.configured ? "התחבר ל-Google Calendar" : "Google Calendar לא מוגדר"}
+              <Link2 className="w-3.5 h-3.5" /> {gcalStatus?.configured ? "חבר Google Calendar" : "Google Calendar לא מוגדר"}
             </button>
           )}
-          <button onClick={() => { setShowAdd(!showAdd); }} className="btn-gold text-sm flex items-center gap-1">
-            <Plus className="w-4 h-4" /> אירוע חדש
-          </button>
+          <button onClick={() => { setAddMode("event"); setShowAdd(!showAdd); }} className="btn-gold text-sm flex items-center gap-1"><Plus className="w-4 h-4" /> חדש</button>
         </div>
       </div>
 
-      {/* View mode tabs + Navigation */}
+      {/* View mode + Navigation */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-1 bg-bg-surface rounded-lg p-1">
           {(["month", "week", "day"] as ViewMode[]).map(mode => (
@@ -410,112 +384,140 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         </div>
       </div>
 
-      {/* Title + Hebrew range */}
       <div className="text-center">
         <h3 className="text-lg font-heading text-text-primary">{viewTitle}</h3>
         <p className="text-sm text-gold">{hebrewRange}</p>
       </div>
 
-      {/* Add event form */}
+      {/* ======== ADD FORM ======== */}
       {showAdd && (
         <div className="card-static space-y-3 border border-gold/30">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-text-primary">אירוע חדש</h4>
+            <div className="flex items-center gap-1 bg-bg-surface rounded-lg p-1">
+              <button onClick={() => setAddMode("event")} className={`px-3 py-1 text-xs rounded-md ${addMode === "event" ? "bg-white shadow-sm text-gold font-medium" : "text-text-muted"}`}>
+                <Calendar className="w-3 h-3 inline ml-1" />אירוע
+              </button>
+              <button onClick={() => setAddMode("task")} className={`px-3 py-1 text-xs rounded-md ${addMode === "task" ? "bg-white shadow-sm text-gold font-medium" : "text-text-muted"}`}>
+                <ListChecks className="w-3 h-3 inline ml-1" />משימה
+              </button>
+            </div>
             <button onClick={() => setShowAdd(false)} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
           </div>
-          <input type="text" className="input-field" placeholder="כותרת האירוע" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-          <textarea className="input-field min-h-[60px]" placeholder="תיאור (אופציונלי)" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-text-secondary text-xs block mb-1">התחלה</label>
-              <input type="datetime-local" className="input-field" value={formData.startAt} onChange={e => setFormData({ ...formData, startAt: e.target.value })} dir="ltr" />
-            </div>
-            <div>
-              <label className="text-text-secondary text-xs block mb-1">סיום</label>
-              <input type="datetime-local" className="input-field" value={formData.endAt} onChange={e => setFormData({ ...formData, endAt: e.target.value })} dir="ltr" />
-            </div>
-          </div>
-          <input type="text" className="input-field" placeholder="מיקום (אופציונלי)" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
-            <select className="select-field" value={formData.clientId} onChange={e => setFormData({ ...formData, clientId: e.target.value })}>
-              <option value="">ללא לקוח</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <select className="select-field" value={formData.projectId} onChange={e => setFormData({ ...formData, projectId: e.target.value })}>
-              <option value="">ללא פרויקט</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-text-secondary text-xs">צבע:</label>
-              <input type="color" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} className="w-7 h-7 rounded cursor-pointer border-0" />
-            </div>
-            <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
-              <input type="checkbox" checked={formData.isAllDay} onChange={e => setFormData({ ...formData, isAllDay: e.target.checked })} className="rounded" />
-              כל היום
-            </label>
-          </div>
-          <button onClick={handleCreate} disabled={saving} className="btn-gold w-full text-sm">{saving ? "שומר..." : "הוסף אירוע"}</button>
+
+          {addMode === "event" ? (
+            <>
+              <input type="text" className="input-field" placeholder="כותרת האירוע" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+              <textarea className="input-field min-h-[50px]" placeholder="תיאור (אופציונלי)" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="text-text-secondary text-xs block mb-1">התחלה</label><input type="datetime-local" className="input-field" value={formData.startAt} onChange={e => setFormData({ ...formData, startAt: e.target.value })} dir="ltr" /></div>
+                <div><label className="text-text-secondary text-xs block mb-1">סיום</label><input type="datetime-local" className="input-field" value={formData.endAt} onChange={e => setFormData({ ...formData, endAt: e.target.value })} dir="ltr" /></div>
+              </div>
+              <input type="text" className="input-field" placeholder="מיקום (אופציונלי)" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+              <div className="grid grid-cols-2 gap-3">
+                <select className="select-field" value={formData.clientId} onChange={e => setFormData({ ...formData, clientId: e.target.value })}>
+                  <option value="">ללא לקוח</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <select className="select-field" value={formData.projectId} onChange={e => setFormData({ ...formData, projectId: e.target.value })}>
+                  <option value="">ללא פרויקט</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label className="text-text-secondary text-xs">צבע:</label>
+                  <input type="color" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} className="w-7 h-7 rounded cursor-pointer border-0" />
+                </div>
+                <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+                  <input type="checkbox" checked={formData.isAllDay} onChange={e => setFormData({ ...formData, isAllDay: e.target.checked })} className="rounded" />
+                  כל היום
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5 text-text-muted" />
+                  <select className="select-field text-xs py-1 px-2" value={formData.reminderMin} onChange={e => setFormData({ ...formData, reminderMin: e.target.value })}>
+                    <option value="">ללא תזכורת</option>
+                    <option value="5">5 דקות לפני</option>
+                    <option value="10">10 דקות לפני</option>
+                    <option value="15">15 דקות לפני</option>
+                    <option value="30">30 דקות לפני</option>
+                    <option value="60">שעה לפני</option>
+                    <option value="120">שעתיים לפני</option>
+                    <option value="1440">יום לפני</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={handleCreate} disabled={saving} className="btn-gold w-full text-sm">{saving ? "שומר..." : "הוסף אירוע"}</button>
+            </>
+          ) : (
+            <>
+              <input type="text" className="input-field" placeholder="כותרת המשימה" value={taskFormData.title} onChange={e => setTaskFormData({ ...taskFormData, title: e.target.value })} />
+              <textarea className="input-field min-h-[50px]" placeholder="תיאור (אופציונלי)" value={taskFormData.description} onChange={e => setTaskFormData({ ...taskFormData, description: e.target.value })} />
+              <div><label className="text-text-secondary text-xs block mb-1">תאריך יעד</label><input type="date" className="input-field" value={taskFormData.dueDate} onChange={e => setTaskFormData({ ...taskFormData, dueDate: e.target.value })} dir="ltr" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <select className="select-field" value={taskFormData.clientId} onChange={e => setTaskFormData({ ...taskFormData, clientId: e.target.value })}>
+                  <option value="">ללא לקוח</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <select className="select-field" value={taskFormData.projectId} onChange={e => setTaskFormData({ ...taskFormData, projectId: e.target.value })}>
+                  <option value="">ללא פרויקט</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <button onClick={handleCreateTask} disabled={saving} className="btn-gold w-full text-sm">{saving ? "שומר..." : "הוסף משימה"}</button>
+            </>
+          )}
         </div>
       )}
 
       {/* ======== MONTH VIEW ======== */}
       {viewMode === "month" && (
         <div className="border border-border-subtle rounded-card overflow-hidden">
-          {/* Day headers */}
           <div className="grid grid-cols-7 bg-bg-surface border-b border-border-subtle">
             {dayNames.map(day => (
-              <div key={day} className={`text-center py-2 text-xs font-medium ${day === "שבת" ? "text-gold" : "text-text-muted"}`}>
-                {day}
-              </div>
+              <div key={day} className={`text-center py-2 text-xs font-medium ${day === "שבת" ? "text-gold" : "text-text-muted"}`}>{day}</div>
             ))}
           </div>
-          {/* Day cells */}
           <div className="grid grid-cols-7">
             {monthGrid.map((cell, idx) => {
               const dayEvents = getEventsForDate(cell.date);
+              const dayTasks = getTasksForDate(cell.date);
               const dayHolidays = getHolidayForDate(cell.date);
               const heb = gregorianToHebrew(cell.date.getFullYear(), cell.date.getMonth() + 1, cell.date.getDate());
               const isShabbat = cell.date.getDay() === 6;
               const selected = selectedDay && isSameDay(cell.date, selectedDay);
+              const allItems = [...dayHolidays.map(() => "h"), ...dayEvents.map(() => "e"), ...dayTasks.map(() => "t")];
 
               return (
-                <div key={idx}
-                  onClick={() => setSelectedDay(cell.date)}
-                  onDoubleClick={() => openAddForDate(cell.date)}
-                  className={`min-h-[90px] border-b border-l border-border-subtle p-1 cursor-pointer transition-colors
-                    ${!cell.isCurrentMonth ? "bg-gray-50/50" : "bg-white"}
-                    ${isToday(cell.date) ? "ring-2 ring-inset ring-gold/40" : ""}
-                    ${selected ? "bg-gold/5" : "hover:bg-gray-50"}
-                    ${isShabbat ? "bg-amber-50/30" : ""}
-                  `}>
-                  {/* Date numbers */}
+                <div key={idx} onClick={() => setSelectedDay(cell.date)}
+                  className={`group min-h-[90px] border-b border-l border-border-subtle p-1 cursor-pointer transition-colors relative
+                    ${!cell.isCurrentMonth ? "bg-gray-50/50" : "bg-white"} ${isToday(cell.date) ? "ring-2 ring-inset ring-gold/40" : ""}
+                    ${selected ? "bg-gold/5" : "hover:bg-gray-50"} ${isShabbat ? "bg-amber-50/30" : ""}`}>
                   <div className="flex items-start justify-between mb-0.5">
                     <span className={`text-sm font-medium leading-none ${!cell.isCurrentMonth ? "text-text-muted/40" : isToday(cell.date) ? "bg-gold text-white w-6 h-6 rounded-full flex items-center justify-center text-xs" : "text-text-primary"}`}>
                       {cell.date.getDate()}
                     </span>
-                    <span className={`text-[10px] leading-none ${!cell.isCurrentMonth ? "text-text-muted/30" : "text-gold/70"}`}>
-                      {heb.dayHeb}
-                    </span>
+                    <div className="flex items-center gap-0.5">
+                      <QuickAdd date={cell.date} />
+                      <span className={`text-[10px] leading-none ${!cell.isCurrentMonth ? "text-text-muted/30" : "text-gold/70"}`}>{heb.dayHeb}</span>
+                    </div>
                   </div>
-                  {/* Holidays */}
                   {dayHolidays.map((h, hi) => (
-                    <div key={hi} className={`text-[9px] leading-tight truncate px-1 py-0.5 rounded mb-0.5 ${h.isYomTov ? "bg-amber-100 text-amber-800" : "bg-blue-50 text-blue-700"}`}>
+                    <div key={`h${hi}`} className={`text-[9px] leading-tight truncate px-1 py-0.5 rounded mb-0.5 ${h.isYomTov ? "bg-amber-100 text-amber-800" : "bg-blue-50 text-blue-700"}`}>
                       {h.emoji} {h.name}
                     </div>
                   ))}
-                  {/* Events */}
-                  {dayEvents.slice(0, 3).map(evt => (
+                  {dayEvents.slice(0, 2).map(evt => (
                     <div key={evt.id} className="text-[10px] leading-tight truncate px-1 py-0.5 rounded mb-0.5 text-white"
-                      style={{ backgroundColor: evt.source === "google" ? "#4285F4" : (evt.color || "#2563eb") }}
-                      title={evt.title}>
+                      style={{ backgroundColor: evt.source === "google" ? "#4285F4" : (evt.color || "#2563eb") }}>
                       {evt.isAllDay ? "" : new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }) + " "}{evt.title}
                     </div>
                   ))}
-                  {dayEvents.length > 3 && (
-                    <div className="text-[9px] text-text-muted text-center">+{dayEvents.length - 3} נוספים</div>
-                  )}
+                  {dayTasks.slice(0, 2).map(t => (
+                    <div key={t.id} className="text-[10px] leading-tight truncate px-1 py-0.5 rounded mb-0.5 bg-orange-100 text-orange-800 flex items-center gap-0.5">
+                      <Circle className="w-2 h-2 flex-shrink-0" />{t.title}
+                    </div>
+                  ))}
+                  {allItems.length > 4 && <div className="text-[9px] text-text-muted text-center">+{allItems.length - 4}</div>}
                 </div>
               );
             })}
@@ -530,10 +532,11 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
             {weekDays.map((day, i) => {
               const heb = gregorianToHebrew(day.getFullYear(), day.getMonth() + 1, day.getDate());
               return (
-                <div key={i} className={`text-center py-2 border-l border-border-subtle ${isToday(day) ? "bg-gold/10" : ""}`}>
+                <div key={i} className={`group text-center py-2 border-l border-border-subtle relative ${isToday(day) ? "bg-gold/10" : ""}`}>
                   <div className="text-xs text-text-muted">{dayNames[i]}</div>
                   <div className={`text-lg font-heading ${isToday(day) ? "text-gold" : "text-text-primary"}`}>{day.getDate()}</div>
                   <div className="text-[10px] text-gold/70">{heb.dayHeb} {heb.monthName}</div>
+                  <div className="absolute top-1 left-1"><QuickAdd date={day} /></div>
                 </div>
               );
             })}
@@ -541,9 +544,10 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
           <div className="grid grid-cols-7 min-h-[300px]">
             {weekDays.map((day, i) => {
               const dayEvents = getEventsForDate(day);
+              const dayTasks = getTasksForDate(day);
               const dayHolidays = getHolidayForDate(day);
               return (
-                <div key={i} className={`border-l border-border-subtle p-2 space-y-1 cursor-pointer hover:bg-gray-50 transition-colors ${day.getDay() === 6 ? "bg-amber-50/30" : ""}`}
+                <div key={i} className={`group border-l border-border-subtle p-1.5 space-y-1 cursor-pointer hover:bg-gray-50 transition-colors ${day.getDay() === 6 ? "bg-amber-50/30" : ""}`}
                   onClick={() => { setSelectedDay(day); setViewMode("day"); setCurrentDate(day); }}>
                   {dayHolidays.map((h, hi) => (
                     <div key={hi} className={`text-[10px] leading-tight truncate px-1.5 py-1 rounded ${h.isYomTov ? "bg-amber-100 text-amber-800" : "bg-blue-50 text-blue-700"}`}>
@@ -553,8 +557,13 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
                   {dayEvents.map(evt => (
                     <div key={evt.id} className="text-[11px] leading-tight px-1.5 py-1 rounded text-white truncate"
                       style={{ backgroundColor: evt.source === "google" ? "#4285F4" : (evt.color || "#2563eb") }}>
-                      <span className="font-medium">{!evt.isAllDay && new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>
+                      {!evt.isAllDay && <span className="font-medium">{new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>}
                       {" "}{evt.title}
+                    </div>
+                  ))}
+                  {dayTasks.map(t => (
+                    <div key={t.id} className="text-[11px] leading-tight px-1.5 py-1 rounded bg-orange-100 text-orange-800 truncate flex items-center gap-1">
+                      <Circle className="w-2.5 h-2.5 flex-shrink-0" />{t.title}
                     </div>
                   ))}
                 </div>
@@ -567,9 +576,10 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
       {/* ======== DAY VIEW ======== */}
       {viewMode === "day" && (() => {
         const dayEvents = getEventsForDate(currentDate);
+        const dayTasks = getTasksForDate(currentDate);
         const dayHolidays = getHolidayForDate(currentDate);
         const heb = gregorianToHebrew(currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate());
-        const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 07:00-20:00
+        const hours = Array.from({ length: 14 }, (_, i) => i + 7);
 
         return (
           <div className="space-y-3">
@@ -581,8 +591,21 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
               <div className="space-y-1">
                 {dayHolidays.map((h, i) => (
                   <div key={i} className={`flex items-center gap-2 text-sm px-3 py-2 rounded-btn ${h.isYomTov ? "bg-amber-50 border border-amber-200" : "bg-blue-50 border border-blue-100"}`}>
-                    {h.emoji && <span>{h.emoji}</span>}
-                    <span className="font-medium">{h.name}</span>
+                    {h.emoji && <span>{h.emoji}</span>}<span className="font-medium">{h.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Tasks for today */}
+            {dayTasks.length > 0 && (
+              <div className="card-static space-y-1.5">
+                <h4 className="text-xs font-medium text-orange-700 flex items-center gap-1"><ListChecks className="w-3.5 h-3.5" /> משימות להיום</h4>
+                {dayTasks.map(t => (
+                  <div key={t.id} className="flex items-center gap-2 text-sm px-3 py-2 rounded-btn bg-orange-50 border border-orange-200">
+                    <Circle className="w-3 h-3 text-orange-500 flex-shrink-0" />
+                    <span className="flex-1 text-text-primary">{t.title}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${taskStatusColors[t.status] || ""}`}>{taskStatusLabel[t.status] || t.status}</span>
+                    {t.project && <span className="text-[10px] text-gold flex items-center gap-0.5"><FolderOpen className="w-2.5 h-2.5" />{t.project.name}</span>}
                   </div>
                 ))}
               </div>
@@ -590,34 +613,29 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
             {/* Timeline */}
             <div className="border border-border-subtle rounded-card overflow-hidden bg-white">
               {hours.map(hour => {
-                const hourEvents = dayEvents.filter(evt => {
-                  const h = new Date(evt.startAt).getHours();
-                  return h === hour;
-                });
+                const hourEvents = dayEvents.filter(e => new Date(e.startAt).getHours() === hour);
                 return (
-                  <div key={hour} className="flex border-b border-border-subtle min-h-[48px]"
-                    onClick={() => {
-                      const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00`;
-                      const endStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}T${String(hour + 1).padStart(2, "0")}:00`;
-                      setFormData({ ...formData, startAt: dateStr, endAt: endStr });
-                      setShowAdd(true);
-                    }}>
+                  <div key={hour} className="group flex border-b border-border-subtle min-h-[48px]">
                     <div className="w-14 flex-shrink-0 text-xs text-text-muted py-2 text-center border-l border-border-subtle bg-bg-surface">
                       {String(hour).padStart(2, "0")}:00
                     </div>
-                    <div className="flex-1 p-1 space-y-1 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div className="flex-1 p-1 space-y-1 cursor-pointer hover:bg-gray-50 transition-colors relative"
+                      onClick={() => openAddForDate(currentDate, "event", hour)}>
+                      <div className="absolute top-1 left-1"><QuickAdd date={currentDate} hour={hour} /></div>
                       {hourEvents.map(evt => (
                         <div key={evt.id} className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-white"
-                          style={{ backgroundColor: evt.source === "google" ? "#4285F4" : (evt.color || "#2563eb") }}>
+                          style={{ backgroundColor: evt.source === "google" ? "#4285F4" : (evt.color || "#2563eb") }}
+                          onClick={e => e.stopPropagation()}>
                           <div className="flex-1 min-w-0">
                             <span className="font-medium">{evt.title}</span>
                             {evt.location && <span className="text-white/80 text-xs mr-2">• {evt.location}</span>}
                           </div>
                           <span className="text-xs text-white/80 flex-shrink-0">
-                            {new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                            {" - "}
-                            {new Date(evt.endAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} - {new Date(evt.endAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
                           </span>
+                          {evt.source !== "google" && (
+                            <button onClick={e2 => { e2.stopPropagation(); deleteEvent(evt.id); }} className="text-white/60 hover:text-white"><Trash2 className="w-3 h-3" /></button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -629,45 +647,32 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         );
       })()}
 
-      {/* ======== SELECTED DAY DETAIL PANEL ======== */}
+      {/* ======== SELECTED DAY DETAIL ======== */}
       {selectedDay && viewMode === "month" && (() => {
         const dayEvents = getEventsForDate(selectedDay);
+        const dayTasks = getTasksForDate(selectedDay);
         const dayHolidays = getHolidayForDate(selectedDay);
         const heb = gregorianToHebrew(selectedDay.getFullYear(), selectedDay.getMonth() + 1, selectedDay.getDate());
-
         return (
           <div className="card-static space-y-3 border border-gold/20">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-base font-heading text-text-primary">
-                  {selectedDay.getDate()} {monthNames[selectedDay.getMonth()]} — {dayNames[selectedDay.getDay()]}
-                </h4>
+                <h4 className="text-base font-heading text-text-primary">{selectedDay.getDate()} {monthNames[selectedDay.getMonth()]} — {dayNames[selectedDay.getDay()]}</h4>
                 <p className="text-xs text-gold">{heb.display}</p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => openAddForDate(selectedDay)} className="btn-gold text-xs flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> הוסף
-                </button>
-                <button onClick={() => { setCurrentDate(selectedDay); setViewMode("day"); }} className="text-xs text-gold hover:underline flex items-center gap-1">
-                  <Eye className="w-3 h-3" /> תצוגת יום
-                </button>
-                <button onClick={() => setSelectedDay(null)} className="text-text-muted hover:text-text-primary">
-                  <X className="w-4 h-4" />
-                </button>
+                <button onClick={() => openAddForDate(selectedDay, "event")} className="btn-gold text-xs flex items-center gap-1"><Calendar className="w-3 h-3" /> אירוע</button>
+                <button onClick={() => openAddForDate(selectedDay, "task")} className="text-xs px-2 py-1 rounded-lg border border-orange-300 text-orange-700 hover:bg-orange-50 flex items-center gap-1"><ListChecks className="w-3 h-3" /> משימה</button>
+                <button onClick={() => { setCurrentDate(selectedDay); setViewMode("day"); }} className="text-xs text-gold hover:underline flex items-center gap-1"><Eye className="w-3 h-3" /> יום</button>
+                <button onClick={() => setSelectedDay(null)} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
               </div>
             </div>
-
             {dayHolidays.map((h, i) => (
               <div key={i} className={`flex items-center gap-2 text-sm px-3 py-2 rounded-btn ${h.isYomTov ? "bg-amber-50 border border-amber-200" : "bg-blue-50 border border-blue-100"}`}>
-                {h.emoji && <span>{h.emoji}</span>}
-                <span className="font-medium">{h.name}</span>
+                {h.emoji && <span>{h.emoji}</span>}<span className="font-medium">{h.name}</span>
               </div>
             ))}
-
-            {dayEvents.length === 0 && dayHolidays.length === 0 && (
-              <p className="text-sm text-text-muted text-center py-4">אין אירועים ביום זה</p>
-            )}
-
+            {dayEvents.length === 0 && dayTasks.length === 0 && dayHolidays.length === 0 && <p className="text-sm text-text-muted text-center py-4">אין אירועים ומשימות ביום זה</p>}
             {dayEvents.map(evt => (
               <div key={evt.id} className="flex items-start gap-3 p-3 rounded-btn border border-border-subtle bg-white">
                 <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ backgroundColor: evt.source === "google" ? "#4285F4" : (evt.color || "#2563eb"), minHeight: 40 }} />
@@ -678,45 +683,42 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
                   </div>
                   {evt.description && <p className="text-xs text-text-muted mt-0.5">{evt.description}</p>}
                   <div className="flex flex-wrap gap-3 mt-1 text-xs text-text-muted">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {evt.isAllDay ? "כל היום" : (
-                        <>
-                          {new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                          {" - "}
-                          {new Date(evt.endAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
-                        </>
-                      )}
-                    </span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{evt.isAllDay ? "כל היום" : `${new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} - ${new Date(evt.endAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}`}</span>
                     {evt.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{evt.location}</span>}
                     {evt.projectId && <span className="flex items-center gap-1 text-gold"><FolderOpen className="w-3 h-3" />{getProjectName(evt.projectId)}</span>}
                     {evt.clientId && <span className="flex items-center gap-1 text-emerald-600"><Users className="w-3 h-3" />{getClientName(evt.clientId)}</span>}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {evt.source !== "google" && (
-                    <>
-                      <button onClick={() => downloadIcs(evt)} className="text-text-muted hover:text-gold transition-colors" title="ייצוא">
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => deleteEvent(evt.id)} className="text-text-muted hover:text-red-500 transition-colors" title="מחק">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </>
-                  )}
+                {evt.source !== "google" && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => downloadIcs(evt)} className="text-text-muted hover:text-gold transition-colors"><Download className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => deleteEvent(evt.id)} className="text-text-muted hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {dayTasks.map(t => (
+              <div key={t.id} className="flex items-center gap-3 p-3 rounded-btn border border-orange-200 bg-orange-50">
+                <Circle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-text-primary text-sm font-medium">{t.title}</p>
+                  {t.description && <p className="text-xs text-text-muted mt-0.5">{t.description}</p>}
+                  <div className="flex gap-2 mt-1 text-xs text-text-muted">
+                    {t.project && <span className="flex items-center gap-0.5 text-gold"><FolderOpen className="w-3 h-3" />{t.project.name}</span>}
+                    {t.client && <span className="flex items-center gap-0.5 text-emerald-600"><Users className="w-3 h-3" />{t.client.name}</span>}
+                  </div>
                 </div>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${taskStatusColors[t.status] || ""}`}>{taskStatusLabel[t.status] || t.status}</span>
               </div>
             ))}
           </div>
         );
       })()}
 
-      {/* Holidays summary for month */}
+      {/* Holidays summary */}
       {viewMode === "month" && holidays.length > 0 && (
         <details className="card-static">
-          <summary className="text-sm font-medium text-gold flex items-center gap-1.5 cursor-pointer">
-            <Calendar className="w-4 h-4" /> חגים ואירועים החודש ({holidays.length})
-          </summary>
+          <summary className="text-sm font-medium text-gold flex items-center gap-1.5 cursor-pointer"><Calendar className="w-4 h-4" /> חגים ואירועים החודש ({holidays.length})</summary>
           <div className="mt-3 space-y-1.5">
             {holidays.map((h, i) => (
               <div key={i} className={`flex items-center gap-2 text-sm px-3 py-2 rounded-btn ${h.isYomTov ? "bg-amber-50 border border-amber-200" : "bg-blue-50 border border-blue-100"}`}>
@@ -730,7 +732,7 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         </details>
       )}
 
-      {loading && <div className="text-center py-4 text-text-muted text-sm">טוען אירועים...</div>}
+      {loading && <div className="text-center py-4 text-text-muted text-sm">טוען...</div>}
     </div>
   );
 }

@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       const calendarId = config.calendarId || "primary";
       for (const event of events) {
         try {
-          const gcalEvent = {
+          const gcalEvent: Record<string, unknown> = {
             summary: event.title,
             description: event.description || "",
             location: event.location || "",
@@ -113,6 +113,12 @@ export async function POST(req: NextRequest) {
             end: event.isAllDay
               ? { date: event.endAt.toISOString().split("T")[0] }
               : { dateTime: event.endAt.toISOString(), timeZone: "Asia/Jerusalem" },
+            reminders: event.reminderMin
+              ? {
+                  useDefault: false,
+                  overrides: [{ method: "popup", minutes: event.reminderMin }],
+                }
+              : { useDefault: true },
           };
 
           const gcalRes = await fetch(
