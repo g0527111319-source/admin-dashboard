@@ -128,6 +128,16 @@ export default function DepthSection({
       } ${className}`}
     >
       {/* ── LAYER 1 — background image with parallax ─────────────────────── */}
+      {/*
+        NOTE on loading strategy:
+          We deliberately use `loading="eager"` (not "lazy") because these
+          images are absolutely-positioned with negative insets, and the
+          browser's lazy-load heuristic often fails to register them as
+          in-viewport — so they never load at all, leaving sections flat.
+          `fetchpriority="low"` keeps them out of the critical path so the
+          LCP hero still wins bandwidth, and `decoding="async"` stops them
+          from ever blocking the main thread.
+      */}
       {reduced ? (
         <div
           aria-hidden
@@ -138,8 +148,10 @@ export default function DepthSection({
             alt={alt}
             className={`w-full h-full object-cover ${blur ? "blur-[2px]" : ""}`}
             style={{ opacity }}
-            loading="lazy"
+            loading="eager"
             decoding="async"
+            // @ts-expect-error — fetchpriority is valid HTML but not yet in React's DOM types
+            fetchpriority="low"
           />
         </div>
       ) : (
@@ -153,8 +165,10 @@ export default function DepthSection({
             alt={alt}
             className={`w-full h-full object-cover ${blur ? "blur-[2px]" : ""}`}
             style={{ opacity }}
-            loading="lazy"
+            loading="eager"
             decoding="async"
+            // @ts-expect-error — fetchpriority is valid HTML but not yet in React's DOM types
+            fetchpriority="low"
           />
         </motion.div>
       )}
