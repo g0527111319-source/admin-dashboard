@@ -105,33 +105,31 @@ export async function POST(req: NextRequest) {
         where: { designerId },
       });
 
-      if (gcalConfig?.accessToken && gcalConfig.syncEnabled) {
+      if (gcalConfig?.accessToken) {
         let accessToken = gcalConfig.accessToken;
+        const clientId_g = process.env.GOOGLE_CLIENT_ID || "";
+        const clientSecret_g = process.env.GOOGLE_CLIENT_SECRET || "";
 
-        // Refresh token if available
-        if (gcalConfig.refreshToken) {
+        // Always refresh token to ensure it's valid
+        if (gcalConfig.refreshToken && clientId_g && clientSecret_g) {
           try {
-            const clientId_g = process.env.GOOGLE_CLIENT_ID;
-            const clientSecret_g = process.env.GOOGLE_CLIENT_SECRET;
-            if (clientId_g && clientSecret_g) {
-              const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                  client_id: clientId_g,
-                  client_secret: clientSecret_g,
-                  refresh_token: gcalConfig.refreshToken,
-                  grant_type: "refresh_token",
-                }),
+            const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                client_id: clientId_g,
+                client_secret: clientSecret_g,
+                refresh_token: gcalConfig.refreshToken,
+                grant_type: "refresh_token",
+              }),
+            });
+            if (tokenRes.ok) {
+              const tokenData = await tokenRes.json();
+              accessToken = tokenData.access_token;
+              await prisma.designerGoogleCalendar.update({
+                where: { designerId },
+                data: { accessToken },
               });
-              if (tokenRes.ok) {
-                const tokenData = await tokenRes.json();
-                accessToken = tokenData.access_token;
-                await prisma.designerGoogleCalendar.update({
-                  where: { designerId },
-                  data: { accessToken },
-                });
-              }
             }
           } catch { /* use existing token */ }
         }
@@ -171,13 +169,14 @@ export async function POST(req: NextRequest) {
             where: { id: event.id },
             data: { googleEventId: gcalData.id },
           });
-          // Return the updated event with googleEventId
           return NextResponse.json({ ...event, googleEventId: gcalData.id, googleSynced: true }, { status: 201 });
+        } else {
+          const errText = await gcalRes.text().catch(() => "");
+          console.error("Google Calendar auto-sync failed:", gcalRes.status, errText);
         }
       }
     } catch (syncErr) {
       console.error("Auto-sync to Google Calendar failed:", syncErr);
-      // Event was created successfully, just sync failed — still return success
     }
 
     return NextResponse.json(event, { status: 201 });
