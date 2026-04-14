@@ -230,15 +230,15 @@ export default function HomePage() {
 
       {/* ─── IMAGE GALLERY STRIP ─── */}
       {/*
-        Light-themed strip. Beautiful marble counter peeks through a soft
-        "airy" cream wash — the design material actually reads now, not
-        a whisper under a heavy overlay.
+        Light-themed strip. Beautiful marble counter directly over the cream
+        bg at 18% — NO overlay on light sections (cream-on-cream produces
+        gray mud; letting the image blend with the cream bg reads cleaner).
       */}
       <DepthSection
         image={DEPTH_IMAGES.marbleCounter}
         speed={0.3}
-        opacity={0.14}
-        overlayTone="airy"
+        opacity={0.18}
+        overlayTone="none"
       >
       <section className="relative py-14 sm:py-16 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(201,168,76,0.06),transparent)]" />
@@ -279,15 +279,15 @@ export default function HomePage() {
 
       {/* ─── FEATURES SECTION ─── */}
       {/*
-        Features section. A bright designer home peeks through a soft cream
-        wash at 12% — the cards feel like they sit inside a real, beautiful
-        interior instead of floating on flat cream.
+        Features section. A bright designer home renders directly on the
+        cream bg at 16% — NO overlay (cream-on-cream overlay is gray mud).
+        The cards sit on top with their own white panels for legibility.
       */}
       <DepthSection
         image={DEPTH_IMAGES.designerHome}
         speed={0.35}
-        opacity={0.12}
-        overlayTone="airy"
+        opacity={0.16}
+        overlayTone="none"
       >
       <section className="relative py-20 sm:py-24 px-4 sm:px-6">
         <div className="relative max-w-7xl mx-auto">
