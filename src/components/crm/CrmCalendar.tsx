@@ -225,9 +225,16 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         alert(err.error || "שגיאה ביצירת אירוע");
         return;
       }
+      const created = await res.json().catch(() => ({}));
       setShowAdd(false);
       resetForm();
       fetchEvents();
+      // Refresh Google events display (event was auto-synced server-side)
+      if (gcalStatus?.connected) fetchGoogleEvents();
+      if (created.googleSynced) {
+        // Subtle feedback that it synced to Google
+        console.log("Event auto-synced to Google Calendar");
+      }
     } catch { alert("שגיאת רשת"); } finally { setSaving(false); }
   };
 
