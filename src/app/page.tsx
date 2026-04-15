@@ -93,9 +93,9 @@ export default function HomePage() {
         tied to the Lenis-driven scroll so the hall recedes as you scroll down.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.archHouse}
-        speed={0.35}
-        opacity={0.22}
+        image={DEPTH_IMAGES.brightVilla}
+        speed={0.4}
+        opacity={0.16}
         overlayTone="none"
         fullHeight
         className="bg-[#050505] text-white"
@@ -230,14 +230,14 @@ export default function HomePage() {
 
       {/* ─── IMAGE GALLERY STRIP ─── */}
       {/*
-        Light-themed strip. Beautiful marble counter directly over the cream
-        bg at 18% — NO overlay on light sections (cream-on-cream produces
-        gray mud; letting the image blend with the cream bg reads cleaner).
+        Light-themed strip. Cream living room with a gallery wall sits directly
+        over the cream page bg at 12% — no overlay (avoids cream-on-cream mud).
+        Lower opacity so the cards remain the visual anchor.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.marbleCounter}
-        speed={0.3}
-        opacity={0.18}
+        image={DEPTH_IMAGES.livingGallery}
+        speed={0.35}
+        opacity={0.12}
         overlayTone="none"
       >
       <section className="relative py-14 sm:py-16 px-4 sm:px-6 overflow-hidden">
@@ -279,14 +279,14 @@ export default function HomePage() {
 
       {/* ─── FEATURES SECTION ─── */}
       {/*
-        Features section. A bright designer home renders directly on the
-        cream bg at 16% — NO overlay (cream-on-cream overlay is gray mud).
-        The cards sit on top with their own white panels for legibility.
+        Features section. A bright open-plan living room peeks behind the
+        feature cards at 10% — subtle enough not to compete with the cards
+        themselves, but strong enough that the page feels like a real room.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.designerHome}
-        speed={0.35}
-        opacity={0.16}
+        image={DEPTH_IMAGES.brightLiving}
+        speed={0.4}
+        opacity={0.10}
         overlayTone="none"
       >
       <section className="relative py-20 sm:py-24 px-4 sm:px-6">
@@ -398,14 +398,14 @@ export default function HomePage() {
 
       {/* ─── PROJECTS GALLERY CTA ─── */}
       {/*
-        Full-bleed promo card over a parallax villa backdrop. A gold radial
-        "brand" overlay accents the image without muting it entirely, so a
-        real designer home is visible behind the CTA.
+        Full-bleed promo card over a parallax pool-house backdrop. The "brand"
+        overlay (gold radial + dark scrim) makes the villa feel cinematic
+        rather than muted.
       */}
       <DepthSection
-        image={DEPTH_IMAGES.modernVilla}
-        speed={0.45}
-        opacity={0.26}
+        image={DEPTH_IMAGES.poolHouse}
+        speed={0.5}
+        opacity={0.20}
         overlayTone="brand"
         blur
       >

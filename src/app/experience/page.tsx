@@ -417,9 +417,9 @@ function HeroSection() {
 
   return (
     <DepthSection
-      image={DEPTH_IMAGES.archHouse}
-      speed={0.4}
-      opacity={0.22}
+      image={DEPTH_IMAGES.brightVilla}
+      speed={0.45}
+      opacity={0.16}
       overlayTone="none"
       fullHeight
     >
@@ -530,9 +530,9 @@ function IntroSection() {
 
   return (
     <DepthSection
-      image={DEPTH_IMAGES.designerHome}
-      speed={0.3}
-      opacity={0.13}
+      image={DEPTH_IMAGES.livingGallery}
+      speed={0.35}
+      opacity={0.09}
       overlayTone="dark"
     >
     <section
@@ -636,9 +636,9 @@ function GallerySection({
 function StatsSection() {
   return (
     <DepthSection
-      image={DEPTH_IMAGES.modernVilla}
-      speed={0.35}
-      opacity={0.12}
+      image={DEPTH_IMAGES.modernFacade}
+      speed={0.4}
+      opacity={0.09}
       overlayTone="dark"
     >
     <section className="relative py-24 sm:py-36 px-4 sm:px-6">
@@ -733,9 +733,9 @@ function StatCard({
 function ClosingCTA() {
   return (
     <DepthSection
-      image={DEPTH_IMAGES.marble}
-      speed={0.5}
-      opacity={0.14}
+      image={DEPTH_IMAGES.beachHouse}
+      speed={0.55}
+      opacity={0.12}
       overlayTone="brand"
       blur
     >

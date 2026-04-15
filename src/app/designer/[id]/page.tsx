@@ -547,19 +547,19 @@ export default function DesignerDashboard() {
           max-md:mr-0
         `}>
           {/*
-            Ambient depth layer — a warm design interior at 18% opacity,
-            rendered directly on the cream page bg with NO overlay. On a
-            light theme, stacking a cream overlay on top of the image
-            produces muddy gray, so we let the photo blend naturally with
-            the cream bg instead — this reads as a subtle "real room" feel.
-            Confined to the main area — the sidebar is outside this <main>
-            block, so its scroll is untouched.
+            Ambient depth layer — a designed cream living room with a
+            gallery wall at 11% opacity, rendered directly on the cream page
+            bg with NO overlay. On a light theme we avoid cream overlays
+            (they produce muddy gray); letting the photo blend naturally
+            with the bg reads as a subtle "real room" feeling behind the
+            CRM cards. Confined to the main area — the sidebar is outside
+            this <main>, so its scroll is untouched.
           */}
           <DepthSection
-            image={DEPTH_IMAGES.naturalLight}
-            opacity={0.18}
+            image={DEPTH_IMAGES.livingGallery}
+            opacity={0.11}
             overlayTone="none"
-            speed={0.25}
+            speed={0.3}
             className="min-h-[calc(100vh-4rem)]"
           >
           <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8">

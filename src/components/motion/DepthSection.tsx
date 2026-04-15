@@ -23,8 +23,11 @@
  * shared document scroll, so Lenis-driven scrolls animate the depth layer too.
  *
  * Motion spec:
- *   - Background translates at `speed * 200px` across the section's viewport transit.
- *     0.3 = subtle, 0.5 = stronger, 0.7 = very noticeable. Default 0.4.
+ *   - TRANSLATE — the image drifts opposite to scroll by `speed * 180px` across
+ *     the section's viewport transit. 0.3 = subtle, 0.5 = stronger. Default 0.4.
+ *   - SCALE     — the image starts at 1.08× and recedes to 1.0× as the section
+ *     passes. This pairs with the translate to sell a real "camera walking
+ *     through space" depth cue instead of a flat slide.
  *   - Respects prefers-reduced-motion (static image only — no parallax).
  *
  * Usage:
@@ -124,8 +127,14 @@ export default function DepthSection({
   //
   // The bg image is oversized (see the top/bottom insets below) so no matter
   // where in the transit we are, we never reveal the edge.
-  const travel = 120 * speed; // px
+  const travel = 180 * speed; // px — ~54-108px total for typical 0.3-0.6 speeds
   const y = useTransform(scrollYProgress, [0, 1], [travel, -travel]);
+
+  // Subtle scale reduction reinforces depth: the image starts slightly
+  // magnified (as if close) and recedes to its natural size as the section
+  // passes the viewport. Combined with `y`, this gives a real feeling of a
+  // static backdrop the camera is moving past — not a sliding poster.
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1.08, 1.04, 1.0]);
 
   return (
     <div
@@ -164,7 +173,7 @@ export default function DepthSection({
       ) : (
         <motion.div
           aria-hidden
-          style={{ y }}
+          style={{ y, scale }}
           className="absolute inset-x-0 -inset-y-[12%] pointer-events-none will-change-transform"
         >
           <img
