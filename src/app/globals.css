@@ -107,6 +107,93 @@
   --sidebar-width: 260px;
   --sidebar-collapsed: 72px;
   --header-height: 64px;
+
+  /* --- Bottom mobile nav --- */
+  --bottom-nav-height: 64px;
+
+  /* --- Semantic status surfaces (for dark-mode-aware badges) --- */
+  --status-green-bg: #ECFDF5;
+  --status-green-fg: #065F46;
+  --status-green-ring: rgba(16, 185, 129, 0.18);
+  --status-red-bg: #FEF2F2;
+  --status-red-fg: #991B1B;
+  --status-red-ring: rgba(239, 68, 68, 0.18);
+  --status-yellow-bg: #FFFBEB;
+  --status-yellow-fg: #92400E;
+  --status-yellow-ring: rgba(245, 158, 11, 0.2);
+  --status-blue-bg: #EFF6FF;
+  --status-blue-fg: #1E40AF;
+  --status-blue-ring: rgba(59, 130, 246, 0.2);
+  --status-gray-bg: #F3F4F6;
+  --status-gray-fg: #374151;
+  --status-gray-ring: rgba(107, 114, 128, 0.18);
+  --status-gold-bg: #FBF7ED;
+  --status-gold-fg: #92700A;
+  --status-gold-ring: rgba(201, 168, 76, 0.22);
+}
+
+/* ============================
+   DARK MODE — token overrides
+   Activated by `.dark` on <html>; the ThemeToggle
+   component toggles this class and persists the user
+   preference in localStorage.
+   ============================ */
+html.dark {
+  color-scheme: dark;
+  --bg: #0B0B0C;
+  --bg-card: #17181B;
+  --bg-card-hover: #1E1F23;
+  --bg-surface: #15161A;
+  --bg-surface-2: #1C1D22;
+  --bg-sidebar: #121215;
+
+  --text: #F5F5F4;
+  --text-secondary: #D4D4D8;
+  --text-muted: #A1A1AA;
+  --text-faint: #71717A;
+
+  --border: #2A2B30;
+  --border-hover: #3A3B42;
+  --border-gold: rgba(232, 201, 122, 0.28);
+  --border-focus: rgba(232, 201, 122, 0.55);
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-gold: 0 4px 20px rgba(201, 168, 76, 0.18);
+  --shadow-gold-lg: 0 8px 32px rgba(201, 168, 76, 0.28);
+
+  /* Dark-mode status surfaces — desaturated backgrounds, brighter text */
+  --status-green-bg: rgba(16, 185, 129, 0.12);
+  --status-green-fg: #6EE7B7;
+  --status-green-ring: rgba(16, 185, 129, 0.28);
+  --status-red-bg: rgba(239, 68, 68, 0.12);
+  --status-red-fg: #FCA5A5;
+  --status-red-ring: rgba(239, 68, 68, 0.28);
+  --status-yellow-bg: rgba(245, 158, 11, 0.12);
+  --status-yellow-fg: #FCD34D;
+  --status-yellow-ring: rgba(245, 158, 11, 0.28);
+  --status-blue-bg: rgba(59, 130, 246, 0.12);
+  --status-blue-fg: #93C5FD;
+  --status-blue-ring: rgba(59, 130, 246, 0.28);
+  --status-gray-bg: rgba(255, 255, 255, 0.05);
+  --status-gray-fg: #D4D4D8;
+  --status-gray-ring: rgba(255, 255, 255, 0.1);
+  --status-gold-bg: rgba(201, 168, 76, 0.14);
+  --status-gold-fg: #F5ECD3;
+  --status-gold-ring: rgba(201, 168, 76, 0.32);
+}
+
+/* Image/card luminance adjustment in dark mode so photos don't blind the viewer */
+html.dark img {
+  opacity: 0.92;
+}
+
+/* Smoothly cross-fade between themes */
+html {
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ============================
@@ -411,8 +498,9 @@ p {
    ============================ */
 
 .input-field {
-  @apply w-full bg-white px-4 py-2.5 text-sm text-text-primary placeholder-text-faint
-         transition-all ease-out;
+  @apply w-full px-4 py-2.5 text-sm placeholder-text-faint transition-all ease-out;
+  background: var(--bg-card);
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   outline: none;
@@ -467,29 +555,39 @@ textarea.input-field {
 }
 .badge-gold {
   @apply badge;
-  background: var(--gold-50);
-  color: #92700A;
-  border: 1px solid rgba(201, 168, 76, 0.2);
+  background: var(--status-gold-bg);
+  color: var(--status-gold-fg);
+  border: 1px solid var(--status-gold-ring);
 }
 .badge-green {
-  @apply badge bg-emerald-50 text-emerald-700;
-  border: 1px solid rgba(16, 185, 129, 0.15);
+  @apply badge;
+  background: var(--status-green-bg);
+  color: var(--status-green-fg);
+  border: 1px solid var(--status-green-ring);
 }
 .badge-red {
-  @apply badge bg-red-50 text-red-700;
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  @apply badge;
+  background: var(--status-red-bg);
+  color: var(--status-red-fg);
+  border: 1px solid var(--status-red-ring);
 }
 .badge-yellow {
-  @apply badge bg-amber-50 text-amber-700;
-  border: 1px solid rgba(245, 158, 11, 0.15);
+  @apply badge;
+  background: var(--status-yellow-bg);
+  color: var(--status-yellow-fg);
+  border: 1px solid var(--status-yellow-ring);
 }
 .badge-blue {
-  @apply badge bg-blue-50 text-blue-700;
-  border: 1px solid rgba(59, 130, 246, 0.15);
+  @apply badge;
+  background: var(--status-blue-bg);
+  color: var(--status-blue-fg);
+  border: 1px solid var(--status-blue-ring);
 }
 .badge-gray {
-  @apply badge bg-gray-50 text-gray-600;
-  border: 1px solid rgba(107, 114, 128, 0.15);
+  @apply badge;
+  background: var(--status-gray-bg);
+  color: var(--status-gray-fg);
+  border: 1px solid var(--status-gray-ring);
 }
 
 .star-rating { color: var(--gold); }

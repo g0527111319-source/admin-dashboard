@@ -65,6 +65,9 @@ type CrmClient = {
   renovationPurpose?: string | null;
   estimatedBudget?: string | null;
   accessInstructions?: string | null;
+  // Email language preference ("he" | "en"). Optional for back-compat with
+  // rows created before the column existed.
+  language?: string | null;
 };
 
 type ClientSubTab =
@@ -106,6 +109,11 @@ const EMPTY_FORM = {
   renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
   accessInstructions: "",
   notes: "",
+  // NEW: every client now gets a first project auto-created. If the designer
+  // leaves this blank the server defaults it to "פרויקט ראשון".
+  firstProjectName: "",
+  // NEW: email language for client-facing messages. Default Hebrew.
+  language: "he" as "he" | "en",
 };
 
 export default function CrmClients({ gender }: { gender?: string }) {
@@ -117,16 +125,7 @@ export default function CrmClients({ gender }: { gender?: string }) {
   const [editingClient, setEditingClient] = useState<CrmClient | null>(null);
   const [selectedClient, setSelectedClient] = useState<CrmClient | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<ClientSubTab>("details");
-  const [formData, setFormData] = useState({
-    firstName: "", lastName: "", phone: "", email: "",
-    partner1FirstName: "", partner1LastName: "", partner1Phone: "", partner1Email: "",
-    street: "", floor: "", apartment: "", neighborhood: "", city: "",
-    renovationSameAddress: false,
-    renovationStreet: "", renovationFloor: "", renovationApartment: "", renovationNeighborhood: "", renovationCity: "",
-    renovationDetails: "", renovationPurpose: "", estimatedBudget: "",
-    accessInstructions: "",
-    notes: "",
-  });
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [showPartner, setShowPartner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -246,6 +245,12 @@ export default function CrmClients({ gender }: { gender?: string }) {
       estimatedBudget: client.estimatedBudget || "",
       accessInstructions: client.accessInstructions || "",
       notes: client.notes || "",
+      // Edit mode: `firstProjectName` is ignored by the PATCH route so we
+      // just seed it empty. `language` is kept so the designer can change it
+      // later (though today the PATCH route will need to accept this field —
+      // if it doesn't, the send will just drop the key silently).
+      firstProjectName: "",
+      language: (client.language === "en" ? "en" : "he") as "he" | "en",
     });
     setShowPartner(!!(client.partner1FirstName || client.partner1Phone || client.partner1Email));
     setShowAddForm(true);
@@ -348,8 +353,13 @@ export default function CrmClients({ gender }: { gender?: string }) {
 
   // =====================================================
   // CLIENT DETAIL VIEW — with sub-tabs
+  // (rendered ONLY when the add/edit form is closed —
+  // otherwise the pencil button inside the detail view
+  // would sit behind the detail branch and the modal would
+  // never mount, because selectedClient is still set when
+  // we enter edit mode).
   // =====================================================
-  if (selectedClient) {
+  if (selectedClient && !showAddForm) {
     // If no project selected yet, show project picker
     if (!selectedProject && selectedClient.projects.length > 0) {
       return (
@@ -1122,7 +1132,56 @@ export default function CrmClients({ gender }: { gender?: string }) {
             </div>
           </div>
 
-          {/* Section 5: Internal Notes */}
+          {/*
+            Section 5: first project + client preferences.
+            Every new client is created WITH a project — it's a system invariant,
+            not an optional extra. The name here is the project's display name;
+            leaving it blank falls back to "פרויקט ראשון" server-side.
+            `language` controls which language we send client-facing emails in
+            (meeting invites, reminders). Only shown on create — editing an
+            existing client doesn't need to re-choose it here.
+          */}
+          {!editingClient && (
+            <div className="border-t border-border-subtle pt-4 space-y-4">
+              <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gold" />
+                פרויקט ראשון והעדפות
+              </h3>
+              <div>
+                <label className="block text-sm text-text-muted mb-1.5">
+                  שם הפרויקט הראשון
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={formData.firstProjectName}
+                  onChange={(e) => setFormData({ ...formData, firstProjectName: e.target.value })}
+                  placeholder="למשל: שיפוץ דירה, עיצוב סלון — ברירת מחדל: פרויקט ראשון"
+                />
+                <p className="text-xs text-text-muted mt-1">
+                  תמיד נוצר פרויקט אחד בעת פתיחת הלקוח. אפשר להוסיף עוד פרויקטים בהמשך מתוך דף הלקוח.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm text-text-muted mb-1.5">
+                  שפת ההתקשרות עם הלקוח (מיילים)
+                </label>
+                <select
+                  className="input-field"
+                  value={formData.language}
+                  onChange={(e) => setFormData({ ...formData, language: e.target.value as "he" | "en" })}
+                >
+                  <option value="he">עברית</option>
+                  <option value="en">English</option>
+                </select>
+                <p className="text-xs text-text-muted mt-1">
+                  ישפיע על שפת הזמנות הפגישה ותזכורות אוטומטיות שנשלחות ללקוח.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Section 6: Internal Notes */}
           <div className="border-t border-border-subtle pt-4 space-y-4">
             <h3 className="text-base font-heading text-text-primary flex items-center gap-2">
               <FileText className="w-4 h-4 text-gold" />

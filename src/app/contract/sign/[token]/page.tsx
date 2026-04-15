@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, use } from "react";
 import { CheckCircle2, FileText, Pen, X, Eye, Clock, AlertCircle, Sparkles } from "lucide-react";
+import ContractAnnexView from "@/components/crm/ContractAnnexView";
+import PdfCanvasViewer from "@/components/crm/PdfCanvasViewer";
+import { readAnnex, annexHasContent } from "@/lib/contract-annex";
 
 // Client auto-fill field types
 const CLIENT_AUTO_FIELDS = ["client_name", "client_email", "client_phone", "client_address"];
@@ -24,11 +27,14 @@ interface ContractData {
   createdAt: string;
   template?: {
     name: string;
-    contentBlocks: { id: string; type: string; content: string; fileUrl?: string; fileName?: string; fileType?: string }[];
+    contentBlocks: { id: string; type: string; content: string; fileUrl?: string; fileName?: string; fileType?: string; pageCount?: number }[];
     fields: { id: string; label: string; type: string; owner: string; required: boolean; placeholder?: string; width?: string; position?: { x: number; y: number; w: number; h: number; blockId: string } }[];
   } | null;
   designer?: { fullName: string; companyName?: string };
 }
+
+// Matches the designer-side editor so field coordinates (stored as %) line up.
+const PDF_PAGE_HEIGHT = 1100;
 
 export default function ClientSignPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -109,6 +115,7 @@ export default function ClientSignPage({ params }: { params: Promise<{ token: st
   const clientFields = (contract.template?.fields || []).filter(f => f.owner === "client" && f.type !== "signature" && !CLIENT_AUTO_FIELDS.includes(f.type));
   const autoFilledFields = (contract.template?.fields || []).filter(f => CLIENT_AUTO_FIELDS.includes(f.type));
   const allFieldValues = { ...contract.designerFieldValues, ...clientValues };
+  const annex = readAnnex(contract.designerFieldValues);
 
   return (
     <div className="min-h-screen bg-bg" dir="rtl">
@@ -179,7 +186,7 @@ export default function ClientSignPage({ params }: { params: Promise<{ token: st
                     <img src={block.fileUrl} alt={block.fileName} className="w-full" draggable={false} />
                   )}
                   {block.fileType === "pdf" && (
-                    <iframe src={block.fileUrl} className="w-full h-[600px] pointer-events-none" title={block.fileName} />
+                    <PdfCanvasViewer url={block.fileUrl} />
                   )}
                   {/* Positioned fields on document */}
                   {(contract.template?.fields || []).filter(f => f.position?.blockId === block.id).map(field => {
@@ -300,6 +307,12 @@ export default function ClientSignPage({ params }: { params: Promise<{ token: st
                 <span className="text-xl font-bold text-text-primary">₪{contract.totalAmount.toLocaleString()}</span>
               </div>
             </div>
+          )}
+
+          {/* Annex — renders between the contract body and the signatures so
+              the client's single signature at the bottom covers both. */}
+          {annex && annexHasContent(annex) && (
+            <ContractAnnexView annex={annex} />
           )}
 
           {/* Signatures */}

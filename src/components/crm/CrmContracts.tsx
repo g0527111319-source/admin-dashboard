@@ -11,6 +11,10 @@ import {
   Home, ZoomIn, ZoomOut, MousePointer
 } from "lucide-react";
 import { g } from "@/lib/gender";
+import ContractAnnexEditor from "./ContractAnnexEditor";
+import ContractAnnexView from "./ContractAnnexView";
+import PdfCanvasViewer from "./PdfCanvasViewer";
+import { ContractAnnex, emptyAnnex, readAnnex, writeAnnex, annexHasContent } from "@/lib/contract-annex";
 
 // ==========================
 // TYPES
@@ -50,7 +54,17 @@ interface ContentBlock {
   fileUrl?: string;
   fileName?: string;
   fileType?: string;
+  /**
+   * Number of pages the uploaded PDF contains. Used to size the iframe so the
+   * designer can scroll through all pages and position fields on any page.
+   * Defaults to 1 for backwards compatibility.
+   */
+  pageCount?: number;
 }
+
+// Approximate rendered height of a single A4 page in a browser iframe at 100%
+// zoom. Works well for portrait PDFs and matches the existing ~700px feel.
+const PDF_PAGE_HEIGHT = 1100;
 
 interface ContractTemplate {
   id: string;
@@ -335,6 +349,13 @@ function TemplateEditor({
     ));
   };
 
+  const setBlockPageCount = (id: string, nextCount: number) => {
+    const clamped = Math.max(1, Math.min(20, Math.round(nextCount)));
+    setBlocks(prev => prev.map(b =>
+      b.id === id ? { ...b, pageCount: clamped } : b
+    ));
+  };
+
   // Add field to document
   const addFieldToDocument = (type: FieldType, owner: FieldOwner, label: string) => {
     const targetBlock = fileBlocks[0];
@@ -579,36 +600,89 @@ function TemplateEditor({
                 </div>
               </div>
 
-              {/* Pages */}
-              <div className="space-y-6 overflow-auto max-h-[75vh]" style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}>
+              {/* Pages — each file block is zoomed individually. Images scale
+                   via `transform: scale()`; PDFs don't, because they render as a
+                   stack of canvas images (from PdfCanvasViewer) that already
+                   display at their natural height — we want native page scroll
+                   to carry the user through all PDF pages, not a nested scroll
+                   container that traps the wheel on page 1. */}
+              <div className="space-y-6">
                 {fileBlocks.map((block, pageIdx) => {
                   const fieldsOnBlock = fields.filter(f => f.position?.blockId === block.id);
+                  const pageCount = Math.max(1, block.pageCount ?? 1);
+                  const isPdf = block.fileType === "pdf";
                   return (
                     <div key={block.id} className="relative">
                       {/* Page header */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {block.fileType === "pdf" ? <File className="w-4 h-4 text-red-500" /> : <FileImage className="w-4 h-4 text-blue-500" />}
-                          <span className="text-sm font-medium text-text-primary">עמוד {pageIdx + 1}</span>
+                          <span className="text-sm font-medium text-text-primary">קובץ {pageIdx + 1}</span>
                           <span className="text-2xs text-text-faint">({fieldsOnBlock.length} שדות)</span>
                         </div>
-                        <button onClick={() => removeBlock(block.id)} className="p-1 rounded hover:bg-red-50 text-text-faint hover:text-red-500 transition-colors" title="הסר עמוד">
-                          <X className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {isPdf && (
+                            <div
+                              className="flex items-center gap-1 bg-bg-surface-2/70 border border-border-subtle rounded-lg px-1.5 py-0.5"
+                              title="מספר עמודים ב-PDF. אם החוזה שלך נמשך על כמה עמודים – הגדל את המספר כדי שתוכלי לגלול ולמקם שדות על כל עמוד."
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setBlockPageCount(block.id, pageCount - 1)}
+                                disabled={pageCount <= 1}
+                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-white text-text-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                                aria-label="פחות עמודים"
+                              >
+                                −
+                              </button>
+                              <span className="text-2xs text-text-muted min-w-[40px] text-center font-mono">
+                                {pageCount} עמ׳
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setBlockPageCount(block.id, pageCount + 1)}
+                                disabled={pageCount >= 20}
+                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-white text-text-muted disabled:opacity-30 disabled:cursor-not-allowed"
+                                aria-label="עוד עמודים"
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                          <button onClick={() => removeBlock(block.id)} className="p-1 rounded hover:bg-red-50 text-text-faint hover:text-red-500 transition-colors" title="הסר קובץ">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Document with fields overlay */}
                       <div
                         ref={el => { containerRefs.current[block.id] = el; }}
                         className="relative border-2 border-border-subtle rounded-xl overflow-hidden bg-white select-none shadow-sm"
-                        style={{ minHeight: 500 }}
+                        style={{
+                          minHeight: 500,
+                          // Scale only image blocks — PDFs use Chrome's built-in
+                          // viewer zoom and adding transform here breaks hit-testing
+                          // (the PDF toolbar + page nav stop responding).
+                          ...(isPdf ? {} : { transform: `scale(${zoom / 100})`, transformOrigin: "top center" }),
+                        }}
                         onClick={() => setSelectedFieldId(null)}
                       >
                         {block.fileType === "image" && block.fileUrl && (
                           <img src={block.fileUrl} alt={block.fileName} className="w-full pointer-events-none" draggable={false} />
                         )}
                         {block.fileType === "pdf" && block.fileUrl && (
-                          <iframe src={block.fileUrl} className="w-full pointer-events-none" style={{ height: 700 }} title={block.fileName} />
+                          // Render PDFs as a stack of canvas images via pdf.js.
+                          // This avoids all the iframe-PDF-viewer headaches
+                          // (scroll blocked by pointer-events, toolbar not
+                          // responding under transform, etc.) and lets us place
+                          // field overlays cleanly on top.
+                          <PdfCanvasViewer
+                            url={block.fileUrl}
+                            onPageCount={(n) => {
+                              if (n !== block.pageCount) setBlockPageCount(block.id, n);
+                            }}
+                          />
                         )}
 
                         {/* Field overlays */}
@@ -672,10 +746,13 @@ function TemplateEditor({
           )}
         </div>
 
-        {/* RIGHT: Tool Panel */}
-        <div className="w-72 flex-shrink-0 space-y-4">
+        {/* RIGHT: Tool Panel — sticky so it stays visible while the user scrolls
+             through a long multi-page PDF. Previously the document area had its
+             own `overflow-auto max-h-[75vh]` to keep this panel visible; that
+             trapped the scroll wheel on page 1 and prevented reaching page 2. */}
+        <div className="w-72 flex-shrink-0 space-y-4 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-auto">
           {/* Field palette */}
-          <div className="card-static space-y-4 max-h-[75vh] overflow-auto">
+          <div className="card-static space-y-4">
             <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
               <MousePointer className="w-4 h-4 text-gold" />
               הוסף שדה למסמך
@@ -879,6 +956,7 @@ function ContractPreview({
   const designerValues = contract.designerFieldValues || {};
   const clientValues = contract.clientFieldValues || {};
   const allFields = template?.fields || [];
+  const annex = readAnnex(designerValues);
 
   return (
     <div className="space-y-6 animate-in">
@@ -926,7 +1004,7 @@ function ContractPreview({
                   <img src={block.fileUrl} alt={block.fileName} className="w-full" draggable={false} />
                 )}
                 {block.fileType === "pdf" && (
-                  <iframe src={block.fileUrl} className="w-full h-[600px] pointer-events-none" title={block.fileName} />
+                  <PdfCanvasViewer url={block.fileUrl} />
                 )}
                 {allFields.filter(f => f.position?.blockId === block.id).map(field => {
                   const pos = field.position!;
@@ -984,6 +1062,11 @@ function ContractPreview({
               <span className="text-xl font-bold text-text-primary">₪{contract.totalAmount.toLocaleString()}</span>
             </div>
           </div>
+        )}
+
+        {/* Annex — renders when enabled + has any content */}
+        {annex && annexHasContent(annex) && (
+          <ContractAnnexView annex={annex} />
         )}
 
         {/* Signatures */}
@@ -1268,6 +1351,9 @@ function ContractFillForm({
   const [designerValues, setDesignerValues] = useState<Record<string, string>>(
     (contract?.designerFieldValues as Record<string, string>) || {}
   );
+  const [annex, setAnnex] = useState<ContractAnnex>(
+    () => readAnnex(contract?.designerFieldValues as Record<string, string> | undefined) || emptyAnnex()
+  );
 
   const designerFields = (template?.fields || []).filter(f => f.owner === "designer" && f.type !== "signature" && !CLIENT_AUTO_FIELDS.includes(f.type));
   const selectedProject = projects.find(p => p.id === projectId);
@@ -1318,7 +1404,7 @@ function ContractFillForm({
       clientName: clientName.trim() || null,
       clientEmail: clientEmail.trim() || null,
       clientPhone: clientPhone.trim() || null,
-      designerFieldValues: designerValues,
+      designerFieldValues: writeAnnex(designerValues, annex),
     });
   };
 
@@ -1408,6 +1494,14 @@ function ContractFillForm({
           </div>
         </div>
       </div>
+
+      {/* Contract annex (per-client addendum) */}
+      <ContractAnnexEditor
+        value={annex}
+        onChange={setAnnex}
+        projectAddress={selectedProject?.client?.address ?? null}
+        clientName={clientName || selectedProject?.client?.name || null}
+      />
 
       {/* Designer fields */}
       {designerFields.length > 0 && (

@@ -13,7 +13,8 @@ import CrmWebhooks from "@/components/crm/CrmWebhooks";
 import CrmWorkflowTemplates from "@/components/crm/CrmWorkflowTemplates";
 import CrmContracts from "@/components/crm/CrmContracts";
 import CrmCalendar from "@/components/crm/CrmCalendar";
-import CrmProjects from "@/components/crm/CrmProjects";
+// CrmProjects is still imported *inside* CrmClients.tsx for the per-client
+// project view — removing the top-level tab, so we no longer need it here.
 import CrmScheduler from "@/components/crm/CrmScheduler";
 import CrmQuotes from "@/components/crm/CrmQuotes";
 import CrmTimeTracking from "@/components/crm/CrmTimeTracking";
@@ -29,12 +30,15 @@ import type { DesignerContext } from "@/components/crm/ChatBot";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
 import TermsConsentModal from "@/components/TermsConsentModal";
 import PushNotificationManager from "@/components/PushNotificationManager";
-import CrmKanban from "@/components/crm/CrmKanban";
+// CrmKanban was only rendered in the removed projects tab; kept as a file
+// for future use but no longer imported here.
 import CrmPortfolio from "@/components/crm/CrmPortfolio";
 import CrmTasks from "@/components/crm/CrmTasks";
 import FeatureGate from "@/components/FeatureGate";
 import NotificationBell from "@/components/NotificationBell";
 import AccountSettings from "@/components/designer/AccountSettings";
+import TodayDashboard from "@/components/designer/TodayDashboard";
+import InboxView from "@/components/designer/InboxView";
 import { useParams } from "next/navigation";
 import DepthSection from "@/components/motion/DepthSection";
 import { DEPTH_IMAGES } from "@/lib/depth-images";
@@ -94,7 +98,10 @@ type DealHistoryItem = {
     status: string; rating: number | null;
 };
 
-type TabKey = "home" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "projects" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks";
+// NOTE: "projects" tab was removed — projects now live only nested inside a
+// specific client's view (CrmClients → selected client → "פרויקטים" sub-tab).
+// See redirect handling in the hash-init useEffect below for legacy links.
+type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks";
 
 interface NavGroup {
   title: string;
@@ -121,13 +128,16 @@ const navGroups: NavGroup[] = [
   },
   {
     title: "CRM",
+    // "לקוחות" is first; "יומן" is placed directly beneath it per product request
+    // (all scheduling — events, tasks, meetings, reminders — is unified inside
+    // the calendar). Projects no longer appear as a tab — they're accessed via
+    // a client's detail view.
     items: [
       { key: "clients", label: "לקוחות", icon: Users },
-      { key: "projects", label: "פרויקטים", icon: FileText },
+      { key: "calendar", label: "יומן ולוח זמנים", icon: CalendarIcon },
       { key: "tasks", label: "משימות", icon: ListChecks },
       { key: "contracts", label: "חוזים", icon: FileText },
       { key: "quotes", label: "הצעות מחיר", icon: CreditCard },
-      { key: "calendar", label: "יומן ולוח זמנים", icon: CalendarIcon },
       { key: "time-tracking", label: "מעקב שעות", icon: Clock },
       { key: "chat", label: "צ׳אט", icon: MessageCircle },
     ]
@@ -209,8 +219,12 @@ export default function DesignerDashboard() {
 
     const [activeTab, setActiveTabRaw] = useState<TabKey>(() => {
         if (typeof window !== "undefined") {
-            const hash = window.location.hash.replace("#", "") as TabKey;
-            if (hash) return hash;
+            const hash = window.location.hash.replace("#", "");
+            // Legacy redirect: the "projects" tab was removed — any old bookmark
+            // or in-app link pointing at #projects lands on the clients tab
+            // instead (projects are now nested inside each client).
+            if (hash === "projects") return "clients";
+            if (hash) return hash as TabKey;
         }
         return "home";
     });
@@ -230,7 +244,6 @@ export default function DesignerDashboard() {
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [showDealModal, setShowDealModal] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
-    const [projectView, setProjectView] = useState<"list" | "kanban">("list");
     const [calendarView, setCalendarView] = useState<"events" | "schedule">("events");
 
     // Profile editing form state
@@ -1093,6 +1106,19 @@ export default function DesignerDashboard() {
               </div>
             )}
 
+            {/* ===== TODAY (new home for designers who prefer the "Today" screen) ===== */}
+            {activeTab === "today" && (
+              <TodayDashboard
+                designerName={designerData.firstName || designerData.fullName?.split(" ")[0]}
+                onNavigate={(h) => setActiveTab(h as TabKey)}
+              />
+            )}
+
+            {/* ===== INBOX ===== */}
+            {activeTab === "inbox" && (
+              <InboxView onNavigate={(h) => setActiveTab(h as TabKey)} />
+            )}
+
             {/* ===== CRM TABS ===== */}
             {activeTab === "clients" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmClients gender={gender} /></FeatureGate>
@@ -1142,28 +1168,9 @@ export default function DesignerDashboard() {
               </div>
               </FeatureGate>
             )}
-            {activeTab === "projects" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}>
-              <div className="space-y-4 animate-in">
-                {/* View toggle: list vs kanban */}
-                <div className="flex items-center gap-2 justify-end">
-                  <button
-                    onClick={() => setProjectView("list")}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${projectView === "list" ? "bg-gold/15 text-gold font-semibold" : "text-text-muted hover:text-text-primary"}`}
-                  >
-                    <span className="flex items-center gap-1"><List className="w-3.5 h-3.5" /> רשימה</span>
-                  </button>
-                  <button
-                    onClick={() => setProjectView("kanban")}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${projectView === "kanban" ? "bg-gold/15 text-gold font-semibold" : "text-text-muted hover:text-text-primary"}`}
-                  >
-                    <span className="flex items-center gap-1"><Grid3X3 className="w-3.5 h-3.5" /> קנבן</span>
-                  </button>
-                </div>
-                {projectView === "list" ? <CrmProjects gender={gender} /> : <CrmKanban gender={gender} />}
-              </div>
-              </FeatureGate>
-            )}
+            {/* NOTE: "projects" top-level tab was removed. Projects are now
+                accessible only inside a specific client's detail view
+                (CrmClients → client → "פרויקטים" sub-tab). */}
             {activeTab === "quotes" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmQuotes gender={gender} /></FeatureGate>
             )}

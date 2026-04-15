@@ -588,6 +588,9 @@ model CrmClient {
   estimatedBudget        String?  // תקציב משוער
   accessInstructions     String?  // דרך גישה
 
+  // Preferred language for client-facing emails (he | en). Default Hebrew.
+  language       String    @default("he")
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime? // מחיקה רכה
@@ -1233,7 +1236,21 @@ model CrmCalendarEvent {
   isAllDay      Boolean     @default(false)
   color         String?
   googleEventId String?
+
+  // Designer-facing reminder. Null = no reminder; default applied at API level.
   reminderMin   Int?
+
+  // Unified type: "event" | "task" | "meeting" | "reminder". Default event for legacy rows.
+  eventType     String      @default("event")
+
+  // Client-facing notifications (only apply when clientId is set + client has email).
+  // notifyClient = send meeting invite email immediately on create.
+  notifyClient         Boolean   @default(false)
+  clientNotifiedAt     DateTime?
+  // clientReminderHours = send email reminder N hours before startAt. Null = no client reminder.
+  clientReminderHours  Int?
+  clientReminderSentAt DateTime?
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

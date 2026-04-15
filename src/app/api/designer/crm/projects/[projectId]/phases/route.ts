@@ -78,6 +78,22 @@ export async function PATCH(
       return NextResponse.json({ error: "נדרש מערך של מזהי שלבים" }, { status: 400 });
     }
 
+    // Security: verify every phaseId actually belongs to THIS project.
+    // Otherwise a caller could reorder phases in someone else's project by
+    // guessing phase IDs (IDOR — the where-clause below only checks id).
+    if (phaseIds.length > 0) {
+      const ownedPhases = await prisma.crmProjectPhase.findMany({
+        where: { id: { in: phaseIds }, projectId },
+        select: { id: true },
+      });
+      if (ownedPhases.length !== phaseIds.length) {
+        return NextResponse.json(
+          { error: "אחד או יותר מהשלבים אינם שייכים לפרויקט הזה" },
+          { status: 403 }
+        );
+      }
+    }
+
     await prisma.$transaction(
       phaseIds.map((id: string, index: number) =>
         prisma.crmProjectPhase.update({

@@ -112,8 +112,9 @@ export const SPECIALIZATIONS = [
 /** שעות פרסום */
 export const POSTING_SLOTS = ["10:30", "13:30", "20:30"] as const;
 
-/** סטטוסים בעברית */
+/** סטטוסים בעברית — מאוחד לכל המערכת (supplier + CRM + billing + portal) */
 export const STATUS_LABELS: Record<string, string> = {
+  // Generic statuses
   PENDING: "ממתין",
   APPROVED: "מאושר",
   REJECTED: "נדחה",
@@ -130,27 +131,91 @@ export const STATUS_LABELS: Record<string, string> = {
   CLOSED: "סגור",
   FREE: "חינמי",
   REFUNDED: "הוחזר",
+  // CRM project / task statuses
+  ACTIVE: "פעיל",
+  IN_PROGRESS: "בתהליך",
+  ON_HOLD: "מושהה",
+  BLOCKED: "חסום",
+  ARCHIVED: "ארכיון",
+  TODO: "לביצוע",
+  DONE: "בוצע",
+  SCHEDULED: "מתוזמן",
+  SENT: "נשלח",
+  VIEWED: "נצפה",
+  SIGNED: "חתום",
+  EXPIRED: "פג תוקף",
 };
 
-/** צבעי סטטוס */
+/**
+ * צבעי סטטוס — מבוסס על tokens אחידים.
+ * משתמש בקלאסים `badge-*` שמוגדרים ב-globals.css כדי
+ * שהצבעים יישארו עקביים בכל האתר (גם במצב כהה).
+ */
 export const STATUS_COLORS: Record<string, string> = {
+  // Generic statuses
   PENDING: "badge-yellow",
   APPROVED: "badge-green",
   REJECTED: "badge-red",
   PUBLISHED: "badge-blue",
   PAID: "badge-green",
   OVERDUE: "badge-red",
-  CANCELLED: "badge-red",
+  CANCELLED: "badge-gray",
   PREPARING: "badge-yellow",
   READY: "badge-blue",
   DRAWN: "badge-gold",
   COMPLETED: "badge-green",
-  DRAFT: "badge-yellow",
+  DRAFT: "badge-gray",
   OPEN: "badge-green",
-  CLOSED: "badge-red",
+  CLOSED: "badge-gray",
   FREE: "badge-blue",
   REFUNDED: "badge-yellow",
+  // CRM-specific
+  ACTIVE: "badge-green",
+  IN_PROGRESS: "badge-blue",
+  ON_HOLD: "badge-yellow",
+  BLOCKED: "badge-red",
+  ARCHIVED: "badge-gray",
+  TODO: "badge-gray",
+  DONE: "badge-green",
+  SCHEDULED: "badge-blue",
+  SENT: "badge-blue",
+  VIEWED: "badge-gold",
+  SIGNED: "badge-green",
+  EXPIRED: "badge-red",
 };
+
+/**
+ * תצוגת זמן יחסי בעברית — "לפני 5 דק׳", "אתמול", "לפני שבועיים".
+ * שימושי לפיד פעילות, inbox, וכו'.
+ */
+export function formatRelativeTime(date: Date | string): string {
+  const target = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - target.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 45) return "לפני רגע";
+  if (diffMin < 60) return `לפני ${diffMin} דק׳`;
+  if (diffHour < 24) return `לפני ${diffHour} שע׳`;
+  if (diffDay === 1) return "אתמול";
+  if (diffDay < 7) return `לפני ${diffDay} ימים`;
+  if (diffDay < 14) return "לפני שבוע";
+  if (diffDay < 30) return `לפני ${Math.floor(diffDay / 7)} שבועות`;
+  if (diffDay < 60) return "לפני חודש";
+  if (diffDay < 365) return `לפני ${Math.floor(diffDay / 30)} חודשים`;
+  return `לפני ${Math.floor(diffDay / 365)} שנה`;
+}
+
+/** פורמט שעה בלבד (09:30) */
+export function formatTime(date: Date | string): string {
+  return new Intl.DateTimeFormat("he-IL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+}
 
 /** חודש נוכחי בפורמט YYYY-MM */
 export function getCurrentMonth(): string {

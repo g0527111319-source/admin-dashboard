@@ -99,7 +99,15 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/designer/crm/clients — יצירת לקוח חדש
+// POST /api/designer/crm/clients — יצירת לקוח חדש + פרויקט ראשון אוטומטי
+//
+// PRODUCT RULE: every client MUST have at least one project. The old flow
+// allowed creating a naked client (zero projects) — this is no longer valid.
+// We wrap the client+project insert in a single Prisma transaction so either
+// both land in the DB or neither does; no partial state.
+//
+// PRIVACY: `designerId` is read from the authenticated `x-user-id` header and
+// used for BOTH inserts. The client cannot pass a designerId of their own.
 export async function POST(req: NextRequest) {
   try {
     const designerId = req.headers.get("x-user-id");
@@ -126,6 +134,9 @@ export async function POST(req: NextRequest) {
       renovationDetails, renovationPurpose, estimatedBudget,
       accessInstructions, notes,
       name: legacyName,
+      // NEW: auto-project + language preference
+      firstProjectName,
+      language,
     } = body;
 
     // Auto-compute name from firstName + lastName for backwards compatibility
@@ -146,53 +157,94 @@ export async function POST(req: NextRequest) {
     const addressParts = [street, city].filter(Boolean);
     const legacyAddress = addressParts.length > 0 ? addressParts.join(", ") : null;
 
-    // Try creating with all new fields; fall back to core fields if DB not migrated
-    let client;
+    // First project name: explicit value → fallback "פרויקט ראשון".
+    const projectName = (firstProjectName?.trim() as string | undefined) || "פרויקט ראשון";
+
+    // Normalize language to one of the two supported values.
+    const normalizedLanguage =
+      language === "en" || language === "he" ? language : "he";
+
+    // Full-fat client payload with every structured field. We'll fall back to a
+    // core-fields-only version if the DB hasn't been `db push`ed with the new
+    // columns yet — same pattern this route already used before.
+    const fullClientData = {
+      designerId,
+      name: computedName,
+      phone: phone?.trim() || null,
+      email: email?.trim() || null,
+      address: legacyAddress,
+      notes: notes?.trim() || null,
+      firstName: firstName?.trim() || null,
+      lastName: lastName?.trim() || null,
+      partner1FirstName: partner1FirstName?.trim() || null,
+      partner1LastName: partner1LastName?.trim() || null,
+      partner1Phone: partner1Phone?.trim() || null,
+      partner1Email: partner1Email?.trim() || null,
+      street: street?.trim() || null,
+      floor: floor?.trim() || null,
+      apartment: apartment?.trim() || null,
+      neighborhood: neighborhood?.trim() || null,
+      city: city?.trim() || null,
+      renovationSameAddress: renovationSameAddress === true,
+      renovationStreet: renovationStreet?.trim() || null,
+      renovationFloor: renovationFloor?.trim() || null,
+      renovationApartment: renovationApartment?.trim() || null,
+      renovationNeighborhood: renovationNeighborhood?.trim() || null,
+      renovationCity: renovationCity?.trim() || null,
+      renovationDetails: renovationDetails?.trim() || null,
+      renovationPurpose: renovationPurpose?.trim() || null,
+      estimatedBudget: estimatedBudget?.toString()?.trim() || null,
+      accessInstructions: accessInstructions?.trim() || null,
+      language: normalizedLanguage,
+    };
+
+    const coreClientData = {
+      designerId,
+      name: computedName,
+      phone: phone?.trim() || null,
+      email: email?.trim() || null,
+      address: legacyAddress,
+      notes: notes?.trim() || null,
+    };
+
+    // Transactional create: client + first project. If either one fails the
+    // whole thing rolls back — we never leave a client without a project.
+    let client: { id: string } & Record<string, unknown>;
     try {
-      client = await prisma.crmClient.create({
-        data: {
-          designerId,
-          name: computedName,
-          phone: phone?.trim() || null,
-          email: email?.trim() || null,
-          address: legacyAddress,
-          notes: notes?.trim() || null,
-          firstName: firstName?.trim() || null,
-          lastName: lastName?.trim() || null,
-          partner1FirstName: partner1FirstName?.trim() || null,
-          partner1LastName: partner1LastName?.trim() || null,
-          partner1Phone: partner1Phone?.trim() || null,
-          partner1Email: partner1Email?.trim() || null,
-          street: street?.trim() || null,
-          floor: floor?.trim() || null,
-          apartment: apartment?.trim() || null,
-          neighborhood: neighborhood?.trim() || null,
-          city: city?.trim() || null,
-          renovationSameAddress: renovationSameAddress === true,
-          renovationStreet: renovationStreet?.trim() || null,
-          renovationFloor: renovationFloor?.trim() || null,
-          renovationApartment: renovationApartment?.trim() || null,
-          renovationNeighborhood: renovationNeighborhood?.trim() || null,
-          renovationCity: renovationCity?.trim() || null,
-          renovationDetails: renovationDetails?.trim() || null,
-          renovationPurpose: renovationPurpose?.trim() || null,
-          estimatedBudget: estimatedBudget?.toString()?.trim() || null,
-          accessInstructions: accessInstructions?.trim() || null,
-        },
+      const result = await prisma.$transaction(async (tx) => {
+        const newClient = await tx.crmClient.create({ data: fullClientData });
+        const newProject = await tx.crmProject.create({
+          data: {
+            clientId: newClient.id,
+            designerId,
+            name: projectName,
+            status: "ACTIVE",
+            // projectType has a schema default of RENOVATION — keep it.
+          },
+          select: { id: true, name: true, status: true },
+        });
+        return { ...newClient, projects: [newProject], _count: { projects: 1 } };
       });
+      client = result as typeof client;
     } catch (createError) {
-      // Fallback: new columns may not exist in DB yet — create with core fields only
-      console.warn("CRM client create with new fields failed, falling back:", createError);
-      client = await prisma.crmClient.create({
-        data: {
-          designerId,
-          name: computedName,
-          phone: phone?.trim() || null,
-          email: email?.trim() || null,
-          address: legacyAddress,
-          notes: notes?.trim() || null,
-        },
+      // Fallback path: new columns (language, or whatever else) may not exist
+      // in the DB yet. Retry with core-only fields — still transactional so the
+      // "every client has a project" invariant holds.
+      console.warn("CRM client+project create with full fields failed, falling back:", createError);
+      const result = await prisma.$transaction(async (tx) => {
+        const newClient = await tx.crmClient.create({ data: coreClientData });
+        const newProject = await tx.crmProject.create({
+          data: {
+            clientId: newClient.id,
+            designerId,
+            name: projectName,
+            status: "ACTIVE",
+          },
+          select: { id: true, name: true, status: true },
+        });
+        return { ...newClient, projects: [newProject], _count: { projects: 1 } };
       });
+      client = result as typeof client;
     }
 
     return NextResponse.json(client, { status: 201 });

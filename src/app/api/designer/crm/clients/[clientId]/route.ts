@@ -81,6 +81,7 @@ export async function PATCH(
       renovationDetails, renovationPurpose, estimatedBudget,
       accessInstructions, notes,
       name: legacyName,
+      language,
     } = body;
 
     // Auto-compute name from structured fields if provided
@@ -110,6 +111,11 @@ export async function PATCH(
     if (renovationPurpose !== undefined) updateData.renovationPurpose = renovationPurpose?.trim() || null;
     if (estimatedBudget !== undefined) updateData.estimatedBudget = estimatedBudget?.toString()?.trim() || null;
     if (accessInstructions !== undefined) updateData.accessInstructions = accessInstructions?.trim() || null;
+    // Only accept language values we actually support — otherwise drop the key
+    // and keep the existing value.
+    if (language !== undefined && (language === "he" || language === "en")) {
+      updateData.language = language;
+    }
 
     // Auto-compute name for backwards compatibility
     // Use safe access since existing may lack new fields if DB not migrated

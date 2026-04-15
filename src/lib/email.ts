@@ -284,3 +284,154 @@ export function downgradeReminderEmail(name: string, downgradeAt: Date, gender?:
   };
 }
 
+// ============================================================================
+// Client-facing transactional emails (meetings)
+// ----------------------------------------------------------------------------
+// These are the ONLY templates in this file that are sent to end-clients (the
+// designer's customers), not to designers. Two variants: invite on meeting
+// creation, and reminder before the meeting.
+//
+// Both support two languages: `he` (default) and `en`. Language is chosen per
+// client at creation time (see CrmClient.language) so the designer decides
+// what each customer receives.
+//
+// PRIVACY: callers must already have loaded the client record via a designer-
+// scoped query (x-user-id → designerId → client). Never call these with a
+// client record fetched by a public route.
+// ============================================================================
+
+type ClientMeetingEmailInput = {
+  clientName: string;
+  designerName: string;
+  language?: string | null; // "he" | "en" (default "he")
+  title: string;
+  startAt: Date;
+  endAt: Date;
+  location?: string | null;
+  description?: string | null;
+  /** Optional — only used by the reminder variant. */
+  hoursBefore?: number;
+};
+
+function formatMeetingDate(startAt: Date, lang: "he" | "en") {
+  const locale = lang === "en" ? "en-US" : "he-IL";
+  const date = startAt.toLocaleDateString(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const time = startAt.toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return { date, time };
+}
+
+function normalizeLang(language?: string | null): "he" | "en" {
+  return language === "en" ? "en" : "he";
+}
+
+/** Client meeting invite — sent immediately when a designer creates a meeting
+ *  with `notifyClient=true` and the client has an email on file. */
+export function clientMeetingInviteEmail(input: ClientMeetingEmailInput) {
+  const lang = normalizeLang(input.language);
+  const { date, time } = formatMeetingDate(input.startAt, lang);
+  const endTime = input.endAt.toLocaleTimeString(lang === "en" ? "en-US" : "he-IL", {
+    hour: "2-digit", minute: "2-digit",
+  });
+
+  if (lang === "en") {
+    return {
+      subject: `Meeting invitation from ${input.designerName}: ${input.title}`,
+      html: `
+<div dir="ltr" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;padding:40px;border-radius:12px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h1 style="color:#C9A84C;font-size:22px;margin:0;">Meeting invitation</h1>
+  </div>
+  <p>Hello ${input.clientName},</p>
+  <p>${input.designerName} has scheduled a meeting with you:</p>
+  <div style="background:#1a1a1a;padding:20px;border-radius:8px;border:1px solid #C9A84C33;">
+    <p style="margin:6px 0;"><strong>Title:</strong> ${input.title}</p>
+    <p style="margin:6px 0;"><strong>Date:</strong> ${date}</p>
+    <p style="margin:6px 0;"><strong>Time:</strong> ${time} – ${endTime}</p>
+    ${input.location ? `<p style="margin:6px 0;"><strong>Location:</strong> ${input.location}</p>` : ""}
+    ${input.description ? `<p style="margin:6px 0;"><strong>Details:</strong> ${input.description}</p>` : ""}
+  </div>
+  <p style="color:#999;font-size:13px;margin-top:20px;">If you need to reschedule, please contact ${input.designerName} directly.</p>
+  <hr style="border:none;border-top:1px solid #222;margin:30px 0;" />
+  <p style="color:#666;font-size:11px;text-align:center;">Sent via Zirat Architecture.</p>
+</div>`,
+    };
+  }
+
+  // Hebrew (default)
+  return {
+    subject: `הזמנה לפגישה מ־${input.designerName}: ${input.title}`,
+    html: `
+<div dir="rtl" style="font-family:Heebo,Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;padding:40px;border-radius:12px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h1 style="color:#C9A84C;font-size:22px;margin:0;">הזמנה לפגישה</h1>
+  </div>
+  <p>שלום ${input.clientName},</p>
+  <p>${input.designerName} קבעו איתך פגישה:</p>
+  <div style="background:#1a1a1a;padding:20px;border-radius:8px;border:1px solid #C9A84C33;">
+    <p style="margin:6px 0;"><strong>נושא:</strong> ${input.title}</p>
+    <p style="margin:6px 0;"><strong>תאריך:</strong> ${date}</p>
+    <p style="margin:6px 0;"><strong>שעה:</strong> ${time} – ${endTime}</p>
+    ${input.location ? `<p style="margin:6px 0;"><strong>מיקום:</strong> ${input.location}</p>` : ""}
+    ${input.description ? `<p style="margin:6px 0;"><strong>פרטים:</strong> ${input.description}</p>` : ""}
+  </div>
+  <p style="color:#999;font-size:13px;margin-top:20px;">במקרה שצריך לדחות — אנא ${"צרו"} קשר ישירות עם ${input.designerName}.</p>
+  <hr style="border:none;border-top:1px solid #222;margin:30px 0;" />
+  <p style="color:#666;font-size:11px;text-align:center;">נשלח באמצעות זירת האדריכלות.</p>
+</div>`,
+  };
+}
+
+/** Client meeting reminder — sent `hoursBefore` hours before the meeting
+ *  start (24h by default). Triggered by the reminders cron. */
+export function clientMeetingReminderEmail(input: ClientMeetingEmailInput) {
+  const lang = normalizeLang(input.language);
+  const { date, time } = formatMeetingDate(input.startAt, lang);
+  const hours = input.hoursBefore ?? 24;
+
+  if (lang === "en") {
+    return {
+      subject: `Reminder: meeting with ${input.designerName} in ${hours} hours`,
+      html: `
+<div dir="ltr" style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;padding:40px;border-radius:12px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h1 style="color:#C9A84C;font-size:22px;margin:0;">Meeting reminder</h1>
+  </div>
+  <p>Hello ${input.clientName},</p>
+  <p>A reminder that your meeting with ${input.designerName} is in about <strong>${hours} hours</strong>:</p>
+  <div style="background:#1a1a1a;padding:20px;border-radius:8px;border-right:4px solid #C9A84C;">
+    <p style="margin:6px 0;"><strong>Title:</strong> ${input.title}</p>
+    <p style="margin:6px 0;"><strong>Date:</strong> ${date}</p>
+    <p style="margin:6px 0;"><strong>Time:</strong> ${time}</p>
+    ${input.location ? `<p style="margin:6px 0;"><strong>Location:</strong> ${input.location}</p>` : ""}
+  </div>
+</div>`,
+    };
+  }
+
+  return {
+    subject: `תזכורת: פגישה עם ${input.designerName} בעוד ${hours} שעות`,
+    html: `
+<div dir="rtl" style="font-family:Heebo,Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e5e5e5;padding:40px;border-radius:12px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h1 style="color:#C9A84C;font-size:22px;margin:0;">תזכורת לפגישה</h1>
+  </div>
+  <p>שלום ${input.clientName},</p>
+  <p>תזכורת שבעוד <strong>${hours} שעות</strong> יש לך פגישה עם ${input.designerName}:</p>
+  <div style="background:#1a1a1a;padding:20px;border-radius:8px;border-right:4px solid #C9A84C;">
+    <p style="margin:6px 0;"><strong>נושא:</strong> ${input.title}</p>
+    <p style="margin:6px 0;"><strong>תאריך:</strong> ${date}</p>
+    <p style="margin:6px 0;"><strong>שעה:</strong> ${time}</p>
+    ${input.location ? `<p style="margin:6px 0;"><strong>מיקום:</strong> ${input.location}</p>` : ""}
+  </div>
+</div>`,
+  };
+}
+

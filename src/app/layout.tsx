@@ -4,6 +4,11 @@ import { Analytics } from "@vercel/analytics/next";
 import AccessibilityWidget from "@/components/AccessibilityWidget";
 import GlobalSearch from "@/components/GlobalSearch";
 import SmoothScrollProvider from "@/components/motion/SmoothScrollProvider";
+import { ThemeProvider, ThemeScript } from "@/components/ThemeProvider";
+import { ToastProvider } from "@/components/ui/Toast";
+import KeyboardShortcutsProvider from "@/components/KeyboardShortcutsProvider";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const heebo = Heebo({
@@ -44,13 +49,22 @@ export default function RootLayout({ children, }: Readonly<{
         <meta name="theme-color" content="#C9A84C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/logo-sticker.webp" />
+        {/* Inline script prevents FOUC when user has chosen dark mode */}
+        <script dangerouslySetInnerHTML={{ __html: ThemeScript }} />
         {/* i18n: client portal uses its own language switcher via client-portal-lang key */}
       </head>
       <body className="font-body antialiased min-h-screen bg-bg text-text-primary">
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
-        <GlobalSearch />
-        <AccessibilityWidget />
-        <Analytics />
+        <ThemeProvider>
+          <ToastProvider>
+            <SmoothScrollProvider>{children}</SmoothScrollProvider>
+            <GlobalSearch />
+            <KeyboardShortcutsProvider />
+            <MobileBottomNav />
+            <AccessibilityWidget />
+            <ServiceWorkerRegister />
+            <Analytics />
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>);
 }

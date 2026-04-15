@@ -17,6 +17,10 @@ type CalendarEvent = {
   clientId: string | null;
   createdAt: string;
   source?: "local" | "google";
+  // New unified fields — optional for back-compat with unmigrated events.
+  eventType?: string | null;
+  notifyClient?: boolean;
+  clientReminderHours?: number | null;
 };
 
 type CrmTask = {
@@ -31,10 +35,34 @@ type CrmTask = {
   client?: { id: string; name: string } | null;
 };
 
-type Project = { id: string; name: string; client: { name: string } };
-type Client = { id: string; name: string };
+type Project = { id: string; name: string; client: { name: string }; clientId?: string };
+/** Client shape used inside the create-form — includes email (for enabling the
+ *  "notify client" checkbox) and the client's projects (so when one is picked
+ *  we can auto-assign if there's exactly one project, or show a filtered
+ *  dropdown if there are more than one). */
+type Client = {
+  id: string;
+  name: string;
+  email?: string | null;
+  partner1Email?: string | null;
+  projects?: { id: string; name: string; status: string }[];
+  _count?: { projects: number };
+};
 type ViewMode = "month" | "week" | "day";
-type AddMode = "event" | "task";
+
+/** Unified creation type. Three of these live in the CrmCalendarEvent table
+ *  (event / meeting / reminder) — the fourth (task) is still a CrmTask row,
+ *  but from the designer's perspective it's just another thing you create
+ *  from the same modal. */
+type AddMode = "event" | "task" | "meeting" | "reminder";
+
+/** Default designer-facing reminder (in minutes). Matches the server-side
+ *  default in `/api/designer/crm/calendar` POST handler. */
+const DEFAULT_REMINDER_MIN = "60";
+
+/** Default client-facing reminder lead time, in hours. Only relevant when a
+ *  client is attached and the designer ticked "client reminder". */
+const DEFAULT_CLIENT_REMINDER_HOURS = "24";
 
 const taskStatusColors: Record<string, string> = {
   TODO: "bg-orange-100 text-orange-800 border-orange-200",
@@ -68,7 +96,13 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     color: "#2563eb",
     projectId: "",
     clientId: "",
-    reminderMin: "",
+    // Default to 60 min (1 hour) reminder. Empty string means "ללא תזכורת".
+    reminderMin: DEFAULT_REMINDER_MIN,
+    // Client-facing notification controls. Only honoured when clientId is set
+    // and the selected client has an email on file.
+    notifyClient: false,
+    enableClientReminder: false,
+    clientReminderHours: DEFAULT_CLIENT_REMINDER_HOURS,
   });
   const [taskFormData, setTaskFormData] = useState({ title: "", description: "", dueDate: "", clientId: "", projectId: "" });
 
@@ -203,21 +237,87 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     setGoogleEvents([]);
   };
 
-  // Create event
+  // Derive the selected client (if any) and that client's projects. Used by
+  // the form to decide: auto-assign project when exactly 1 exists, hide the
+  // "notify client" controls when the client has no email, etc.
+  const selectedFormClient = useMemo(
+    () => clients.find(c => c.id === formData.clientId) || null,
+    [clients, formData.clientId]
+  );
+  const selectedFormTaskClient = useMemo(
+    () => clients.find(c => c.id === taskFormData.clientId) || null,
+    [clients, taskFormData.clientId]
+  );
+  const clientHasEmail = Boolean(selectedFormClient?.email || selectedFormClient?.partner1Email);
+  const clientProjects = selectedFormClient?.projects ?? [];
+  const taskClientProjects = selectedFormTaskClient?.projects ?? [];
+
+  // Client-first auto-project assignment: when a client with exactly one
+  // project is selected, we silently fill projectId — no dropdown needed.
+  // When there are 0 or many projects, we leave projectId alone (dropdown
+  // gets rendered conditionally below).
+  useEffect(() => {
+    if (!formData.clientId) return;
+    if (clientProjects.length === 1 && formData.projectId !== clientProjects[0].id) {
+      setFormData(prev => ({ ...prev, projectId: clientProjects[0].id }));
+    }
+    // If the client changes and the old projectId no longer belongs to this
+    // client's project list, clear it.
+    if (formData.projectId && !clientProjects.some(p => p.id === formData.projectId)) {
+      setFormData(prev => ({ ...prev, projectId: clientProjects.length === 1 ? clientProjects[0].id : "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.clientId, clientProjects.length]);
+
+  useEffect(() => {
+    if (!taskFormData.clientId) return;
+    if (taskClientProjects.length === 1 && taskFormData.projectId !== taskClientProjects[0].id) {
+      setTaskFormData(prev => ({ ...prev, projectId: taskClientProjects[0].id }));
+    }
+    if (taskFormData.projectId && !taskClientProjects.some(p => p.id === taskFormData.projectId)) {
+      setTaskFormData(prev => ({ ...prev, projectId: taskClientProjects.length === 1 ? taskClientProjects[0].id : "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskFormData.clientId, taskClientProjects.length]);
+
+  // Create calendar event (event / meeting / reminder — all three land in the
+  // same table with different eventType values).
   const handleCreate = async () => {
     if (!formData.title.trim()) { alert("יש להזין כותרת"); return; }
     if (!formData.startAt) { alert("יש להזין זמן התחלה"); return; }
     setSaving(true);
     try {
+      // Reminder type: no duration — endAt falls back to startAt.
+      const endAtValue = addMode === "reminder"
+        ? formData.startAt
+        : (formData.endAt || formData.startAt);
+
+      // clientReminderHours is only sent when the checkbox is on AND a client
+      // is attached AND that client has an email we can send to.
+      const canNotifyClient = Boolean(formData.clientId) && clientHasEmail;
+      const clientReminderHoursPayload =
+        canNotifyClient && formData.enableClientReminder && formData.clientReminderHours
+          ? parseInt(formData.clientReminderHours)
+          : null;
+
       const res = await fetch("/api/designer/crm/calendar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
+          title: formData.title,
+          description: formData.description,
+          startAt: formData.startAt,
+          endAt: endAtValue,
+          location: formData.location,
+          isAllDay: formData.isAllDay,
+          color: formData.color,
           projectId: formData.projectId || null,
           clientId: formData.clientId || null,
-          endAt: formData.endAt || formData.startAt,
-          reminderMin: formData.reminderMin ? parseInt(formData.reminderMin) : null,
+          // Empty string = "no reminder". Otherwise parse to int.
+          reminderMin: formData.reminderMin === "" ? null : parseInt(formData.reminderMin),
+          eventType: addMode === "task" ? "event" : addMode,
+          notifyClient: canNotifyClient && formData.notifyClient,
+          clientReminderHours: clientReminderHoursPayload,
         }),
       });
       if (!res.ok) {
@@ -265,7 +365,15 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     } catch { alert("שגיאת רשת"); } finally { setSaving(false); }
   };
 
-  const resetForm = () => setFormData({ title: "", description: "", startAt: "", endAt: "", location: "", isAllDay: false, color: "#2563eb", projectId: "", clientId: "", reminderMin: "" });
+  const resetForm = () => setFormData({
+    title: "", description: "", startAt: "", endAt: "",
+    location: "", isAllDay: false, color: "#2563eb",
+    projectId: "", clientId: "",
+    reminderMin: DEFAULT_REMINDER_MIN,
+    notifyClient: false,
+    enableClientReminder: false,
+    clientReminderHours: DEFAULT_CLIENT_REMINDER_HOURS,
+  });
 
   const deleteEvent = async (eventId: string) => {
     await fetch(`/api/designer/crm/calendar?eventId=${eventId}`, { method: "DELETE" });
@@ -345,10 +453,28 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     const h = hour ?? 9;
     const ds = `${fmtDateKey(date)}T${String(h).padStart(2, "0")}:00`;
     const es = `${fmtDateKey(date)}T${String(h + 1).padStart(2, "0")}:00`;
-    if (mode === "event") {
-      setFormData({ title: "", description: "", startAt: ds, endAt: es, location: "", isAllDay: false, color: "#2563eb", projectId: "", clientId: "", reminderMin: "" });
-    } else {
+    if (mode === "task") {
       setTaskFormData({ title: "", description: "", dueDate: fmtDateKey(date), clientId: "", projectId: "" });
+    } else {
+      // event / meeting / reminder — all use the same formData, with
+      // reminder having no duration (endAt = startAt).
+      setFormData({
+        title: "",
+        description: "",
+        startAt: ds,
+        endAt: mode === "reminder" ? ds : es,
+        location: "",
+        isAllDay: false,
+        color: mode === "meeting" ? "#C9A84C" : "#2563eb",
+        projectId: "",
+        clientId: clientId || "",
+        reminderMin: DEFAULT_REMINDER_MIN,
+        // For meetings, pre-enable the "notify client" checkbox — that's the
+        // canonical use case. The designer can uncheck.
+        notifyClient: mode === "meeting",
+        enableClientReminder: mode === "meeting",
+        clientReminderHours: DEFAULT_CLIENT_REMINDER_HOURS,
+      });
     }
     setAddMode(mode);
     setShowAdd(true);
@@ -404,7 +530,20 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
               <Link2 className="w-3.5 h-3.5" /> {gcalStatus?.configured ? "חבר Google Calendar" : "Google Calendar לא מוגדר"}
             </button>
           )}
-          <button onClick={() => { setAddMode("event"); setShowAdd(!showAdd); }} className="btn-gold text-sm flex items-center gap-1"><Plus className="w-4 h-4" /> חדש</button>
+          <button
+            onClick={() => {
+              // Reset form to a clean default whenever the designer opens the
+              // modal from the top bar — avoids stale values sticking around.
+              if (!showAdd) {
+                resetForm();
+                setAddMode("event");
+              }
+              setShowAdd(!showAdd);
+            }}
+            className="btn-gold text-sm flex items-center gap-1"
+          >
+            <Plus className="w-4 h-4" /> חדש
+          </button>
         </div>
       </div>
 
@@ -517,49 +656,185 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         <p className="text-sm text-gold">{hebrewRange}</p>
       </div>
 
-      {/* ======== ADD FORM ======== */}
+      {/* ======== UNIFIED ADD FORM ========
+          One modal handles all four creation types: אירוע / פגישה / משימה / תזכורת.
+          Event / meeting / reminder share `formData` and POST to
+          /api/designer/crm/calendar with different `eventType` values.
+          Task uses its own state and posts to /api/designer/crm/tasks.
+          Client dropdown comes first — if the selected client has only one
+          project, the project is auto-assigned silently (no dropdown).
+      */}
       {showAdd && (
         <div ref={addFormRef} className="card-static space-y-3 border border-gold/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 bg-bg-surface rounded-lg p-1">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-1 bg-bg-surface rounded-lg p-1 flex-wrap">
               <button onClick={() => setAddMode("event")} className={`px-3 py-1 text-xs rounded-md ${addMode === "event" ? "bg-white shadow-sm text-gold font-medium" : "text-text-muted"}`}>
                 <Calendar className="w-3 h-3 inline ml-1" />אירוע
               </button>
+              <button onClick={() => setAddMode("meeting")} className={`px-3 py-1 text-xs rounded-md ${addMode === "meeting" ? "bg-white shadow-sm text-gold font-medium" : "text-text-muted"}`}>
+                <Users className="w-3 h-3 inline ml-1" />פגישה
+              </button>
               <button onClick={() => setAddMode("task")} className={`px-3 py-1 text-xs rounded-md ${addMode === "task" ? "bg-white shadow-sm text-gold font-medium" : "text-text-muted"}`}>
                 <ListChecks className="w-3 h-3 inline ml-1" />משימה
+              </button>
+              <button onClick={() => setAddMode("reminder")} className={`px-3 py-1 text-xs rounded-md ${addMode === "reminder" ? "bg-white shadow-sm text-gold font-medium" : "text-text-muted"}`}>
+                <Bell className="w-3 h-3 inline ml-1" />תזכורת
               </button>
             </div>
             <button onClick={() => setShowAdd(false)} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
           </div>
 
-          {addMode === "event" ? (
+          {addMode === "task" ? (
             <>
-              <input type="text" className="input-field" placeholder="כותרת האירוע" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-              <textarea className="input-field min-h-[50px]" placeholder="תיאור (אופציונלי)" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-text-secondary text-xs block mb-1">התחלה</label><input type="datetime-local" className="input-field" value={formData.startAt} onChange={e => setFormData({ ...formData, startAt: e.target.value })} dir="ltr" /></div>
-                <div><label className="text-text-secondary text-xs block mb-1">סיום</label><input type="datetime-local" className="input-field" value={formData.endAt} onChange={e => setFormData({ ...formData, endAt: e.target.value })} dir="ltr" /></div>
-              </div>
-              <input type="text" className="input-field" placeholder="מיקום (אופציונלי)" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
-              <div className="grid grid-cols-2 gap-3">
-                <select className="select-field" value={formData.clientId} onChange={e => setFormData({ ...formData, clientId: e.target.value })}>
+              <input type="text" className="input-field" placeholder="כותרת המשימה" value={taskFormData.title} onChange={e => setTaskFormData({ ...taskFormData, title: e.target.value })} />
+              <textarea className="input-field min-h-[50px]" placeholder="תיאור (אופציונלי)" value={taskFormData.description} onChange={e => setTaskFormData({ ...taskFormData, description: e.target.value })} />
+              <div><label className="text-text-secondary text-xs block mb-1">תאריך יעד</label><input type="date" className="input-field" value={taskFormData.dueDate} onChange={e => setTaskFormData({ ...taskFormData, dueDate: e.target.value })} dir="ltr" /></div>
+
+              {/* Client-first → project only if needed */}
+              <div>
+                <label className="text-text-secondary text-xs block mb-1">שיוך ללקוח (אופציונלי)</label>
+                <select className="select-field" value={taskFormData.clientId} onChange={e => setTaskFormData({ ...taskFormData, clientId: e.target.value, projectId: "" })}>
                   <option value="">ללא לקוח</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
-                <select className="select-field" value={formData.projectId} onChange={e => setFormData({ ...formData, projectId: e.target.value })}>
-                  <option value="">ללא פרויקט</option>
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </div>
+              {taskFormData.clientId && taskClientProjects.length > 1 && (
+                <div>
+                  <label className="text-text-secondary text-xs block mb-1">
+                    בחר פרויקט ({taskClientProjects.length} פרויקטים פתוחים)
+                  </label>
+                  <select className="select-field" value={taskFormData.projectId} onChange={e => setTaskFormData({ ...taskFormData, projectId: e.target.value })}>
+                    <option value="">ללא פרויקט</option>
+                    {taskClientProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {taskFormData.clientId && taskClientProjects.length === 1 && (
+                <p className="text-xs text-text-muted">
+                  שיוך אוטומטי לפרויקט: <span className="text-gold">{taskClientProjects[0].name}</span>
+                </p>
+              )}
+
+              <button onClick={handleCreateTask} disabled={saving} className="btn-gold w-full text-sm">{saving ? "שומר..." : "הוסף משימה"}</button>
+            </>
+          ) : (
+            <>
+              <input type="text" className="input-field" placeholder={
+                addMode === "meeting" ? "כותרת הפגישה (למשל: פגישת תכנון)" :
+                addMode === "reminder" ? "על מה להזכיר?" :
+                "כותרת האירוע"
+              } value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+              <textarea className="input-field min-h-[50px]" placeholder="תיאור (אופציונלי)" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+
+              {/* Reminder mode: one time, no duration. Others: start+end. */}
+              {addMode === "reminder" ? (
+                <div>
+                  <label className="text-text-secondary text-xs block mb-1">תאריך ושעה</label>
+                  <input type="datetime-local" className="input-field" value={formData.startAt} onChange={e => setFormData({ ...formData, startAt: e.target.value, endAt: e.target.value })} dir="ltr" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className="text-text-secondary text-xs block mb-1">התחלה</label><input type="datetime-local" className="input-field" value={formData.startAt} onChange={e => setFormData({ ...formData, startAt: e.target.value })} dir="ltr" /></div>
+                  <div><label className="text-text-secondary text-xs block mb-1">סיום</label><input type="datetime-local" className="input-field" value={formData.endAt} onChange={e => setFormData({ ...formData, endAt: e.target.value })} dir="ltr" /></div>
+                </div>
+              )}
+
+              {/* Location is irrelevant for reminders */}
+              {addMode !== "reminder" && (
+                <input type="text" className="input-field" placeholder={addMode === "meeting" ? "מיקום הפגישה (אופציונלי)" : "מיקום (אופציונלי)"} value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+              )}
+
+              {/* Client-first */}
+              <div>
+                <label className="text-text-secondary text-xs block mb-1">
+                  שיוך ללקוח{addMode === "meeting" ? "" : " (אופציונלי)"}
+                </label>
+                <select className="select-field" value={formData.clientId} onChange={e => setFormData({ ...formData, clientId: e.target.value, projectId: "" })}>
+                  <option value="">ללא לקוח</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
+              {/* Project dropdown only shown when client has >1 project.
+                  With exactly 1, projectId is auto-filled and we show a hint. */}
+              {formData.clientId && clientProjects.length > 1 && (
+                <div>
+                  <label className="text-text-secondary text-xs block mb-1">
+                    בחר פרויקט ({clientProjects.length} פרויקטים פתוחים)
+                  </label>
+                  <select className="select-field" value={formData.projectId} onChange={e => setFormData({ ...formData, projectId: e.target.value })}>
+                    <option value="">ללא פרויקט</option>
+                    {clientProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {formData.clientId && clientProjects.length === 1 && (
+                <p className="text-xs text-text-muted">
+                  שיוך אוטומטי לפרויקט: <span className="text-gold">{clientProjects[0].name}</span>
+                </p>
+              )}
+
+              {/* Client-facing notifications — only when a client is attached
+                  and has a valid email. Otherwise hide to avoid ghost controls. */}
+              {formData.clientId && clientHasEmail && (
+                <div className="bg-bg-surface/40 border border-border-subtle rounded-lg p-3 space-y-2">
+                  <p className="text-xs text-text-muted">
+                    הודעות ללקוח ({selectedFormClient?.email || selectedFormClient?.partner1Email})
+                  </p>
+                  <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.notifyClient}
+                      onChange={e => setFormData({ ...formData, notifyClient: e.target.checked })}
+                      className="rounded"
+                    />
+                    שלח הודעה ללקוח עם פרטי הפגישה עכשיו
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.enableClientReminder}
+                      onChange={e => setFormData({ ...formData, enableClientReminder: e.target.checked })}
+                      className="rounded"
+                    />
+                    תזכורת אוטומטית ללקוח לפני הפגישה
+                  </label>
+                  {formData.enableClientReminder && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-text-secondary">כמה זמן לפני?</span>
+                      <select
+                        className="select-field text-xs py-1 px-2 w-auto"
+                        value={formData.clientReminderHours}
+                        onChange={e => setFormData({ ...formData, clientReminderHours: e.target.value })}
+                      >
+                        <option value="1">שעה לפני</option>
+                        <option value="2">שעתיים לפני</option>
+                        <option value="6">6 שעות לפני</option>
+                        <option value="12">12 שעות לפני</option>
+                        <option value="24">יום לפני</option>
+                        <option value="48">יומיים לפני</option>
+                        <option value="72">3 ימים לפני</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+              {formData.clientId && !clientHasEmail && (
+                <p className="text-xs text-amber-600">
+                  ללקוח הזה אין מייל — לא ניתן לשלוח הודעה או תזכורת אוטומטית. ניתן להוסיף מייל בדף הלקוח.
+                </p>
+              )}
+
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <label className="text-text-secondary text-xs">צבע:</label>
                   <input type="color" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} className="w-7 h-7 rounded cursor-pointer border-0" />
                 </div>
-                <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
-                  <input type="checkbox" checked={formData.isAllDay} onChange={e => setFormData({ ...formData, isAllDay: e.target.checked })} className="rounded" />
-                  כל היום
-                </label>
+                {addMode !== "reminder" && (
+                  <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+                    <input type="checkbox" checked={formData.isAllDay} onChange={e => setFormData({ ...formData, isAllDay: e.target.checked })} className="rounded" />
+                    כל היום
+                  </label>
+                )}
                 <div className="flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5 text-text-muted" />
                   <select className="select-field text-xs py-1 px-2" value={formData.reminderMin} onChange={e => setFormData({ ...formData, reminderMin: e.target.value })}>
@@ -568,30 +843,18 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
                     <option value="10">10 דקות לפני</option>
                     <option value="15">15 דקות לפני</option>
                     <option value="30">30 דקות לפני</option>
-                    <option value="60">שעה לפני</option>
+                    <option value="60">שעה לפני (ברירת מחדל)</option>
                     <option value="120">שעתיים לפני</option>
                     <option value="1440">יום לפני</option>
                   </select>
                 </div>
               </div>
-              <button onClick={handleCreate} disabled={saving} className="btn-gold w-full text-sm">{saving ? "שומר..." : "הוסף אירוע"}</button>
-            </>
-          ) : (
-            <>
-              <input type="text" className="input-field" placeholder="כותרת המשימה" value={taskFormData.title} onChange={e => setTaskFormData({ ...taskFormData, title: e.target.value })} />
-              <textarea className="input-field min-h-[50px]" placeholder="תיאור (אופציונלי)" value={taskFormData.description} onChange={e => setTaskFormData({ ...taskFormData, description: e.target.value })} />
-              <div><label className="text-text-secondary text-xs block mb-1">תאריך יעד</label><input type="date" className="input-field" value={taskFormData.dueDate} onChange={e => setTaskFormData({ ...taskFormData, dueDate: e.target.value })} dir="ltr" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <select className="select-field" value={taskFormData.clientId} onChange={e => setTaskFormData({ ...taskFormData, clientId: e.target.value })}>
-                  <option value="">ללא לקוח</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <select className="select-field" value={taskFormData.projectId} onChange={e => setTaskFormData({ ...taskFormData, projectId: e.target.value })}>
-                  <option value="">ללא פרויקט</option>
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-              </div>
-              <button onClick={handleCreateTask} disabled={saving} className="btn-gold w-full text-sm">{saving ? "שומר..." : "הוסף משימה"}</button>
+              <button onClick={handleCreate} disabled={saving} className="btn-gold w-full text-sm">
+                {saving ? "שומר..." :
+                  addMode === "meeting" ? "קבע פגישה" :
+                  addMode === "reminder" ? "הוסף תזכורת" :
+                  "הוסף אירוע"}
+              </button>
             </>
           )}
         </div>
