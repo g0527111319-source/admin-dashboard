@@ -28,10 +28,13 @@ interface ContractData {
   template?: {
     name: string;
     contentBlocks: { id: string; type: string; content: string; fileUrl?: string; fileName?: string; fileType?: string; pageCount?: number }[];
-    fields: { id: string; label: string; type: string; owner: string; required: boolean; placeholder?: string; width?: string; position?: { x: number; y: number; w: number; h: number; blockId: string } }[];
+    fields: { id: string; label: string; type: string; owner: string; required: boolean; placeholder?: string; width?: string; fontSize?: number; position?: { x: number; y: number; w: number; h: number; blockId: string } }[];
   } | null;
   designer?: { fullName: string; companyName?: string };
 }
+
+/** Keep in sync with CrmContracts.tsx. */
+const DEFAULT_FIELD_FONT_SIZE = 12;
 
 // Matches the designer-side editor so field coordinates (stored as %) line up.
 const PDF_PAGE_HEIGHT = 1100;
@@ -202,27 +205,42 @@ export default function ClientSignPage({ params }: { params: Promise<{ token: st
                     const bgColor = field.type === "signature" ? "bg-purple-50/80"
                       : isAutoField ? "bg-emerald-50/80"
                       : field.owner === "designer" ? "bg-amber-50/80" : "bg-blue-50/80";
+                    // Use the per-field font size from the template (set by the
+                    // designer via the font-size slider). Defaults to 12px so
+                    // pre-existing templates that don't carry fontSize keep
+                    // rendering at the same size as before.
+                    const fs = field.fontSize || DEFAULT_FIELD_FONT_SIZE;
 
                     return (
                       <div
                         key={field.id}
-                        className={`absolute border rounded-md px-1.5 flex items-center ${borderColor} ${bgColor}`}
-                        style={{ left: `${pos.x}%`, top: `${pos.y}%`, width: `${pos.w}%`, height: `${pos.h}%`, minHeight: field.type === "signature" ? 50 : 24 }}
+                        className={`absolute border rounded-md flex items-center ${borderColor} ${bgColor}`}
+                        style={{
+                          left: `${pos.x}%`,
+                          top: `${pos.y}%`,
+                          width: `${pos.w}%`,
+                          height: `${pos.h}%`,
+                          fontSize: `${fs}px`,
+                          lineHeight: 1.1,
+                          padding: fs <= 10 ? "0 2px" : "0 6px",
+                          minHeight: field.type === "signature" ? 40 : Math.max(14, fs + 4),
+                        }}
                       >
                         {field.type === "signature" ? (
                           value ? <img src={value} alt="חתימה" className="h-full mx-auto object-contain" />
-                            : <span className="text-xs text-text-faint italic">חתימה</span>
+                            : <span className="text-text-faint italic">חתימה</span>
                         ) : isClientEditableField ? (
                           <input
                             type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "email" ? "email" : "text"}
                             value={clientValues[field.id] || ""}
                             onChange={e => setClientValues(prev => ({ ...prev, [field.id]: e.target.value }))}
-                            className="w-full h-full bg-transparent border-0 outline-none text-xs"
+                            className="w-full h-full bg-transparent border-0 outline-none p-0"
+                            style={{ fontSize: `${fs}px`, lineHeight: 1.1 }}
                             placeholder={field.placeholder || field.label}
                           />
                         ) : (
-                          <span className="text-xs truncate flex items-center gap-1">
-                            {value || <span className="text-text-faint italic text-2xs">{field.label}</span>}
+                          <span className="truncate flex items-center gap-1">
+                            {value || <span className="text-text-faint italic">{field.label}</span>}
                             {isAutoField && value && <Sparkles className="w-2.5 h-2.5 text-emerald-500 flex-shrink-0" />}
                           </span>
                         )}

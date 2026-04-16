@@ -30,6 +30,11 @@ const PUBLIC_PATHS = [
   "/terms",
   "/projects",
   "/card",
+  // Public contract-signing page — clients don't have accounts, they get here
+  // via a signed magic link emailed to them (or copy/paste of that URL).
+  // Without this, the middleware would redirect them to /login and they'd be
+  // stuck (no account to log into).
+  "/contract",
 ];
 
 const API_PUBLIC_PATHS = [
@@ -56,6 +61,9 @@ const API_PUBLIC_PREFIXES = [
   "/api/image-proxy",    // Image proxy — public, fetches images server-side
   "/api/whatsapp/webhook", // WhatsApp bot webhook — Green API sends here
   "/api/webhooks/",      // Third-party webhooks (iCount, etc.) — own HMAC verification
+  // Public contract signing API — authenticated via signToken path param.
+  // Client has no user account, just the signed magic link.
+  "/api/contract/sign/",
 ];
 
 async function verifyTokenMiddleware(token: string) {

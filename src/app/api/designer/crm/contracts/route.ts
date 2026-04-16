@@ -74,6 +74,28 @@ export async function POST(req: NextRequest) {
     const contractCount = await prisma.crmContract.count({ where: { designerId } });
     const contractNumber = `CTR-${String(contractCount + 1).padStart(4, "0")}`;
 
+    // Pull the template-level designer signature (if any) so the designer
+    // signs ONCE on the template and we auto-apply it to every contract
+    // created from that template. Storing in template.styling.designerSignature
+    // avoids a schema migration. If the template has no signature, we leave
+    // the contract's designerSignatureData null — the designer can still sign
+    // the specific contract directly.
+    let preSignedData: unknown = null;
+    let preSignedAt: Date | null = null;
+    if (templateId) {
+      const template = await prisma.crmContractTemplate.findFirst({
+        where: { id: templateId, designerId },
+        select: { styling: true },
+      });
+      const styling = (template?.styling ?? {}) as Record<string, unknown>;
+      const sig = styling.designerSignature as { dataUrl?: string; signedAt?: string } | undefined;
+      if (sig?.dataUrl) {
+        preSignedData = sig.dataUrl;
+        // Prefer the template-level timestamp but fall back to "now" if absent.
+        preSignedAt = sig.signedAt ? new Date(sig.signedAt) : new Date();
+      }
+    }
+
     const contract = await prisma.crmContract.create({
       data: {
         projectId,
@@ -89,6 +111,12 @@ export async function POST(req: NextRequest) {
         clientPhone: resolvedClientPhone,
         designerFieldValues: designerFieldValues || {},
         clientFieldValues: clientFieldValues || {},
+        // Apply the template's reusable signature if present — the designer
+        // signed the template, so every contract from it inherits that signature.
+        ...(preSignedData ? {
+          designerSignatureData: preSignedData as object,
+          designerSignedAt: preSignedAt,
+        } : {}),
       },
       include: {
         project: {

@@ -45,6 +45,28 @@ interface TemplateField {
   defaultValue?: string;
   width?: "full" | "half";
   position?: FieldPosition;
+  /**
+   * Font size in CSS pixels for the field's rendered text. Defaults to 12.
+   * Lets the designer shrink/enlarge the text independently of the box
+   * dimensions — useful when a field needs to fit into a small cell (e.g.
+   * a row in a pre-printed table on the PDF) but still hold readable text.
+   */
+  fontSize?: number;
+}
+
+/** Default font size (in px) for positioned-field overlay text. */
+const DEFAULT_FIELD_FONT_SIZE = 12;
+
+/** Template-level signature (stored in ContractTemplate.styling JSON). */
+interface TemplateSignature {
+  dataUrl: string;     // image/png data URL of the signature
+  signedAt: string;    // ISO timestamp
+}
+
+/** Shape we store into ContractTemplate.styling (other keys are free-form). */
+interface TemplateStyling {
+  designerSignature?: TemplateSignature;
+  [key: string]: unknown;
 }
 
 interface ContentBlock {
@@ -75,6 +97,10 @@ interface ContractTemplate {
   sortOrder: number;
   contentBlocks: ContentBlock[];
   fields: TemplateField[];
+  /** Visual styling JSON blob — free-form, but we store `designerSignature`
+   *  here so the designer can sign once per template and have it auto-apply
+   *  to every new contract created from this template. */
+  styling?: TemplateStyling;
   createdAt: string;
 }
 
@@ -309,8 +335,20 @@ function TemplateEditor({
   const [zoom, setZoom] = useState(100);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const labelInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState<{ fieldId: string; startX: number; startY: number; origX: number; origY: number } | null>(null);
   const [resizing, setResizing] = useState<{ fieldId: string; startX: number; startY: number; origW: number; origH: number } | null>(null);
+
+  // Template-level (reusable) designer signature.
+  // Stored in template.styling.designerSignature so it's persisted without a
+  // schema migration. When a contract is created from this template the
+  // backend copies this signature into the contract's designerSignatureData
+  // + designerSignedAt fields automatically — so the designer signs ONCE
+  // per template instead of on every contract.
+  const [designerSignature, setDesignerSignature] = useState<TemplateSignature | null>(
+    () => template?.styling?.designerSignature || null
+  );
+  const [showDesignerSignPad, setShowDesignerSignPad] = useState(false);
 
   const fileBlocks = blocks.filter(b => b.type === "file");
 
@@ -356,6 +394,18 @@ function TemplateEditor({
     ));
   };
 
+  // Auto-suggest a unique label so the designer can tell similar fields apart.
+  // If the base label is already in use, append " 2", " 3", ... until free.
+  const nextUniqueLabel = (base: string): string => {
+    const used = new Set(fields.map(f => (f.label || "").trim()));
+    if (!used.has(base)) return base;
+    for (let i = 2; i < 100; i++) {
+      const candidate = `${base} ${i}`;
+      if (!used.has(candidate)) return candidate;
+    }
+    return base;
+  };
+
   // Add field to document
   const addFieldToDocument = (type: FieldType, owner: FieldOwner, label: string) => {
     const targetBlock = fileBlocks[0];
@@ -364,11 +414,12 @@ function TemplateEditor({
     const isSignature = type === "signature";
     const newField: TemplateField = {
       id: generateId(),
-      label,
+      label: nextUniqueLabel(label),
       type,
       owner,
       required: true,
       width: "full",
+      fontSize: DEFAULT_FIELD_FONT_SIZE,
       position: {
         x: 20 + Math.random() * 20,
         y: 20 + Math.random() * 30,
@@ -379,6 +430,12 @@ function TemplateEditor({
     };
     setFields(prev => [...prev, newField]);
     setSelectedFieldId(newField.id);
+    // Bring focus to the label input so the designer can immediately rename
+    // the field to something meaningful (e.g. "טלפון משרד" vs "טלפון נייד").
+    setTimeout(() => {
+      labelInputRef.current?.focus();
+      labelInputRef.current?.select();
+    }, 50);
   };
 
   const updateField = (id: string, updates: Partial<TemplateField>) => {
@@ -467,8 +524,11 @@ function TemplateEditor({
         const rect = container.getBoundingClientRect();
         const dw = ((clientX - resizing.startX) / rect.width) * 100;
         const dh = ((clientY - resizing.startY) / rect.height) * 100;
-        const newW = Math.max(8, Math.min(100 - field.position.x, resizing.origW + dw));
-        const newH = Math.max(3, Math.min(100 - field.position.y, resizing.origH + dh));
+        // Allow very small fields (min 3% W × 1.5% H) so they fit into small
+        // table cells on pre-printed PDFs. Previous 8%×3% minimum forced
+        // oversized boxes that overflowed printed table rows.
+        const newW = Math.max(3, Math.min(100 - field.position.x, resizing.origW + dw));
+        const newH = Math.max(1.5, Math.min(100 - field.position.y, resizing.origH + dh));
         updateField(resizing.fieldId, {
           position: { ...field.position, w: Math.round(newW * 10) / 10, h: Math.round(newH * 10) / 10 },
         });
@@ -496,6 +556,21 @@ function TemplateEditor({
 
   return (
     <div className="space-y-4 animate-in">
+      {/* Designer signature pad (template-level, reusable).
+          Opens on demand when the designer clicks the "חתום/החלף חתימה" button
+          below. Stores a PNG data URL into local state; the actual save happens
+          when the template is saved. */}
+      {showDesignerSignPad && (
+        <SignatureCanvas
+          title={g(gdr, "חתימת מעצב לתבנית", "חתימת מעצבת לתבנית")}
+          onCancel={() => setShowDesignerSignPad(false)}
+          onSign={(dataUrl) => {
+            setDesignerSignature({ dataUrl, signedAt: new Date().toISOString() });
+            setShowDesignerSignPad(false);
+          }}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-heading font-bold text-text-primary flex items-center gap-2">
@@ -505,12 +580,26 @@ function TemplateEditor({
         <div className="flex gap-2">
           <button onClick={onCancel} className="btn-ghost">ביטול</button>
           <button
-            onClick={() => onSave({
-              name, description: description || null,
-              contentBlocks: blocks as unknown as ContentBlock[],
-              fields: fields as unknown as TemplateField[],
-              isDefault,
-            })}
+            onClick={() => {
+              // Include the template-level designer signature in styling so
+              // the backend persists it alongside the template. When a
+              // contract is created from this template, the POST route copies
+              // this signature into the contract's designerSignatureData so
+              // the designer doesn't have to sign each contract individually.
+              const stylingPayload: TemplateStyling = {
+                ...(template?.styling || {}),
+                designerSignature: designerSignature || undefined,
+              };
+              // Drop undefined keys so Prisma's JSON column stays clean.
+              if (!stylingPayload.designerSignature) delete stylingPayload.designerSignature;
+              onSave({
+                name, description: description || null,
+                contentBlocks: blocks as unknown as ContentBlock[],
+                fields: fields as unknown as TemplateField[],
+                isDefault,
+                styling: stylingPayload,
+              });
+            }}
             disabled={!name.trim()}
             className="btn-gold disabled:opacity-40"
           >
@@ -537,6 +626,69 @@ function TemplateEditor({
                 className="w-4 h-4 rounded border-border-subtle text-gold focus:ring-gold/30" />
               <span className="text-sm text-text-secondary">תבנית ברירת מחדל</span>
             </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Template-level designer signature — sign ONCE here and it will be
+          auto-applied to every contract created from this template, so the
+          designer doesn't have to re-sign every contract individually. */}
+      <div className="card-static">
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className="flex-shrink-0 flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+              <FileSignature className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">
+                {g(gdr, "חתימת מעצב קבועה", "חתימת מעצבת קבועה")}
+              </h3>
+              <p className="text-xs text-text-muted">
+                {designerSignature
+                  ? "חתימה זו תתווסף אוטומטית לכל חוזה שייווצר מהתבנית"
+                  : `${g(gdr, "חתום", "חתמי")} פעם אחת כאן — החתימה תופיע אוטומטית על כל חוזה שייווצר מהתבנית, בלי לחתום שוב`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 mr-auto">
+            {designerSignature ? (
+              <>
+                <div className="border border-border-subtle rounded-lg p-2 bg-white">
+                  <img
+                    src={designerSignature.dataUrl}
+                    alt={g(gdr, "חתימת מעצב", "חתימת מעצבת")}
+                    className="h-12 w-auto"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowDesignerSignPad(true)}
+                    className="btn-ghost text-xs flex items-center gap-1"
+                  >
+                    <Pen className="w-3 h-3" /> החלף חתימה
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("להסיר את החתימה מהתבנית?")) setDesignerSignature(null);
+                    }}
+                    className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1 px-2"
+                  >
+                    <Trash2 className="w-3 h-3" /> הסר
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowDesignerSignPad(true)}
+                className="btn-gold flex items-center gap-2"
+              >
+                <Pen className="w-4 h-4" /> {g(gdr, "חתום עכשיו", "חתמי עכשיו")}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -692,11 +844,16 @@ function TemplateEditor({
                           const FieldIcon = fieldTypeIcons[field.type] || Type;
                           const isSelected = selectedFieldId === field.id;
                           const isAutoField = CLIENT_AUTO_FIELDS.includes(field.type);
+                          const fs = field.fontSize || DEFAULT_FIELD_FONT_SIZE;
+                          // Shrink chrome (icons, padding) when the field is small
+                          // so the label actually fits. We use the font size as a
+                          // rough proxy for "how much room is there?".
+                          const isTiny = fs <= 10 || (pos.h <= 3 && pos.w <= 10);
 
                           return (
                             <div
                               key={field.id}
-                              className={`absolute border-2 rounded-lg cursor-move flex items-center gap-1.5 px-2 transition-all ${colors} ${
+                              className={`absolute border-2 rounded-lg cursor-move flex items-center ${isTiny ? "gap-1 px-1" : "gap-1.5 px-2"} transition-all ${colors} ${
                                 isSelected ? "shadow-lg ring-2 ring-gold/50 z-30" : dragging?.fieldId === field.id ? "shadow-lg z-20" : "hover:shadow-md z-10"
                               }`}
                               style={{
@@ -704,17 +861,28 @@ function TemplateEditor({
                                 top: `${pos.y}%`,
                                 width: `${pos.w}%`,
                                 height: `${pos.h}%`,
-                                minHeight: field.type === "signature" ? 50 : 28,
+                                // Use the field's own fontSize as the CSS size —
+                                // the label, placeholder and value all inherit it.
+                                fontSize: `${fs}px`,
+                                lineHeight: 1.1,
+                                // Minimum height scales with the font so tiny
+                                // fields don't render as 28px-tall stubs.
+                                minHeight: field.type === "signature" ? 40 : Math.max(16, fs + 6),
                               }}
                               onMouseDown={e => handleDragStart(e, field.id)}
                               onTouchStart={e => handleDragStart(e, field.id)}
                               onClick={e => { e.stopPropagation(); setSelectedFieldId(field.id); }}
                             >
-                              <FieldIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
-                              <span className="text-xs font-medium truncate flex-1">
+                              {!isTiny && (
+                                <FieldIcon
+                                  className="flex-shrink-0 opacity-70"
+                                  style={{ width: `${Math.max(10, fs)}px`, height: `${Math.max(10, fs)}px` }}
+                                />
+                              )}
+                              <span className="font-medium truncate flex-1">
                                 {field.label || fieldTypeLabels[field.type]}
                               </span>
-                              {isAutoField && (
+                              {isAutoField && !isTiny && (
                                 <Sparkles className="w-3 h-3 flex-shrink-0 opacity-60" />
                               )}
                               {isSelected && (
@@ -723,16 +891,16 @@ function TemplateEditor({
                                   onClick={e => { e.stopPropagation(); removeField(field.id); }}
                                   title="הסר שדה"
                                 >
-                                  <X className="w-3.5 h-3.5" />
+                                  <X className="w-3 h-3" />
                                 </button>
                               )}
                               {/* Resize handle */}
                               <div
-                                className="absolute bottom-0 left-0 w-5 h-5 cursor-se-resize flex items-center justify-center rounded-tr-md"
+                                className="absolute bottom-0 left-0 w-4 h-4 cursor-se-resize flex items-center justify-center rounded-tr-md"
                                 onMouseDown={e => handleResizeStart(e, field.id)}
                                 onTouchStart={e => handleResizeStart(e, field.id)}
                               >
-                                <Maximize2 className="w-3 h-3 opacity-40" />
+                                <Maximize2 className="w-2.5 h-2.5 opacity-40" />
                               </div>
                             </div>
                           );
@@ -801,16 +969,91 @@ function TemplateEditor({
                 </button>
               </div>
 
-              {/* Label */}
+              {/* Label — auto-focused so the designer can immediately rename
+                  the field to something meaningful (e.g. "טלפון משרד" vs
+                  "טלפון נייד") rather than keeping the generic default. */}
               <div>
-                <label className="form-label text-xs">תווית</label>
+                <label className="form-label text-xs">
+                  שם השדה
+                  <span className="text-text-faint font-normal mr-1">(יופיע על המסמך)</span>
+                </label>
                 <input
+                  ref={labelInputRef}
                   value={selectedField.label}
                   onChange={e => updateField(selectedField.id, { label: e.target.value })}
                   className="input-field text-sm"
                   placeholder="שם השדה"
                 />
               </div>
+
+              {/* Font size — lets the designer match the field's text size to
+                  surrounding printed text on the PDF (e.g. small font for a
+                  cell in a table, larger font for a headline field). */}
+              {selectedField.type !== "signature" && (
+                <div>
+                  <label className="form-label text-xs flex items-center justify-between">
+                    <span>גודל טקסט</span>
+                    <span className="text-text-muted font-mono">
+                      {selectedField.fontSize || DEFAULT_FIELD_FONT_SIZE}px
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min={8}
+                    max={36}
+                    step={1}
+                    value={selectedField.fontSize || DEFAULT_FIELD_FONT_SIZE}
+                    onChange={e => updateField(selectedField.id, { fontSize: parseInt(e.target.value, 10) })}
+                    className="w-full accent-gold"
+                  />
+                  <div className="flex justify-between text-2xs text-text-faint mt-0.5">
+                    <span>קטן</span>
+                    <span>רגיל</span>
+                    <span>גדול</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Box size — numeric width/height in percent of the page. Lets
+                  you dial in an exact size when the draggable resize handle
+                  isn't precise enough (e.g. fitting a pre-printed table cell). */}
+              {selectedField.position && (
+                <div>
+                  <label className="form-label text-xs">גודל תיבה (% מהעמוד)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-2xs text-text-faint">רוחב</label>
+                      <input
+                        type="number"
+                        min={3}
+                        max={100}
+                        step={0.5}
+                        value={selectedField.position.w}
+                        onChange={e => {
+                          const w = Math.max(3, Math.min(100 - selectedField.position!.x, parseFloat(e.target.value) || 3));
+                          updateField(selectedField.id, { position: { ...selectedField.position!, w: Math.round(w * 10) / 10 } });
+                        }}
+                        className="input-field text-xs py-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-2xs text-text-faint">גובה</label>
+                      <input
+                        type="number"
+                        min={1.5}
+                        max={100}
+                        step={0.5}
+                        value={selectedField.position.h}
+                        onChange={e => {
+                          const h = Math.max(1.5, Math.min(100 - selectedField.position!.y, parseFloat(e.target.value) || 1.5));
+                          updateField(selectedField.id, { position: { ...selectedField.position!, h: Math.round(h * 10) / 10 } });
+                        }}
+                        className="input-field text-xs py-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Type (read-only for auto fields and signatures) */}
               <div>
@@ -1015,16 +1258,22 @@ function ContractPreview({
                   const bgColor = field.type === "signature" ? "bg-purple-50/80"
                     : CLIENT_AUTO_FIELDS.includes(field.type) ? "bg-emerald-50/80"
                     : field.owner === "designer" ? "bg-amber-50/80" : "bg-blue-50/80";
+                  const fs = field.fontSize || DEFAULT_FIELD_FONT_SIZE;
                   return (
                     <div
                       key={field.id}
-                      className={`absolute border rounded-md px-1.5 flex items-center ${borderColor} ${bgColor}`}
-                      style={{ left: `${pos.x}%`, top: `${pos.y}%`, width: `${pos.w}%`, height: `${pos.h}%`, minHeight: field.type === "signature" ? 50 : 24 }}
+                      className={`absolute border rounded-md flex items-center ${borderColor} ${bgColor}`}
+                      style={{
+                        left: `${pos.x}%`, top: `${pos.y}%`, width: `${pos.w}%`, height: `${pos.h}%`,
+                        fontSize: `${fs}px`, lineHeight: 1.1,
+                        padding: fs <= 10 ? "0 2px" : "0 6px",
+                        minHeight: field.type === "signature" ? 40 : Math.max(14, fs + 4),
+                      }}
                     >
                       {field.type === "signature" ? (
-                        value ? <img src={value} alt="חתימה" className="h-full mx-auto object-contain" /> : <span className="text-xs text-text-faint italic">חתימה</span>
+                        value ? <img src={value} alt="חתימה" className="h-full mx-auto object-contain" /> : <span className="text-text-faint italic">חתימה</span>
                       ) : (
-                        <span className="text-xs truncate">{value || <span className="text-text-faint italic">{field.label}</span>}</span>
+                        <span className="truncate">{value || <span className="text-text-faint italic">{field.label}</span>}</span>
                       )}
                     </div>
                   );
@@ -1543,6 +1792,133 @@ function ContractFillForm({
 }
 
 // ==========================
+// SENT LINK MODAL
+// ==========================
+// Shown right after a contract is sent to a client. Gives the designer
+// visible confirmation that the email went out + an easy way to copy the
+// signing URL so they can also paste it into WhatsApp / SMS as a backup.
+
+function SentLinkModal({
+  contract,
+  onClose,
+  gender,
+}: {
+  contract: Contract;
+  onClose: () => void;
+  gender?: string;
+}) {
+  const gdr = gender || "female";
+  const signUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/contract/sign/${contract.signToken}`
+      : `/contract/sign/${contract.signToken}`;
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(signUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt("העתק/י את הקישור ידנית:", signUrl);
+    }
+  };
+
+  const waMessage = `שלום ${contract.clientName || ""}, ${g(gdr, "שלחתי לך", "שלחתי לך")} חוזה לחתימה:\n${signUrl}`;
+  const waHref = contract.clientPhone
+    ? `https://wa.me/${contract.clientPhone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(waMessage)}`
+    : `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-heading font-bold text-text-primary flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            החוזה נשלח בהצלחה
+          </h3>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-bg-surface">
+            <X className="w-5 h-5 text-text-muted" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">
+            {contract.clientEmail ? (
+              <>
+                <p className="font-semibold flex items-center gap-1">
+                  <Mail className="w-4 h-4" /> אימייל נשלח אל:
+                </p>
+                <p className="mr-5 font-mono" dir="ltr">{contract.clientEmail}</p>
+              </>
+            ) : (
+              <p className="font-semibold">
+                הסטטוס עודכן ל״ממתין לחתימה״ — ניתן לשלוח את הקישור ידנית.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="form-label text-xs">קישור לחתימת הלקוח</label>
+            <div className="flex gap-2">
+              <input
+                value={signUrl}
+                readOnly
+                onClick={e => (e.target as HTMLInputElement).select()}
+                className="input-field text-xs font-mono flex-1"
+                dir="ltr"
+              />
+              <button
+                onClick={copy}
+                className={`btn-ghost flex items-center gap-1 whitespace-nowrap ${copied ? "text-emerald-600" : ""}`}
+              >
+                {copied ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" /> הועתק
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" /> העתק
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-2xs text-text-faint mt-1">
+              ניתן לשלוח את הקישור ללקוח גם ב־WhatsApp, SMS או כל אפליקציית הודעות.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost flex items-center justify-center gap-1.5 text-sm bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] border-[#128C7E]/20"
+            >
+              <Send className="w-4 h-4" /> שליחה ב־WhatsApp
+            </a>
+            <a
+              href={signUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost flex items-center justify-center gap-1.5 text-sm"
+            >
+              <Eye className="w-4 h-4" /> תצוגת הלקוח
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-border-subtle">
+          <button onClick={onClose} className="btn-gold w-full">
+            סיימתי
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================
 // MAIN COMPONENT
 // ==========================
 
@@ -1560,6 +1936,13 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
   const [showSignature, setShowSignature] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [showSendModal, setShowSendModal] = useState<ContractTemplate | null>(null);
+  // Contract whose signing link is displayed in the "sent successfully" modal.
+  // Shown after sendToClient succeeds; lets the designer copy the URL to send
+  // it via WhatsApp / SMS as a backup to the email.
+  const [sentLinkFor, setSentLinkFor] = useState<Contract | null>(null);
+  // Token of the contract whose sign link was just copied — briefly flashes
+  // a "copied!" confirmation next to the copy button so the user gets feedback.
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -1645,8 +2028,19 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
       if (res.ok) {
         const updated = await res.json();
         setContracts(prev => prev.map(c => c.id === id ? updated : c));
+        // Show the signing link so the designer can send it via WhatsApp
+        // directly (as a backup — some inboxes swallow the Resend email, and
+        // having the link visible is reassuring). The SentLinkModal also
+        // exposes a one-click copy button for the URL.
+        setSentLinkFor(updated);
+      } else {
+        const err = await res.json().catch(() => ({} as { error?: string }));
+        alert(err.error || "לא הצלחנו לשלוח את החוזה. נסה/י שוב.");
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      alert("שגיאה בשליחת החוזה. יש לבדוק את חיבור האינטרנט.");
+    }
     finally { setSendingId(null); }
   }
 
@@ -1674,9 +2068,21 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
     } catch (e) { console.error(e); }
   }
 
-  function copySignLink(token: string) {
+  // Copy the signing link and briefly flash feedback on the triggering button.
+  // Previously this silently wrote to the clipboard — with no confirmation the
+  // user would click "Copy link", see nothing happen, and assume it was broken.
+  async function copySignLink(token: string) {
     const url = `${window.location.origin}/contract/sign/${token}`;
-    navigator.clipboard.writeText(url);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(prev => (prev === token ? null : prev)), 2000);
+    } catch {
+      // Clipboard API can fail in insecure contexts (no HTTPS) or when the
+      // document isn't focused. Fall back to a prompt so the URL is at least
+      // selectable.
+      window.prompt("העתק/י את הקישור ידנית:", url);
+    }
   }
 
   if (loading) {
@@ -1746,6 +2152,17 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
           projects={projects}
           onSend={saveContract}
           onClose={() => setShowSendModal(null)}
+          gender={gdr}
+        />
+      )}
+
+      {/* Confirmation + link modal — shown after a successful sendToClient so
+          the designer gets explicit "it worked!" feedback, can copy the URL
+          as backup, and can jump straight into WhatsApp. */}
+      {sentLinkFor && (
+        <SentLinkModal
+          contract={sentLinkFor}
+          onClose={() => setSentLinkFor(null)}
           gender={gdr}
         />
       )}
@@ -1946,10 +2363,18 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
 
                     <button
                       onClick={() => copySignLink(c.signToken)}
-                      className="p-2 rounded-lg text-text-faint hover:text-gold hover:bg-gold/5 transition-colors"
-                      title="העתק קישור חתימה"
+                      className={`p-2 rounded-lg transition-colors ${
+                        copiedToken === c.signToken
+                          ? "text-emerald-600 bg-emerald-50"
+                          : "text-text-faint hover:text-gold hover:bg-gold/5"
+                      }`}
+                      title={copiedToken === c.signToken ? "הועתק ללוח" : "העתק קישור חתימה"}
                     >
-                      <Link2 className="w-4 h-4" />
+                      {copiedToken === c.signToken ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <Link2 className="w-4 h-4" />
+                      )}
                     </button>
 
                     {c.status === "SIGNED" && (
