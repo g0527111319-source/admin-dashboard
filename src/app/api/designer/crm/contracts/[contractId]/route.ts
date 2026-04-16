@@ -76,7 +76,11 @@ export async function PATCH(
       updateData.status = "SIGNED";
     }
 
-    // Send to client
+    // Send to client — track result so the UI can surface delivery failures
+    // instead of showing a green "sent" when Resend has silently blocked the
+    // message (most common cause: sandbox `from` domain).
+    let emailWarning: { message: string; sandbox?: boolean; to?: string } | null = null;
+
     if (body.sendEmail && body.status === "SENT_FOR_SIGNATURE") {
       updateData.sentToClientAt = new Date();
       const emailsSent = Array.isArray(existing.emailsSent) ? [...(existing.emailsSent as unknown[])] : [];
@@ -98,7 +102,7 @@ export async function PATCH(
           const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
           const signUrl = `${APP_URL}/contract/sign/${existing.signToken}`;
 
-          await sendEmail({
+          const result = await sendEmail({
             to: existing.clientEmail,
             subject: `חוזה לחתימה — ${contractTitle}`,
             html: `
@@ -117,9 +121,27 @@ export async function PATCH(
               </div>
             `,
           });
+
+          if (!result.success) {
+            emailWarning = {
+              message: result.sandbox
+                ? "המייל לא נשלח: שרת המייל פועל במצב sandbox של Resend ומאפשר שליחה רק לכתובת הבעלים. יש לאמת דומיין ב-Resend ולהגדיר FROM_EMAIL. ראה docs/email-setup.md. ניתן גם לשתף את הלקוח/ה את קישור החתימה ידנית מכפתור 'העתק קישור'."
+                : `שליחת המייל ללקוח/ה נכשלה: ${result.message || "שגיאה לא ידועה"}. ניתן להעתיק את הקישור ולשלוח ידנית.`,
+              sandbox: result.sandbox,
+              to: existing.clientEmail,
+            };
+          }
         } catch (emailError) {
           console.error("Failed to send contract signing email to client:", emailError);
+          emailWarning = {
+            message: `שליחת המייל ללקוח/ה נכשלה: ${emailError instanceof Error ? emailError.message : "שגיאה לא ידועה"}`,
+            to: existing.clientEmail,
+          };
         }
+      } else {
+        emailWarning = {
+          message: "אין ללקוח/ה כתובת אימייל שמורה — אנא עדכנו במסך הלקוח, או העתיקו את קישור החתימה ושילחו ידנית.",
+        };
       }
     }
 
@@ -138,7 +160,7 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(contract);
+    return NextResponse.json({ ...contract, ...(emailWarning ? { emailWarning } : {}) });
   } catch (error) {
     console.error("Contract update error:", error);
     return NextResponse.json({ error: "שגיאה בעדכון חוזה" }, { status: 500 });

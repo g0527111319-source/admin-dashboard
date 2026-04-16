@@ -5,7 +5,17 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
+// IMPORTANT: Resend's sandbox domain (`@resend.dev`) only delivers mail to
+// the account owner's own email. Any mail to a third party silently gets
+// 403'd. To deliver to real clients you MUST verify a domain at
+// https://resend.com/domains and set `FROM_EMAIL` on Vercel to an address
+// under that domain, e.g. `זירת האדריכלות <noreply@zirat.co.il>`.
 const FROM_EMAIL = process.env.FROM_EMAIL || "זירת האדריכלות <noreply@resend.dev>";
+const FROM_IS_SANDBOX = /@resend\.dev>?\s*$/i.test(FROM_EMAIL);
+
+// The only address Resend's sandbox domain is allowed to deliver to.
+// Surfaced as a warning on every send so we don't lose mails silently.
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 
 /**
  * Attachments passed through to Resend. `content` accepts either a Buffer
@@ -24,20 +34,40 @@ type SendEmailOptions = {
   attachments?: EmailAttachment[];
 };
 
-export async function sendEmail({ to, subject, html, attachments }: SendEmailOptions) {
+export type EmailSendResult =
+  | { success: true; id?: string; mock?: boolean }
+  | { success: false; error: unknown; code?: string; message?: string; sandbox?: boolean };
+
+export async function sendEmail({ to, subject, html, attachments }: SendEmailOptions): Promise<EmailSendResult> {
+  const toList = Array.isArray(to) ? to : [to];
+
   if (!resend) {
     console.log("[Email Mock] Would send:", {
-      to,
+      to: toList,
       subject,
       attachmentCount: attachments?.length || 0,
     });
     return { success: true, mock: true };
   }
 
+  // Loud warning when sandbox + recipient is not the account owner: this
+  // send WILL be rejected by Resend. We still attempt the call (so the
+  // error surfaces in logs) but flag it up-front.
+  if (FROM_IS_SANDBOX) {
+    const allowed = ADMIN_EMAIL.toLowerCase();
+    const blocked = toList.filter((t) => t.toLowerCase() !== allowed);
+    if (blocked.length > 0) {
+      console.warn(
+        "[Email] Sandbox domain in use — these recipients will be rejected by Resend:",
+        { from: FROM_EMAIL, blocked, fix: "set FROM_EMAIL to a verified domain on Vercel" },
+      );
+    }
+  }
+
   try {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
-      to: Array.isArray(to) ? to : [to],
+      to: toList,
       subject,
       html,
       // Resend accepts Buffer content directly for attachments. We forward
@@ -52,15 +82,37 @@ export async function sendEmail({ to, subject, html, attachments }: SendEmailOpt
     });
 
     if (error) {
-      console.error("[Email Error]", error);
-      return { success: false, error };
+      console.error("[Email Error]", { to: toList, subject, from: FROM_EMAIL, error });
+      const err = error as { name?: string; message?: string; statusCode?: number };
+      return {
+        success: false,
+        error,
+        code: err.name,
+        message: err.message,
+        sandbox: FROM_IS_SANDBOX,
+      };
     }
 
     return { success: true, id: data?.id };
   } catch (err) {
-    console.error("[Email Exception]", err);
-    return { success: false, error: err };
+    console.error("[Email Exception]", { to: toList, subject, from: FROM_EMAIL, err });
+    return {
+      success: false,
+      error: err,
+      message: err instanceof Error ? err.message : String(err),
+      sandbox: FROM_IS_SANDBOX,
+    };
   }
+}
+
+/** True when the current `FROM_EMAIL` points to Resend's sandbox. */
+export function isSandboxFrom(): boolean {
+  return FROM_IS_SANDBOX;
+}
+
+/** Current FROM_EMAIL value — exposed for diagnostics. */
+export function getFromEmail(): string {
+  return FROM_EMAIL;
 }
 
 // --- Email Templates ---

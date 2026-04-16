@@ -2184,14 +2184,23 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
         body: JSON.stringify(body),
       });
       if (res.ok) {
-        const updated = await res.json();
-        setContracts(prev => prev.map(c => c.id === id ? updated : c));
+        const updated = await res.json() as Contract & { emailWarning?: { message: string; sandbox?: boolean; to?: string } };
+        const warning = updated.emailWarning;
+        // Strip the warning before pushing to state so Contract stays clean.
+        const clean: Contract = { ...updated };
+        delete (clean as { emailWarning?: unknown }).emailWarning;
+        setContracts(prev => prev.map(c => c.id === id ? clean : c));
         // Show the signing link so the designer can send it via WhatsApp
         // directly (as a backup — some inboxes swallow the Resend email, and
         // having the link visible is reassuring). The SentLinkModal also
         // exposes a one-click copy button for the URL.
-        setSentLinkFor(updated);
+        setSentLinkFor(clean);
         setEmailModal(null);
+        // Flag a non-blocking warning when the email failed — typically
+        // Resend sandbox mode. The designer can still copy the link.
+        if (warning) {
+          window.setTimeout(() => alert(`שים/י לב: ${warning.message}`), 250);
+        }
       } else {
         const err = await res.json().catch(() => ({} as { error?: string }));
         alert(err.error || "לא הצלחנו לשלוח את החוזה. נסה/י שוב.");
