@@ -1,8 +1,13 @@
 export const dynamic = "force-dynamic";
+// PDF generation + R2 upload can take a few seconds — default 10s serverless
+// cap is too tight. 30s matches the other file-heavy endpoints in this project.
+export const maxDuration = 30;
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit-logger";
 import { sendEmail } from "@/lib/email";
+import { generateSignedContractPdf } from "@/lib/contract-pdf";
+import { uploadToR2, getPublicUrl, generateFileKey } from "@/lib/r2";
 
 // GET /api/contract/sign/[token] — public: client views the contract
 export async function GET(
@@ -171,13 +176,115 @@ export async function POST(
 
     // Send contract notification emails via Resend
     try {
+      // companyName lives on DesignerCrmSettings (not Designer itself),
+      // so we pull it in a single relation query. The PDF certificate uses
+      // it next to the designer's name ("שירה כהן · Studio X").
       const designer = await prisma.designer.findUnique({
         where: { id: contract.designerId },
-        select: { fullName: true, email: true },
+        select: {
+          fullName: true,
+          email: true,
+          crmSettings: { select: { companyName: true } },
+        },
       });
 
       const contractTitle = contract.title || `חוזה ${contract.contractNumber}`;
       const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
+
+      // ── If this signature completes the contract, build the archival PDF
+      //    once and reuse the bytes for the email attachment + R2 upload. We
+      //    only do this on the final signature to avoid generating a stale
+      //    "half-signed" PDF that would confuse the archive.
+      let pdfBytes: Buffer | null = null;
+      let pdfPublicUrl: string | null = null;
+
+      if (bothSigned) {
+        try {
+          // Pull the full contract (with template) for PDF generation.
+          const full = await prisma.crmContract.findUnique({
+            where: { id: contract.id },
+            include: {
+              template: {
+                select: { name: true, contentBlocks: true, fields: true },
+              },
+            },
+          });
+
+          if (full && designer) {
+            pdfBytes = await generateSignedContractPdf(
+              {
+                id: full.id,
+                title: full.title,
+                contractNumber: full.contractNumber,
+                totalAmount: full.totalAmount,
+                createdAt: full.createdAt,
+                clientName: full.clientName,
+                clientEmail: full.clientEmail,
+                clientPhone: full.clientPhone,
+                designerFieldValues: full.designerFieldValues as Record<string, string> | null,
+                clientFieldValues: full.clientFieldValues as Record<string, string> | null,
+                designerSignatureData: full.designerSignatureData as string | null,
+                designerSignedAt: full.designerSignedAt,
+                clientSignatureData: full.clientSignatureData as string | null,
+                clientSignedAt: full.clientSignedAt,
+                signatureIp: full.signatureIp,
+                template: full.template
+                  ? {
+                      name: full.template.name,
+                      contentBlocks: (full.template.contentBlocks as unknown as {
+                        id: string; type: string; content?: string;
+                        fileUrl?: string; fileType?: string; fileName?: string;
+                      }[]) || [],
+                      fields: (full.template.fields as unknown as {
+                        id: string; label: string; type: string; owner: string;
+                      }[]) || [],
+                    }
+                  : null,
+              },
+              {
+                fullName: designer.fullName,
+                companyName: designer.crmSettings?.companyName || null,
+                email: designer.email,
+              },
+            );
+
+            // Upload to R2 so we have a permanent link (designer can re-download
+            // anytime from the contract row). Filename is human-readable so when
+            // saved from an email it's immediately recognizable.
+            const filename = `contract-${full.contractNumber || full.id}-signed.pdf`;
+            const key = generateFileKey(
+              "contracts/signed",
+              filename,
+              full.designerId,
+            );
+            const uploadResult = await uploadToR2(
+              pdfBytes,
+              key,
+              "application/pdf",
+            );
+            pdfPublicUrl = uploadResult.url || getPublicUrl(key);
+
+            // Persist the pdfUrl on the contract so the contracts list in the
+            // designer UI can link straight to the archived PDF.
+            await prisma.crmContract.update({
+              where: { id: full.id },
+              data: { pdfUrl: pdfPublicUrl },
+            });
+          }
+        } catch (pdfError) {
+          console.error("Failed to generate signed contract PDF:", pdfError);
+        }
+      }
+
+      // Resend attachment (both emails get the same PDF so we're not
+      // regenerating it per recipient).
+      const pdfAttachment = pdfBytes
+        ? [{
+            filename: `contract-${contract.contractNumber || contract.id}-signed.pdf`,
+            content: pdfBytes,
+            contentType: "application/pdf",
+          }]
+        : undefined;
 
       // Send confirmation to client
       if (contract.clientEmail) {
@@ -190,12 +297,14 @@ export async function POST(
               <p>שלום ${contract.clientName || ""},</p>
               <p>חתימתך על <strong>${contractTitle}</strong> התקבלה בהצלחה.</p>
               ${bothSigned
-                ? '<p style="color: #4CAF50; font-weight: bold;">החוזה נחתם על ידי שני הצדדים ונכנס לתוקף.</p>'
+                ? '<p style="color: #4CAF50; font-weight: bold;">החוזה נחתם על ידי שני הצדדים ונכנס לתוקף. עותק החוזה החתום מצורף למייל זה.</p>'
                 : "<p>ממתינים לחתימת המעצב/ת להשלמת התהליך.</p>"
               }
+              ${pdfPublicUrl ? `<div style="text-align: center; margin-top: 24px;"><a href="${pdfPublicUrl}" style="background: #C9A84C; color: #000; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">הורד עותק PDF</a></div>` : ""}
               <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">זירת האדריכלות</p>
             </div>
           `,
+          ...(pdfAttachment ? { attachments: pdfAttachment } : {}),
         });
       }
 
@@ -210,15 +319,17 @@ export async function POST(
               <p>שלום ${designer.fullName},</p>
               <p><strong>${contract.clientName || "הלקוח/ה"}</strong> חתם/ה על <strong>${contractTitle}</strong>.</p>
               ${bothSigned
-                ? '<p style="color: #4CAF50; font-weight: bold;">החוזה נחתם על ידי שני הצדדים ונכנס לתוקף.</p>'
+                ? '<p style="color: #4CAF50; font-weight: bold;">החוזה נחתם על ידי שני הצדדים ונכנס לתוקף. עותק החוזה החתום מצורף למייל זה ונשמר גם בלוח הניהול.</p>'
                 : "<p>החוזה ממתין לחתימתך.</p>"
               }
               <div style="text-align: center; margin-top: 24px;">
                 <a href="${APP_URL}/designer" style="background: #C9A84C; color: #000; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">צפייה בחוזה</a>
+                ${pdfPublicUrl ? `<a href="${pdfPublicUrl}" style="display: inline-block; margin-right: 8px; background: #333; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">הורד PDF</a>` : ""}
               </div>
               <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">זירת האדריכלות</p>
             </div>
           `,
+          ...(pdfAttachment ? { attachments: pdfAttachment } : {}),
         });
       }
     } catch (emailError) {

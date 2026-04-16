@@ -7,15 +7,30 @@ const resend = process.env.RESEND_API_KEY
 
 const FROM_EMAIL = process.env.FROM_EMAIL || "זירת האדריכלות <noreply@resend.dev>";
 
+/**
+ * Attachments passed through to Resend. `content` accepts either a Buffer
+ * (we pass the raw bytes of the generated PDF) or a base64 string.
+ */
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+};
+
 type SendEmailOptions = {
   to: string | string[];
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
 };
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, attachments }: SendEmailOptions) {
   if (!resend) {
-    console.log("[Email Mock] Would send:", { to, subject });
+    console.log("[Email Mock] Would send:", {
+      to,
+      subject,
+      attachmentCount: attachments?.length || 0,
+    });
     return { success: true, mock: true };
   }
 
@@ -25,6 +40,15 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
       to: Array.isArray(to) ? to : [to],
       subject,
       html,
+      // Resend accepts Buffer content directly for attachments. We forward
+      // the optional contentType so PDFs show the right icon in mail clients.
+      ...(attachments && attachments.length > 0 ? {
+        attachments: attachments.map((att) => ({
+          filename: att.filename,
+          content: att.content,
+          ...(att.contentType ? { contentType: att.contentType } : {}),
+        })),
+      } : {}),
     });
 
     if (error) {

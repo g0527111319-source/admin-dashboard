@@ -124,6 +124,8 @@ interface Contract {
   signToken: string;
   sentToClientAt: string | null;
   clientViewedAt: string | null;
+  /** Set once both parties have signed — link to the archival PDF on R2. */
+  pdfUrl: string | null;
   notesInternal: string | null;
   createdAt: string;
   project?: { id: string; name: string; client?: ProjectClient };
@@ -1798,6 +1800,144 @@ function ContractFillForm({
 // visible confirmation that the email went out + an easy way to copy the
 // signing URL so they can also paste it into WhatsApp / SMS as a backup.
 
+// ==========================
+// SendToEmailModal
+// ==========================
+// Pre-send dialog: designer confirms (or edits) the recipient email before
+// the contract invitation goes out. Used both for the initial send (when a
+// contract is still DRAFT) and for re-sending an already-sent contract when
+// the client claims they didn't receive the email / needs it at a different
+// address. Keeping the email editable here is important because the saved
+// client record may carry a stale address.
+function SendToEmailModal({
+  contract,
+  isResend,
+  onConfirm,
+  onClose,
+  gender: _gender,
+}: {
+  contract: Contract;
+  isResend: boolean;
+  onConfirm: (email: string) => Promise<void>;
+  onClose: () => void;
+  gender?: string;
+}) {
+  const [email, setEmail] = useState(contract.clientEmail || "");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+
+  const submit = async () => {
+    const trimmed = email.trim();
+    if (!isValidEmail(trimmed)) {
+      setError("כתובת אימייל לא תקינה");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      await onConfirm(trimmed);
+    } catch (e) {
+      console.error(e);
+      setError("שליחה נכשלה — נסה/י שוב");
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-heading font-bold text-text-primary flex items-center gap-2">
+            <Mail className="w-5 h-5 text-gold" />
+            {isResend ? "שליחה חוזרת ללקוח" : "שליחה ללקוח"}
+          </h3>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-bg-surface">
+            <X className="w-5 h-5 text-text-muted" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-bg-surface rounded-lg p-3 text-sm">
+            <div className="text-xs text-text-muted mb-1">חוזה</div>
+            <div className="font-medium text-text-primary">{contract.title}</div>
+            {contract.contractNumber && (
+              <div className="text-2xs text-text-faint mt-0.5">#{contract.contractNumber}</div>
+            )}
+          </div>
+
+          <div>
+            <label className="form-label">
+              כתובת אימייל לשליחה
+              <span className="text-red-400 mr-1">*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => {
+                setEmail(e.target.value);
+                if (error) setError(null);
+              }}
+              onKeyDown={e => {
+                if (e.key === "Enter" && !sending) submit();
+              }}
+              autoFocus
+              dir="ltr"
+              placeholder="client@example.com"
+              className="input-field font-mono text-sm"
+            />
+            <p className="text-2xs text-text-faint mt-1">
+              ניתן לשנות את הכתובת — היא תישמר על החוזה הזה.
+            </p>
+            {error && (
+              <p className="text-xs text-red-500 mt-2">{error}</p>
+            )}
+          </div>
+
+          {isResend && contract.sentToClientAt && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
+              נשלח בפעם האחרונה ב־
+              {new Date(contract.sentToClientAt).toLocaleString("he-IL", {
+                day: "2-digit", month: "2-digit", year: "numeric",
+                hour: "2-digit", minute: "2-digit",
+              })}
+              {contract.clientViewedAt && (
+                <> · הלקוח צפה ב־{new Date(contract.clientViewedAt).toLocaleString("he-IL", {
+                  day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+                })}</>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-border-subtle flex gap-2">
+          <button onClick={onClose} className="btn-ghost flex-1" disabled={sending}>
+            ביטול
+          </button>
+          <button
+            onClick={submit}
+            disabled={sending || !email.trim()}
+            className="btn-gold flex-1 flex items-center justify-center gap-1.5"
+          >
+            {sending ? (
+              <>
+                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                שולח...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                {isResend ? "שלח שוב" : "שלח"}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SentLinkModal({
   contract,
   onClose,
@@ -1943,6 +2083,11 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
   // Token of the contract whose sign link was just copied — briefly flashes
   // a "copied!" confirmation next to the copy button so the user gets feedback.
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  // Contract the designer is about to send to the client. Opening this modal
+  // shows an editable email field so the address can be corrected before the
+  // invitation goes out. Set this (not sendToClient directly) from any Send
+  // / Resend button. `isResend` flags whether the contract was already sent.
+  const [emailModal, setEmailModal] = useState<{ contract: Contract; isResend: boolean } | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -2017,13 +2162,26 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
     } catch (e) { console.error(e); }
   }
 
-  async function sendToClient(id: string) {
+  // Send (or re-send) a contract invitation to the client's email. When
+  // `email` is provided it overrides the stored clientEmail — the updated
+  // address is persisted so subsequent sends/resends go to the new one.
+  //
+  // The endpoint also handles idempotency: re-sending a SENT_FOR_SIGNATURE
+  // contract with the same status + sendEmail:true triggers a fresh email
+  // without creating a duplicate record.
+  async function sendToClient(id: string, email?: string) {
     setSendingId(id);
     try {
+      const body: Record<string, unknown> = {
+        status: "SENT_FOR_SIGNATURE",
+        sendEmail: true,
+      };
+      if (email) body.clientEmail = email;
+
       const res = await fetch(`/api/designer/crm/contracts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "SENT_FOR_SIGNATURE", sendEmail: true }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         const updated = await res.json();
@@ -2033,13 +2191,16 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
         // having the link visible is reassuring). The SentLinkModal also
         // exposes a one-click copy button for the URL.
         setSentLinkFor(updated);
+        setEmailModal(null);
       } else {
         const err = await res.json().catch(() => ({} as { error?: string }));
         alert(err.error || "לא הצלחנו לשלוח את החוזה. נסה/י שוב.");
+        throw new Error(err.error || "send failed");
       }
     } catch (e) {
       console.error(e);
-      alert("שגיאה בשליחת החוזה. יש לבדוק את חיבור האינטרנט.");
+      if (!emailModal) alert("שגיאה בשליחת החוזה. יש לבדוק את חיבור האינטרנט.");
+      throw e;
     }
     finally { setSendingId(null); }
   }
@@ -2152,6 +2313,18 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
           projects={projects}
           onSend={saveContract}
           onClose={() => setShowSendModal(null)}
+          gender={gdr}
+        />
+      )}
+
+      {/* Pre-send email confirmation — opens on Send / Resend so the designer
+          can correct the recipient address before the invitation goes out. */}
+      {emailModal && (
+        <SendToEmailModal
+          contract={emailModal.contract}
+          isResend={emailModal.isResend}
+          onConfirm={(email) => sendToClient(emailModal.contract.id, email)}
+          onClose={() => setEmailModal(null)}
           gender={gdr}
         />
       )}
@@ -2313,6 +2486,82 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
                     </div>
                   )}
 
+                  {/* Visible sign-link panel — shown for every non-signed,
+                      non-cancelled contract so the designer always has the
+                      URL handy (for copy/send/WhatsApp) without drilling in.
+                      Hidden once the contract is SIGNED (link no longer needed). */}
+                  {c.status !== "SIGNED" && c.status !== "CANCELLED" && (
+                    <div className="mt-3 pt-3 border-t border-border-subtle">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <h5 className="text-xs font-semibold text-text-muted flex items-center gap-1">
+                          <Link2 className="w-3.5 h-3.5" />
+                          קישור חתימה ללקוח
+                        </h5>
+                        {c.sentToClientAt && (
+                          <span className="text-2xs text-emerald-600 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            נשלח ב־{new Date(c.sentToClientAt).toLocaleDateString("he-IL")}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <input
+                          value={typeof window !== "undefined" ? `${window.location.origin}/contract/sign/${c.signToken}` : `/contract/sign/${c.signToken}`}
+                          readOnly
+                          onClick={e => (e.target as HTMLInputElement).select()}
+                          className="input-field text-2xs font-mono flex-1 min-w-[200px] bg-bg-surface"
+                          dir="ltr"
+                        />
+                        <button
+                          onClick={() => copySignLink(c.signToken)}
+                          className={`btn-ghost text-xs flex items-center gap-1 whitespace-nowrap ${
+                            copiedToken === c.signToken ? "text-emerald-600 border-emerald-200 bg-emerald-50" : ""
+                          }`}
+                          title="העתק קישור"
+                        >
+                          {copiedToken === c.signToken ? (
+                            <><CheckCircle2 className="w-3.5 h-3.5" /> הועתק</>
+                          ) : (
+                            <><Copy className="w-3.5 h-3.5" /> העתק</>
+                          )}
+                        </button>
+                        <a
+                          href={`/contract/sign/${c.signToken}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-ghost text-xs flex items-center gap-1 whitespace-nowrap"
+                          title="פתח בתצוגת הלקוח"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> פתח
+                        </a>
+                        {c.project?.client && (
+                          <button
+                            onClick={() => setEmailModal({
+                              contract: c,
+                              isResend: c.status === "SENT_FOR_SIGNATURE",
+                            })}
+                            disabled={sendingId === c.id}
+                            className="btn-ghost text-xs flex items-center gap-1 whitespace-nowrap text-blue-600 border-blue-200 hover:bg-blue-50 disabled:opacity-50"
+                            title={c.status === "SENT_FOR_SIGNATURE" ? "שלח שוב במייל" : "שלח במייל"}
+                          >
+                            {sendingId === c.id ? (
+                              <div className="w-3.5 h-3.5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
+                            ) : (
+                              <Send className="w-3.5 h-3.5" />
+                            )}
+                            {c.status === "SENT_FOR_SIGNATURE" ? "שלח שוב" : "שלח במייל"}
+                          </button>
+                        )}
+                      </div>
+                      {!c.project?.client && (
+                        <p className="text-2xs text-red-500 mt-1.5 flex items-center gap-1">
+                          <XCircle className="w-3 h-3" />
+                          הלקוח לא שמור במערכת — לא ניתן לשלוח במייל. ניתן להעתיק את הקישור ולשלוח ידנית.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1 shrink-0 mt-3">
                     <button
                       onClick={() => { setPreviewContract(c); setView("contract-preview"); }}
@@ -2329,35 +2578,6 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
                         title="חתום"
                       >
                         <Pen className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    {c.status === "DRAFT" && (
-                      <button
-                        onClick={() => {
-                          if (!c.clientEmail) {
-                            alert("לא ניתן לשלוח חוזה ללא כתובת אימייל.");
-                            return;
-                          }
-                          if (!c.project?.client) {
-                            alert("לא ניתן לשלוח חוזה ללקוח שלא שמור במערכת.");
-                            return;
-                          }
-                          sendToClient(c.id);
-                        }}
-                        disabled={sendingId === c.id}
-                        className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-                          c.clientEmail && c.project?.client
-                            ? "text-text-faint hover:text-blue-600 hover:bg-blue-50"
-                            : "text-text-faint/40 cursor-not-allowed"
-                        }`}
-                        title={
-                          !c.project?.client ? "לקוח לא שמור במערכת"
-                            : !c.clientEmail ? "חסר אימייל ללקוח"
-                              : "שלח ללקוח"
-                        }
-                      >
-                        <Send className="w-4 h-4" />
                       </button>
                     )}
 
@@ -2378,16 +2598,33 @@ export default function CrmContracts({ clientId, projectId, gender }: { clientId
                     </button>
 
                     {c.status === "SIGNED" && (
-                      <button
-                        onClick={() => {
-                          const url = `${window.location.origin}/contract/sign/${c.signToken}`;
-                          window.open(url, "_blank");
-                        }}
-                        className="p-2 rounded-lg text-text-faint hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                        title="צפייה בחוזה החתום"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            const url = `${window.location.origin}/contract/sign/${c.signToken}`;
+                            window.open(url, "_blank");
+                          }}
+                          className="p-2 rounded-lg text-text-faint hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          title="צפייה בחוזה החתום"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {/* PDF download — only present once the sign flow has
+                            finished and the archival PDF is saved. Older SIGNED
+                            contracts (pre-PDF feature) won't have pdfUrl yet. */}
+                        {c.pdfUrl && (
+                          <a
+                            href={c.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                            className="p-2 rounded-lg text-text-faint hover:text-gold hover:bg-gold/5 transition-colors"
+                            title="הורד PDF חתום"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        )}
+                      </>
                     )}
 
                     {c.status === "DRAFT" && (
