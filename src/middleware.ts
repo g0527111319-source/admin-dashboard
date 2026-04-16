@@ -32,6 +32,10 @@ const PUBLIC_PATHS = [
   // reviewers hit this URL without logging in; gating it behind auth caused
   // the "privacy policy does not fully document..." rejection.
   "/privacy",
+  // Data deletion request form — public per Google's Data Retention & Deletion
+  // disclosure requirement. Anyone (including former users and Google reviewers)
+  // must be able to file a deletion request without logging in.
+  "/data-deletion",
   "/projects",
   "/card",
   // Public contract-signing page — clients don't have accounts, they get here
@@ -54,6 +58,10 @@ const API_PUBLIC_PATHS = [
   "/api/admin/migrate-subscriptions", // Header-secret protected, one-time DDL
   "/api/admin/2fa/request",  // Pre-login admin 2FA flow
   "/api/admin/2fa/verify",   // Pre-login admin 2FA flow
+  // Public data-deletion request endpoint — anyone (including former users and
+  // Google OAuth reviewers) must be able to file a deletion request without
+  // being logged in. Rate limiting is handled upstream at the edge.
+  "/api/data-deletion",
 ];
 
 // Prefix-based public paths (starts with)

@@ -9,7 +9,9 @@ export type AuditAction =
   | "FILE_DELETE"
   | "CONTRACT_SIGNED"
   | "ADMIN_SETTINGS_CHANGE"
-  | "LOGOUT";
+  | "LOGOUT"
+  | "DATA_DELETION_REQUESTED"
+  | "ACCOUNT_SELF_DELETED";
 
 interface AuditEvent {
   action: AuditAction;

@@ -441,6 +441,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="text-white/35 text-sm hover:text-white/60 transition-colors">מדיניות פרטיות</Link>
             <Link href="/terms" className="text-white/35 text-sm hover:text-white/60 transition-colors">תנאי שימוש</Link>
+            <Link href="/data-deletion" className="text-white/35 text-sm hover:text-white/60 transition-colors">מחיקת נתונים</Link>
             <p className="text-white/35 text-sm">{siteText.brand.copyright}</p>
           </div>
         </div>

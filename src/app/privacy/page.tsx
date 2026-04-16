@@ -95,12 +95,21 @@ export default function PrivacyPage() {
             <li><strong>Google Calendar tokens:</strong> נמחקים אוטומטית ברגע שתלחץ על &quot;ניתוק&quot; במסך הגדרות ה-CRM, או תבטל את הגישה ב-
               <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Google Account permissions</a>.
             </li>
-            <li><strong>בקשת מחיקה מלאה של החשבון:</strong> ניתן בכל עת על ידי שליחת אימייל ל-
+            <li><strong>בקשת מחיקה מלאה של החשבון:</strong> ניתן בכל עת דרך
+              {" "}<a href="/data-deletion" className="text-gold hover:underline font-semibold">טופס מחיקת הנתונים הציבורי שלנו</a>
+              {" "}או על ידי שליחת אימייל ל-
               <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline">tamar@zirat.co.il</a>
               {" "}עם הנושא &quot;Delete my account&quot;. המחיקה תבוצע בתוך 30 יום ותכלול את כל נתוני הפרופיל, התוכן, הטוקנים של Google, והרשומות המשויכות. לוגים של אבטחה ישמרו לכל היותר 90 יום לצרכי אבטחה וציות.
             </li>
             <li><strong>Backups:</strong> עותקי גיבוי של בסיס הנתונים נשמרים עד 30 יום ולאחר מכן נמחקים לצמיתות.</li>
           </ul>
+          <div className="mt-4 p-4 bg-gold/5 border border-gold/30 rounded-lg">
+            <p className="text-text-primary leading-relaxed">
+              <strong>לנוחותך:</strong> טופס ציבורי למחיקת נתונים זמין בכל עת ב-
+              {" "}<a href="/data-deletion" className="text-gold hover:underline font-semibold">/data-deletion</a>.
+              אין צורך להיות מחובר/ת כדי להגיש בקשה.
+            </p>
+          </div>
         </section>
 
         <section className="space-y-3">
@@ -172,9 +181,11 @@ export default function PrivacyPage() {
           <p className="text-text-secondary leading-relaxed" dir="ltr">
             <strong>Data Retention &amp; Deletion:</strong> Users can disconnect Google Calendar at any time from the CRM settings (which deletes the stored tokens immediately) or from
             <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline"> https://myaccount.google.com/permissions</a>.
-            Full account deletion can be requested by emailing
+            Full account deletion can be requested via our public
+            {" "}<a href="/data-deletion" className="text-gold hover:underline font-semibold">Data Deletion form</a>
+            {" "}or by emailing
             <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline"> tamar@zirat.co.il</a>
-            {" "}with the subject &quot;Delete my account&quot;; deletion is completed within 30 days.
+            {" "}with the subject &quot;Delete my account&quot;; deletion is completed within 30 days and includes all Google OAuth tokens, profile data, and user-generated content.
           </p>
           <p className="text-text-secondary leading-relaxed" dir="ltr">
             <strong>Limited Use:</strong> Our use of information received from Google APIs adheres to the
