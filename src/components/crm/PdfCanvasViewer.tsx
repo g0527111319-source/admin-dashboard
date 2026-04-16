@@ -9,13 +9,33 @@
  *  - A `transform: scale()` anywhere up the tree breaks its hit-testing —
  *    the toolbar and page navigation stop responding.
  *  - We can't place field overlays cleanly inside the PDF since the iframe
- *    is a separate document.
+ *    is a separate document with its own layout.
  *
  * By rendering to canvases we:
  *  - See all pages stacked vertically by default (natural scroll).
  *  - Keep the whole viewer inside the normal DOM (so field % positions
  *    stay aligned and clicking works everywhere).
  *  - Report back the real page count so the parent can size overlays.
+ *
+ * Why self-host pdf.js (from /public/pdfjs)?
+ *
+ * pdf.js v5 is ESM-only and its worker is a module worker. Loading it from
+ * a CDN (cdnjs, jsdelivr, unpkg — all tried) fails in one of two ways:
+ *  - `disableWorker: true` hangs forever on complex PDFs (e.g. Hebrew
+ *    contracts with transparency groups).
+ *  - Module workers have stricter cross-origin rules than classic workers
+ *    and silently fail to start, so rendering just hangs.
+ *
+ * We previously shipped pdf.js v3.11.174 via a classic <script> tag from
+ * cdnjs — that *loaded* fine but had a rendering bug where pages with a
+ * Transparency Group + embedded subset fonts (exactly what the Hebrew
+ * contract uses) painted as a ~99% black rectangle.
+ *
+ * Self-hosting v5 from /public/pdfjs (copied there at build time by
+ * scripts/copy-pdfjs.mjs) gives us:
+ *  - Same-origin module worker (no CORS weirdness).
+ *  - A modern pdf.js that renders the Hebrew contract correctly.
+ *  - cmaps + standard_fonts locally, so non-Latin glyphs resolve.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -29,65 +49,24 @@ interface Props {
   className?: string;
 }
 
-/**
- * We load pdf.js from a CDN at runtime instead of importing it through
- * webpack. The npm build uses modern JS features (private fields, ESM worker
- * bootstrapping) that the Next.js dev bundler does not handle cleanly —
- * importing it ended up throwing `Object.defineProperty called on non-object`
- * at runtime.
- *
- * Script-tag injection of the UMD build is bulletproof: it runs in the page
- * context, matches the worker version exactly, and needs zero bundler setup.
- */
-// v3.11.174 is the latest pdf.js release that still ships a classic UMD
-// script build (pdf.min.js) — newer releases are ESM-only and can't be loaded
-// via a plain <script> tag without import-maps.
-const PDFJS_VERSION = "3.11.174";
-const PDFJS_CDN_BASE = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}`;
-// cdnjs only hosts the compiled scripts — it does NOT include the cmaps/
-// or standard_fonts/ directories. For those we use jsdelivr, which mirrors
-// the full pdfjs-dist npm package (and sends CORS headers so fetch works).
-// Without these, PDFs that use CID-keyed fonts (Hebrew, Arabic, CJK...)
-// render as scrambled / disconnected glyphs.
-const PDFJS_ASSETS_BASE = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}`;
+// Path prefix where scripts/copy-pdfjs.mjs puts the pdf.js runtime.
+const PDFJS_BASE = "/pdfjs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfJs = any;
 
 let pdfjsPromise: Promise<PdfJs> | null = null;
 
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[data-pdfjs="${src}"]`
-    );
-    if (existing) {
-      if (existing.dataset.loaded === "1") return resolve();
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error(`load ${src}`)));
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = src;
-    s.async = true;
-    s.dataset.pdfjs = src;
-    s.addEventListener("load", () => {
-      s.dataset.loaded = "1";
-      resolve();
-    });
-    s.addEventListener("error", () => reject(new Error(`load ${src}`)));
-    document.head.appendChild(s);
-  });
-}
-
 async function getPdfjs(): Promise<PdfJs> {
   if (!pdfjsPromise) {
     pdfjsPromise = (async () => {
-      await loadScript(`${PDFJS_CDN_BASE}/pdf.min.js`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lib = (window as any).pdfjsLib;
-      if (!lib) throw new Error("pdf.js failed to initialize");
-      lib.GlobalWorkerOptions.workerSrc = `${PDFJS_CDN_BASE}/pdf.worker.min.js`;
+      // Dynamic import with a runtime-computed URL: `webpackIgnore: true`
+      // tells Next.js's webpack to emit a raw `import()` call instead of
+      // trying to resolve this at build time (which would fail — the file
+      // only exists at runtime in /public).
+      const modUrl = `${PDFJS_BASE}/pdf.min.mjs`;
+      const lib = await import(/* webpackIgnore: true */ modUrl);
+      lib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}/pdf.worker.min.mjs`;
       return lib;
     })();
   }
@@ -115,6 +94,8 @@ export default function PdfCanvasViewer({
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let doc: any = null;
 
     (async () => {
       try {
@@ -125,26 +106,16 @@ export default function PdfCanvasViewer({
         // Pass CMap + standard font URLs so pdf.js can decode non-Latin
         // character encodings (Hebrew, Arabic, CJK...). Without these, PDFs
         // that use CID-keyed fonts render as broken / disconnected glyphs.
-        //
-        // `isEvalSupported: false` forces pdf.js onto its safer (non-eval)
-        // operator interpreter. The eval path in v3.11.174 has a known bug
-        // with Hebrew contracts that use transparency groups + embedded
-        // subset fonts — whole pages render as a black rectangle. The
-        // non-eval path is slightly slower but produces correct pixels.
-        //
-        // `useSystemFonts: false` tells pdf.js to always use the PDF's
-        // embedded fonts even when the OS has a font with the same name.
-        // Subsetted Hebrew fonts have custom glyph maps that break when
-        // substituted by a full system font (letters land on wrong glyphs).
-        const doc = await pdfjs.getDocument({
+        doc = await pdfjs.getDocument({
           url,
-          cMapUrl: `${PDFJS_ASSETS_BASE}/cmaps/`,
+          cMapUrl: `${PDFJS_BASE}/cmaps/`,
           cMapPacked: true,
-          standardFontDataUrl: `${PDFJS_ASSETS_BASE}/standard_fonts/`,
-          isEvalSupported: false,
-          useSystemFonts: false,
+          standardFontDataUrl: `${PDFJS_BASE}/standard_fonts/`,
         }).promise;
-        if (cancelled) { doc.destroy(); return; }
+        if (cancelled) {
+          doc.destroy();
+          return;
+        }
 
         onPageCountRef.current?.(doc.numPages);
 
@@ -160,7 +131,8 @@ export default function PdfCanvasViewer({
           // Render at a high enough scale for clarity on retina screens,
           // then down-display via CSS width.
           const baseViewport = page.getViewport({ scale: 1 });
-          const scale = (width / baseViewport.width) * (window.devicePixelRatio || 1);
+          const scale =
+            (width / baseViewport.width) * (window.devicePixelRatio || 1);
           const viewport = page.getViewport({ scale });
 
           const canvas = document.createElement("canvas");
@@ -182,12 +154,9 @@ export default function PdfCanvasViewer({
           pageWrapper.appendChild(canvas);
           container.appendChild(pageWrapper);
 
-          // Explicit white page background. PDFs with transparency groups
-          // (/Group <</S /Transparency>>) don't declare a paper color, so
-          // pdf.js v3 leaves the canvas transparent and any composite op
-          // drawn on top paints onto nothing — the visible result on the
-          // Hebrew contract was a ~99% black page. Setting `background`
-          // forces pdf.js to paint an opaque white under the content.
+          // Explicit white page background — PDFs with transparency groups
+          // don't declare a paper color and would otherwise show as
+          // transparent / black on the canvas default.
           await page.render({
             canvasContext: ctx,
             viewport,
@@ -209,6 +178,13 @@ export default function PdfCanvasViewer({
 
     return () => {
       cancelled = true;
+      if (doc) {
+        try {
+          doc.destroy();
+        } catch {
+          // Ignore — doc may already be torn down.
+        }
+      }
     };
   }, [url, width]);
 

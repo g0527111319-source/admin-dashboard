@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "postinstall": "prisma generate",
+    "predev": "node scripts/copy-pdfjs.mjs",
+    "postinstall": "prisma generate && node scripts/copy-pdfjs.mjs",
+    "prebuild": "node scripts/copy-pdfjs.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

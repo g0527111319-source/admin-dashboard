@@ -41,3 +41,7 @@ next-env.d.ts
 .vercel
 .env*.local
 .env.test
+
+# pdf.js assets copied from node_modules/pdfjs-dist at build time
+# (see scripts/copy-pdfjs.mjs)
+/public/pdfjs
