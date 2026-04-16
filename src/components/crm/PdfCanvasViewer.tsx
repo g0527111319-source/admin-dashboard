@@ -124,13 +124,25 @@ export default function PdfCanvasViewer({
 
         // Pass CMap + standard font URLs so pdf.js can decode non-Latin
         // character encodings (Hebrew, Arabic, CJK...). Without these, PDFs
-        // that use CID-keyed fonts render as broken / disconnected glyphs —
-        // which is exactly what we saw with the Hebrew contract template.
+        // that use CID-keyed fonts render as broken / disconnected glyphs.
+        //
+        // `isEvalSupported: false` forces pdf.js onto its safer (non-eval)
+        // operator interpreter. The eval path in v3.11.174 has a known bug
+        // with Hebrew contracts that use transparency groups + embedded
+        // subset fonts — whole pages render as a black rectangle. The
+        // non-eval path is slightly slower but produces correct pixels.
+        //
+        // `useSystemFonts: false` tells pdf.js to always use the PDF's
+        // embedded fonts even when the OS has a font with the same name.
+        // Subsetted Hebrew fonts have custom glyph maps that break when
+        // substituted by a full system font (letters land on wrong glyphs).
         const doc = await pdfjs.getDocument({
           url,
           cMapUrl: `${PDFJS_ASSETS_BASE}/cmaps/`,
           cMapPacked: true,
           standardFontDataUrl: `${PDFJS_ASSETS_BASE}/standard_fonts/`,
+          isEvalSupported: false,
+          useSystemFonts: false,
         }).promise;
         if (cancelled) { doc.destroy(); return; }
 
@@ -170,7 +182,18 @@ export default function PdfCanvasViewer({
           pageWrapper.appendChild(canvas);
           container.appendChild(pageWrapper);
 
-          await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+          // Explicit white page background. PDFs with transparency groups
+          // (/Group <</S /Transparency>>) don't declare a paper color, so
+          // pdf.js v3 leaves the canvas transparent and any composite op
+          // drawn on top paints onto nothing — the visible result on the
+          // Hebrew contract was a ~99% black page. Setting `background`
+          // forces pdf.js to paint an opaque white under the content.
+          await page.render({
+            canvasContext: ctx,
+            viewport,
+            canvas,
+            background: "rgba(255, 255, 255, 1)",
+          }).promise;
           if (cancelled) return;
         }
 
