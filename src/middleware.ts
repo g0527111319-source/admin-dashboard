@@ -28,6 +28,10 @@ const PUBLIC_PATHS = [
   "/suppliers-directory",
   "/events",
   "/terms",
+  // Privacy policy MUST be publicly reachable — Google OAuth verification
+  // reviewers hit this URL without logging in; gating it behind auth caused
+  // the "privacy policy does not fully document..." rejection.
+  "/privacy",
   "/projects",
   "/card",
   // Public contract-signing page — clients don't have accounts, they get here
