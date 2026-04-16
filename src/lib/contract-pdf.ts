@@ -8,7 +8,10 @@
  * Structure of the output:
  *   1. Original contract pages — every `file`-type content block on the
  *      template that is itself a PDF gets copied into the output verbatim,
- *      in the same order as the designer arranged them.
+ *      in the same order as the designer arranged them. Positioned field
+ *      values (designer + client fills, positioned signatures) are drawn
+ *      on top of these copied pages so the final PDF mirrors exactly what
+ *      the client saw on-screen while signing.
  *   2. Signature certificate page — one clean A4 page at the end that lists
  *      the contract metadata, every filled field (designer + client), both
  *      signatures as inline images, and the audit timestamps / IP. This is
@@ -16,12 +19,15 @@
  *      which values were agreed to.
  *
  * Hebrew rendering:
- *   pdf-lib draws glyphs left-to-right at the position you give it. For a
- *   purely-Hebrew string that means the result is visually reversed. We
- *   handle this by flipping Hebrew runs within mixed strings (`bidi()`
- *   below). It's not a full Unicode-BiDi implementation — numbers and
- *   Latin text in the middle of a Hebrew run are kept in logical order —
- *   but it's good enough for the short certificate-page labels we draw.
+ *   pdf-lib emits glyph-positioned text streams and writes a ToUnicode map
+ *   so modern PDF viewers (Chrome, Acrobat, pdf.js, preview.app) can do
+ *   BiDi reordering on their own. We used to pre-reverse Hebrew runs which
+ *   caused double-reversal ("תילטיגיד המיתח רושיא" instead of
+ *   "אישור חתימה דיגיטלית") on viewers that applied their own BiDi layer.
+ *   We now pass strings through unchanged; the viewer handles direction.
+ *   The `bidi()` helper is kept as a no-op so we don't have to touch every
+ *   call-site, and so future locales that legitimately need reversal can
+ *   re-introduce logic here without refactoring.
  *
  * Serverless-safety:
  *   pdf-lib is pure JS and has no native/binary dependencies, so this works
@@ -74,6 +80,21 @@ interface TemplateBlock {
   fileUrl?: string;
   fileType?: string;
   fileName?: string;
+  /**
+   * Number of pages the uploaded PDF contains. Used when we overlay
+   * positioned field values onto the copied pages — positions are
+   * percentages of the full multi-page stack, so we need to know how
+   * many pages there are to map a field back to a specific copied page.
+   */
+  pageCount?: number;
+}
+
+interface FieldPosition {
+  x: number;    // percent of block width
+  y: number;    // percent of total stacked-pages height
+  w: number;    // percent of block width
+  h: number;    // percent of total stacked-pages height
+  blockId: string;
 }
 
 interface TemplateFieldForPdf {
@@ -81,44 +102,32 @@ interface TemplateFieldForPdf {
   label: string;
   type: string;
   owner: string;
+  /** When present, we draw the value on top of the copied PDF page. */
+  position?: FieldPosition;
+  /** Font size in CSS pixels; used for positioned text overlays only. */
+  fontSize?: number;
 }
 
 // ==========================================
-// Bidi helper
+// Bidi helper (no-op — see module doc at top)
 // ==========================================
-
-// Unicode ranges for Hebrew glyphs; strings hitting these get reversed.
-const HEBREW_CHAR = /[\u0590-\u05FF\uFB1D-\uFB4F]/;
-
-function containsHebrew(s: string): boolean {
-  return HEBREW_CHAR.test(s);
-}
 
 /**
- * Light-weight BiDi: split a string into runs and reverse Hebrew runs so
- * pdf-lib (which draws LTR) produces visually-correct Hebrew text.
+ * Previously this reversed Hebrew runs so pdf-lib's LTR glyph placement
+ * would render visually-correct right-to-left text. Modern PDF viewers
+ * (Chrome/pdf.js, Acrobat, macOS Preview) apply their own BiDi layer to
+ * the emitted text stream + ToUnicode map, which meant our reversal was
+ * being undone — producing a second, correct-looking reversal that read
+ * as gibberish from right to left (e.g. "תילטיגיד המיתח רושיא" instead
+ * of "אישור חתימה דיגיטלית"). We now hand text straight through and let
+ * the viewer do the right thing.
  *
- * - Pure-Hebrew runs get reversed.
- * - Latin/digit runs stay in order (so phone numbers, IDs, emails still
- *   read correctly).
- * - Line breaks are kept intact so multi-line text renders top-to-bottom.
+ * The function is kept so call-sites don't need to be refactored and so
+ * any future locale-specific tweaks (e.g. Arabic shaping) have a single
+ * entry point.
  */
 export function bidi(text: string): string {
-  if (!text) return "";
-  if (!containsHebrew(text)) return text;
-  return text
-    .split("\n")
-    .map((line) => {
-      // Split into Hebrew / non-Hebrew runs
-      const parts = line.split(/([\u0590-\u05FF\uFB1D-\uFB4F][\u0590-\u05FF\uFB1D-\uFB4F\s.,'"()\-/:;!?]*)/);
-      // Reverse the whole logical order so runs come out right-to-left,
-      // then reverse each Hebrew run's glyphs internally.
-      return parts
-        .reverse()
-        .map((part) => (containsHebrew(part) ? part.split("").reverse().join("") : part))
-        .join("");
-    })
-    .join("\n");
+  return text || "";
 }
 
 // ==========================================
@@ -189,10 +198,18 @@ export async function generateSignedContractPdf(
   const latinFont = await outDoc.embedFont(StandardFonts.Helvetica);
   const latinBoldFont = await outDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // ---- 1. Copy original PDF content blocks ----
+  // ---- 1. Copy original PDF content blocks + overlay filled fields ----
+  // The designer's template editor lets them anchor fields at percentage
+  // coordinates on top of each uploaded PDF. The sign-page UI mirrors this
+  // on screen. We now replicate it in the archival PDF too, so the PDF
+  // that's attached to the designer + client emails shows the actual
+  // filled values in-place (not just on the certificate page).
   const pdfBlocks = (contract.template?.contentBlocks || []).filter(
     (b) => b.type === "file" && b.fileType === "pdf" && b.fileUrl,
   );
+  const allFields = contract.template?.fields || [];
+  const designerValues = contract.designerFieldValues || {};
+  const clientValues = contract.clientFieldValues || {};
 
   for (const block of pdfBlocks) {
     const bytes = await fetchPdfBytes(block.fileUrl!);
@@ -202,6 +219,83 @@ export async function generateSignedContractPdf(
       const pageIndices = srcDoc.getPageIndices();
       const copied = await outDoc.copyPages(srcDoc, pageIndices);
       copied.forEach((p) => outDoc.addPage(p));
+
+      // Fields anchored to this block. Positions are in percentages of the
+      // full stacked-pages area (so for a 2-page PDF, y=25 sits in the top
+      // half of page 1; y=60 sits in the top fifth of page 2).
+      const fieldsOnBlock = allFields.filter((f) => f.position?.blockId === block.id);
+      if (fieldsOnBlock.length > 0) {
+        const pageCount = Math.max(1, copied.length);
+        for (const field of fieldsOnBlock) {
+          const pos = field.position!;
+          // Resolve which copied page the field lands on.
+          const pageIdx = Math.max(0, Math.min(pageCount - 1, Math.floor((pos.y * pageCount) / 100)));
+          const page = copied[pageIdx];
+          if (!page) continue;
+
+          const { width: pw, height: ph } = page.getSize();
+          // Coordinates local to this page (0-100 for both).
+          const localYPct = Math.max(0, pos.y * pageCount - pageIdx * 100);
+          const localHPct = Math.max(0, pos.h * pageCount);
+          const xPdf = pw * (pos.x / 100);
+          const wPdf = pw * (pos.w / 100);
+          const hPdf = ph * (localHPct / 100);
+          // pdf-lib Y origin is bottom-left; our % coords are top-down.
+          const yTopFromTop = ph * (localYPct / 100);
+          const yPdfBottom = ph - yTopFromTop - hPdf;
+
+          const isClientAuto = ["client_name", "client_email", "client_phone", "client_address"].includes(field.type);
+          const source = field.owner === "client" || isClientAuto ? clientValues : designerValues;
+          // Prefer the owner-specific bucket but fall back to the other if
+          // the value lives there (older contracts sometimes did this).
+          const rawValue = source[field.id] ?? designerValues[field.id] ?? clientValues[field.id] ?? "";
+
+          try {
+            if (field.type === "signature") {
+              // Signature fields store a PNG data URL as their value.
+              // If the positioned slot is empty, fall back to the canonical
+              // signature from the contract itself (designer/client).
+              const sigSource =
+                rawValue ||
+                (field.owner === "client" ? contract.clientSignatureData : contract.designerSignatureData);
+              const pngBytes = signatureToPngBytes(sigSource);
+              if (pngBytes) {
+                const img = await outDoc.embedPng(pngBytes);
+                const ratio = Math.min(wPdf / img.width, hPdf / img.height);
+                const drawW = img.width * ratio;
+                const drawH = img.height * ratio;
+                page.drawImage(img, {
+                  x: xPdf + (wPdf - drawW) / 2,
+                  y: yPdfBottom + (hPdf - drawH) / 2,
+                  width: drawW,
+                  height: drawH,
+                });
+              }
+            } else if (rawValue) {
+              // Text value: draw right-aligned inside the box (Hebrew-first
+              // layouts read right-to-left so the value hugs the right edge
+              // just like the on-screen preview). pdf-lib positions at the
+              // glyph baseline; bump up by ~size*0.3 for visual centering.
+              const text = String(rawValue);
+              const fontSize = Math.max(6, Math.min(field.fontSize || 10, 22));
+              const textWidth = hebrewFont.widthOfTextAtSize(text, fontSize);
+              // Right-align inside the box (with a tiny pad).
+              const pad = 2;
+              const textX = xPdf + Math.max(pad, wPdf - textWidth - pad);
+              const textY = yPdfBottom + hPdf / 2 - fontSize / 3;
+              page.drawText(text, {
+                x: textX,
+                y: textY,
+                size: fontSize,
+                font: hebrewFont,
+                color: rgb(0.1, 0.1, 0.1),
+              });
+            }
+          } catch (fieldErr) {
+            console.warn("[contract-pdf] couldn't draw field overlay:", field.id, fieldErr);
+          }
+        }
+      }
     } catch (err) {
       console.warn("[contract-pdf] could not copy pages from", block.fileUrl, err);
     }

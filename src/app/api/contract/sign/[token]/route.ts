@@ -234,9 +234,12 @@ export async function POST(
                       contentBlocks: (full.template.contentBlocks as unknown as {
                         id: string; type: string; content?: string;
                         fileUrl?: string; fileType?: string; fileName?: string;
+                        pageCount?: number;
                       }[]) || [],
                       fields: (full.template.fields as unknown as {
                         id: string; label: string; type: string; owner: string;
+                        position?: { x: number; y: number; w: number; h: number; blockId: string };
+                        fontSize?: number;
                       }[]) || [],
                     }
                   : null,

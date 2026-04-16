@@ -449,12 +449,13 @@ function TemplateEditor({
     if (selectedFieldId === id) setSelectedFieldId(null);
   };
 
-  // Field color helpers
+  // Field color helpers — transparent fill so the underlying PDF/image stays
+  // fully visible; only the border and label color communicate owner/type.
   const getFieldColors = (f: TemplateField) => {
-    if (f.type === "signature") return "border-purple-500 bg-purple-500/15 text-purple-700";
-    if (CLIENT_AUTO_FIELDS.includes(f.type)) return "border-emerald-500 bg-emerald-500/15 text-emerald-700";
-    if (f.owner === "designer") return "border-amber-500 bg-amber-500/15 text-amber-700";
-    return "border-blue-500 bg-blue-500/15 text-blue-700";
+    if (f.type === "signature") return "border-purple-500 bg-transparent text-purple-700";
+    if (CLIENT_AUTO_FIELDS.includes(f.type)) return "border-emerald-500 bg-transparent text-emerald-700";
+    if (f.owner === "designer") return "border-amber-500 bg-transparent text-amber-700";
+    return "border-blue-500 bg-transparent text-blue-700";
   };
 
   const getFieldDotColor = (f: TemplateField) => {
@@ -1257,14 +1258,13 @@ function ContractPreview({
                   const borderColor = field.type === "signature" ? "border-purple-400"
                     : CLIENT_AUTO_FIELDS.includes(field.type) ? "border-emerald-400"
                     : field.owner === "designer" ? "border-amber-400" : "border-blue-400";
-                  const bgColor = field.type === "signature" ? "bg-purple-50/80"
-                    : CLIENT_AUTO_FIELDS.includes(field.type) ? "bg-emerald-50/80"
-                    : field.owner === "designer" ? "bg-amber-50/80" : "bg-blue-50/80";
+                  // No background fill — the rendered value sits on top of the
+                  // underlying PDF without covering any of it.
                   const fs = field.fontSize || DEFAULT_FIELD_FONT_SIZE;
                   return (
                     <div
                       key={field.id}
-                      className={`absolute border rounded-md flex items-center ${borderColor} ${bgColor}`}
+                      className={`absolute border rounded-md flex items-center ${borderColor} bg-transparent`}
                       style={{
                         left: `${pos.x}%`, top: `${pos.y}%`, width: `${pos.w}%`, height: `${pos.h}%`,
                         fontSize: `${fs}px`, lineHeight: 1.1,
