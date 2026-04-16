@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CheckCircle2, FileText, Pen, X, Eye, Clock, AlertCircle, Sparkles } from "lucide-react";
 import ContractAnnexView from "@/components/crm/ContractAnnexView";
 import PdfCanvasViewer from "@/components/crm/PdfCanvasViewer";
@@ -39,8 +39,13 @@ const DEFAULT_FIELD_FONT_SIZE = 12;
 // Matches the designer-side editor so field coordinates (stored as %) line up.
 const PDF_PAGE_HEIGHT = 1100;
 
-export default function ClientSignPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = use(params);
+// Next.js 14 passes params to Client Components as a plain object (not a Promise).
+// Using React.use() on a non-thenable throws during SSR and produces a 500 on the
+// deployed route — even when the page itself renders fine locally in dev. Keep
+// the sync signature here; if we ever migrate to Next 15 we'll flip back to the
+// Promise-based form and use() it.
+export default function ClientSignPage({ params }: { params: { token: string } }) {
+  const { token } = params;
   const [contract, setContract] = useState<ContractData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
