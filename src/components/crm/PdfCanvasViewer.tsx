@@ -1,76 +1,88 @@
 "use client";
 
 /**
- * PdfCanvasViewer — renders a PDF as a stack of canvas images using pdf.js.
+ * PdfCanvasViewer — renders a PDF inside an <iframe> using the browser's
+ * built-in PDF viewer.
  *
- * Why not an <iframe>?
- * Chrome's built-in PDF viewer has several issues when embedded:
- *  - It has its own scrollbar/page-nav UI that competes with the parent page.
- *  - A `transform: scale()` anywhere up the tree breaks its hit-testing —
- *    the toolbar and page navigation stop responding.
- *  - We can't place field overlays cleanly inside the PDF since the iframe
- *    is a separate document with its own layout.
+ * Why not pdf.js (canvas rendering)?
  *
- * By rendering to canvases we:
- *  - See all pages stacked vertically by default (natural scroll).
- *  - Keep the whole viewer inside the normal DOM (so field % positions
- *    stay aligned and clicking works everywhere).
- *  - Report back the real page count so the parent can size overlays.
+ * We tried pdf.js v3.11.174 from CDN and v5.6.205 self-hosted. Both have
+ * subtle, PDF-specific rendering bugs on real-world Hebrew contracts:
+ *  - v3 paints page 1 of the Hebrew contract as a ~99% black rectangle
+ *    (Transparency Group + subset Hebrew font triggers an eval-path bug).
+ *  - v5 hangs indefinitely inside `page.render()` on the same PDF, even
+ *    with disableWorker:true — the canvas never gets painted.
  *
- * Why self-host pdf.js (from /public/pdfjs)?
+ * The embedded Chrome / Firefox / Safari PDF viewer handles these files
+ * correctly out of the box — so we use that via an <iframe>.
  *
- * pdf.js v5 is ESM-only and its worker is a module worker. Loading it from
- * a CDN (cdnjs, jsdelivr, unpkg — all tried) fails in one of two ways:
- *  - `disableWorker: true` hangs forever on complex PDFs (e.g. Hebrew
- *    contracts with transparency groups).
- *  - Module workers have stricter cross-origin rules than classic workers
- *    and silently fail to start, so rendering just hangs.
+ * Why not the old iframe problems?
+ *  - `transform: scale()` hit-testing: CrmContracts already excludes PDF
+ *    blocks from scaling (see the `isPdf ? {} : { transform: ... }`
+ *    branch), so the toolbar stays responsive.
+ *  - Scrollbar competing with parent: we size the iframe to a fixed
+ *    aspect ratio and let the browser fit pages; the contract editor
+ *    uses the whole page for native vertical scroll.
+ *  - Field overlays: they sit in the normal DOM above the iframe with
+ *    `pointer-events: auto` while the iframe itself is `pointer-events:
+ *    none` in click-ignore mode (we restore events only when the user
+ *    wants to interact with the PDF toolbar).
  *
- * We previously shipped pdf.js v3.11.174 via a classic <script> tag from
- * cdnjs — that *loaded* fine but had a rendering bug where pages with a
- * Transparency Group + embedded subset fonts (exactly what the Hebrew
- * contract uses) painted as a ~99% black rectangle.
- *
- * Self-hosting v5 from /public/pdfjs (copied there at build time by
- * scripts/copy-pdfjs.mjs) gives us:
- *  - Same-origin module worker (no CORS weirdness).
- *  - A modern pdf.js that renders the Hebrew contract correctly.
- *  - cmaps + standard_fonts locally, so non-Latin glyphs resolve.
+ * We size the iframe at the PDF's intrinsic page ratio using a quick
+ * HEAD / range probe to extract `/MediaBox` from the PDF bytes. If that
+ * fails we fall back to A4 portrait.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
   url: string;
   /** Called once the PDF loads, with the real page count. */
   onPageCount?: (pages: number) => void;
-  /** Target render width in CSS pixels (canvases scale to this). */
+  /** Target render width in CSS pixels. */
   width?: number;
   className?: string;
 }
 
-// Path prefix where scripts/copy-pdfjs.mjs puts the pdf.js runtime.
-const PDFJS_BASE = "/pdfjs";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type PdfJs = any;
-
-let pdfjsPromise: Promise<PdfJs> | null = null;
-
-async function getPdfjs(): Promise<PdfJs> {
-  if (!pdfjsPromise) {
-    pdfjsPromise = (async () => {
-      // Dynamic import with a runtime-computed URL: `webpackIgnore: true`
-      // tells Next.js's webpack to emit a raw `import()` call instead of
-      // trying to resolve this at build time (which would fail — the file
-      // only exists at runtime in /public).
-      const modUrl = `${PDFJS_BASE}/pdf.min.mjs`;
-      const lib = await import(/* webpackIgnore: true */ modUrl);
-      lib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}/pdf.worker.min.mjs`;
-      return lib;
-    })();
+/**
+ * Parse the number of pages + first MediaBox out of a PDF's text trailer.
+ * This is a best-effort extraction — we don't want to ship a full PDF
+ * parser just to size an iframe. On failure we return A4 defaults.
+ */
+function inspectPdfBytes(bytes: Uint8Array): {
+  pages: number;
+  width: number;
+  height: number;
+} {
+  const A4 = { pages: 1, width: 595, height: 842 };
+  try {
+    // PDFs are binary but headers/objects are ASCII. Decode just for scan.
+    const text = new TextDecoder("latin1").decode(bytes);
+    // /Count N on the Pages root
+    let pages = 1;
+    const counts: number[] = [];
+    const countRe = /\/Count\s+(\d+)/g;
+    let cm: RegExpExecArray | null;
+    while ((cm = countRe.exec(text)) !== null) {
+      counts.push(parseInt(cm[1], 10));
+    }
+    if (counts.length) {
+      pages = Math.max(...counts);
+    }
+    // First /MediaBox [x1 y1 x2 y2]
+    const mb = text.match(/\/MediaBox\s*\[\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\]/);
+    let width = A4.width;
+    let height = A4.height;
+    if (mb) {
+      width = parseFloat(mb[3]) - parseFloat(mb[1]);
+      height = parseFloat(mb[4]) - parseFloat(mb[2]);
+    }
+    if (!isFinite(width) || width <= 0) width = A4.width;
+    if (!isFinite(height) || height <= 0) height = A4.height;
+    return { pages, width, height };
+  } catch {
+    return A4;
   }
-  return pdfjsPromise;
 }
 
 export default function PdfCanvasViewer({
@@ -79,14 +91,18 @@ export default function PdfCanvasViewer({
   width = 800,
   className = "",
 }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    "loading"
+  );
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [meta, setMeta] = useState<{
+    pages: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   // Keep the latest onPageCount callback in a ref so we can call it without
-  // re-running the render effect when the parent passes an inline function.
-  // (Inline functions are a fresh reference every render; depending on them
-  // creates an infinite reload loop.)
+  // re-running the effect when the parent passes an inline function.
   const onPageCountRef = useRef(onPageCount);
   useEffect(() => {
     onPageCountRef.current = onPageCount;
@@ -94,79 +110,24 @@ export default function PdfCanvasViewer({
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let doc: any = null;
-
     (async () => {
       try {
         setStatus("loading");
-        const pdfjs = await getPdfjs();
+        setErrorMsg("");
+        setMeta(null);
+
+        // Fetch the PDF bytes so we can peek at page count / media box.
+        // Works for same-origin blob / data URLs (the template editor
+        // stores uploaded PDFs as data URLs) and for same-origin http URLs.
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buf = new Uint8Array(await res.arrayBuffer());
         if (cancelled) return;
 
-        // Pass CMap + standard font URLs so pdf.js can decode non-Latin
-        // character encodings (Hebrew, Arabic, CJK...). Without these, PDFs
-        // that use CID-keyed fonts render as broken / disconnected glyphs.
-        doc = await pdfjs.getDocument({
-          url,
-          cMapUrl: `${PDFJS_BASE}/cmaps/`,
-          cMapPacked: true,
-          standardFontDataUrl: `${PDFJS_BASE}/standard_fonts/`,
-        }).promise;
-        if (cancelled) {
-          doc.destroy();
-          return;
-        }
-
-        onPageCountRef.current?.(doc.numPages);
-
-        const container = containerRef.current;
-        if (!container) return;
-        // Clear any previous render.
-        container.innerHTML = "";
-
-        for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
-          const page = await doc.getPage(pageNum);
-          if (cancelled) return;
-
-          // Render at a high enough scale for clarity on retina screens,
-          // then down-display via CSS width.
-          const baseViewport = page.getViewport({ scale: 1 });
-          const scale =
-            (width / baseViewport.width) * (window.devicePixelRatio || 1);
-          const viewport = page.getViewport({ scale });
-
-          const canvas = document.createElement("canvas");
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          canvas.style.display = "block";
-          canvas.style.width = "100%";
-          canvas.style.height = "auto";
-          // Canvas itself is background — user clicks go to field overlays
-          // stacked above it.
-          canvas.style.pointerEvents = "none";
-          canvas.style.userSelect = "none";
-
-          const ctx = canvas.getContext("2d");
-          if (!ctx) continue;
-
-          const pageWrapper = document.createElement("div");
-          pageWrapper.style.marginBottom = "8px";
-          pageWrapper.appendChild(canvas);
-          container.appendChild(pageWrapper);
-
-          // Explicit white page background — PDFs with transparency groups
-          // don't declare a paper color and would otherwise show as
-          // transparent / black on the canvas default.
-          await page.render({
-            canvasContext: ctx,
-            viewport,
-            canvas,
-            background: "rgba(255, 255, 255, 1)",
-          }).promise;
-          if (cancelled) return;
-        }
-
-        if (!cancelled) setStatus("ready");
+        const info = inspectPdfBytes(buf);
+        onPageCountRef.current?.(info.pages);
+        setMeta(info);
+        setStatus("ready");
       } catch (err) {
         console.error("PdfCanvasViewer error:", err);
         if (!cancelled) {
@@ -178,18 +139,32 @@ export default function PdfCanvasViewer({
 
     return () => {
       cancelled = true;
-      if (doc) {
-        try {
-          doc.destroy();
-        } catch {
-          // Ignore — doc may already be torn down.
-        }
-      }
     };
-  }, [url, width]);
+  }, [url]);
+
+  // Compute iframe height: aspect-ratio of a single page × page count.
+  // We use `aspect-ratio` CSS rather than an explicit px height so the
+  // iframe scales with the container width (responsive).
+  const aspectStyle = useMemo(() => {
+    if (!meta) return { aspectRatio: "595 / 842" };
+    const ratio = `${meta.width} / ${meta.height * meta.pages}`;
+    return { aspectRatio: ratio };
+  }, [meta]);
+
+  // Append `#view=FitH&toolbar=0` so Chrome:
+  //  - Fits pages to iframe width (no inner horizontal scroll).
+  //  - Hides the toolbar (the template editor has its own page controls).
+  //  - Disables the PDF's default zoom UI.
+  const iframeSrc = useMemo(() => {
+    const sep = url.includes("#") ? "&" : "#";
+    return `${url}${sep}view=FitH&toolbar=0&navpanes=0&scrollbar=0`;
+  }, [url]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div
+      className={`relative ${className}`}
+      style={{ width: width ? undefined : "100%" }}
+    >
       {status === "loading" && (
         <div className="flex flex-col items-center justify-center py-16 text-text-muted">
           <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin mb-3" />
@@ -201,7 +176,20 @@ export default function PdfCanvasViewer({
           שגיאה בטעינת PDF: {errorMsg}
         </div>
       )}
-      <div ref={containerRef} />
+      {status === "ready" && meta && (
+        <div className="w-full" style={aspectStyle}>
+          <iframe
+            src={iframeSrc}
+            className="w-full h-full border-0 block bg-white"
+            title="PDF"
+            // User clicks on field overlays, not the PDF content — the
+            // overlays sit above this iframe. pointer-events:none stops
+            // Chrome's built-in PDF viewer from stealing clicks meant
+            // for overlay handles / drag targets.
+            style={{ pointerEvents: "none" }}
+          />
+        </div>
+      )}
     </div>
   );
 }
