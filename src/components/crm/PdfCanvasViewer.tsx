@@ -44,6 +44,12 @@ interface Props {
 // via a plain <script> tag without import-maps.
 const PDFJS_VERSION = "3.11.174";
 const PDFJS_CDN_BASE = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}`;
+// cdnjs only hosts the compiled scripts — it does NOT include the cmaps/
+// or standard_fonts/ directories. For those we use jsdelivr, which mirrors
+// the full pdfjs-dist npm package (and sends CORS headers so fetch works).
+// Without these, PDFs that use CID-keyed fonts (Hebrew, Arabic, CJK...)
+// render as scrambled / disconnected glyphs.
+const PDFJS_ASSETS_BASE = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfJs = any;
@@ -116,7 +122,16 @@ export default function PdfCanvasViewer({
         const pdfjs = await getPdfjs();
         if (cancelled) return;
 
-        const doc = await pdfjs.getDocument(url).promise;
+        // Pass CMap + standard font URLs so pdf.js can decode non-Latin
+        // character encodings (Hebrew, Arabic, CJK...). Without these, PDFs
+        // that use CID-keyed fonts render as broken / disconnected glyphs —
+        // which is exactly what we saw with the Hebrew contract template.
+        const doc = await pdfjs.getDocument({
+          url,
+          cMapUrl: `${PDFJS_ASSETS_BASE}/cmaps/`,
+          cMapPacked: true,
+          standardFontDataUrl: `${PDFJS_ASSETS_BASE}/standard_fonts/`,
+        }).promise;
         if (cancelled) { doc.destroy(); return; }
 
         onPageCountRef.current?.(doc.numPages);
