@@ -100,6 +100,7 @@ export default function PdfCanvasViewer({
     width: number;
     height: number;
   } | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   // Keep the latest onPageCount callback in a ref so we can call it without
   // re-running the effect when the parent passes an inline function.
@@ -110,23 +111,33 @@ export default function PdfCanvasViewer({
 
   useEffect(() => {
     let cancelled = false;
+    let createdBlobUrl: string | null = null;
     (async () => {
       try {
         setStatus("loading");
         setErrorMsg("");
         setMeta(null);
+        setBlobUrl(null);
 
         // Fetch the PDF bytes so we can peek at page count / media box.
         // Works for same-origin blob / data URLs (the template editor
         // stores uploaded PDFs as data URLs) and for same-origin http URLs.
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buf = new Uint8Array(await res.arrayBuffer());
+        const buf = await res.arrayBuffer();
         if (cancelled) return;
 
-        const info = inspectPdfBytes(buf);
+        const info = inspectPdfBytes(new Uint8Array(buf));
+        // Create a blob URL — Chrome's built-in PDF viewer treats data:
+        // URLs as "downloads" on some configurations and respects URL
+        // hash parameters (#toolbar=0&view=FitH) more reliably on blob
+        // URLs than on data URLs.
+        const blob = new Blob([buf], { type: "application/pdf" });
+        createdBlobUrl = URL.createObjectURL(blob);
+
         onPageCountRef.current?.(info.pages);
         setMeta(info);
+        setBlobUrl(createdBlobUrl);
         setStatus("ready");
       } catch (err) {
         console.error("PdfCanvasViewer error:", err);
@@ -139,26 +150,30 @@ export default function PdfCanvasViewer({
 
     return () => {
       cancelled = true;
+      if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
     };
   }, [url]);
 
-  // Compute iframe height: aspect-ratio of a single page × page count.
-  // We use `aspect-ratio` CSS rather than an explicit px height so the
-  // iframe scales with the container width (responsive).
+  // Compute iframe height: one fitted page ≈ containerWidth × (pdfH/pdfW).
+  // Multiply by number of pages, then add a small per-page-break buffer so
+  // Chrome's inter-page dark separator doesn't cut off the last page.
   const aspectStyle = useMemo(() => {
     if (!meta) return { aspectRatio: "595 / 842" };
-    const ratio = `${meta.width} / ${meta.height * meta.pages}`;
-    return { aspectRatio: ratio };
+    // Extra 6% of page height per additional page break, to cover Chrome's
+    // inter-page separator + ~24px reserved for its (hidden) toolbar area.
+    const pageBreaks = Math.max(0, meta.pages - 1);
+    const totalHeight =
+      meta.height * meta.pages + meta.height * 0.06 * pageBreaks;
+    return { aspectRatio: `${meta.width} / ${totalHeight}` };
   }, [meta]);
 
-  // Append `#view=FitH&toolbar=0` so Chrome:
-  //  - Fits pages to iframe width (no inner horizontal scroll).
-  //  - Hides the toolbar (the template editor has its own page controls).
-  //  - Disables the PDF's default zoom UI.
+  // `#view=FitH` + `toolbar=0` + `navpanes=0` + `scrollbar=0` — asks Chrome's
+  // built-in PDF viewer to fit each page to the iframe width and hide its
+  // own chrome. The template editor supplies its own page-navigation UI.
   const iframeSrc = useMemo(() => {
-    const sep = url.includes("#") ? "&" : "#";
-    return `${url}${sep}view=FitH&toolbar=0&navpanes=0&scrollbar=0`;
-  }, [url]);
+    if (!blobUrl) return "";
+    return `${blobUrl}#view=FitH&toolbar=0&navpanes=0&scrollbar=0`;
+  }, [blobUrl]);
 
   return (
     <div
@@ -176,7 +191,7 @@ export default function PdfCanvasViewer({
           שגיאה בטעינת PDF: {errorMsg}
         </div>
       )}
-      {status === "ready" && meta && (
+      {status === "ready" && meta && blobUrl && (
         <div className="w-full" style={aspectStyle}>
           <iframe
             src={iframeSrc}
