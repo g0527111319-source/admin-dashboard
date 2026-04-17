@@ -56,16 +56,12 @@ const config: Config = {
         sans: ["var(--font-heebo)", '"Heebo"', "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
         assistant: ["var(--font-assistant)", '"Assistant"', "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "monospace"],
-        // פונטים עבריים יוקרתיים — טעונים ב-@font-face ב-globals.css
-        geoffrey: ['"Geoffrey"', '"Frank Ruhl Libre"', "serif"],          // תצוגה חגיגית בולד
-        vilna: ['"Mekorot Vilna"', '"Frank Ruhl Libre"', "serif"],        // קלאסי נטוי
-        david: ['"David Libre Local"', '"Frank Ruhl Libre"', "serif"],    // ספר מסורתי
-        aviv: ['"Aviv Regular"', '"Heebo"', "sans-serif"],                // מודרני נקי
-        sf: ['"SF Hebrew"', '"Heebo"', "sans-serif"],                     // בסגנון אפל
-        sabina: ['"Sabina"', '"Heebo"', "sans-serif"],                    // אלגנטי דק
-        rubik1: ['"Rubik One"', '"Heebo"', "sans-serif"],                 // תצוגה מאסיבי
-        italki: ['"Italki Atik"', '"Frank Ruhl Libre"', "serif"],         // כתיבה דקורטיבית
-        hand: ['"Mark Hand"', '"Frank Ruhl Libre"', "cursive"],           // כתב יד
+        // פונטים עבריים מ-Google Fonts — תמיכה מאומתת בעברית
+        rubik: ["var(--font-rubik)", '"Rubik"', "sans-serif"],            // מודרני נקי
+        secular: ["var(--font-secular)", '"Secular One"', "sans-serif"],  // תצוגה אלגנטית
+        bellefair: ["var(--font-bellefair)", '"Bellefair"', "serif"],     // סריף דק יוקרתי
+        david: ["var(--font-david)", '"David Libre"', "serif"],           // ספר מסורתי
+        suez: ["var(--font-suez)", '"Suez One"', "sans-serif"],           // תצוגה מאסיבית
       },
       fontSize: {
         "2xs": ["0.65rem", { lineHeight: "1rem" }],

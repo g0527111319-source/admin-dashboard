@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
-import { Heebo, Assistant, Frank_Ruhl_Libre } from "next/font/google";
+import {
+  Heebo,
+  Assistant,
+  Frank_Ruhl_Libre,
+  Rubik,
+  Secular_One,
+  Bellefair,
+  David_Libre,
+  Suez_One,
+} from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import AccessibilityWidget from "@/components/AccessibilityWidget";
 import GlobalSearch from "@/components/GlobalSearch";
@@ -32,6 +41,42 @@ const frankRuhlLibre = Frank_Ruhl_Libre({
   display: "swap",
 });
 
+// ── פונטים עבריים נוספים מ-Google — תמיכה מאומתת בעברית ──
+const rubik = Rubik({
+  subsets: ["hebrew", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-rubik",
+  display: "swap",
+});
+
+const secularOne = Secular_One({
+  subsets: ["hebrew", "latin"],
+  weight: ["400"],
+  variable: "--font-secular",
+  display: "swap",
+});
+
+const bellefair = Bellefair({
+  subsets: ["hebrew", "latin"],
+  weight: ["400"],
+  variable: "--font-bellefair",
+  display: "swap",
+});
+
+const davidLibre = David_Libre({
+  subsets: ["hebrew", "latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-david",
+  display: "swap",
+});
+
+const suezOne = Suez_One({
+  subsets: ["hebrew", "latin"],
+  weight: ["400"],
+  variable: "--font-suez",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
     title: "זירת האדריכלות | קהילה שהיא בית",
     description: "מערכת ניהול קהילת מעצבות פנים ואדריכליות — זירת האדריכלות",
@@ -42,7 +87,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children, }: Readonly<{
     children: React.ReactNode;
 }>) {
-    return (<html lang="he" dir="rtl" suppressHydrationWarning className={`${heebo.variable} ${assistant.variable} ${frankRuhlLibre.variable}`}>
+    return (<html lang="he" dir="rtl" suppressHydrationWarning className={`${heebo.variable} ${assistant.variable} ${frankRuhlLibre.variable} ${rubik.variable} ${secularOne.variable} ${bellefair.variable} ${davidLibre.variable} ${suezOne.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="google-site-verification" content="yfcoIh96qYOARTamBbB2-Tq1ZTWaNmkdUce1stOym1s" />

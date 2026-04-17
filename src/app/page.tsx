@@ -193,7 +193,7 @@ export default function HomePage() {
               animate="visible"
               variants={fadeUp}
               custom={1}
-              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white/70 backdrop-blur-sm px-5 py-2 text-[11px] sm:text-xs text-gold-dim tracking-[0.3em] uppercase mb-8 shadow-sm font-sf"
+              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white/70 backdrop-blur-sm px-5 py-2 text-[11px] sm:text-xs text-gold-dim tracking-[0.3em] uppercase mb-8 shadow-sm font-rubik"
             >
               <Gem className="w-3.5 h-3.5 text-gold" />
               הקהילה היוקרתית של אדריכלות הפנים בישראל
@@ -207,8 +207,8 @@ export default function HomePage() {
               custom={2}
               className="leading-[1.02] text-[2.75rem] sm:text-6xl lg:text-[5.5rem] text-[#1a1410] tracking-tight"
             >
-              <span className="font-geoffrey font-bold">איפה שהעיצוב</span>
-              <span className="block mt-4 font-italki italic bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
+              <span className="font-suez">איפה שהעיצוב</span>
+              <span className="block mt-4 font-bellefair bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
                 פוגש משפחה
               </span>
             </motion.h1>
@@ -219,7 +219,7 @@ export default function HomePage() {
               animate="visible"
               variants={fadeUp}
               custom={3}
-              className="mt-8 text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed font-aviv"
+              className="mt-8 text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed font-rubik"
             >
               מרחב אחד למעצבות פנים ואדריכלות — <span className="text-gold-dim font-medium">קהילה חמה</span>,
               מערכת <span className="text-gold-dim font-medium">CRM מקצועית</span> לניהול לקוחות,
@@ -326,8 +326,8 @@ export default function HomePage() {
             custom={1}
             className="text-4xl sm:text-5xl lg:text-6xl text-[#1a1410] leading-[1.1] mb-8"
           >
-            <span className="font-geoffrey font-bold">הרבה יותר מקהילה.</span>
-            <span className="block mt-3 font-vilna italic text-gold-dim">כל מה שצריך במקום אחד.</span>
+            <span className="font-suez">הרבה יותר מקהילה.</span>
+            <span className="block mt-3 font-bellefair text-gold-dim">כל מה שצריך במקום אחד.</span>
           </motion.h2>
 
           <motion.p
@@ -378,8 +378,8 @@ export default function HomePage() {
                     <Icon className="w-6 h-6 text-gold-dim" />
                   </div>
 
-                  <h3 className="font-david font-bold text-xl text-[#1a1410] mb-3">{p.title}</h3>
-                  <p className="text-sm text-text-secondary leading-relaxed font-aviv">{p.desc}</p>
+                  <h3 className="font-secular text-xl text-[#1a1410] mb-3">{p.title}</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed font-rubik">{p.desc}</p>
 
                   <div className="mt-6 h-px bg-gradient-to-l from-transparent via-gold/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </motion.div>
@@ -413,8 +413,8 @@ export default function HomePage() {
                 <div className="h-px w-10 bg-gold/40" />
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#1a1410]">
-                <span className="font-geoffrey font-bold">חללים</span>{" "}
-                <span className="font-vilna italic text-gold-dim">שמספרים סיפור</span>
+                <span className="font-suez">חללים</span>{" "}
+                <span className="font-bellefair text-gold-dim">שמספרים סיפור</span>
               </h2>
               <p className="mt-4 text-text-muted max-w-xl mx-auto">
                 פרויקטים אמיתיים של המעצבות בקהילה — מהסלון ועד הגינה.
@@ -487,8 +487,8 @@ export default function HomePage() {
             <Users className="w-10 h-10 text-gold mx-auto mb-6" />
 
             <h2 className="text-4xl sm:text-5xl lg:text-6xl text-[#1a1410] leading-tight mb-6">
-              <span className="font-geoffrey font-bold">מוכנות להיות</span>
-              <span className="block mt-3 font-italki italic bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
+              <span className="font-suez">מוכנות להיות</span>
+              <span className="block mt-3 font-bellefair bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
                 חלק מהבית?
               </span>
             </h2>
@@ -528,7 +528,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5">
           <div className="flex items-center gap-3">
             <Logo size="sm" variant="light" />
-            <p className="font-hand text-base text-gold-dim">קהילה שהיא בית</p>
+            <p className="font-bellefair text-base text-gold-dim">קהילה שהיא בית</p>
           </div>
           <div className="flex items-center gap-5 text-sm">
             <Link href="/privacy" className="text-text-muted hover:text-gold transition-colors">
