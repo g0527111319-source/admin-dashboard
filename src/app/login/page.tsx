@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
@@ -10,7 +10,8 @@ const roleMeta = {
     supplier: { icon: <Store className="w-6 h-6"/>, text: siteText.auth.roles.supplier },
     designer: { icon: <Palette className="w-6 h-6"/>, text: siteText.auth.roles.designer },
 } as const;
-const roles: UserRole[] = ["admin", "supplier", "designer"];
+// רק מעצבות וספקים ברירור הרגיל — ניהול נכנס דרך ?role=admin מהעמוד הראשי
+const roles: UserRole[] = ["designer", "supplier"];
 
 const bgImages = [
   "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=2000&q=80",
@@ -26,7 +27,18 @@ export default function LoginPage() {
 function LoginContent() {
     const searchParams = useSearchParams();
     const redirect = searchParams.get("redirect") || "";
-    const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+    const roleParam = searchParams.get("role");
+    // אם הגיעו עם ?role=admin (מכפתור "ניהול" בעמוד הבית) — דילוג ישיר לטופס אדמין
+    const initialRole: UserRole | null =
+        roleParam === "admin" || roleParam === "designer" || roleParam === "supplier"
+            ? (roleParam as UserRole)
+            : null;
+    const [selectedRole, setSelectedRole] = useState<UserRole | null>(initialRole);
+    // סנכרון אם ה-URL משתנה
+    useEffect(() => {
+        if (initialRole && !selectedRole) setSelectedRole(initialRole);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialRole]);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -208,9 +220,20 @@ function LoginContent() {
                 </p>
               </div>
             </div>) : (<div className="animate-fade-in">
-              <button onClick={() => { setSelectedRole(null); setError(""); }} className="flex items-center gap-2 text-text-muted hover:text-gold mb-6 transition-colors text-sm">
+              <button
+                onClick={() => {
+                    // אם הגיעו ישירות ל-admin — חזרה לעמוד הבית; אחרת חזרה לבחירת תפקיד
+                    if (initialRole === "admin") {
+                        window.location.href = "/";
+                        return;
+                    }
+                    setSelectedRole(null);
+                    setError("");
+                }}
+                className="flex items-center gap-2 text-text-muted hover:text-gold mb-6 transition-colors text-sm"
+              >
                 <ArrowLeft className="w-4 h-4 rotate-180"/>
-                {siteText.auth.common.backToRoleSelection}
+                {initialRole === "admin" ? "חזרה לעמוד הבית" : siteText.auth.common.backToRoleSelection}
               </button>
 
               <div className="flex items-center gap-3 mb-6">

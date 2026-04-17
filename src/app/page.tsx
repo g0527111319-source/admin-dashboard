@@ -1,448 +1,546 @@
 "use client";
 
 import Logo from "@/components/ui/Logo";
-import { siteText } from "@/content/siteText";
-import {
-  ArrowLeft,
-  Building2,
-  Calendar,
-  Gem,
-  MessageCircle,
-  Palette,
-  Shield,
-  Sparkles,
-  Star,
-  TrendingUp,
-  Users,
-} from "lucide-react";
-import Link from "next/link";
 import DepthSection from "@/components/motion/DepthSection";
 import { DEPTH_IMAGES } from "@/lib/depth-images";
+import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  ArrowLeft,
+  Sparkles,
+  Users,
+  Briefcase,
+  Store,
+  Calendar,
+  Gem,
+  Star,
+  ShieldCheck,
+  ChevronDown,
+  Heart,
+} from "lucide-react";
+import Link from "next/link";
+import { useRef } from "react";
 
-const entryCards = [
-  {
-    href: "/login",
-    accent: "#C9A84C",
-    image:
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
-    icon: Shield,
-    text: siteText.home.entries.admin,
-  },
-  {
-    href: "/login",
-    accent: "#E8C97A",
-    image:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-    icon: Building2,
-    text: siteText.home.entries.supplier,
-  },
-  {
-    href: "/login",
-    accent: "#F4E5BE",
-    image:
-      "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80",
-    icon: Palette,
-    text: siteText.home.entries.designer,
-  },
-] as const;
+/* ──────────────────────────────────────────────────────────────
+   אנימציות משותפות — fade-up עם stagger
+   ────────────────────────────────────────────────────────────── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: 0.08 * i,
+      duration: 0.8,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
+};
 
-const featureCards = [
-  {
-    icon: MessageCircle,
-    tone: "from-amber-50 via-orange-50/40 to-white",
-    image: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80",
-    text: siteText.home.features[0],
-  },
-  {
-    icon: TrendingUp,
-    tone: "from-stone-100 via-amber-50/30 to-white",
-    image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80",
-    text: siteText.home.features[1],
-  },
-  {
-    icon: Users,
-    tone: "from-zinc-100 via-stone-50 to-white",
-    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80",
-    text: siteText.home.features[2],
-  },
-] as const;
+const fadeScale = {
+  hidden: { opacity: 0, scale: 0.94 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    scale: 1,
+    transition: {
+      delay: 0.1 * i,
+      duration: 0.9,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
+};
 
-const communityHighlights = [
-  { icon: Calendar, text: siteText.home.highlights[0] },
-  { icon: Users, text: siteText.home.highlights[1] },
-  { icon: Palette, text: siteText.home.highlights[2] },
-] as const;
+/* ──────────────────────────────────────────────────────────────
+   תוכן האתר
+   ────────────────────────────────────────────────────────────── */
+type Pillar = {
+  icon: typeof Heart;
+  title: string;
+  desc: string;
+  tint: string;
+  highlight?: boolean;
+};
 
-/* Gallery images for the new showcase strip */
-const galleryImages = [
-  { src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80", label: "בית פרטי" },
-  { src: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=600&q=80", label: "מטבח מודרני" },
-  { src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80", label: "סלון יוקרתי" },
-  { src: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=600&q=80", label: "בית עם בריכה" },
-  { src: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=600&q=80", label: "בית מודרני" },
-  { src: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=600&q=80", label: "חדר אמבט" },
+const pillars: Pillar[] = [
+  {
+    icon: Heart,
+    title: "קהילה שהיא בית",
+    desc: "מרחב חם ואיכותי למעצבות פנים ואדריכלות בישראל — היכרות, השראה ותמיכה יומית.",
+    tint: "from-[#FBF7ED] to-white",
+  },
+  {
+    icon: Briefcase,
+    title: "CRM מתקדם למעצבות",
+    desc: "מערכת ניהול לקוחות מלאה — פרויקטים, חוזים, הצעות מחיר, תשלומים ותקשורת במקום אחד.",
+    tint: "from-[#F5ECD3] to-white",
+    highlight: true,
+  },
+  {
+    icon: Store,
+    title: "ספקים מובחרים",
+    desc: "קטלוג ספקים שעברו סינון קפדני — נגרים, שיש, אריחים, חשמל ועוד, עם דירוגי קהילה.",
+    tint: "from-[#FDF8E8] to-white",
+  },
+  {
+    icon: Calendar,
+    title: "אירועים והכשרות",
+    desc: "מפגשים פיזיים, סדנאות, הרצאות מקצועיות ונטוורקינג — רמת היוקרה של המקצוע.",
+    tint: "from-[#FBF4DD] to-white",
+  },
 ];
 
+const stats = [
+  { value: "+120", label: "מעצבות בקהילה" },
+  { value: "+45", label: "ספקים מובחרים" },
+  { value: "24/7", label: "תמיכה וליווי" },
+  { value: "100%", label: "נשים בתעשייה" },
+] as const;
+
+const galleryImages = [
+  { src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80", label: "בית פרטי" },
+  { src: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80", label: "מטבח מעוצב" },
+  { src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80", label: "סלון יוקרתי" },
+  { src: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80", label: "פול-האוס" },
+  { src: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80", label: "וילה מודרנית" },
+  { src: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=800&q=80", label: "חדר רחצה" },
+] as const;
+
+/* ──────────────────────────────────────────────────────────────
+   רכיב: עמוד הבית
+   ────────────────────────────────────────────────────────────── */
 export default function HomePage() {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+
   return (
-    <div className="min-h-screen bg-bg text-text-primary overflow-hidden">
-      {/* ─── HERO ─── */}
-      {/*
-        HERO uses DepthSection for the backdrop (parallax architecture at 18%
-        opacity on black). The `bg-fixed` hack is gone — iOS-safe, GPU-friendly,
-        tied to the Lenis-driven scroll so the hall recedes as you scroll down.
-      */}
+    <div className="min-h-screen bg-[#FAF9F6] text-text-primary overflow-hidden" dir="rtl">
+      {/* ═══════════════════════════════════════════════════════
+          TOP BAR — לוגו + כפתור ניהול דיסקרטי
+          ═══════════════════════════════════════════════════════ */}
+      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-white/60 border-b border-gold/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Logo size="sm" variant="light" />
+          </div>
+          <Link
+            href="/login?role=admin"
+            className="group flex items-center gap-1.5 text-[11px] tracking-[0.25em] uppercase text-text-muted/70 hover:text-gold transition-colors duration-300"
+            aria-label="כניסת ניהול"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+            <span>ניהול</span>
+          </Link>
+        </div>
+      </header>
+
+      {/* ═══════════════════════════════════════════════════════
+          HERO — קרם, זהב, אוויר
+          ═══════════════════════════════════════════════════════ */}
       <DepthSection
         image={DEPTH_IMAGES.brightVilla}
-        speed={0.4}
-        opacity={0.16}
+        speed={0.35}
+        opacity={0.08}
         overlayTone="none"
         fullHeight
-        className="bg-[#050505] text-white"
+        className="bg-gradient-to-b from-[#FDFCFA] via-[#FAF9F6] to-[#F5ECD3]/30"
       >
-        <section className="relative isolate min-h-screen">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,168,76,0.28),transparent_32%),linear-gradient(135deg,rgba(5,5,5,0.92),rgba(5,5,5,0.65)_45%,rgba(15,15,15,0.88))]" />
-        <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:90px_90px]" />
-        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[82vw] h-[82vw] max-w-[860px] max-h-[860px] rounded-full border border-gold/15" />
-        <div className="absolute top-20 right-[8%] hidden xl:block opacity-[0.06] saturate-0">
-          <Logo size="xl" variant="dark" />
-        </div>
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gold-gradient" />
+        <section ref={heroRef} className="relative isolate min-h-screen pt-16">
+          {/* אורות זהב רכים ברקע */}
+          <motion.div
+            className="absolute -top-40 left-1/4 w-[520px] h-[520px] rounded-full bg-gold/20 blur-[140px] pointer-events-none"
+            animate={{ scale: [1, 1.08, 1], opacity: [0.5, 0.7, 0.5] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute top-1/3 -right-32 w-[380px] h-[380px] rounded-full bg-[#E8C97A]/25 blur-[120px] pointer-events-none"
+            animate={{ scale: [1.05, 1, 1.05], opacity: [0.45, 0.65, 0.45] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 sm:pt-14 sm:pb-24">
-          <div className="flex items-center justify-between mb-10">
-            <div className="rounded-full border border-white/10 bg-white/5 backdrop-blur-md px-4 py-2 text-[11px] sm:text-xs text-white/80 tracking-[0.25em] uppercase">
-              {siteText.brand.communityLabel}
-            </div>
-            <div className="rounded-full border border-gold/20 bg-black/25 backdrop-blur-md px-4 py-2 text-xs sm:text-sm text-gold-light">
-              {siteText.brand.tagline}
-            </div>
-          </div>
+          {/* שבכת נקודות עדינה */}
+          <div className="absolute inset-0 opacity-[0.04] [background-image:radial-gradient(circle_at_1px_1px,#C9A84C_1px,transparent_0)] [background-size:38px_38px] pointer-events-none" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 items-end">
-            <div className="max-w-3xl">
-              <div className="mb-8 animate-in">
-                <Logo size="xl" variant="dark" />
-              </div>
+          {/* קו זהב עליון */}
+          <div className="absolute top-16 left-0 right-0 h-[2px] bg-gradient-to-l from-transparent via-gold to-transparent opacity-60" />
 
-              <div className="inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/10 px-4 py-2 text-sm text-gold-light backdrop-blur-md animate-in stagger-1">
-                <Gem className="w-4 h-4" />
-                {siteText.home.badge}
-              </div>
-
-              <h1 className="mt-7 text-4xl sm:text-5xl lg:text-7xl font-heading font-bold leading-[1.05] animate-in stagger-2">
-                {siteText.home.title}
-                <span className="block text-gold mt-3">{siteText.home.titleAccent}</span>
-              </h1>
-
-              <p className="mt-6 text-base sm:text-lg lg:text-xl text-white/70 max-w-2xl leading-relaxed animate-in stagger-3">
-                {siteText.home.description}
-              </p>
-
-              <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 animate-in stagger-4">
-                {siteText.home.stats.map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-[22px] border border-white/10 bg-white/6 backdrop-blur-md px-4 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.18)]"
-                  >
-                    <div className="text-2xl sm:text-3xl font-mono font-bold text-gold">{item.value}</div>
-                    <div className="mt-1 text-xs sm:text-sm text-white/65 leading-relaxed">{item.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -inset-5 rounded-[32px] bg-gold/10 blur-3xl" />
-              <div className="relative rounded-[32px] border border-white/10 bg-white/[0.06] p-4 sm:p-5 backdrop-blur-xl shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
-                <div className="mb-4 flex items-center justify-between rounded-[24px] border border-white/10 bg-black/20 px-4 py-3">
-                  <div>
-                    <p className="text-xs tracking-[0.28em] uppercase text-white/45">{siteText.home.entryHeaderEyebrow}</p>
-                    <p className="text-sm sm:text-base text-white/90">{siteText.home.entryHeaderTitle}</p>
-                  </div>
-                  <Sparkles className="w-5 h-5 text-gold" />
-                </div>
-
-                <div className="space-y-4">
-                  {entryCards.map((card, index) => {
-                    const Icon = card.icon;
-                    return (
-                      <Link
-                        key={card.text.title}
-                        href={card.href}
-                        className="group relative block overflow-hidden rounded-[20px] sm:rounded-[28px] border border-white/10 p-5 sm:p-6 min-h-[160px] sm:min-h-[185px] transition-all duration-500 hover:-translate-y-1.5 hover:border-gold/45"
-                        style={{
-                          backgroundImage: `linear-gradient(135deg, rgba(5,5,5,0.84), rgba(5,5,5,0.4)), url(${card.image})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                      >
-                        <div
-                          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, rgba(201,168,76,0.2), rgba(255,255,255,0.02), rgba(201,168,76,0.14))",
-                          }}
-                        />
-                        <div className="relative flex h-full flex-col justify-between">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <p className="text-[11px] uppercase tracking-[0.28em] text-white/55">{card.text.label}</p>
-                              <h3 className="mt-3 text-2xl sm:text-[2rem] font-heading font-bold text-white leading-tight">
-                                {card.text.title}
-                              </h3>
-                            </div>
-                            <div
-                              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-black/30 backdrop-blur-md"
-                              style={{ boxShadow: `0 0 35px ${card.accent}20` }}
-                            >
-                              <Icon className="w-5 h-5" style={{ color: card.accent }} />
-                            </div>
-                          </div>
-
-                          <div className="flex items-end justify-between gap-4 mt-8">
-                            <p className="max-w-sm text-sm sm:text-base leading-relaxed text-white/75">
-                              {card.text.subtitle}
-                            </p>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 opacity-80 group-hover:translate-x-[-6px] group-hover:opacity-100 transition-all duration-500">
-                              <ArrowLeft className="w-5 h-5 text-white" />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="absolute top-4 left-4 text-[10px] text-white/35">0{index + 1}</div>
-                      </Link>
-                    );
-                  })}
+          <motion.div
+            style={{ y: heroY, opacity: heroOpacity }}
+            className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-24 text-center"
+          >
+            {/* לוגו ראשי */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeScale}
+              custom={0}
+              className="flex justify-center mb-8"
+            >
+              <div className="relative">
+                <div className="absolute -inset-8 bg-gold/20 blur-3xl rounded-full opacity-50" />
+                <div className="relative">
+                  <Logo size="xl" variant="light" />
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
+            </motion.div>
 
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-[72px] sm:h-[110px]">
-            <path d="M0 89C109 57 219 40 328 45C496 52 609 118 783 118C952 118 1088 23 1280 8C1334 4 1387 5 1440 12V120H0V89Z" fill="#FAF9F6" />
-          </svg>
-        </div>
+            {/* תג יוקרה */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={1}
+              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white/70 backdrop-blur-sm px-5 py-2 text-[11px] sm:text-xs text-gold-dim tracking-[0.3em] uppercase mb-8 shadow-sm font-sf"
+            >
+              <Gem className="w-3.5 h-3.5 text-gold" />
+              הקהילה היוקרתית של אדריכלות הפנים בישראל
+            </motion.div>
+
+            {/* כותרת ראשית — שילוב פונטים יוקרתי */}
+            <motion.h1
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={2}
+              className="leading-[1.02] text-[2.75rem] sm:text-6xl lg:text-[5.5rem] text-[#1a1410] tracking-tight"
+            >
+              <span className="font-geoffrey font-bold">איפה שהעיצוב</span>
+              <span className="block mt-4 font-italki italic bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
+                פוגש משפחה
+              </span>
+            </motion.h1>
+
+            {/* תיאור פואטי */}
+            <motion.p
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={3}
+              className="mt-8 text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed font-aviv"
+            >
+              מרחב אחד למעצבות פנים ואדריכלות — <span className="text-gold-dim font-medium">קהילה חמה</span>,
+              מערכת <span className="text-gold-dim font-medium">CRM מקצועית</span> לניהול לקוחות,
+              ספקים מובחרים ואירועים שמרימים את המקצוע לרמה אחרת.
+            </motion.p>
+
+            {/* כפתורי פעולה ראשיים */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={4}
+              className="mt-12 flex flex-col sm:flex-row gap-4 items-center justify-center"
+            >
+              {/* CTA ראשי — כניסה לאזור אישי */}
+              <Link
+                href="/login"
+                className="group relative inline-flex items-center gap-3 px-8 sm:px-10 py-4 rounded-full bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] text-white font-semibold text-base sm:text-lg shadow-[0_12px_40px_rgba(201,168,76,0.35)] hover:shadow-[0_20px_55px_rgba(201,168,76,0.5)] hover:-translate-y-0.5 transition-all duration-500 overflow-hidden"
+              >
+                {/* נצנוץ רץ */}
+                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-l from-transparent via-white/40 to-transparent" />
+                <Sparkles className="w-5 h-5 relative z-10" />
+                <span className="relative z-10">כניסה לאזור אישי</span>
+                <ArrowLeft className="w-5 h-5 relative z-10 group-hover:-translate-x-1 transition-transform" />
+              </Link>
+
+              {/* CTA משני — הרשמה */}
+              <Link
+                href="/register"
+                className="group inline-flex items-center gap-2 px-7 py-4 rounded-full border-2 border-gold/40 bg-white/70 backdrop-blur-sm text-gold-dim font-semibold text-base hover:border-gold hover:bg-white transition-all duration-300"
+              >
+                <span>להצטרפות לקהילה</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+
+            {/* מספרים */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={5}
+              className="mt-20 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto"
+            >
+              {stats.map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  custom={6 + i}
+                  variants={fadeUp}
+                  className="relative rounded-2xl border border-gold/15 bg-white/60 backdrop-blur-sm px-4 py-5 shadow-[0_10px_30px_rgba(201,168,76,0.06)] hover:shadow-[0_15px_40px_rgba(201,168,76,0.12)] hover:-translate-y-1 transition-all duration-500 group"
+                >
+                  <div className="text-2xl sm:text-3xl font-heading font-bold bg-gradient-to-l from-[#8B6914] to-gold bg-clip-text text-transparent">
+                    {item.value}
+                  </div>
+                  <div className="mt-1.5 text-xs sm:text-sm text-text-muted leading-snug">{item.label}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* חץ גלילה */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 0.6, y: 0 }}
+            transition={{ delay: 2, duration: 1 }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-none"
+          >
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="flex flex-col items-center gap-1.5 text-gold/70 text-[10px] tracking-[0.3em] uppercase"
+            >
+              <span>גלול</span>
+              <ChevronDown className="w-4 h-4" />
+            </motion.div>
+          </motion.div>
         </section>
       </DepthSection>
 
-      {/* ─── IMAGE GALLERY STRIP ─── */}
-      {/*
-        Light-themed strip. Cream living room with a gallery wall sits directly
-        over the cream page bg at 12% — no overlay (avoids cream-on-cream mud).
-        Lower opacity so the cards remain the visual anchor.
-      */}
+      {/* ═══════════════════════════════════════════════════════
+          SECTION — מה זה זירת האדריכלות?
+          ═══════════════════════════════════════════════════════ */}
+      <section className="relative py-24 sm:py-32 px-4 sm:px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-[#FDFCFA] to-[#FAF9F6] pointer-events-none" />
+
+        <div className="relative max-w-5xl mx-auto text-center">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="inline-flex items-center gap-2 text-xs tracking-[0.3em] uppercase text-gold-dim mb-6"
+          >
+            <div className="h-px w-10 bg-gold/40" />
+            מה זה זירת האדריכלות?
+            <div className="h-px w-10 bg-gold/40" />
+          </motion.div>
+
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            custom={1}
+            className="text-4xl sm:text-5xl lg:text-6xl text-[#1a1410] leading-[1.1] mb-8"
+          >
+            <span className="font-geoffrey font-bold">הרבה יותר מקהילה.</span>
+            <span className="block mt-3 font-vilna italic text-gold-dim">כל מה שצריך במקום אחד.</span>
+          </motion.h2>
+
+          <motion.p
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            custom={2}
+            className="text-lg sm:text-xl text-text-secondary leading-relaxed max-w-3xl mx-auto"
+          >
+            זירת האדריכלות היא הבית של מעצבות הפנים והאדריכלות בישראל —
+            קהילה חמה שחיה ונושמת, ובצמוד אליה <strong className="text-gold-dim">מערכת CRM מלאה</strong> שמנהלת עבורך את
+            הלקוחות, הפרויקטים, הצעות המחיר, החוזים, התשלומים והתקשורת —
+            הכל בממשק אחד, בעברית, ובסטנדרט של מעצבות אמיתיות.
+          </motion.p>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          PILLARS — ארבעה עמודי תווך
+          ═══════════════════════════════════════════════════════ */}
+      <section className="relative py-20 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-[#FAF9F6] to-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {pillars.map((p, i) => {
+              const Icon = p.icon;
+              return (
+                <motion.div
+                  key={p.title}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-50px" }}
+                  variants={fadeScale}
+                  custom={i}
+                  className={`group relative rounded-[28px] p-7 sm:p-8 bg-gradient-to-br ${p.tint} border transition-all duration-500 hover:-translate-y-2 ${
+                    p.highlight
+                      ? "border-gold/50 shadow-[0_20px_50px_rgba(201,168,76,0.18)] hover:shadow-[0_28px_60px_rgba(201,168,76,0.28)]"
+                      : "border-gold/15 shadow-[0_10px_30px_rgba(26,20,16,0.04)] hover:shadow-[0_20px_45px_rgba(26,20,16,0.08)] hover:border-gold/30"
+                  }`}
+                >
+                  {p.highlight && (
+                    <div className="absolute -top-3 right-6 px-3 py-1 rounded-full bg-gradient-to-l from-[#8B6914] to-gold text-white text-[10px] font-bold tracking-[0.2em] uppercase shadow-md">
+                      חדש
+                    </div>
+                  )}
+
+                  <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gold/20 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                    <Icon className="w-6 h-6 text-gold-dim" />
+                  </div>
+
+                  <h3 className="font-david font-bold text-xl text-[#1a1410] mb-3">{p.title}</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed font-aviv">{p.desc}</p>
+
+                  <div className="mt-6 h-px bg-gradient-to-l from-transparent via-gold/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          GALLERY STRIP — חללים שמספרים סיפור
+          ═══════════════════════════════════════════════════════ */}
       <DepthSection
         image={DEPTH_IMAGES.livingGallery}
-        speed={0.35}
-        opacity={0.12}
+        speed={0.3}
+        opacity={0.08}
         overlayTone="none"
       >
-      <section className="relative py-14 sm:py-16 px-4 sm:px-6 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(201,168,76,0.06),transparent)]" />
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-white px-4 py-2 text-sm text-gold-700 shadow-soft mb-4">
-              <Palette className="w-4 h-4" />
-              השראה לעיצוב
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-heading font-bold text-text-primary">
-              חללים שמספרים סיפור
-            </h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            {galleryImages.map((img, i) => (
-              <div
-                key={i}
-                className="group relative aspect-[4/5] rounded-[20px] overflow-hidden border border-border-subtle shadow-card hover:shadow-gold hover:-translate-y-1 transition-all duration-500 cursor-pointer"
-              >
-                <div
-                  className="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-700"
-                  style={{ backgroundImage: `url(${img.src})` }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                  <span className="text-white text-xs font-medium">{img.label}</span>
-                </div>
-                {/* Gold corner accent */}
-                <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gold/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                  <Star className="w-3 h-3 text-white" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      </DepthSection>
-
-      {/* ─── FEATURES SECTION ─── */}
-      {/*
-        Features section. A bright open-plan living room peeks behind the
-        feature cards at 10% — subtle enough not to compete with the cards
-        themselves, but strong enough that the page feels like a real room.
-      */}
-      <DepthSection
-        image={DEPTH_IMAGES.brightLiving}
-        speed={0.4}
-        opacity={0.10}
-        overlayTone="none"
-      >
-      <section className="relative py-20 sm:py-24 px-4 sm:px-6">
-        <div className="relative max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start mb-14">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-white px-4 py-2 text-sm text-gold-700 shadow-soft mb-5">
-                <Star className="w-4 h-4" />
-                {siteText.home.sectionBadge}
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold leading-tight text-text-primary">
-                {siteText.home.sectionTitle}
-                <span className="block text-gold mt-2">{siteText.home.sectionTitleAccent}</span>
-              </h2>
-            </div>
-
-            <div className="rounded-[28px] border border-border-gold bg-white/90 backdrop-blur-sm p-6 sm:p-7 shadow-[0_25px_70px_rgba(38,30,12,0.08)]">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {siteText.home.inspiration.map((moment) => (
-                  <div key={moment.title} className="rounded-[22px] bg-bg-surface px-4 py-5 sm:min-h-[170px] flex flex-col justify-between">
-                    <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold font-mono text-sm">
-                      {moment.title.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-heading text-lg text-text-primary mb-2">{moment.title}</h3>
-                      <p className="text-sm leading-relaxed text-text-muted">{moment.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Feature cards with background images */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featureCards.map((feature) => (
-              <div
-                key={feature.text.title}
-                className="group relative rounded-[28px] border border-border-subtle overflow-hidden shadow-card hover:shadow-[0_24px_60px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300"
-              >
-                {/* Background image peek */}
-                <div className="h-36 relative overflow-hidden">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700"
-                    style={{ backgroundImage: `url(${feature.image})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
-                  <div className="absolute top-4 right-4 w-12 h-12 rounded-2xl bg-black text-gold flex items-center justify-center shadow-gold">
-                    <feature.icon className="w-5 h-5" />
-                  </div>
-                </div>
-                <div className={`p-7 bg-gradient-to-br ${feature.tone}`}>
-                  <h3 className="font-heading text-2xl text-text-primary mb-3">{feature.text.title}</h3>
-                  <p className="text-text-muted leading-relaxed text-sm sm:text-base">{feature.text.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Lobby showcase with full-bleed image */}
-          <div className="mt-14 rounded-[20px] sm:rounded-[34px] overflow-hidden border border-border-gold bg-[#0A0A0A] text-white shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
-            <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr]">
-              <div className="relative min-h-[320px] lg:min-h-[420px]">
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(135deg, rgba(10,10,10,0.15), rgba(10,10,10,0.75)), url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1400&q=80')",
-                  }}
-                />
-                <div className="relative h-full p-8 sm:p-10 flex flex-col justify-end">
-                  <p className="text-xs tracking-[0.32em] uppercase text-gold-light/80 mb-4">{siteText.home.lobbyEyebrow}</p>
-                  <h3 className="text-3xl sm:text-4xl font-heading font-bold leading-tight max-w-sm">
-                    {siteText.home.lobbyTitle}
-                  </h3>
-                </div>
-              </div>
-
-              <div className="p-8 sm:p-10 lg:p-12">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-                  {communityHighlights.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <div key={item.text.title} className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-5 backdrop-blur-sm hover:border-gold/30 transition-colors duration-300">
-                        <Icon className="w-5 h-5 text-gold mb-4" />
-                        <h4 className="font-heading text-xl mb-2">{item.text.title}</h4>
-                        <p className="text-sm text-white/65 leading-relaxed">{item.text.text}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-[26px] border border-gold/20 bg-gold/10 px-5 py-5">
-                  <div>
-                    <p className="text-sm text-gold-light mb-1">{siteText.home.ctaLead}</p>
-                    <p className="text-lg font-heading">{siteText.home.ctaText}</p>
-                  </div>
-                  <Link href="/login" className="btn-gold whitespace-nowrap">
-                    {siteText.home.ctaButton}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      </DepthSection>
-
-      {/* ─── PROJECTS GALLERY CTA ─── */}
-      {/*
-        Full-bleed promo card over a parallax pool-house backdrop. The "brand"
-        overlay (gold radial + dark scrim) makes the villa feel cinematic
-        rather than muted.
-      */}
-      <DepthSection
-        image={DEPTH_IMAGES.poolHouse}
-        speed={0.5}
-        opacity={0.20}
-        overlayTone="brand"
-        blur
-      >
-      <section className="relative py-16 px-4 sm:px-6 overflow-hidden">
-        <div className="relative max-w-7xl mx-auto">
-          <div className="rounded-[28px] border border-gold/25 bg-white/5 backdrop-blur-md p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-xl sm:text-2xl font-heading font-bold text-white mb-2">
-                צפו בפרויקטים של המעצבות שלנו
-              </h3>
-              <p className="text-sm text-white/50">
-                גלריה מרהיבה של עבודות עיצוב פנים מהקהילה
-              </p>
-            </div>
-            <Link
-              href="/projects"
-              className="px-6 py-3 bg-gold text-black font-bold rounded-xl hover:bg-gold-light transition-colors whitespace-nowrap text-sm shadow-gold"
+        <section className="relative py-20 sm:py-28 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              variants={fadeUp}
+              className="text-center mb-14"
             >
-              צפה בפרויקטים
-            </Link>
+              <div className="inline-flex items-center gap-2 text-xs tracking-[0.3em] uppercase text-gold-dim mb-5">
+                <div className="h-px w-10 bg-gold/40" />
+                השראה
+                <div className="h-px w-10 bg-gold/40" />
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#1a1410]">
+                <span className="font-geoffrey font-bold">חללים</span>{" "}
+                <span className="font-vilna italic text-gold-dim">שמספרים סיפור</span>
+              </h2>
+              <p className="mt-4 text-text-muted max-w-xl mx-auto">
+                פרויקטים אמיתיים של המעצבות בקהילה — מהסלון ועד הגינה.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+              {galleryImages.map((img, i) => (
+                <motion.div
+                  key={img.src}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-40px" }}
+                  variants={fadeScale}
+                  custom={i}
+                  className="group relative aspect-[4/5] rounded-[22px] overflow-hidden border border-gold/15 shadow-[0_12px_30px_rgba(26,20,16,0.06)] hover:shadow-[0_25px_50px_rgba(201,168,76,0.18)] hover:-translate-y-1.5 transition-all duration-700 cursor-pointer"
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-[1.2s]"
+                    style={{ backgroundImage: `url(${img.src})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1410]/85 via-[#1a1410]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                    <div className="flex items-center gap-2 text-white text-sm font-medium">
+                      <Star className="w-3.5 h-3.5 text-gold" />
+                      {img.label}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              custom={3}
+              className="text-center mt-10"
+            >
+              <Link
+                href="/projects"
+                className="inline-flex items-center gap-2 text-gold-dim font-medium hover:text-gold transition-colors group"
+              >
+                לגלריית הפרויקטים המלאה
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </section>
       </DepthSection>
 
-      {/* ─── FOOTER ─── */}
-      <footer className="bg-[#050505] py-8 px-4 border-t border-white/5">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Logo size="sm" variant="dark" />
-            <p className="text-sm text-white/55">{siteText.brand.footer}</p>
+      {/* ═══════════════════════════════════════════════════════
+          CLOSING CTA — הזמנה חמה להצטרף
+          ═══════════════════════════════════════════════════════ */}
+      <section className="relative py-24 sm:py-32 px-4 sm:px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#FDFCFA] via-[#FBF4DD] to-[#F5ECD3]" />
+
+        {/* אורות רקע */}
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-gold/15 blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#E8C97A]/20 blur-[120px] pointer-events-none" />
+
+        <div className="relative max-w-3xl mx-auto text-center">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={fadeUp}
+          >
+            <Users className="w-10 h-10 text-gold mx-auto mb-6" />
+
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl text-[#1a1410] leading-tight mb-6">
+              <span className="font-geoffrey font-bold">מוכנות להיות</span>
+              <span className="block mt-3 font-italki italic bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
+                חלק מהבית?
+              </span>
+            </h2>
+
+            <p className="text-lg sm:text-xl text-text-secondary leading-relaxed mb-10 max-w-2xl mx-auto">
+              הצטרפי למאות מעצבות שכבר מנהלות את העסק שלהן בצורה חכמה יותר —
+              ומרגישות בבית.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+              <Link
+                href="/register"
+                className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-full bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] text-white font-semibold text-lg shadow-[0_15px_45px_rgba(201,168,76,0.4)] hover:shadow-[0_25px_60px_rgba(201,168,76,0.55)] hover:-translate-y-1 transition-all duration-500 overflow-hidden"
+              >
+                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-l from-transparent via-white/40 to-transparent" />
+                <Sparkles className="w-5 h-5 relative z-10" />
+                <span className="relative z-10">בואי להצטרף</span>
+                <ArrowLeft className="w-5 h-5 relative z-10 group-hover:-translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 px-6 py-4 text-gold-dim font-medium hover:text-gold transition-colors"
+              >
+                <span>כבר חלק מהקהילה? כניסה</span>
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          FOOTER — דיסקרטי, אוורירי
+          ═══════════════════════════════════════════════════════ */}
+      <footer className="relative bg-[#FAF9F6] border-t border-gold/10 py-10 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-3">
+            <Logo size="sm" variant="light" />
+            <p className="font-hand text-base text-gold-dim">קהילה שהיא בית</p>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/privacy" className="text-white/35 text-sm hover:text-white/60 transition-colors">מדיניות פרטיות</Link>
-            <Link href="/terms" className="text-white/35 text-sm hover:text-white/60 transition-colors">תנאי שימוש</Link>
-            <Link href="/data-deletion" className="text-white/35 text-sm hover:text-white/60 transition-colors">מחיקת נתונים</Link>
-            <p className="text-white/35 text-sm">{siteText.brand.copyright}</p>
+          <div className="flex items-center gap-5 text-sm">
+            <Link href="/privacy" className="text-text-muted hover:text-gold transition-colors">
+              פרטיות
+            </Link>
+            <Link href="/terms" className="text-text-muted hover:text-gold transition-colors">
+              תנאי שימוש
+            </Link>
+            <Link href="/accessibility" className="text-text-muted hover:text-gold transition-colors">
+              נגישות
+            </Link>
+            <span className="text-text-muted/60">© 2026 זירת האדריכלות</span>
           </div>
         </div>
       </footer>
