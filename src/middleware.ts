@@ -38,6 +38,14 @@ const PUBLIC_PATHS = [
   "/data-deletion",
   "/projects",
   "/card",
+  // SEO — bloc ציבורי ודפי נחיתה אורגניים
+  "/blog",
+  "/interior-designers",
+  "/for-designers",
+  "/experience",
+  "/accessibility",
+  "/sitemap.xml",
+  "/robots.txt",
   // Public contract-signing page — clients don't have accounts, they get here
   // via a signed magic link emailed to them (or copy/paste of that URL).
   // Without this, the middleware would redirect them to /login and they'd be
