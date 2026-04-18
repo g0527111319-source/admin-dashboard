@@ -77,7 +77,7 @@ const suezOne = Suez_One({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichal.co.il";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
 
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),

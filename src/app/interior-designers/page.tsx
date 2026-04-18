@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichal.co.il";
+  process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
 
 const itemListJsonLd = {
   "@context": "https://schema.org",

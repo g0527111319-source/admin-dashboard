@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllPostsMeta } from "@/lib/blog";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichal.co.il";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
 
 /**
  * Dynamic sitemap — includes only public-facing pages.
