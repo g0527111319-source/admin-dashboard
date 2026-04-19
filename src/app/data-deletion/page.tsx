@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GoldText } from "@/components/ds";
 
 export default function DataDeletionPage() {
   const [email, setEmail] = useState("");
@@ -41,7 +42,7 @@ export default function DataDeletionPage() {
     <div dir="rtl" className="min-h-screen bg-bg-primary py-16 px-4">
       <div className="max-w-2xl mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-heading text-text-primary">בקשה למחיקת נתונים</h1>
+          <h1 className="text-3xl font-heading text-text-primary">בקשה <GoldText>למחיקת נתונים</GoldText></h1>
           <p className="text-text-muted text-sm mt-2">Data Deletion Request — Zirat Architecture</p>
         </div>
 
