@@ -8,10 +8,10 @@ _מסמך מכיל את כל המידע הנדרש כדי שמפתח או בינ
 |---|---|
 | שם הפרויקט | Zirat Community — פלטפורמת קהילה ו-CRM למעצבות פנים |
 | בעלים | ישראל גולדשמיד / תמר (מנהלת קהילה) |
-| דומיין עיקרי | `zirat-design.vercel.app` |
-| דומיין חדש | `ziratadrichal.co.il` (בתהליך הקמה) |
+| דומיין עיקרי | `ziratadrichalut.co.il` (www) |
+| דומיין legacy | `ziratadrichal.co.il` (301 redirect עם שמירת path) |
 | טכנולוגיה | Next.js 14.2 (App Router) + TypeScript + Prisma + PostgreSQL |
-| תאריך עדכון | 2026-04-16 |
+| תאריך עדכון | 2026-04-19 |
 | שפה | עברית (RTL), תמיכה ב-English ללקוחות |
 
 ---
@@ -82,7 +82,7 @@ _מסמך מכיל את כל המידע הנדרש כדי שמפתח או בינ
 
 | שירות | פרטים |
 |---|---|
-| אימייל | **Resend 6.9.4** — כרגע sandbox (noreply@resend.dev). בתהליך מעבר ל-ziratadrichal.co.il |
+| אימייל | **Resend 6.9.4** — כרגע sandbox (noreply@resend.dev). בתהליך מעבר ל-ziratadrichalut.co.il |
 | חיוב וחשבוניות | **iCount API** (חברה ישראלית) — מנויים חוזרים, webhooks, idempotency דרך `icountEventId` |
 | אחסון קבצים | **כפול:** Cloudinary (ראשי) + AWS SDK S3 ל-Cloudflare R2 (bucket: `zirat-files`) |
 | WhatsApp — בוט AI | **Baileys** (WhatsApp Web ישיר) + **Anthropic Claude API** |
@@ -307,7 +307,7 @@ vercel.json           — הגדרות Vercel + cron jobs
 - **FROM:** `FROM_EMAIL` (Vercel env)
 - **תבניות:** `welcomeDesignerEmail`, `dealNotificationEmail`, `reminderEmail`, `subscriptionReceiptEmail`, `trialEndingEmail`, `renewalReminderEmail`, `paymentFailedEmail`, `subscriptionCancelledEmail`, `subscriptionPausedEmail`, `promotionNearEmail`, `promotionGrantedEmail`, `downgradeReminderEmail`, `clientMeetingInviteEmail`, `clientMeetingReminderEmail`
 
-**⚠ משימה פתוחה:** לסיים אימות הדומיין `ziratadrichal.co.il` ב-Resend.
+**⚠ משימה פתוחה:** לסיים אימות הדומיין `ziratadrichalut.co.il` ב-Resend.
 
 ```typescript
 const result = await sendEmail({
@@ -483,8 +483,8 @@ npx prisma migrate deploy
 
 ### 10.1 משימות פתוחות (בתהליך)
 
-- **דומיין חדש:** `ziratadrichal.co.il` נקנה מ-Internic ב-2026-04-16. ה-DNS הועבר ל-Cloudflare של ישראל. ממתין לתפוצה (עד 24 שעות).
-- **Resend domain verification:** אחרי שה-DNS יתפוס, להוסיף את הדומיין החדש ל-Resend → Auto configure → אימות → עדכון `FROM_EMAIL` ב-Vercel → Redeploy.
+- **דומיין חדש:** `ziratadrichalut.co.il` פעיל (2026-04-19). זון ב-Cloudflare activated, DNS פורסם, SSL הונפק, 301 redirects מ-`ziratadrichal.co.il` עובדים. Google Search Console אומת.
+- **Resend domain verification:** להוסיף את `ziratadrichalut.co.il` ל-Resend → Auto configure → אימות → עדכון `FROM_EMAIL` ב-Vercel → Redeploy.
 - **Google OAuth verification:** ממתין לתשובה מ-Google. כל המסמכים מוכנים ב-`docs/google-verification/`.
 
 ### 10.2 בעיות ידועות

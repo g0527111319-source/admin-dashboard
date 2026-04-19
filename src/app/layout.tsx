@@ -77,7 +77,9 @@ const suezOne = Suez_One({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
+// .trim() defends against env vars saved with trailing \n — that would poison
+// metadataBase / og:url / canonical and break crawlers.
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il").trim();
 
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),

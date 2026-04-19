@@ -17,6 +17,10 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 
+// Site URL for absolute links in emails. .trim() defends against env vars
+// saved with a trailing newline — that would break all email CTA links.
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il").trim();
+
 // Admin recipient list. Falls back to all users with role=admin if
 // ADMIN_EMAIL env not set. We cache briefly to avoid hammering DB.
 let _adminEmailCache: { at: number; list: string[] } | null = null;
@@ -146,7 +150,7 @@ export function adminNewLeadEmail(lead: LeadEmailPayload): { subject: string; ht
       <tr><td style="font-weight:600;background:#faf8f1;">דגש נוסף</td><td>${br(lead.additionalNotes)}</td></tr>
     </table>
     <p style="margin:20px 0 0;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il"}/admin/leads/${lead.id}" style="background:${BRAND_COLOR};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;">
+      <a href="${SITE_URL}/admin/leads/${lead.id}" style="background:${BRAND_COLOR};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;">
         פתחי את הליד בדשבורד
       </a>
     </p>
@@ -188,7 +192,7 @@ export function adminConversionEmail(args: {
       ללקוחה רשמית במערכת ה-CRM שלה. זה הרגע לפתוח את מעקב ה-8% עמלה.
     </p>
     <p style="margin:18px 0 0;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il"}/admin/leads/${args.leadId}" style="background:${BRAND_COLOR};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;">
+      <a href="${SITE_URL}/admin/leads/${args.leadId}" style="background:${BRAND_COLOR};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;">
         פתחי את הליד
       </a>
     </p>
@@ -211,7 +215,7 @@ export function designerAssignmentEmail(args: {
       מומלץ ליצור קשר תוך 24 שעות כדי להגדיל את הסיכויים להמרה.
     </p>
     <p style="margin:18px 0 0;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il"}/designer/${args.designerId}/leads" style="background:${BRAND_COLOR};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;">
+      <a href="${SITE_URL}/designer/${args.designerId}/leads" style="background:${BRAND_COLOR};color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;display:inline-block;">
         פתחי את הליד ב-CRM
       </a>
     </p>

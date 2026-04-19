@@ -43,8 +43,9 @@ export default function BlogPostPage({ params }: Props) {
   const post = getPostBySlug(params.slug);
   if (!post) notFound();
 
+  // .trim() defends against env vars saved with trailing \n.
   const SITE_URL =
-    process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
+    (process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il").trim();
 
   const articleJsonLd = {
     "@context": "https://schema.org",

@@ -26,8 +26,9 @@ export const metadata: Metadata = {
   },
 };
 
+// .trim() defends against env vars saved with trailing \n.
 const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
+  (process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il").trim();
 
 const itemListJsonLd = {
   "@context": "https://schema.org",
