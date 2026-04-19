@@ -22,11 +22,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ lea
     return NextResponse.json({ error: "הליד כבר לא פתוח להבעת עניין" }, { status: 400 });
   }
 
+  // Commission disclosure: the client sends { commissionAgreed: true, commissionPercent: 8 }
+  // after the designer actively accepts the modal. We require the flag to be
+  // present and true — anyone replaying a bare POST from a stale client gets
+  // rejected so we never record an un-confirmed agreement.
+  const body = (await req.json().catch(() => ({}))) as {
+    commissionAgreed?: boolean;
+    commissionPercent?: number;
+  };
+  if (body.commissionAgreed !== true) {
+    return NextResponse.json(
+      { error: "יש לאשר את תנאי עמלת הקהילה כדי להביע עניין בליד" },
+      { status: 400 },
+    );
+  }
+
   await prisma.leadInterest.upsert({
     where: { leadId_designerId: { leadId, designerId } },
     create: { leadId, designerId },
     update: {},
   });
+
+  // Server-side audit trail — shows up in Vercel logs with designer + lead +
+  // timestamp so we can reconcile disputes. Schema-level persistence can be
+  // added later via a nullable `commissionAgreedAt` column on LeadInterest.
+  console.log(
+    JSON.stringify({
+      event: "lead.community.interest.commission_agreed",
+      leadId,
+      designerId,
+      commissionPercent: body.commissionPercent ?? 8,
+      at: new Date().toISOString(),
+    }),
+  );
+
   return NextResponse.json({ ok: true });
 }
 

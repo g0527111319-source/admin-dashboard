@@ -84,6 +84,11 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // When the designer taps "אני מעוניינת" we first show a commission
+  // disclosure modal. Only after she actively confirms do we POST interest.
+  // Unchecking interest (removing) bypasses the modal — no agreement is
+  // being made, just undoing a previous declaration.
+  const [pendingInterestLeadId, setPendingInterestLeadId] = useState<string | null>(null);
 
   const loadCommunity = useCallback(async () => {
     try {
@@ -119,11 +124,44 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
 
   useEffect(() => { reloadAll(); }, [reloadAll]);
 
-  const toggleInterest = async (leadId: string, current: boolean) => {
+  // Entry point from the card button. Adding interest routes through the
+  // commission-disclosure modal; removing interest is a direct un-declare.
+  const toggleInterest = (leadId: string, current: boolean) => {
+    if (current) {
+      void removeInterest(leadId);
+    } else {
+      setPendingInterestLeadId(leadId);
+    }
+  };
+
+  const removeInterest = async (leadId: string) => {
     setBusy(`interest-${leadId}`);
     try {
+      const res = await fetch(`/api/designer/leads/community/${leadId}/interest`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(err.error || "שגיאה");
+      } else {
+        await loadCommunity();
+      }
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // Called only after the designer explicitly accepts the commission
+  // disclosure modal. The server also logs the agreement server-side via
+  // `commissionAgreed: true` so we have a record beyond client state.
+  const confirmInterest = async () => {
+    const leadId = pendingInterestLeadId;
+    if (!leadId) return;
+    setBusy(`interest-${leadId}`);
+    setPendingInterestLeadId(null);
+    try {
       const res = await fetch(`/api/designer/leads/community/${leadId}/interest`, {
-        method: current ? "DELETE" : "POST",
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ commissionAgreed: true, commissionPercent: 8 }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -268,6 +306,123 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
           gender={gender}
         />
       )}
+
+      {pendingInterestLeadId && (
+        <CommissionAgreementModal
+          gender={gender}
+          onCancel={() => setPendingInterestLeadId(null)}
+          onConfirm={confirmInterest}
+        />
+      )}
+    </div>
+  );
+}
+
+// ==========================================
+// Commission agreement modal
+// ==========================================
+// Shown before a designer declares interest in a community lead. She cannot
+// add herself to the interest list without actively confirming the 8%
+// commission clause — this gives us a UX-level audit trail (and the server
+// logs the same consent via the `commissionAgreed` POST body).
+
+function CommissionAgreementModal({ gender, onCancel, onConfirm }: {
+  gender: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const [accepted, setAccepted] = useState(false);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="commission-agreement-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in"
+      onClick={onCancel}
+    >
+      <div
+        className="card-static max-w-lg w-full relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 w-11 h-11 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center">
+            <Handshake className="w-5 h-5 text-gold" />
+          </div>
+          <div className="flex-1">
+            <h3
+              id="commission-agreement-title"
+              className="text-lg font-heading text-text-primary"
+            >
+              {g(gender, "אישור הסכמה לעמלת קהילה", "אישור הסכמה לעמלת קהילה")}
+            </h3>
+            <p className="text-xs text-text-muted mt-0.5">
+              תנאי יסוד לקבלת ליד מפיד הקהילה של זירת האדריכלות
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 text-sm text-text-primary leading-relaxed space-y-3">
+          <p>
+            {g(
+              gender,
+              "הריני מאשר כי ידוע לי שהליד הופנה אליי דרך קהילת ",
+              "הריני מאשרת כי ידוע לי שהליד הופנה אליי דרך קהילת ",
+            )}
+            <strong>זירת האדריכלות</strong>
+            {g(gender, " בניהולה של תמר גולדשמיד.", " בניהולה של תמר גולדשמיד.")}
+          </p>
+          <p>
+            {g(
+              gender,
+              "במידה והליד יבשיל לעסקה בפועל והלקוח/ה ישלם/תשלם לי על שירותי העיצוב — אני מתחייב להעביר ",
+              "במידה והליד יבשיל לעסקה בפועל והלקוח/ה ישלם/תשלם לי על שירותי העיצוב — אני מתחייבת להעביר ",
+            )}
+            <strong className="text-gold">8% מסך העמלה</strong>
+            {g(
+              gender,
+              " שאקבל מהלקוח/ה לתמר גולדשמיד, כעמלת הפניה והפעלת הקהילה, תוך 14 יום ממועד קבלת התשלום.",
+              " שאקבל מהלקוח/ה לתמר גולדשמיד, כעמלת הפניה והפעלת הקהילה, תוך 14 יום ממועד קבלת התשלום.",
+            )}
+          </p>
+          <p className="text-xs text-text-muted">
+            ההצהרה נרשמת במערכת עם חותמת זמן ומהווה אסמכתא להסכם העמלה.
+          </p>
+        </div>
+
+        <label className="mt-5 flex items-start gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-gold"
+          />
+          <span className="text-sm text-text-primary">
+            {g(
+              gender,
+              "קראתי, הבנתי ואני מסכים לתנאים.",
+              "קראתי, הבנתי ואני מסכימה לתנאים.",
+            )}
+          </span>
+        </label>
+
+        <div className="mt-6 flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-btn text-sm text-text-muted hover:text-text-primary hover:bg-bg-surface transition-colors"
+          >
+            ביטול
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={!accepted}
+            className="px-5 py-2 rounded-btn text-sm font-semibold bg-gold text-white hover:bg-gold/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            {g(gender, "אני מאשר וקבל את הליד", "אני מאשרת וקבלת הליד")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
