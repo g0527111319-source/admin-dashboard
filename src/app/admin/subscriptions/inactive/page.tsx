@@ -121,7 +121,7 @@ export default async function InactivePaidPage() {
                     <td className="p-3 border-b border-white/[0.08] text-sm text-white">
                       <a
                         href={`tel:${r.phone}`}
-                        className="px-3.5 py-1.5 bg-gold text-black rounded-btn text-[13px] font-bold no-underline inline-block"
+                        className="btn-gold !px-3.5 !py-1.5 !text-[13px] no-underline inline-block"
                       >
                         התקשרי אליה
                       </a>

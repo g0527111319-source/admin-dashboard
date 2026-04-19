@@ -114,7 +114,7 @@ export default async function CollaborationReportPage({
             />
             <button
               type="submit"
-              className="px-5 py-2.5 bg-gold text-black border-none rounded-btn font-bold cursor-pointer"
+              className="btn-gold !px-5 !py-2.5 !text-sm"
             >
               חפש
             </button>
