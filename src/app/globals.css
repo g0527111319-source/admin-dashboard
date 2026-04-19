@@ -34,6 +34,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==============================
+   Zirat Design System (v4 utilities)
+   Signature twist buttons, aurora bg, cards, chips, badges.
+   Prefixed with `.ds-` so they live alongside the v2/v3 system
+   without overriding anything. Imported after Tailwind so DS
+   utilities can cascade over base utility classes when used.
+   ============================== */
+@import "./design-system.css";
+
 /* ============================
    PREMIUM DESIGN SYSTEM v2.0
    Apple / Stripe / Linear Level

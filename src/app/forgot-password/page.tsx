@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
+import { TwistButton } from "@/components/ds";
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function ForgotPasswordPage() {
@@ -85,9 +86,9 @@ export default function ForgotPasswordPage() {
 
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-              <button type="submit" disabled={loading} className="w-full btn-gold py-3 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              <TwistButton type="submit" disabled={loading} variant="primary" size="lg" className="w-full">
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t.submitButton}
-              </button>
+              </TwistButton>
             </form>
           </div>
         ) : (
@@ -99,9 +100,9 @@ export default function ForgotPasswordPage() {
             <p className="text-text-muted mb-6">
               {t.sentPrefix} {email} {t.sentSuffix}
             </p>
-            <a href="/login" className="btn-gold inline-block px-8 py-2.5">
+            <TwistButton href="/login" variant="primary" size="md">
               {siteText.auth.common.backToLogin}
-            </a>
+            </TwistButton>
           </div>
         )}
       </div>

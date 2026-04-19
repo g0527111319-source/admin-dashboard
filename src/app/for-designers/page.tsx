@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TwistButton, Eyebrow, GoldText } from "@/components/ds";
 
 export const metadata: Metadata = {
   title: "קהילה למעצבות פנים: הביאו עוד לקוחות ותצמחו כמקצועיות",
@@ -38,21 +39,18 @@ export default function ForDesignersLandingPage() {
     <main className="min-h-screen bg-bg">
       <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
         <header className="mb-14 text-center">
-          <p className="mb-3 text-xs uppercase tracking-luxury text-gold">למעצבות פנים</p>
+          <Eyebrow className="mb-3 inline-block">למעצבות פנים</Eyebrow>
           <h1 className="font-heading text-4xl sm:text-5xl text-text-primary leading-tight">
-            הקהילה המקצועית שמעצבת לך עסק מרוויח
+            הקהילה המקצועית שמעצבת לך <GoldText>עסק מרוויח</GoldText>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-text-secondary">
             מעצבת פנים מוכשרת ששווקית לבד שורפת אנרגיה על דברים הלא-נכונים. בקהילה את חלק
             ממאות מעצבות שמחלקות לקוחות, ספקים, ידע ותוכנות — וצומחות ביחד.
           </p>
-          <div className="mt-8 flex justify-center gap-4">
-            <Link
-              href="/register"
-              className="rounded-btn bg-gold px-8 py-3 font-medium text-bg-dark hover:bg-gold-light transition"
-            >
+          <div className="mt-8 flex justify-center gap-4 flex-wrap">
+            <TwistButton href="/register" variant="primary" size="lg">
               הצטרפי לקהילה
-            </Link>
+            </TwistButton>
             <Link
               href="/blog/interior-designer-business-pricing"
               className="rounded-btn border border-border-subtle px-6 py-3 font-medium text-text-primary hover:border-gold transition"
@@ -81,12 +79,9 @@ export default function ForDesignersLandingPage() {
           <p className="text-text-secondary mb-8">
             בעיקר בזכות הפניות, שדרוג תמחור, וגישה לספקים במחירים של קהילה.
           </p>
-          <Link
-            href="/register"
-            className="inline-block rounded-btn bg-gold px-10 py-4 text-lg font-medium text-bg-dark hover:bg-gold-light transition"
-          >
+          <TwistButton href="/register" variant="primary" size="lg">
             התחילי בחינם
-          </Link>
+          </TwistButton>
         </section>
       </section>
     </main>

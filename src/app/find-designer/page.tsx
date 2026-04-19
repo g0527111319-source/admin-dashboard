@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FindDesignerForm from "@/components/leads/FindDesignerForm";
+import { Eyebrow, GoldText } from "@/components/ds";
 
 export const metadata: Metadata = {
   title: "אני מחפש/ת מעצבת פנים — זירת האדריכלות",
@@ -20,9 +21,9 @@ export default function FindDesignerPage() {
     <main className="min-h-screen bg-bg">
       <section className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
         <header className="mb-10 text-center">
-          <p className="mb-3 text-xs uppercase tracking-luxury text-gold">שירות התאמה חינם</p>
+          <Eyebrow className="mb-3 inline-block">שירות התאמה חינם</Eyebrow>
           <h1 className="font-heading text-4xl sm:text-5xl text-text-primary leading-tight">
-            מוצאים לך את המעצבת המתאימה
+            מוצאים לך את <GoldText>המעצבת המתאימה</GoldText>
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-text-secondary">
             מלא/י את הטופס הקצר, ומנהלת הקהילה תאתר עד 3 מעצבות מהקהילה שמתאימות לסגנון, לתקציב

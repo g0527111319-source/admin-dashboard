@@ -9,21 +9,35 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Premium Luxury Palette
+        // === DESIGN SYSTEM v3.0 — זירת האדריכלות ===
+        // Premium Luxury Palette — gold / cream / ink
         bg: {
-          DEFAULT: "#FAFAF8",
-          card: "#FFFFFF",
-          "card-hover": "#FDFCFA",
-          surface: "#F5F4F0",
-          "surface-2": "#EEEDEA",
-          sidebar: "#FCFBF9",
-          dark: "#0A0A0A",
-          "dark-surface": "#141414",
+          DEFAULT: "#FAF9F6",       // cream (main background)
+          card: "#FDFCFA",          // cream-3
+          "card-hover": "#FFFBEF",
+          surface: "#F5ECD3",       // cream-2 (warm card bg)
+          "surface-2": "#EEDBA8",
+          sidebar: "#1a1410",       // ink (dark sidebar)
+          dark: "#0e0b08",          // deep ink
+          "dark-surface": "#1a1410",
+        },
+        cream: {
+          DEFAULT: "#FAF9F6",
+          50: "#FDFCFA",
+          100: "#F5ECD3",
+          200: "#EEDBA8",
+        },
+        ink: {
+          DEFAULT: "#1a1410",
+          2: "#2a1f17",
+          muted: "#6a5020",
+          deep: "#0e0b08",
         },
         gold: {
           DEFAULT: "#C9A84C",
           light: "#E8C97A",
           dim: "#8B6914",
+          deep: "#5A4608",
           dark: "#7A6520",
           50: "#FBF7ED",
           100: "#F5ECD3",
@@ -31,13 +45,14 @@ const config: Config = {
           500: "#C9A84C",
           600: "#B8952F",
           700: "#8B6914",
+          800: "#5A4608",
         },
-        "text-primary": "#111111",
-        "text-secondary": "#374151",
-        "text-muted": "#6B7280",
-        "text-faint": "#9CA3AF",
-        "border-subtle": "#E5E5E0",
-        "border-hover": "#D1D0CB",
+        "text-primary": "#1a1410",
+        "text-secondary": "#2a1f17",
+        "text-muted": "#6a5020",
+        "text-faint": "#8B6914",
+        "border-subtle": "rgba(201, 168, 76, 0.20)",
+        "border-hover": "rgba(201, 168, 76, 0.40)",
         "border-gold": "rgba(201, 168, 76, 0.25)",
         // Section Accent Colors
         accent: {
@@ -114,9 +129,17 @@ const config: Config = {
         "gold-gradient": "linear-gradient(135deg, #C9A84C, #E8C97A, #C9A84C)",
         "gold-shimmer": "linear-gradient(90deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%)",
         "gold-subtle": "linear-gradient(135deg, #C9A84C 0%, #D4B65E 100%)",
-        "hero-gradient": "linear-gradient(135deg, #0A0A0A 0%, #1a1a1a 100%)",
-        "warm-gradient": "linear-gradient(135deg, #FAFAF8 0%, #F5F4F0 100%)",
-        "card-gradient": "linear-gradient(180deg, #FFFFFF 0%, #FDFCFA 100%)",
+        // Design System brand gradient — used in gold-text and primary buttons
+        "brand-gradient":
+          "linear-gradient(90deg, #5A4608 0%, #8B6914 25%, #C9A84C 50%, #E8C97A 75%, #C9A84C 100%)",
+        "twist-primary":
+          "linear-gradient(135deg, #F5D77F 0%, #C9A84C 40%, #8B6914 80%, #5A4608 100%)",
+        "twist-secondary":
+          "linear-gradient(135deg, #FFFDF6 0%, #FAF2DD 55%, #F5ECD3 100%)",
+        "card-highlight": "linear-gradient(145deg, #FFFBEF, #F5ECD3)",
+        "hero-gradient": "linear-gradient(135deg, #1a1410 0%, #0e0b08 100%)",
+        "warm-gradient": "linear-gradient(135deg, #FAF9F6 0%, #F5ECD3 100%)",
+        "card-gradient": "linear-gradient(180deg, #FDFCFA 0%, #F5ECD3 100%)",
       },
       spacing: {
         "sidebar": "260px",
@@ -130,6 +153,10 @@ const config: Config = {
         "scale-in": "scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
         "gold-pulse": "goldPulse 3s ease-in-out infinite",
         float: "float 6s ease-in-out infinite",
+        // Design System v3.0
+        "aurora-drift": "auroraDrift 24s ease-in-out infinite",
+        "gold-sheen": "goldSheen 6s linear infinite",
+        "logo-draw": "logoDraw 1.6s ease forwards",
         // v3.0 — Premium Animations
         shimmer: "shimmer 2s ease-in-out infinite",
         "gold-glow": "goldGlow 2s ease-in-out infinite",
@@ -222,6 +249,22 @@ const config: Config = {
           "0%, 100%": { transform: "translateX(0)" },
           "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-4px)" },
           "20%, 40%, 60%, 80%": { transform: "translateX(4px)" },
+        },
+        // Design System v3.0 — aurora blobs drift on landing pages
+        auroraDrift: {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(40px, -30px) scale(1.1)" },
+          "66%": { transform: "translate(-30px, 40px) scale(0.95)" },
+        },
+        // Gold text sheen — runs on gold-text utility for that subtle shine
+        goldSheen: {
+          "0%": { backgroundPosition: "0 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+        // Logo stroke draw-in
+        logoDraw: {
+          "0%": { strokeDashoffset: "100" },
+          "100%": { strokeDashoffset: "0" },
         },
       },
       transitionTimingFunction: {

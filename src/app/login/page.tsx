@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
+import { TwistButton, Eyebrow, GoldText } from "@/components/ds";
 import { Shield, Store, Palette, Eye, EyeOff, ArrowLeft, Mail, Lock, Loader2, } from "lucide-react";
 type UserRole = "admin" | "supplier" | "designer";
 const roleMeta = {
@@ -154,12 +155,12 @@ function LoginContent() {
             <Logo size="xl" variant="dark"/>
           </div>
           <div className="max-w-lg">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-black/40 backdrop-blur-md px-4 py-2 text-xs text-gold-light tracking-widest uppercase mb-6">
+            <Eyebrow className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-black/40 backdrop-blur-md px-4 py-2 mb-6 text-gold-light">
               Interior Design Community
-            </div>
+            </Eyebrow>
             <h2 className="text-4xl xl:text-5xl font-heading font-bold text-white leading-tight mb-4">
               המקום שבו
-              <span className="block text-gold mt-2">עיצוב פוגש קהילה</span>
+              <GoldText className="block mt-2">עיצוב פוגש קהילה</GoldText>
             </h2>
             <p className="text-white/60 text-base leading-relaxed max-w-md">
               חללים מעוצבים, מטבחים יוקרתיים, בתים מרהיבים — הכל מתחיל כאן, בקהילה שמחברת מעצבות וספקים ברמה אחרת.
@@ -275,10 +276,9 @@ function LoginContent() {
                     {error}
                   </div>)}
 
-                <button type="submit" disabled={loading} className="w-full btn-gold py-3 text-base sm:text-lg font-semibold flex items-center justify-center gap-2 min-h-[48px]
-                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <TwistButton type="submit" disabled={loading} variant="primary" size="lg" className="w-full">
                   {loading ? (<Loader2 className="w-5 h-5 animate-spin"/>) : (siteText.auth.common.loginButton)}
-                </button>
+                </TwistButton>
               </form>
 
               {selectedRole !== "admin" && (<div className="mt-6 space-y-4">

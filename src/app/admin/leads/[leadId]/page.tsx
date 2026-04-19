@@ -14,6 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { TwistButton } from "@/components/ds";
 import {
   ArrowRight, Loader2, AlertTriangle, User, Phone, Mail, MapPin, Home, Ruler,
   Banknote, Clock, Palette, MessageSquare, Send, Archive, Trash2, RotateCw,
@@ -449,13 +450,16 @@ export default function AdminLeadDetailPage() {
             </p>
           </div>
           {canPostToCommunity && (
-            <button
+            <TwistButton
               onClick={postToCommunity}
               disabled={!!busy}
-              className="btn-gold flex items-center gap-2 text-sm"
+              variant="primary"
+              size="sm"
             >
-              <Send className="w-4 h-4" /> פרסם לקהילה
-            </button>
+              <span className="inline-flex items-center gap-2">
+                <Send className="w-4 h-4" /> פרסם לקהילה
+              </span>
+            </TwistButton>
           )}
           {lead.status === "POSTED_TO_COMMUNITY" && (
             <span className="text-xs text-purple-600 flex items-center gap-1">
@@ -477,14 +481,18 @@ export default function AdminLeadDetailPage() {
                   <span className="text-text-muted text-xs">
                     נבחרו {selectedDesignerIds.size} / 3
                   </span>
-                  <button
+                  <TwistButton
                     onClick={assignDesigners}
                     disabled={!!busy || selectedDesignerIds.size === 0}
-                    className="btn-gold flex items-center gap-2 text-sm disabled:opacity-40"
+                    variant="primary"
+                    size="sm"
+                    className="disabled:opacity-40"
                   >
-                    {busy === "assign" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    הקצה לנבחרות
-                  </button>
+                    <span className="inline-flex items-center gap-2">
+                      {busy === "assign" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      הקצה לנבחרות
+                    </span>
+                  </TwistButton>
                 </div>
               )}
             </div>

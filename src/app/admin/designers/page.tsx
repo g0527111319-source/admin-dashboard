@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { AREAS, SPECIALIZATIONS, formatCurrency } from "@/lib/utils";
 import { g } from "@/lib/gender";
+import { TwistButton } from "@/components/ds";
 
 // ==========================================
 // Types
@@ -359,9 +360,11 @@ export default function DesignersPage() {
           <button className="btn-outline flex items-center gap-2 text-sm">
             <Download className="w-4 h-4" />ייצוא Excel
           </button>
-          <button className="btn-gold flex items-center gap-2 text-sm">
-            <Plus className="w-4 h-4" />הוסף מעצבת
-          </button>
+          <TwistButton variant="primary" size="sm">
+            <span className="inline-flex items-center gap-2">
+              <Plus className="w-4 h-4" />הוסף מעצבת
+            </span>
+          </TwistButton>
         </div>
       </div>
 

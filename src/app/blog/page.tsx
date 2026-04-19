@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPostsMeta } from "@/lib/blog";
+import { Eyebrow } from "@/components/ds";
 
 export const metadata: Metadata = {
   title: "הבלוג | טיפים, מגמות ותובנות לעיצוב פנים ואדריכלות",
@@ -32,7 +33,7 @@ export default function BlogIndexPage() {
     <main className="min-h-screen bg-bg">
       <section className="mx-auto max-w-4xl px-6 py-16 sm:py-24">
         <header className="mb-12 text-center">
-          <p className="mb-3 text-xs uppercase tracking-luxury text-gold">הבלוג</p>
+          <Eyebrow className="mb-3 inline-block">הבלוג</Eyebrow>
           <h1 className="font-heading text-4xl sm:text-5xl text-text-primary">
             טיפים, מגמות ותובנות לעיצוב פנים ואדריכלות
           </h1>

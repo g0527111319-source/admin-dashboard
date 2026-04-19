@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
+import { TwistButton } from "@/components/ds";
 import {
   User, Mail, Phone, Lock, Eye, EyeOff, MapPin, Briefcase, Loader2,
   CheckCircle2, Store, Palette, ArrowLeft, Hash, Calendar, Home, Building2,
@@ -183,9 +184,9 @@ export default function RegisterPage() {
             <p className="text-text-muted mb-6">
               {role === "designer" ? t.successDesigner : t.successSupplier}
             </p>
-            <a href="/login" className="btn-gold inline-block px-8 py-2.5">
+            <TwistButton href="/login" variant="primary" size="md">
               {t.backToLogin}
-            </a>
+            </TwistButton>
           </div>
         </div>
       </div>
@@ -542,9 +543,9 @@ export default function RegisterPage() {
 
                 {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-                <button type="submit" disabled={loading} className="w-full btn-gold py-3 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
+                <TwistButton type="submit" disabled={loading} variant="primary" size="lg" className="w-full mt-2">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t.submitButton}
-                </button>
+                </TwistButton>
               </form>
 
               <p className="text-center text-text-muted text-sm mt-6">

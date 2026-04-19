@@ -9,6 +9,7 @@ import {
   Activity, Heart, ArrowUpRight, ArrowDownRight, Eye, Zap, BarChart3, Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { TwistButton } from "@/components/ds";
 
 // ==========================================
 // Types
@@ -330,9 +331,11 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/admin/posts" className="btn-gold text-sm flex items-center gap-2 w-fit">
-            <FileText className="w-4 h-4" />אשר פרסומים ({stats.pendingPosts})
-          </Link>
+          <TwistButton href="/admin/posts" variant="primary" size="sm">
+            <span className="inline-flex items-center gap-2">
+              <FileText className="w-4 h-4" />אשר פרסומים ({stats.pendingPosts})
+            </span>
+          </TwistButton>
           <Link href="/admin/reports" className="btn-outline text-sm flex items-center gap-2 w-fit">
             <BarChart3 className="w-4 h-4" />דוחות
           </Link>

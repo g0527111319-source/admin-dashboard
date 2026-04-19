@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
+import { TwistButton } from "@/components/ds";
 
 /* ─── Types ─── */
 interface Attendee {
@@ -492,10 +493,12 @@ export default function EventsPage() {
 
             <div className="gold-separator" />
 
-            <button className="btn-gold flex items-center gap-2 text-sm w-full justify-center">
-              <Plus className="w-4 h-4" />
-              {"צור אירוע"}
-            </button>
+            <TwistButton variant="primary" size="sm" className="w-full">
+              <span className="inline-flex items-center justify-center gap-2">
+                <Plus className="w-4 h-4" />
+                {"צור אירוע"}
+              </span>
+            </TwistButton>
           </div>
         </div>
       )}

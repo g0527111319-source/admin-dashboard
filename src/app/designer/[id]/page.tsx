@@ -25,6 +25,7 @@ import CrmHandoffChecklist from "@/components/crm/CrmHandoffChecklist";
 import CrmOnboarding from "@/components/crm/CrmOnboarding";
 import CrmChat from "@/components/crm/CrmChat";
 import CrmStyleQuiz from "@/components/crm/CrmStyleQuiz";
+import { TwistButton } from "@/components/ds";
 import ChatBot from "@/components/crm/ChatBot";
 import type { DesignerContext } from "@/components/crm/ChatBot";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
@@ -377,7 +378,7 @@ export default function DesignerDashboard() {
         <div className="min-h-screen bg-bg flex items-center justify-center" dir="rtl">
           <div className="text-center">
             <p className="text-red-400 text-sm mb-3">{profileError}</p>
-            <button onClick={() => window.location.reload()} className="btn-gold px-4 py-2 rounded-lg text-sm">נסה שוב</button>
+            <TwistButton onClick={() => window.location.reload()} variant="primary" size="sm">נסה שוב</TwistButton>
           </div>
         </div>
       );
@@ -1022,7 +1023,7 @@ export default function DesignerDashboard() {
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::090", "הערות (אופציונלי — אנונימי)")}</label>
                     <textarea className="input-field h-20 resize-none" placeholder={g(gender, "שתף את החוויה שלך...", "שתפי את החוויה שלך...")} />
                   </div>
-                  <button className="btn-gold w-full">{txt("src/app/designer/[id]/page.tsx::092", "שלח דיווח")}</button>
+                  <TwistButton variant="primary" size="md" className="w-full">{txt("src/app/designer/[id]/page.tsx::092", "שלח דיווח")}</TwistButton>
                   <p className="text-text-muted text-xs text-center">{g(gender, "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנס להגרלה החודשית!", "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנסי להגרלה החודשית!")}</p>
                 </div>
               </div>
@@ -1432,11 +1433,12 @@ export default function DesignerDashboard() {
                       {profileMsg.text}
                     </div>
                   )}
-                  <button onClick={saveProfile} disabled={profileSaving}
-                    className="btn-gold flex items-center justify-center gap-2 w-full sm:w-auto px-8">
-                    {profileSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                    {profileSaving ? g(gender, "שומר...", "שומרת...") : g(gender, "שמור שינויים", "שמרי שינויים")}
-                  </button>
+                  <TwistButton onClick={saveProfile} disabled={profileSaving} variant="primary" size="md" className="w-full sm:w-auto">
+                    <span className="inline-flex items-center gap-2">
+                      {profileSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                      {profileSaving ? g(gender, "שומר...", "שומרת...") : g(gender, "שמור שינויים", "שמרי שינויים")}
+                    </span>
+                  </TwistButton>
                 </div>
               </div>
             )}
@@ -1475,7 +1477,7 @@ export default function DesignerDashboard() {
               <div className="space-y-3">
                 <input type="number" className="input-field" placeholder="סכום העסקה (₪)" />
                 <input type="text" className="input-field" placeholder="תיאור קצר" />
-                <button onClick={() => setShowDealModal(false)} className="btn-gold w-full mt-2">{txt("src/app/designer/[id]/page.tsx::127", "שלח דיווח")}</button>
+                <TwistButton onClick={() => setShowDealModal(false)} variant="primary" size="md" className="w-full mt-2">{txt("src/app/designer/[id]/page.tsx::127", "שלח דיווח")}</TwistButton>
               </div>
             </div>
           </div>

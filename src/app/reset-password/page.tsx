@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
+import { TwistButton } from "@/components/ds";
 import { Lock, Eye, EyeOff, Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 export default function ResetPasswordPage() {
@@ -35,9 +36,9 @@ function ResetPasswordContent() {
           </div>
           <h2 className="text-xl font-bold text-text-primary mb-2">{t.invalidTitle}</h2>
           <p className="text-text-muted mb-6">{t.invalidDescription}</p>
-          <a href="/forgot-password" className="btn-gold inline-block px-8 py-2.5">
+          <TwistButton href="/forgot-password" variant="primary" size="md">
             {t.requestNewLink}
-          </a>
+          </TwistButton>
         </div>
       </div>
     );
@@ -116,9 +117,9 @@ function ResetPasswordContent() {
 
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-              <button type="submit" disabled={loading} className="w-full btn-gold py-3 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              <TwistButton type="submit" disabled={loading} variant="primary" size="lg" className="w-full">
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t.saveButton}
-              </button>
+              </TwistButton>
             </form>
           </div>
         ) : (
@@ -128,9 +129,9 @@ function ResetPasswordContent() {
             </div>
             <h2 className="text-xl font-bold text-text-primary mb-2">{t.successTitle}</h2>
             <p className="text-text-muted mb-6">{t.successDescription}</p>
-            <a href="/login" className="btn-gold inline-block px-8 py-2.5">
+            <TwistButton href="/login" variant="primary" size="md">
               {siteText.auth.common.loginButton}
-            </a>
+            </TwistButton>
           </div>
         )}
       </div>

@@ -1,0 +1,411 @@
+/* ============================================================
+   DESIGN SYSTEM v3.0 — זירת האדריכלות
+   The signature utilities of the new visual identity.
+   Imported from globals.css (at bottom, after Tailwind layers).
+   ============================================================ */
+
+/* --- Gold text — brand gradient with sheen animation --- */
+.ds-gold-text {
+  background: linear-gradient(90deg, #5A4608 0%, #8B6914 20%, #C9A84C 50%, #E8C97A 75%, #C9A84C 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: dsGoldSheen 6s linear infinite;
+}
+@keyframes dsGoldSheen {
+  0% { background-position: 0 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* --- Eyebrow — small uppercase label above headings --- */
+.ds-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #8B6914;
+  font-weight: 500;
+}
+
+/* --- Aurora background — floating gold blobs behind content --- */
+.ds-aurora-bg {
+  position: relative;
+  overflow: hidden;
+  background: #FAF9F6;
+}
+.ds-aurora-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 10%, rgba(232, 201, 122, 0.35), transparent 60%),
+    radial-gradient(ellipse 50% 45% at 80% 70%, rgba(201, 168, 76, 0.22), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.ds-aurora-bg > * { position: relative; z-index: 1; }
+
+/* --- Aurora blobs — animated drifting orbs (use for hero) --- */
+.ds-aurora-blobs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.ds-aurora-blobs span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  animation: dsAuroraDrift 24s ease-in-out infinite;
+}
+.ds-aurora-blobs span:nth-child(1) {
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, #E8C97A, transparent 60%);
+  top: -100px; right: -80px;
+}
+.ds-aurora-blobs span:nth-child(2) {
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, #C9A84C, transparent 65%);
+  top: 40%; left: -150px;
+  animation-delay: -8s;
+  animation-duration: 30s;
+}
+.ds-aurora-blobs span:nth-child(3) {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, #8B6914, transparent 65%);
+  bottom: -120px; right: 30%;
+  animation-delay: -14s;
+}
+@keyframes dsAuroraDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.1); }
+  66% { transform: translate(-30px, 40px) scale(0.95); }
+}
+
+/* --- Blueprint grid — architectural reference grid --- */
+.ds-blueprint {
+  background-image:
+    linear-gradient(rgba(201, 168, 76, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 168, 76, 0.09) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-color: #FAF9F6;
+}
+
+/* --- Reveal line — horizontal gold gradient separator --- */
+.ds-reveal-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #C9A84C, transparent);
+}
+
+/* ============================================================
+   TWIST BUTTON — the signature CTA of the brand
+   Organic asymmetric border-radius that morphs on hover.
+   ============================================================ */
+.ds-twist {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  padding: 0 28px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  min-width: 180px;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: var(--font-rubik), "Rubik", sans-serif;
+  text-decoration: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ds-twist:disabled { opacity: 0.55; cursor: not-allowed; }
+.ds-twist.ds-twist-lg { height: 72px; min-width: 220px; font-size: 15px; padding: 0 32px; }
+.ds-twist.ds-twist-sm { height: 44px; min-width: 130px; font-size: 13px; padding: 0 20px; }
+
+.ds-twist-blob {
+  position: absolute;
+  inset: 0;
+  border-radius: 62% 38% 58% 42% / 50% 60% 40% 50%;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ds-twist-halo {
+  position: absolute;
+  inset: -3px -4px;
+  border-radius: 62% 38% 58% 42% / 50% 60% 40% 50%;
+  border: 1.5px dashed rgba(139, 105, 20, 0.45);
+  transform: rotate(-1.2deg);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.ds-twist:hover .ds-twist-blob {
+  border-radius: 38% 62% 42% 58% / 60% 40% 54% 46%;
+  transform: rotate(-2.2deg) scale(1.04);
+}
+.ds-twist:hover .ds-twist-halo {
+  border-radius: 38% 62% 42% 58% / 60% 40% 54% 46%;
+  transform: rotate(2.5deg) scale(1.04);
+}
+.ds-twist:active .ds-twist-blob { transform: rotate(-1deg) scale(0.98); }
+
+.ds-twist-label {
+  position: relative;
+  z-index: 2;
+  white-space: nowrap;
+  font-family: var(--font-rubik), "Rubik", sans-serif;
+}
+
+/* Primary — gold gradient fill */
+.ds-twist-primary .ds-twist-blob {
+  background: linear-gradient(135deg, #F5D77F 0%, #C9A84C 40%, #8B6914 80%, #5A4608 100%);
+  border: 2px solid rgba(58, 42, 16, 0.4);
+  box-shadow:
+    inset 0 3px 12px rgba(255, 253, 247, 0.45),
+    inset 0 -6px 14px rgba(58, 42, 16, 0.35);
+}
+.ds-twist-primary .ds-twist-label {
+  color: #FFF8E8;
+  text-shadow: 0 1px 2px rgba(58, 42, 16, 0.35);
+}
+
+/* Secondary — cream fill with gold border */
+.ds-twist-secondary .ds-twist-blob {
+  background: linear-gradient(135deg, #FFFDF6 0%, #FAF2DD 55%, #F5ECD3 100%);
+  border: 2px solid rgba(139, 105, 20, 0.5);
+  box-shadow:
+    inset 0 3px 10px rgba(255, 253, 247, 0.9),
+    inset 0 -6px 14px rgba(201, 168, 76, 0.22);
+}
+.ds-twist-secondary .ds-twist-label { color: #5A4608; }
+
+/* Dark — ink background, gold text */
+.ds-twist-dark .ds-twist-blob {
+  background: #1a1410;
+  border: 2px solid #8B6914;
+  box-shadow: inset 0 0 20px rgba(201, 168, 76, 0.15);
+}
+.ds-twist-dark .ds-twist-label { color: #E8C97A; }
+
+/* ============================================================
+   DESIGN SYSTEM CARD
+   ============================================================ */
+.ds-card {
+  border-radius: 24px;
+  background: rgba(255, 253, 247, 0.75);
+  border: 1px solid rgba(201, 168, 76, 0.20);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 24px;
+  box-shadow:
+    0 1px 0 rgba(201, 168, 76, 0.15),
+    0 20px 50px -25px rgba(26, 20, 16, 0.2);
+}
+.ds-card-highlight {
+  background: linear-gradient(145deg, #FFFBEF, #F5ECD3);
+  border-color: rgba(201, 168, 76, 0.4);
+}
+.ds-card-dark {
+  background: #1a1410;
+  color: #F5ECD3;
+  border-color: rgba(201, 168, 76, 0.3);
+}
+
+/* ============================================================
+   CHIPS + BADGES
+   ============================================================ */
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  background: rgba(201, 168, 76, 0.08);
+  font-size: 12px;
+  color: #5A4608;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ds-chip:hover { background: rgba(201, 168, 76, 0.15); }
+.ds-chip.ds-chip-active {
+  background: linear-gradient(90deg, #8B6914, #C9A84C);
+  color: #fff;
+  border-color: transparent;
+}
+
+.ds-badge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.ds-badge-new { background: linear-gradient(90deg, #5A4608, #C9A84C); color: #fff; }
+.ds-badge-ok { background: rgba(91, 140, 62, 0.15); color: #3a5a20; }
+.ds-badge-warn { background: rgba(201, 168, 76, 0.18); color: #8B6914; }
+.ds-badge-alert { background: rgba(180, 60, 60, 0.12); color: #7a2020; }
+
+/* ============================================================
+   INPUTS (cream variant) — used in public forms
+   ============================================================ */
+.ds-input {
+  width: 100%;
+  background: rgba(255, 253, 247, 0.8);
+  border: 1.5px solid rgba(139, 105, 20, 0.3);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-family: var(--font-rubik), "Rubik", sans-serif;
+  font-size: 15px;
+  color: #1a1410;
+  transition: all 0.2s;
+}
+.ds-input:focus {
+  outline: none;
+  border-color: #C9A84C;
+  box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.15);
+}
+.ds-label {
+  font-size: 12px;
+  color: #8B6914;
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+/* ============================================================
+   PILL TABS — for filtering/switching views
+   ============================================================ */
+.ds-pill-tabs {
+  display: inline-flex;
+  background: rgba(245, 236, 211, 0.5);
+  padding: 4px;
+  border-radius: 9999px;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  gap: 2px;
+}
+.ds-pill-tabs button {
+  border: none;
+  background: transparent;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-family: var(--font-rubik), "Rubik", sans-serif;
+  font-size: 13px;
+  color: #6a5020;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ds-pill-tabs button.ds-pill-active {
+  background: #fff;
+  color: #5A4608;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   STATS CARD
+   ============================================================ */
+.ds-stat {
+  padding: 22px;
+  border-radius: 20px;
+  background: rgba(255, 253, 247, 0.7);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+}
+.ds-stat-num {
+  font-family: var(--font-suez), "Suez One", serif;
+  font-size: 42px;
+  line-height: 1;
+  color: #1a1410;
+}
+.ds-stat-lbl,
+.ds-stat-label {
+  font-size: 12px;
+  color: #8B6914;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.ds-stat-delta {
+  font-size: 12px;
+  color: #3a5a20;
+  margin-top: 6px;
+  font-weight: 500;
+}
+.ds-stat-delta[data-direction="down"] { color: #7a2020; }
+
+/* ============================================================
+   PUBLIC NAV — the sticky top bar on marketing pages
+   ============================================================ */
+.ds-public-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 48px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(250, 249, 246, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+/* ============================================================
+   SIDEBAR — dark-ink sidebar for designer/admin workspaces
+   ============================================================ */
+.ds-sidebar {
+  width: 260px;
+  background: #1a1410;
+  color: #F5ECD3;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 1px solid rgba(201, 168, 76, 0.2);
+}
+.ds-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  color: rgba(245, 236, 211, 0.7);
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+.ds-nav-item:hover {
+  background: rgba(201, 168, 76, 0.08);
+  color: #E8C97A;
+}
+.ds-nav-item.ds-nav-active {
+  background: linear-gradient(90deg, rgba(201, 168, 76, 0.18), rgba(201, 168, 76, 0.04));
+  color: #E8C97A;
+  border-color: rgba(201, 168, 76, 0.3);
+}
+
+/* ============================================================
+   RESPONSIVE — aurora blobs smaller on mobile
+   ============================================================ */
+@media (max-width: 640px) {
+  .ds-aurora-blobs span:nth-child(1) { width: 280px; height: 280px; }
+  .ds-aurora-blobs span:nth-child(2) { width: 320px; height: 320px; }
+  .ds-aurora-blobs span:nth-child(3) { width: 240px; height: 240px; }
+  .ds-public-nav { padding: 16px 20px; }
+  .ds-sidebar { width: 100%; height: auto; position: static; }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .ds-gold-text { animation: none; background-position: 0 0; }
+  .ds-aurora-blobs span { animation: none; }
+  .ds-twist, .ds-twist-blob, .ds-twist-halo { transition: none; }
+}

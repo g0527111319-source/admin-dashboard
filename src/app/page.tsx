@@ -3,6 +3,12 @@
 import Logo from "@/components/ui/Logo";
 import DepthSection from "@/components/motion/DepthSection";
 import { DEPTH_IMAGES } from "@/lib/depth-images";
+import {
+  TwistButton,
+  Eyebrow,
+  GoldText,
+  DsCard,
+} from "@/components/ds";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowLeft,
@@ -194,10 +200,12 @@ export default function HomePage() {
               animate="visible"
               variants={fadeUp}
               custom={1}
-              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white/70 backdrop-blur-sm px-5 py-2 text-[11px] sm:text-xs text-gold-dim tracking-[0.3em] uppercase mb-8 shadow-sm font-rubik"
+              className="mb-8 inline-flex items-center justify-center"
             >
-              <Gem className="w-3.5 h-3.5 text-gold" />
-              הקהילה היוקרתית של אדריכלות הפנים בישראל
+              <Eyebrow className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white/70 backdrop-blur-sm px-5 py-2 shadow-sm">
+                <Gem className="w-3.5 h-3.5 text-gold" />
+                הקהילה היוקרתית של אדריכלות הפנים בישראל
+              </Eyebrow>
             </motion.div>
 
             {/* כותרת ראשית — שילוב פונטים יוקרתי */}
@@ -209,9 +217,9 @@ export default function HomePage() {
               className="leading-[1.02] text-[2.75rem] sm:text-6xl lg:text-[5.5rem] text-[#1a1410] tracking-tight"
             >
               <span className="font-suez">איפה שהעיצוב</span>
-              <span className="block mt-4 font-bellefair bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
+              <GoldText className="block mt-4 font-bellefair">
                 פוגש משפחה
-              </span>
+              </GoldText>
             </motion.h1>
 
             {/* תיאור פואטי */}
@@ -236,25 +244,21 @@ export default function HomePage() {
               className="mt-12 flex flex-col sm:flex-row gap-4 items-center justify-center"
             >
               {/* CTA ראשי — כניסה לאזור אישי */}
-              <Link
-                href="/login"
-                className="group relative inline-flex items-center gap-3 px-8 sm:px-10 py-4 rounded-full bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] text-white font-semibold text-base sm:text-lg shadow-[0_12px_40px_rgba(201,168,76,0.35)] hover:shadow-[0_20px_55px_rgba(201,168,76,0.5)] hover:-translate-y-0.5 transition-all duration-500 overflow-hidden"
-              >
-                {/* נצנוץ רץ */}
-                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-l from-transparent via-white/40 to-transparent" />
-                <Sparkles className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">כניסה לאזור אישי</span>
-                <ArrowLeft className="w-5 h-5 relative z-10 group-hover:-translate-x-1 transition-transform" />
-              </Link>
+              <TwistButton href="/login" variant="primary" size="lg">
+                <span className="inline-flex items-center gap-3">
+                  <Sparkles className="w-5 h-5" />
+                  <span>כניסה לאזור אישי</span>
+                  <ArrowLeft className="w-5 h-5" />
+                </span>
+              </TwistButton>
 
               {/* CTA משני — הרשמה */}
-              <Link
-                href="/register"
-                className="group inline-flex items-center gap-2 px-7 py-4 rounded-full border-2 border-gold/40 bg-white/70 backdrop-blur-sm text-gold-dim font-semibold text-base hover:border-gold hover:bg-white transition-all duration-300"
-              >
-                <span>להצטרפות לקהילה</span>
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              </Link>
+              <TwistButton href="/register" variant="secondary" size="lg">
+                <span className="inline-flex items-center gap-2">
+                  <span>להצטרפות לקהילה</span>
+                  <ArrowLeft className="w-4 h-4" />
+                </span>
+              </TwistButton>
             </motion.div>
 
             {/* CTA ייעודי ללקוחות פרטיים — "אני מחפש מעצבת" */}
@@ -265,14 +269,13 @@ export default function HomePage() {
               custom={4.5}
               className="mt-6 flex items-center justify-center"
             >
-              <Link
-                href="/find-designer"
-                className="group relative inline-flex items-center gap-3 px-9 py-4 rounded-full bg-white border-2 border-dashed border-gold hover:border-solid hover:bg-gold/5 text-gold-dim font-semibold text-base shadow-[0_8px_24px_rgba(201,168,76,0.12)] hover:shadow-[0_14px_36px_rgba(201,168,76,0.25)] transition-all duration-400"
-              >
-                <Home className="w-5 h-5" />
-                <span>אני מחפש/ת מעצבת לפרויקט שלי</span>
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              </Link>
+              <TwistButton href="/find-designer" variant="secondary" size="md">
+                <span className="inline-flex items-center gap-3">
+                  <Home className="w-5 h-5" />
+                  <span>אני מחפש/ת מעצבת לפרויקט שלי</span>
+                  <ArrowLeft className="w-4 h-4" />
+                </span>
+              </TwistButton>
             </motion.div>
 
             {/* מספרים */}
@@ -330,10 +333,10 @@ export default function HomePage() {
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeUp}
-            className="inline-flex items-center gap-2 text-xs tracking-[0.3em] uppercase text-gold-dim mb-6"
+            className="mb-6 inline-flex items-center justify-center gap-2"
           >
             <div className="h-px w-10 bg-gold/40" />
-            מה זה זירת האדריכלות?
+            <Eyebrow>מה זה זירת האדריכלות?</Eyebrow>
             <div className="h-px w-10 bg-gold/40" />
           </motion.div>
 
@@ -346,7 +349,9 @@ export default function HomePage() {
             className="text-4xl sm:text-5xl lg:text-6xl text-[#1a1410] leading-[1.1] mb-8"
           >
             <span className="font-suez">הרבה יותר מקהילה.</span>
-            <span className="block mt-3 font-bellefair text-gold-dim">כל מה שצריך במקום אחד.</span>
+            <GoldText className="block mt-3 font-bellefair">
+              כל מה שצריך במקום אחד.
+            </GoldText>
           </motion.h2>
 
           <motion.p
@@ -426,14 +431,14 @@ export default function HomePage() {
               variants={fadeUp}
               className="text-center mb-14"
             >
-              <div className="inline-flex items-center gap-2 text-xs tracking-[0.3em] uppercase text-gold-dim mb-5">
+              <div className="inline-flex items-center gap-2 mb-5">
                 <div className="h-px w-10 bg-gold/40" />
-                השראה
+                <Eyebrow>השראה</Eyebrow>
                 <div className="h-px w-10 bg-gold/40" />
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#1a1410]">
                 <span className="font-suez">חללים</span>{" "}
-                <span className="font-bellefair text-gold-dim">שמספרים סיפור</span>
+                <GoldText className="font-bellefair">שמספרים סיפור</GoldText>
               </h2>
               <p className="mt-4 text-text-muted max-w-xl mx-auto">
                 פרויקטים אמיתיים של המעצבות בקהילה — מהסלון ועד הגינה.
@@ -507,9 +512,9 @@ export default function HomePage() {
 
             <h2 className="text-4xl sm:text-5xl lg:text-6xl text-[#1a1410] leading-tight mb-6">
               <span className="font-suez">מוכנות להיות</span>
-              <span className="block mt-3 font-bellefair bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] bg-clip-text text-transparent">
+              <GoldText className="block mt-3 font-bellefair">
                 חלק מהבית?
-              </span>
+              </GoldText>
             </h2>
 
             <p className="text-lg sm:text-xl text-text-secondary leading-relaxed mb-10 max-w-2xl mx-auto">
@@ -518,15 +523,13 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-              <Link
-                href="/register"
-                className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-full bg-gradient-to-l from-[#8B6914] via-gold to-[#E8C97A] text-white font-semibold text-lg shadow-[0_15px_45px_rgba(201,168,76,0.4)] hover:shadow-[0_25px_60px_rgba(201,168,76,0.55)] hover:-translate-y-1 transition-all duration-500 overflow-hidden"
-              >
-                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-l from-transparent via-white/40 to-transparent" />
-                <Sparkles className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">בואי להצטרף</span>
-                <ArrowLeft className="w-5 h-5 relative z-10 group-hover:-translate-x-1 transition-transform" />
-              </Link>
+              <TwistButton href="/register" variant="primary" size="lg">
+                <span className="inline-flex items-center gap-3">
+                  <Sparkles className="w-5 h-5" />
+                  <span>בואי להצטרף</span>
+                  <ArrowLeft className="w-5 h-5" />
+                </span>
+              </TwistButton>
 
               <Link
                 href="/login"
