@@ -1,15 +1,50 @@
 {
   "name": "זירת האדריכלות",
-  "short_name": "זירת",
-  "description": "קהילה שהיא בית - מערכת ניהול למעצבות פנים",
-  "start_url": "/",
+  "short_name": "זירה",
+  "description": "קהילה שהיא בית — קהילת המעצבות והאדריכליות הגדולה בישראל. הזדמנויות עסקיות, ספקים, אירועים, CRM מובנה ושיתופי פעולה.",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#050505",
   "theme_color": "#C9A84C",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "dir": "rtl",
   "lang": "he",
+  "categories": ["business", "productivity", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "/logo-sticker.webp", "sizes": "512x512", "type": "image/webp" }
+    { "src": "/icons/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "לוח בקרה",
+      "short_name": "בית",
+      "description": "מעבר מהיר ללוח הבקרה האישי",
+      "url": "/?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "ספקים",
+      "short_name": "ספקים",
+      "description": "גלריית הספקים של הקהילה",
+      "url": "/?source=pwa-suppliers#suppliers",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "אירועים",
+      "short_name": "אירועים",
+      "description": "האירועים הקרובים",
+      "url": "/?source=pwa-events#events",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

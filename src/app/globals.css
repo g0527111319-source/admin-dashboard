@@ -1809,3 +1809,69 @@ img {
 svg {
   shape-rendering: geometricPrecision;
 }
+
+/* ============================================================
+   MOBILE / PWA / TWA — Safe Areas & Touch Targets
+   ============================================================
+   - viewport-fit=cover in layout.tsx enables env(safe-area-inset-*)
+   - On iPhone X+/14+, TWA full-screen, respect notch and home bar
+   - On Android TWA, status bar overlay protection
+   ============================================================ */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* When running as PWA/TWA (standalone display mode), the body padding
+     above provides the safe-area buffer. Fixed bottom navs should add
+     their own offset via this utility class. */
+  .pwa-safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  }
+  .pwa-safe-top {
+    padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+  }
+}
+
+/* Standalone mode — apply extra styling only when running as installed PWA */
+@media all and (display-mode: standalone),
+       all and (display-mode: window-controls-overlay),
+       all and (display-mode: fullscreen) {
+  /* Hide any "install app" prompts when already installed */
+  [data-hide-when-installed] { display: none !important; }
+
+  /* Prevent accidental text selection on tap in PWA mode for UI chrome */
+  .no-select-pwa {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Touch target minimum size (WCAG / Google Play quality guideline: 48x48) */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"], input[type="submit"], input[type="button"] {
+    min-height: 44px;
+  }
+  /* Allow explicit opt-out for icon buttons where 44px is too big */
+  .touch-target-small {
+    min-height: auto !important;
+  }
+}
+
+/* Prevent iOS Safari from zooming in on inputs when focused (font-size < 16px triggers it) */
+@media screen and (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Disable pull-to-refresh bounce on PWA (annoying in app mode) */
+@media all and (display-mode: standalone) {
+  html, body {
+    overscroll-behavior-y: contain;
+  }
+}

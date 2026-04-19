@@ -149,8 +149,15 @@ export const metadata: Metadata = {
         },
     },
     icons: {
-        icon: "/favicon.ico",
-        apple: "/logo-sticker.webp",
+        icon: [
+            { url: "/favicon.ico" },
+            { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+            { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+            { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+        ],
+        apple: [
+            { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        ],
     },
     verification: {
         google: "yfcoIh96qYOARTamBbB2-Tq1ZTWaNmkdUce1stOym1s",
@@ -189,8 +196,18 @@ export default function RootLayout({ children, }: Readonly<{
         <link rel="manifest" href="/manifest.json" />
         <meta name="google-site-verification" content="yfcoIh96qYOARTamBbB2-Tq1ZTWaNmkdUce1stOym1s" />
         <meta name="theme-color" content="#C9A84C" />
+        {/* iOS Safari: enable PWA mode when user adds to home screen */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/logo-sticker.webp" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="זירה" />
+        <meta name="format-detection" content="telephone=no" />
+        {/* viewport-fit=cover lets the app render into iPhone notch safe areas */}
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover"
+        />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         {/* Inline script prevents FOUC when user has chosen dark mode */}
         <script dangerouslySetInnerHTML={{ __html: ThemeScript }} />
         {/* SEO: structured data for rich results in Google */}

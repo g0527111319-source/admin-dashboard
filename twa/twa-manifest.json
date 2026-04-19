@@ -1,0 +1,50 @@
+{
+  "packageId": "co.il.ziratadrichalut.twa",
+  "host": "www.ziratadrichalut.co.il",
+  "name": "זירת האדריכלות",
+  "launcherName": "זירה",
+  "display": "standalone",
+  "themeColor": "#C9A84C",
+  "navigationColor": "#050505",
+  "navigationColorDark": "#050505",
+  "navigationDividerColor": "#050505",
+  "navigationDividerColorDark": "#050505",
+  "backgroundColor": "#050505",
+  "enableNotifications": true,
+  "startUrl": "/?source=android",
+  "iconUrl": "https://www.ziratadrichalut.co.il/icons/icon-512.png",
+  "maskableIconUrl": "https://www.ziratadrichalut.co.il/icons/icon-maskable-512.png",
+  "monochromeIconUrl": "https://www.ziratadrichalut.co.il/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "shortcuts": [
+    {
+      "name": "לוח בקרה",
+      "shortName": "בית",
+      "url": "/?source=android-shortcut",
+      "chosenIconUrl": "https://www.ziratadrichalut.co.il/icons/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://www.ziratadrichalut.co.il/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": { "enabled": true },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "appVersion": "1.0.0",
+  "minSdkVersion": 23,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  }
+}
