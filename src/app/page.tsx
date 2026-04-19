@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ChevronDown,
   Heart,
+  Home,
 } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
@@ -252,6 +253,24 @@ export default function HomePage() {
                 className="group inline-flex items-center gap-2 px-7 py-4 rounded-full border-2 border-gold/40 bg-white/70 backdrop-blur-sm text-gold-dim font-semibold text-base hover:border-gold hover:bg-white transition-all duration-300"
               >
                 <span>להצטרפות לקהילה</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+
+            {/* CTA ייעודי ללקוחות פרטיים — "אני מחפש מעצבת" */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={4.5}
+              className="mt-6 flex items-center justify-center"
+            >
+              <Link
+                href="/find-designer"
+                className="group relative inline-flex items-center gap-3 px-9 py-4 rounded-full bg-white border-2 border-dashed border-gold hover:border-solid hover:bg-gold/5 text-gold-dim font-semibold text-base shadow-[0_8px_24px_rgba(201,168,76,0.12)] hover:shadow-[0_14px_36px_rgba(201,168,76,0.25)] transition-all duration-400"
+              >
+                <Home className="w-5 h-5" />
+                <span>אני מחפש/ת מעצבת לפרויקט שלי</span>
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               </Link>
             </motion.div>

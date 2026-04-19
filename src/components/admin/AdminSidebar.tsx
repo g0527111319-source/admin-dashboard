@@ -3,9 +3,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/ui/Logo";
-import { LayoutDashboard, Users, Palette, FileText, Trophy, Calendar, BarChart3, Settings, MessageCircle, Star, ChevronRight, Menu, X, LogOut, UserPlus, CalendarClock, MapPin, Zap, CheckSquare, CreditCard, Tag, } from "lucide-react";
+import { LayoutDashboard, Users, Palette, FileText, Trophy, Calendar, BarChart3, Settings, MessageCircle, Star, ChevronRight, Menu, X, LogOut, UserPlus, CalendarClock, MapPin, Zap, CheckSquare, CreditCard, Tag, Inbox, } from "lucide-react";
 const menuItems = [
     { href: "/admin", label: "סקירה כללית", icon: LayoutDashboard },
+    { href: "/admin/leads", label: "לידים", icon: Inbox },
     { href: "/admin/suppliers", label: "ניהול ספקים", icon: Users },
     { href: "/admin/designers", label: "ניהול מעצבות", icon: Palette },
     { href: "/admin/waitlist", label: "רשימת המתנה", icon: UserPlus },

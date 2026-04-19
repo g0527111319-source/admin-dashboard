@@ -179,6 +179,10 @@ model Designer {
 
   // Subscription / Membership
   subscription         DesignerSubscription?
+
+  // Leads — קהילה
+  leadInterests        LeadInterest[]
+  leadAssignments      LeadAssignment[]
 }
 
 // ==========================================
@@ -2119,4 +2123,98 @@ model RateLimitEntry {
 
   @@unique([key])
   @@index([expiresAt])
+}
+
+// ==========================================
+// לידים — "אני מחפש מעצבת"
+// Public-facing lead capture + community distribution
+// ==========================================
+model Lead {
+  id                    String   @id @default(uuid())
+
+  // Contact (public form — all required)
+  firstName             String
+  lastName              String
+  phone                 String
+  email                 String
+
+  // Property
+  city                  String
+  address               String
+  sizeSqm               Int?
+
+  // Renovation scope
+  scope                 String   // מה כולל השיפוץ
+  renovationBudget      Float?   // תקציב שיפוץ ₪
+  designerBudget        Float?   // תקציב למעצבת ₪
+  startTiming           String?  // 'immediate' | '1-3months' | 'research'
+  stylePreference       String?  // 'modern' | 'classic' | 'scandi' | 'industrial' | 'unsure'
+  additionalNotes       String?  // דגש נוסף שחשוב ללקוח
+
+  // Lifecycle
+  status                LeadStatus @default(NEW)
+  source                String   @default("landing")
+  consentedAt           DateTime
+  ipAddress             String?
+  userAgent             String?
+
+  // Community-feed flow
+  postedToCommunityAt   DateTime?
+
+  // Distribution / conversion
+  distributedAt         DateTime?
+  convertedByDesignerId String?
+  convertedToClientId   String?
+  convertedAt           DateTime?
+  archivedAt            DateTime?
+  adminNotes            String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  interests             LeadInterest[]
+  assignments           LeadAssignment[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum LeadStatus {
+  NEW                    // טרי — מנהלת עוד לא סקרה
+  REVIEWING              // מנהלת בתהליך בדיקה
+  POSTED_TO_COMMUNITY    // פורסם כפיד לכל המעצבות לקבלת הבעת עניין
+  DISTRIBUTED            // שלוש מעצבות קיבלו את הליד המלא
+  CONVERTED              // מעצבת המירה ללקוחה
+  ARCHIVED               // בארכיון
+}
+
+// הבעת עניין של מעצבת על ליד שפורסם לפיד הקהילה
+model LeadInterest {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  designerId  String
+  designer    Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([leadId, designerId])
+  @@index([designerId])
+}
+
+// הקצאת ליד למעצבת ספציפית (אחרי שמנהלת בחרה 3)
+model LeadAssignment {
+  id                  String    @id @default(uuid())
+  leadId              String
+  lead                Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  designerId          String
+  designer            Designer  @relation(fields: [designerId], references: [id], onDelete: Cascade)
+  assignedAt          DateTime  @default(now())
+  viewedAt            DateTime?
+  dismissedAt         DateTime? // מעצבת סימנה "לא רלוונטי"
+  convertedToClientId String?   // CrmClient.id שנוצר מהליד
+  convertedAt         DateTime?
+
+  @@unique([leadId, designerId])
+  @@index([designerId])
+  @@index([convertedAt])
 }

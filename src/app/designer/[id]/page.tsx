@@ -3,7 +3,7 @@ import { txt } from "@/content/siteText";
 import { useState, useEffect } from "react";
 import Logo from "@/components/ui/Logo";
 import Image from "next/image";
-import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban, Loader2, Hash, Briefcase, ListChecks } from "lucide-react";
+import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban, Loader2, Hash, Briefcase, ListChecks, Inbox } from "lucide-react";
 import CrmClients from "@/components/crm/CrmClients";
 import CrmSettings from "@/components/crm/CrmSettings";
 import CrmSuppliers from "@/components/crm/CrmSuppliers";
@@ -39,6 +39,7 @@ import NotificationBell from "@/components/NotificationBell";
 import AccountSettings from "@/components/designer/AccountSettings";
 import TodayDashboard from "@/components/designer/TodayDashboard";
 import InboxView from "@/components/designer/InboxView";
+import CommunityLeadsFeed from "@/components/leads/CommunityLeadsFeed";
 import { useParams } from "next/navigation";
 import DepthSection from "@/components/motion/DepthSection";
 import { DEPTH_IMAGES } from "@/lib/depth-images";
@@ -101,7 +102,7 @@ type DealHistoryItem = {
 // NOTE: "projects" tab was removed — projects now live only nested inside a
 // specific client's view (CrmClients → selected client → "פרויקטים" sub-tab).
 // See redirect handling in the hash-init useEffect below for legacy links.
-type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks";
+type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks" | "leads";
 
 interface NavGroup {
   title: string;
@@ -122,6 +123,7 @@ const navGroups: NavGroup[] = [
     title: "קהילה",
     items: [
       { key: "suppliers", label: "ספריית ספקים", icon: Search },
+      { key: "leads", label: "לידים מהקהילה", icon: Inbox },
       { key: "deals", label: "דיווח עסקה", icon: HandCoins },
       { key: "history", label: "היסטוריה", icon: History },
     ]
@@ -1117,6 +1119,11 @@ export default function DesignerDashboard() {
             {/* ===== INBOX ===== */}
             {activeTab === "inbox" && (
               <InboxView onNavigate={(h) => setActiveTab(h as TabKey)} />
+            )}
+
+            {/* ===== COMMUNITY LEADS ===== */}
+            {activeTab === "leads" && (
+              <CommunityLeadsFeed gender={gender} />
             )}
 
             {/* ===== CRM TABS ===== */}

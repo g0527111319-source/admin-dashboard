@@ -51,6 +51,10 @@ const PUBLIC_PATHS = [
   // Without this, the middleware would redirect them to /login and they'd be
   // stuck (no account to log into).
   "/contract",
+  // Public "find a designer" landing page — intake form for private clients
+  // who want the admin to match them with a community designer. No login
+  // needed; honeypot + DB rate-limit gate abuse.
+  "/find-designer",
 ];
 
 const API_PUBLIC_PATHS = [
@@ -70,6 +74,10 @@ const API_PUBLIC_PATHS = [
   // Google OAuth reviewers) must be able to file a deletion request without
   // being logged in. Rate limiting is handled upstream at the edge.
   "/api/data-deletion",
+  // Public "find a designer" intake submission — open to anonymous visitors.
+  // Honeypot + DB-backed rate limiter inside the route handler protect against
+  // spam; no session required.
+  "/api/leads/submit",
 ];
 
 // Prefix-based public paths (starts with)
