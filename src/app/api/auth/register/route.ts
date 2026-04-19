@@ -74,6 +74,46 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: txt("src/app/api/auth/register/route.ts::001", "נדרשים שם מלא, אימייל, טלפון וסיסמה") }, { status: 400 });
         }
 
+        // Enum validation — Prisma would throw a 500 on invalid enum values,
+        // so we normalize/validate here and return a proper 400 with a helpful
+        // message. Accepts only Prisma's actual enum values; anything else
+        // (including the UI's legacy "independent"/"salaried" strings) is
+        // mapped or rejected cleanly.
+        const rawEmploymentType = body.employmentType;
+        let employmentType: "FREELANCE" | "SALARIED" | undefined;
+        if (rawEmploymentType != null && rawEmploymentType !== "") {
+            const normalized = String(rawEmploymentType).toUpperCase().trim();
+            const legacyMap: Record<string, "FREELANCE" | "SALARIED"> = {
+                FREELANCE: "FREELANCE",
+                SALARIED: "SALARIED",
+                INDEPENDENT: "FREELANCE",
+                EMPLOYEE: "SALARIED",
+            };
+            const mapped = legacyMap[normalized];
+            if (!mapped) {
+                return NextResponse.json(
+                    { error: "סוג העסקה לא תקין — יש לבחור 'עצמאית' או 'שכירה'" },
+                    { status: 400 },
+                );
+            }
+            employmentType = mapped;
+        }
+
+        // Defensive number parsing — a junk value (e.g. "abc") would have
+        // produced NaN and failed deep in Prisma with a 500. Coerce to undefined
+        // if not a non-negative number we can persist.
+        let yearsAsIndependent: number | undefined;
+        if (body.yearsAsIndependent != null && body.yearsAsIndependent !== "") {
+            const parsed = Number(body.yearsAsIndependent);
+            if (!Number.isFinite(parsed) || parsed < 0 || parsed > 80) {
+                return NextResponse.json(
+                    { error: "שנות ותק לא תקינות" },
+                    { status: 400 },
+                );
+            }
+            yearsAsIndependent = parsed;
+        }
+
         const result = await registerDesigner({
             fullName,
             email,
@@ -81,8 +121,8 @@ export async function POST(req: NextRequest) {
             password,
             city: body.city,
             specialization: body.specialization,
-            employmentType: body.employmentType || undefined,
-            yearsAsIndependent: body.yearsAsIndependent != null ? Number(body.yearsAsIndependent) : undefined,
+            employmentType,
+            yearsAsIndependent,
             // שדות מורחבים
             firstName: body.firstName || undefined,
             lastName: body.lastName || undefined,
