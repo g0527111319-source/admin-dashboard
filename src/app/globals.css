@@ -377,31 +377,79 @@ p {
    PREMIUM BUTTONS
    ============================ */
 
+/* ───────────────────────────────────────────────────────────
+   .btn-gold — upgraded to carry the Zirat DS "twist" aesthetic.
+   Organic asymmetric border-radius that morphs on hover, matching
+   the signature look of <TwistButton variant="primary">. Pure CSS;
+   no HTML/JSX changes needed — every existing .btn-gold button in
+   the codebase inherits this automatically.
+   ─────────────────────────────────────────────────────────── */
 .btn-gold {
-  @apply bg-gold text-white font-semibold px-6 py-2.5 text-sm
-         transition-all ease-out shadow-sm
-         hover:shadow-md active:scale-[0.98];
-  border-radius: var(--radius-md);
-  duration: var(--duration-normal);
-  background-image: linear-gradient(135deg, #C9A84C 0%, #D4B65E 100%);
-  border: 1px solid rgba(201, 168, 76, 0.3);
+  @apply text-white font-semibold px-7 py-3 text-sm
+         transition-all ease-out;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-rubik), "Rubik", sans-serif;
+  border-radius: 62% 38% 58% 42% / 50% 60% 40% 50%;
+  background-image: linear-gradient(135deg, #F5D77F 0%, #C9A84C 40%, #8B6914 80%, #5A4608 100%);
+  border: 2px solid rgba(58, 42, 16, 0.4);
+  color: #FFF8E8 !important;
+  text-shadow: 0 1px 2px rgba(58, 42, 16, 0.35);
+  box-shadow:
+    inset 0 3px 12px rgba(255, 253, 247, 0.45),
+    inset 0 -6px 14px rgba(58, 42, 16, 0.35);
+  transition: border-radius 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s ease;
 }
 .btn-gold:hover {
-  background-image: linear-gradient(135deg, #B8952F 0%, #C9A84C 100%);
-  transform: translateY(-1px);
+  border-radius: 38% 62% 42% 58% / 60% 40% 54% 46%;
+  transform: rotate(-1.5deg) scale(1.03);
+  background-image: linear-gradient(135deg, #F5D77F 0%, #C9A84C 40%, #8B6914 80%, #5A4608 100%);
 }
 .btn-gold:active {
-  transform: translateY(0) scale(0.98);
+  transform: rotate(-0.5deg) scale(0.98);
+}
+.btn-gold:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
+/* ───────────────────────────────────────────────────────────
+   .btn-outline — secondary twist: cream fill with gold border.
+   Matches <TwistButton variant="secondary">.
+   ─────────────────────────────────────────────────────────── */
 .btn-outline {
-  @apply border border-gold/40 text-gold bg-transparent px-6 py-2.5 text-sm
-         transition-all ease-out font-semibold
-         hover:bg-gold/5 hover:border-gold/60;
-  border-radius: var(--radius-md);
+  @apply font-semibold px-7 py-3 text-sm transition-all ease-out;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-rubik), "Rubik", sans-serif;
+  border-radius: 62% 38% 58% 42% / 50% 60% 40% 50%;
+  background-image: linear-gradient(135deg, #FFFDF6 0%, #FAF2DD 55%, #F5ECD3 100%);
+  border: 2px solid rgba(139, 105, 20, 0.5);
+  color: #5A4608 !important;
+  box-shadow:
+    inset 0 3px 10px rgba(255, 253, 247, 0.9),
+    inset 0 -6px 14px rgba(201, 168, 76, 0.22);
+  transition: border-radius 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-outline:hover {
-  transform: translateY(-1px);
+  border-radius: 38% 62% 42% 58% / 60% 40% 54% 46%;
+  transform: rotate(-1.2deg) scale(1.03);
+}
+.btn-outline:active {
+  transform: rotate(-0.4deg) scale(0.98);
+}
+.btn-outline:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-dark {

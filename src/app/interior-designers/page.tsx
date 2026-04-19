@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TwistButton, Eyebrow, GoldText } from "@/components/ds";
 
 export const metadata: Metadata = {
   title: "מעצבות פנים מומלצות בישראל | מאומתות עם דירוג אמיתי",
@@ -94,28 +95,22 @@ export default function InteriorDesignersLandingPage() {
 
       <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
         <header className="mb-12 text-center">
-          <p className="mb-3 text-xs uppercase tracking-luxury text-gold">מעצבות פנים מומלצות</p>
+          <Eyebrow className="mb-3 inline-block">מעצבות פנים מומלצות</Eyebrow>
           <h1 className="font-heading text-4xl sm:text-5xl text-text-primary">
-            מעצבות פנים מומלצות בישראל — מאומתות, עם דירוג אמיתי
+            מעצבות פנים <GoldText>מומלצות</GoldText> בישראל — מאומתות, עם דירוג אמיתי
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-text-secondary">
             הקהילה הגדולה בישראל של מעצבות פנים ואדריכליות. כל המעצבות בפלטפורמה נבדקו,
             עם תיקי עבודות מעודכנים ודירוגי לקוחות אמיתיים. ללא פרסומות וללא תשלום על "מקומות ראשונים" —
             רק מקצועניות אמיתיות.
           </p>
-          <div className="mt-8 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-btn bg-gold px-6 py-3 font-medium text-bg-dark hover:bg-gold-light transition"
-            >
+          <div className="mt-8 flex justify-center gap-4 flex-wrap">
+            <TwistButton href="/" variant="primary" size="md">
               גלו את הקהילה
-            </Link>
-            <Link
-              href="/blog/how-to-choose-interior-designer"
-              className="rounded-btn border border-border-subtle px-6 py-3 font-medium text-text-primary hover:border-gold transition"
-            >
+            </TwistButton>
+            <TwistButton href="/blog/how-to-choose-interior-designer" variant="secondary" size="md">
               איך לבחור מעצבת
-            </Link>
+            </TwistButton>
           </div>
         </header>
 

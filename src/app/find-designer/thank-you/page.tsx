@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { TwistButton, GoldText } from "@/components/ds";
 
 export const metadata: Metadata = {
   title: "קיבלנו את הבקשה שלך — זירת האדריכלות",
@@ -15,7 +15,7 @@ export default function ThankYouPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="font-heading text-3xl sm:text-4xl text-text-primary">קיבלנו את הבקשה שלך 🎉</h1>
+        <h1 className="font-heading text-3xl sm:text-4xl text-text-primary">קיבלנו את <GoldText>הבקשה שלך</GoldText> 🎉</h1>
         <p className="mt-5 text-text-secondary text-lg leading-relaxed">
           מנהלת הקהילה תעבור על הפרטים ותפנה את הבקשה שלך למעצבות המתאימות ביותר תוך
           <strong> 48 שעות</strong>. שלחנו לך מייל אישור — בדקי גם בתיבת הספאם.
@@ -24,12 +24,9 @@ export default function ThankYouPage() {
           עד 3 מעצבות ייצרו איתך קשר ישירות. בחרי את מי שהכי מתאימה לסגנון ולתקציב שלך.
         </p>
         <div className="mt-10">
-          <Link
-            href="/"
-            className="inline-block rounded-btn border border-border-subtle px-8 py-3 text-text-primary hover:border-gold transition"
-          >
+          <TwistButton href="/" variant="secondary" size="md">
             חזרה לדף הבית
-          </Link>
+          </TwistButton>
         </div>
       </div>
     </main>
