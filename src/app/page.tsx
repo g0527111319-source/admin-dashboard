@@ -550,13 +550,27 @@ export default function HomePage() {
             <p className="font-bellefair text-base text-gold-dim">קהילה שהיא בית</p>
           </div>
           <div className="flex items-center gap-5 text-sm">
-            <Link href="/privacy" className="text-text-muted hover:text-gold transition-colors">
-              פרטיות
+            <Link
+              href="/privacy"
+              className="text-text-muted hover:text-gold transition-colors"
+              aria-label="Privacy Policy - מדיניות פרטיות"
+              title="Privacy Policy"
+            >
+              פרטיות (Privacy Policy)
             </Link>
-            <Link href="/terms" className="text-text-muted hover:text-gold transition-colors">
-              תנאי שימוש
+            <Link
+              href="/terms"
+              className="text-text-muted hover:text-gold transition-colors"
+              aria-label="Terms of Service - תנאי שימוש"
+              title="Terms of Service"
+            >
+              תנאי שימוש (Terms of Service)
             </Link>
-            <Link href="/accessibility" className="text-text-muted hover:text-gold transition-colors">
+            <Link
+              href="/accessibility"
+              className="text-text-muted hover:text-gold transition-colors"
+              aria-label="Accessibility Statement"
+            >
               נגישות
             </Link>
             <span className="text-text-muted/60">© 2026 זירת האדריכלות</span>
