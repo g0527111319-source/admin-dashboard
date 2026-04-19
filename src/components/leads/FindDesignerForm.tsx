@@ -180,7 +180,7 @@ export default function FindDesignerForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex items-center gap-2 rounded-btn bg-gold px-10 py-3 text-base font-medium text-bg-dark hover:bg-gold-light disabled:opacity-60 disabled:cursor-not-allowed transition"
+          className="btn-gold inline-flex items-center gap-2 !px-10 !py-3 !text-base"
         >
           {submitting ? "שולחת…" : "שליחה — מתחילים לחפש"}
         </button>

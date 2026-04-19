@@ -265,7 +265,7 @@ export default function MeetingFollowUp({
             type="button"
             onClick={send}
             disabled={sending || !text || !data}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-gold text-white font-semibold hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-gold flex items-center gap-1.5 !px-4 !py-2 !text-sm"
           >
             {sending ? (
               <Loader2 className="w-4 h-4 animate-spin" />

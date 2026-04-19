@@ -251,7 +251,7 @@ export default function InboxView({
             <button
               type="button"
               onClick={() => markAs("read")}
-              className="px-3 py-1.5 text-xs rounded-lg bg-gold text-white font-semibold hover:brightness-110 transition-all"
+              className="btn-gold !px-3 !py-1.5 !text-xs"
             >
               סמן כנקראו
             </button>

@@ -416,7 +416,7 @@ function CommissionAgreementModal({ gender, onCancel, onConfirm }: {
           <button
             onClick={onConfirm}
             disabled={!accepted}
-            className="px-5 py-2 rounded-btn text-sm font-semibold bg-gold text-white hover:bg-gold/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2"
+            className="btn-gold inline-flex items-center gap-2 !px-5 !py-2 !text-sm"
           >
             <CheckCircle2 className="w-4 h-4" />
             {g(gender, "אני מאשר וקבל את הליד", "אני מאשרת וקבלת הליד")}

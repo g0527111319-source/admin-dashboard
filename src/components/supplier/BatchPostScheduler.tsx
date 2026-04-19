@@ -291,7 +291,7 @@ export default function BatchPostScheduler({
           type="button"
           onClick={submit}
           disabled={busy}
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gold text-white font-semibold hover:brightness-110 transition-all disabled:opacity-40"
+          className="btn-gold flex items-center gap-2 !px-5 !py-3 !text-sm"
         >
           {busy ? (
             <Loader2 className="w-4 h-4 animate-spin" />

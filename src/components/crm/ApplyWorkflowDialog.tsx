@@ -241,7 +241,7 @@ export default function ApplyWorkflowDialog({
             type="button"
             onClick={apply}
             disabled={applying || !selected}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-gold text-white font-semibold hover:brightness-110 transition-all disabled:opacity-40"
+            className="btn-gold flex items-center gap-1.5 !px-4 !py-2 !text-sm"
           >
             {applying ? (
               <Loader2 className="w-4 h-4 animate-spin" />
