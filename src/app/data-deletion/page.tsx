@@ -129,7 +129,7 @@ export default function DataDeletionPage() {
             <button
               type="submit"
               disabled={submitting || !email || !confirm}
-              className="w-full bg-gold text-black font-semibold py-3 rounded-lg hover:bg-gold/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn-gold w-full"
             >
               {submitting ? "שולח..." : "שלח בקשת מחיקה"}
             </button>
