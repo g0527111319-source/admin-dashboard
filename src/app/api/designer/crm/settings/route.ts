@@ -40,6 +40,7 @@ export async function PATCH(req: NextRequest) {
     const {
       companyName,
       logoUrl,
+      portfolioHeroImageUrl,
       primaryColor,
       secondaryColor,
       tagline,
@@ -55,6 +56,7 @@ export async function PATCH(req: NextRequest) {
         designerId,
         ...(companyName !== undefined && { companyName }),
         ...(logoUrl !== undefined && { logoUrl }),
+        ...(portfolioHeroImageUrl !== undefined && { portfolioHeroImageUrl }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(secondaryColor !== undefined && { secondaryColor }),
         ...(tagline !== undefined && { tagline }),
@@ -66,6 +68,7 @@ export async function PATCH(req: NextRequest) {
       update: {
         ...(companyName !== undefined && { companyName }),
         ...(logoUrl !== undefined && { logoUrl }),
+        ...(portfolioHeroImageUrl !== undefined && { portfolioHeroImageUrl }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(secondaryColor !== undefined && { secondaryColor }),
         ...(tagline !== undefined && { tagline }),

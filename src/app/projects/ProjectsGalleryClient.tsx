@@ -47,6 +47,7 @@ type Designer = {
     logoUrl: string | null;
     companyName: string | null;
     tagline?: string | null;
+    portfolioHeroImageUrl?: string | null;
   } | null;
 };
 
@@ -130,6 +131,7 @@ function ProjectsContent() {
   const [styleFilter, setStyleFilter] = useState("all");
   const [designerName, setDesignerName] = useState<string | null>(null);
   const [designerLogo, setDesignerLogo] = useState<string | null>(null);
+  const [portfolioHeroImage, setPortfolioHeroImage] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   // Parallax on hero image/gradient — gentle
@@ -151,6 +153,7 @@ function ProjectsContent() {
           if (designerParam && data.length > 0 && data[0].designer?.fullName) {
             setDesignerName(data[0].designer.fullName);
             setDesignerLogo(data[0].designer?.crmSettings?.logoUrl || null);
+            setPortfolioHeroImage(data[0].designer?.crmSettings?.portfolioHeroImageUrl || null);
           }
         }
       } catch (e) {
@@ -216,6 +219,7 @@ function ProjectsContent() {
         designerId={designerParam}
         displayName={displayName}
         designerLogo={designerLogo}
+        portfolioHeroImage={portfolioHeroImage}
         city={city}
         specialization={designer?.specialization ?? null}
         tagline={designer?.crmSettings?.tagline ?? null}
@@ -468,6 +472,7 @@ function DesignerPortfolioView({
   designerId,
   displayName,
   designerLogo,
+  portfolioHeroImage,
   city,
   specialization,
   tagline,
@@ -486,6 +491,7 @@ function DesignerPortfolioView({
   designerId: string;
   displayName: string;
   designerLogo: string | null;
+  portfolioHeroImage: string | null;
   city: string | null;
   specialization: string | null;
   tagline: string | null;
@@ -738,7 +744,7 @@ function DesignerPortfolioView({
                 <MessageCircle className="w-3.5 h-3.5" /> שלחי פנייה
               </a>
               <Link
-                href={`/business-card/${designerId}`}
+                href={`/card/${designerId}`}
                 className="btn-outline inline-flex items-center gap-2"
               >
                 <Sparkles className="w-3.5 h-3.5" /> כרטיס ביקור דיגיטלי
@@ -765,7 +771,13 @@ function DesignerPortfolioView({
                 transform: "rotate(-2deg)",
               }}
             >
-              {designerLogo ? (
+              {portfolioHeroImage ? (
+                <img
+                  src={portfolioHeroImage}
+                  alt={`תמונת תיק עבודות ${displayName}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : designerLogo ? (
                 <img
                   src={designerLogo}
                   alt={`לוגו ${displayName}`}

@@ -192,6 +192,10 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   // Per-card publish toggle in-flight
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // Portfolio hero image (shown on public portfolio page header)
+  const [portfolioHeroImageUrl, setPortfolioHeroImageUrl] = useState<string | null>(null);
+  const [savingHero, setSavingHero] = useState(false);
+
   // Bulk selection state (feature #10)
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(new Set());
@@ -232,6 +236,47 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     fetchProjects();
     fetchSuppliers();
   }, [fetchProjects, fetchSuppliers]);
+
+  // Load CRM settings to get existing portfolio hero image
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/designer/crm/settings");
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setPortfolioHeroImageUrl(data.portfolioHeroImageUrl || null);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    loadSettings();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const saveHeroImage = useCallback(async (url: string | null) => {
+    setSavingHero(true);
+    try {
+      const res = await fetch("/api/designer/crm/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ portfolioHeroImageUrl: url }),
+      });
+      if (res.ok) {
+        setPortfolioHeroImageUrl(url);
+        showToast(url ? "תמונת הנושא נשמרה" : "התמונה הוסרה");
+      } else {
+        showToast("שגיאה בשמירה");
+      }
+    } catch {
+      showToast("שגיאה בשמירה");
+    } finally {
+      setSavingHero(false);
+    }
+  }, [showToast]);
 
   // ===== FORM ACTIONS =====
   const openCreate = () => {
@@ -1667,6 +1712,51 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
+        </div>
+
+        {/* ===== PORTFOLIO HERO IMAGE ===== */}
+        <div className="mt-5 bg-bg-card border border-border rounded-[14px] p-4 flex items-center gap-4 flex-wrap">
+          <div className="w-[72px] h-[72px] rounded-xl overflow-hidden bg-bg-surface border border-border flex items-center justify-center shrink-0">
+            {portfolioHeroImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={portfolioHeroImageUrl}
+                alt="תמונת נושא לתיק העבודות"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <ImagePlus className="w-6 h-6 text-text-muted" />
+            )}
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <div className="text-sm font-semibold text-text">תמונת נושא לתיק עבודות הציבורי</div>
+            <p className="text-xs text-text-muted m-0 mt-0.5">
+              מופיעה בראש עמוד הפרויקטים הציבורי שלך. מומלץ לבחור תמונה מייצגת באיכות גבוהה.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <FileUpload
+              onUpload={(f) => saveHeroImage(f.url)}
+              onError={(e) => showToast(e)}
+              folder="branding"
+              category="image"
+              accept="image/*"
+              label={portfolioHeroImageUrl ? "החלפת תמונה" : "העלאת תמונה"}
+              compact
+              skipEditor
+              disabled={savingHero}
+            />
+            {portfolioHeroImageUrl && (
+              <button
+                type="button"
+                onClick={() => saveHeroImage(null)}
+                disabled={savingHero}
+                className="text-xs text-text-muted hover:text-red-600 transition-colors px-2 py-1"
+              >
+                הסרה
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ===== KPI STRIP ===== */}

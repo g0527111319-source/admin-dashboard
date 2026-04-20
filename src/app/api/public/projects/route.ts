@@ -30,7 +30,12 @@ export async function GET(req: NextRequest) {
             instagram: true,
             website: true,
             crmSettings: {
-              select: { logoUrl: true, companyName: true },
+              select: {
+                logoUrl: true,
+                companyName: true,
+                portfolioHeroImageUrl: true,
+                tagline: true,
+              },
             },
           },
         },

@@ -762,6 +762,7 @@ model DesignerCrmSettings {
   // מיתוג
   companyName         String?
   logoUrl             String?
+  portfolioHeroImageUrl String?
   primaryColor        String?  @default("#2563eb")
   secondaryColor      String?  @default("#f59e0b")
   tagline             String?

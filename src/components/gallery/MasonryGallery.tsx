@@ -87,7 +87,6 @@ export default function MasonryGallery({
         const isPriority = i < 3;
         const tileInner = (
           <motion.div
-            layoutId={`${layoutIdPrefix}-${i}`}
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.15 }}
@@ -97,7 +96,7 @@ export default function MasonryGallery({
               ease: [0.16, 1, 0.3, 1],
             }}
             whileHover={reduced ? undefined : { y: -6 }}
-            className="group/tile relative block mb-4 sm:mb-5 break-inside-avoid rounded-2xl overflow-hidden border border-white/5 bg-[#1a1a2e] cursor-pointer shadow-[0_4px_20px_-8px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-12px_rgba(201,168,76,0.25)] transition-shadow duration-500 will-change-transform"
+            className="group/tile relative block rounded-2xl overflow-hidden border border-white/5 bg-[#1a1a2e] cursor-pointer shadow-[0_4px_20px_-8px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-12px_rgba(201,168,76,0.25)] transition-shadow duration-500 will-change-transform"
           >
             {/* Gold border that glows in on hover */}
             <div
@@ -171,8 +170,9 @@ export default function MasonryGallery({
               key={i}
               type="button"
               onClick={() => onItemClick(i)}
-              className="block w-full text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A84C] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050505] rounded-2xl"
+              className="block w-full text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A84C] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050505] rounded-2xl mb-4 sm:mb-5 break-inside-avoid"
               aria-label={item.caption ?? item.alt ?? `תמונה ${i + 1}`}
+              data-layout-id={`${layoutIdPrefix}-${i}`}
             >
               {tileInner}
             </button>
@@ -182,13 +182,26 @@ export default function MasonryGallery({
         // Tile wrapping a link (detail page navigation).
         if (item.href) {
           return (
-            <Link key={i} href={item.href} className="block">
+            <Link
+              key={i}
+              href={item.href}
+              className="block mb-4 sm:mb-5 break-inside-avoid"
+              data-layout-id={`${layoutIdPrefix}-${i}`}
+            >
               {tileInner}
             </Link>
           );
         }
 
-        return <div key={i}>{tileInner}</div>;
+        return (
+          <div
+            key={i}
+            className="mb-4 sm:mb-5 break-inside-avoid"
+            data-layout-id={`${layoutIdPrefix}-${i}`}
+          >
+            {tileInner}
+          </div>
+        );
       })}
     </div>
   );
