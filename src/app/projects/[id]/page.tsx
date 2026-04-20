@@ -3,8 +3,29 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Logo from "@/components/ui/Logo";
-import { ArrowLeft, X, ChevronLeft, ChevronRight, MapPin, Building2, User, Calendar, ImageIcon, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Calendar,
+  ImageIcon,
+  Sparkles,
+  Share2,
+  Heart,
+  Ruler,
+  Users,
+  DollarSign,
+  Maximize2,
+  MessageCircle,
+  LayoutTemplate,
+  Hammer,
+  KeyRound,
+  Send,
+  Star,
+} from "lucide-react";
 
 type ProjectImage = {
   id: string;
@@ -59,6 +80,13 @@ function proxyImageUrl(url: string): string {
   return url;
 }
 
+function getInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].charAt(0);
+  return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+}
+
 // ===== LIGHTBOX =====
 function Lightbox({
   images,
@@ -99,7 +127,7 @@ function Lightbox({
     >
       <button
         onClick={onClose}
-        className="absolute top-4 left-4 z-10 p-2.5 rounded-full bg-white/95 hover:bg-white text-text-primary transition-colors shadow-lg"
+        className="absolute top-4 left-4 z-10 p-2.5 rounded-full bg-white/95 hover:bg-white text-text transition-colors shadow-lg"
         aria-label="סגור"
       >
         <X className="w-5 h-5" />
@@ -127,7 +155,7 @@ function Lightbox({
       {index > 0 && (
         <button
           onClick={(e) => { e.stopPropagation(); goPrev(); }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 hover:bg-white text-text-primary transition-colors shadow-lg"
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 hover:bg-white text-text transition-colors shadow-lg"
           aria-label="הקודם"
         >
           <ChevronRight className="w-6 h-6" />
@@ -136,7 +164,7 @@ function Lightbox({
       {index < images.length - 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); goNext(); }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 hover:bg-white text-text-primary transition-colors shadow-lg"
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 hover:bg-white text-text transition-colors shadow-lg"
           aria-label="הבא"
         >
           <ChevronLeft className="w-6 h-6" />
@@ -159,6 +187,7 @@ export default function ProjectPage() {
   const [project, setProject] = useState<PublicProject | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -177,6 +206,24 @@ export default function ProjectPage() {
     load();
   }, [projectId]);
 
+  const handleShare = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const shareData = {
+      title: project?.title || "פרויקט",
+      text: project?.title || "",
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(window.location.href);
+      }
+    } catch (e) {
+      // user cancelled or unsupported — silent
+    }
+  }, [project]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -187,11 +234,11 @@ export default function ProjectPage() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-bg text-text-primary flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center gap-4">
         <p className="text-text-muted">הפרויקט לא נמצא</p>
         <Link
           href="/projects"
-          className="text-sm text-[color:var(--gold-dim)] hover:text-gold flex items-center gap-2 transition-colors font-semibold"
+          className="text-sm text-gold-dim hover:text-gold flex items-center gap-2 transition-colors font-semibold"
         >
           <ArrowLeft className="w-4 h-4" />
           חזרה לגלריה
@@ -200,8 +247,21 @@ export default function ProjectPage() {
     );
   }
 
+  const descParagraphs = (project.description || "")
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const leadParagraph = descParagraphs[0] || "";
+  const restParagraphs = descParagraphs.slice(1);
+
+  const categoryLabel = CATEGORIES[project.category] || project.category;
+  const projectYear = new Date(project.createdAt).getFullYear();
+  const isFeatured =
+    project.status === "published" || project.status === "featured";
+  const firstName = project.designer.fullName.trim().split(/\s+/)[0] || project.designer.fullName;
+
   return (
-    <div className="min-h-screen bg-bg text-text-primary">
+    <div className="min-h-screen bg-bg text-text">
       {/* Lightbox */}
       {lightboxIndex !== null && project.images.length > 0 && (
         <Lightbox
@@ -211,282 +271,568 @@ export default function ProjectPage() {
         />
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-bg/85 border-b border-border-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link href="/">
-            <Logo size="sm" />
-          </Link>
+      {/* ========= TOPNAV (fixed, blur) ========= */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/90 backdrop-blur-md border-b border-border-subtle">
+        <div className="max-w-[1400px] mx-auto h-16 px-6 flex items-center justify-between">
+          {/* Back link (right in RTL first position) */}
           <Link
             href="/projects"
-            className="flex items-center gap-2 text-sm text-[color:var(--gold-dim)] hover:text-gold transition-colors font-semibold"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            חזרה לגלריה
+            <ArrowRight className="w-3.5 h-3.5" />
+            חזרה לתיק העבודות
           </Link>
-        </div>
-      </header>
 
-      {/* Project Header Strip */}
-      <section className="px-4 sm:px-6 pt-10 pb-6 border-b border-border-subtle">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-[11px] tracking-[0.3em] uppercase text-[color:var(--gold-dim)] mb-3 font-semibold inline-flex items-center gap-2">
-            <Sparkles className="w-3 h-3" /> פרויקט נבחר
-          </p>
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="badge-gold">
-              {CATEGORIES[project.category] || project.category}
-            </span>
+          {/* Brand center */}
+          <Link href="/" className="flex items-center gap-2.5 font-heading font-bold text-[15px]">
+            <div
+              className="w-8 h-8 rounded-lg grid place-items-center text-[#5A4608] font-extrabold"
+              style={{ background: "linear-gradient(135deg, #F5ECD3, #C9A84C)" }}
+            >
+              ז
+            </div>
+            <span className="text-[13.5px]">זירת האדריכלות</span>
+          </Link>
+
+          {/* Share / heart */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              שתף
+            </button>
+            <button
+              type="button"
+              onClick={() => setLiked((v) => !v)}
+              aria-label="הוסף למועדפים"
+              aria-pressed={liked}
+              className="inline-flex items-center justify-center px-3 py-2 text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
+            >
+              <Heart
+                className={`w-3.5 h-3.5 ${liked ? "fill-gold text-gold" : ""}`}
+              />
+            </button>
           </div>
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading font-semibold tracking-tight leading-[1.1] text-text-primary mb-3">
+        </div>
+      </nav>
+
+      <div className="max-w-[1240px] mx-auto px-6">
+        {/* ========= PROJECT HEADER ========= */}
+        <div className="pt-[90px] pb-6">
+          {/* Breadcrumbs */}
+          <nav className="text-[12.5px] text-text-muted mb-4 flex items-center gap-2 flex-wrap">
+            <Link
+              href={`/projects?designer=${project.designer.id}`}
+              className="hover:text-gold-dim transition-colors"
+            >
+              {project.designer.fullName}
+            </Link>
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <Link
+              href={`/projects?designer=${project.designer.id}`}
+              className="hover:text-gold-dim transition-colors"
+            >
+              תיק עבודות
+            </Link>
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>{project.title}</span>
+          </nav>
+
+          {isFeatured && (
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-gold-dim font-semibold tracking-[0.8px] uppercase mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              פרויקט נבחר
+            </span>
+          )}
+
+          <h1
+            className="font-heading font-medium m-0 mb-3.5 max-w-[820px] leading-[1.1]"
+            style={{
+              fontSize: "clamp(34px, 4.8vw, 52px)",
+              letterSpacing: "-1px",
+            }}
+          >
             {project.title}
           </h1>
+
           {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-text-secondary">
+          <div className="flex flex-wrap gap-x-[22px] gap-y-2 text-[14px] text-text-secondary py-3">
             {project.designer.city && (
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-gold" />
                 {project.designer.city}
               </span>
             )}
+            {categoryLabel && (
+              <span className="inline-flex items-center gap-1.5">
+                <Ruler className="w-3.5 h-3.5 text-gold" />
+                {categoryLabel}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-gold" />
-              {new Date(project.createdAt).toLocaleDateString("he-IL")}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <ImageIcon className="w-3.5 h-3.5 text-gold" />
-              {project.images.length} תמונות
+              {projectYear}
             </span>
             {project.designer.specialization && (
               <span className="inline-flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-gold" />
+                <Users className="w-3.5 h-3.5 text-gold" />
                 {project.designer.specialization}
               </span>
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* Hero - Cover Image */}
-      <section className="relative px-4 sm:px-6 pt-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="relative rounded-2xl overflow-hidden shadow-lg border border-border-subtle bg-bg-card">
-            {project.coverImageUrl ? (
-              <img
-                src={proxyImageUrl(project.coverImageUrl)}
-                alt={project.title}
-                className="w-full h-auto block max-h-[80vh] object-contain mx-auto"
-                loading="lazy"
-              />
-            ) : project.images[0] ? (
-              <img
-                src={proxyImageUrl(project.images[0].imageUrl)}
-                alt={project.title}
-                className="w-full h-auto block max-h-[80vh] object-contain mx-auto"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full py-24 flex items-center justify-center bg-gradient-to-br from-[color:var(--gold-50)] to-bg-surface">
-                <span className="text-[color:var(--gold-dim)]/30 text-8xl font-heading">{project.title.charAt(0)}</span>
-              </div>
-            )}
-            {/* Image count tag */}
-            {project.images.length > 0 && (
-              <span className="absolute top-4 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-text-secondary text-xs font-semibold rounded-full border border-border-subtle shadow-sm">
-                <ImageIcon className="w-3 h-3" />
-                1 מתוך {project.images.length} תמונות
+            {project.suppliers && project.suppliers.length > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-gold" />
+                {project.suppliers.length} ספקים
               </span>
             )}
           </div>
         </div>
-      </section>
 
-      {/* Designer Pill — floating */}
-      <section className="px-4 sm:px-6 -mt-8 relative z-10">
-        <div className="max-w-md mx-auto bg-white rounded-2xl shadow-md border border-border-subtle px-4 py-3">
+        {/* ========= HERO IMAGE ========= */}
+        <div
+          className="relative mt-3.5 rounded-[20px] overflow-hidden shadow-lg"
+          style={{ aspectRatio: "16/9" }}
+        >
+          {project.coverImageUrl ? (
+            <img
+              src={proxyImageUrl(project.coverImageUrl)}
+              alt={project.title}
+              className="w-full h-full object-cover block"
+              loading="lazy"
+            />
+          ) : project.images[0] ? (
+            <img
+              src={proxyImageUrl(project.images[0].imageUrl)}
+              alt={project.title}
+              className="w-full h-full object-cover block"
+              loading="lazy"
+            />
+          ) : (
+            <svg
+              viewBox="0 0 1200 675"
+              preserveAspectRatio="xMidYMid slice"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-full h-full block"
+              style={{ background: "linear-gradient(135deg, #E8C97A, #8B6914)" }}
+            >
+              <defs>
+                <linearGradient id="h-sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#FBF7ED" />
+                  <stop offset="1" stopColor="#E8C97A" />
+                </linearGradient>
+                <linearGradient id="h-floor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#8B6914" />
+                  <stop offset="1" stopColor="#5A4608" />
+                </linearGradient>
+              </defs>
+              <rect width="1200" height="675" fill="url(#h-sky)" />
+              <rect x="0" y="0" width="1200" height="520" fill="#F5ECD3" />
+              <rect x="0" y="520" width="1200" height="155" fill="url(#h-floor)" />
+              <rect x="650" y="100" width="420" height="380" fill="rgba(255,255,255,.75)" stroke="rgba(26,20,16,.3)" strokeWidth="3" />
+              <line x1="860" y1="100" x2="860" y2="480" stroke="rgba(26,20,16,.2)" strokeWidth="2" />
+              <line x1="650" y1="290" x2="1070" y2="290" stroke="rgba(26,20,16,.2)" strokeWidth="2" />
+              <circle cx="750" cy="220" r="60" fill="rgba(46,80,40,.3)" />
+              <circle cx="950" cy="260" r="80" fill="rgba(46,80,40,.25)" />
+              <rect x="150" y="380" width="400" height="150" fill="rgba(80,60,40,.55)" rx="10" />
+              <rect x="170" y="400" width="120" height="120" fill="rgba(245,236,211,.6)" rx="6" />
+              <rect x="300" y="400" width="120" height="120" fill="rgba(245,236,211,.6)" rx="6" />
+              <rect x="430" y="400" width="105" height="120" fill="rgba(245,236,211,.6)" rx="6" />
+              <rect x="220" y="545" width="270" height="70" fill="rgba(26,20,16,.4)" rx="4" />
+              <line x1="350" y1="0" x2="350" y2="220" stroke="rgba(26,20,16,.4)" strokeWidth="2" />
+              <ellipse cx="350" cy="240" rx="60" ry="25" fill="rgba(255,240,200,.9)" />
+              <rect x="110" y="140" width="180" height="160" fill="rgba(255,255,255,.95)" stroke="rgba(26,20,16,.3)" strokeWidth="2" />
+              <circle cx="170" cy="210" r="30" fill="rgba(201,168,76,.7)" />
+              <rect x="210" y="180" width="60" height="80" fill="rgba(139,101,8,.5)" />
+              <rect x="580" y="440" width="50" height="80" fill="rgba(80,60,40,.6)" />
+              <path d="M590 440 Q605 390 620 440 M595 440 Q590 400 610 410 M605 440 Q625 395 635 420 M595 440 Q605 380 595 390" stroke="rgba(46,80,40,.85)" strokeWidth="4" fill="none" strokeLinecap="round" />
+            </svg>
+          )}
+          {project.images.length > 0 && (
+            <div className="absolute top-5 right-5 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[12px] font-medium text-text">
+              <ImageIcon className="w-3.5 h-3.5" />
+              1 מתוך {project.images.length} תמונות
+            </div>
+          )}
+        </div>
+
+        {/* ========= DESIGNER PILL (floating) ========= */}
+        <div
+          className="relative z-10 mx-auto bg-white rounded-2xl shadow-lg border border-border-subtle flex items-center gap-3.5 max-w-[460px]"
+          style={{ marginTop: "-40px", padding: "14px 18px" }}
+        >
+          {project.designer.crmSettings?.logoUrl ? (
+            <img
+              src={project.designer.crmSettings.logoUrl}
+              alt={`לוגו ${project.designer.fullName}`}
+              className="w-12 h-12 rounded-full object-cover flex-none"
+            />
+          ) : (
+            <div
+              className="w-12 h-12 rounded-full grid place-items-center text-white font-heading font-bold text-base flex-none"
+              style={{ background: "linear-gradient(135deg, #E8C97A, #8B6914)" }}
+            >
+              {getInitials(project.designer.fullName)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="font-heading font-semibold text-[14.5px] truncate">
+              {project.designer.fullName}
+            </div>
+            <div className="text-[12px] text-text-muted flex items-center gap-2 mt-0.5 truncate">
+              <Star className="w-3 h-3 text-gold fill-gold" />
+              <span>4.9</span>
+              {project.designer.city && <span>· {project.designer.city}</span>}
+              {project.designer.specialization && (
+                <span className="hidden sm:inline">· {project.designer.specialization}</span>
+              )}
+            </div>
+          </div>
           <Link
             href={`/projects?designer=${project.designer.id}`}
-            className="flex items-center gap-3 group"
+            className="btn-outline"
+            style={{ padding: "8px 16px", fontSize: "12px" }}
           >
-            {/* Avatar/Logo */}
-            {project.designer.crmSettings?.logoUrl ? (
-              <img
-                src={project.designer.crmSettings.logoUrl}
-                alt={`לוגו ${project.designer.fullName}`}
-                className="w-11 h-11 rounded-full object-cover border-2 border-[color:var(--border-gold)]"
-              />
-            ) : (
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[color:var(--gold-50)] to-white flex items-center justify-center border-2 border-[color:var(--border-gold)]">
-                <span className="text-lg font-heading font-bold text-[color:var(--gold-dim)]">
-                  {project.designer.fullName.charAt(0)}
-                </span>
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-text-primary flex items-center gap-1.5 truncate">
-                <User className="w-3.5 h-3.5 text-gold flex-shrink-0" />
-                {project.designer.fullName}
-              </p>
-              {project.designer.city && (
-                <p className="text-xs text-text-muted mt-0.5 truncate">
-                  {project.designer.city}
-                  {project.designer.specialization && ` · ${project.designer.specialization}`}
-                </p>
-              )}
-            </div>
-            <span className="text-xs text-[color:var(--gold-dim)] group-hover:text-gold transition-colors font-semibold whitespace-nowrap">
-              לפרופיל המלא ←
-            </span>
+            לפרופיל המלא
           </Link>
         </div>
-      </section>
 
-      {/* Content */}
-      <section className="py-10 sm:py-14 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-10">
-            {/* Main Content */}
-            <div className="space-y-10">
-              {/* Description */}
-              {project.description && (
-                <div>
-                  <h2 className="text-xl font-heading font-semibold text-text-primary mb-4">אודות הפרויקט</h2>
-                  <div
-                    className="text-text-secondary text-[15px] leading-relaxed whitespace-pre-line border-r-[3px] pr-4"
-                    style={{ borderColor: "var(--gold)" }}
-                  >
-                    {project.description}
-                  </div>
+        {/* ========= BODY GRID: story + specs ========= */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[50px] pt-[50px] pb-10 items-start">
+          {/* LEFT: story */}
+          <div className="text-text-secondary text-base leading-[1.85]">
+            {leadParagraph ? (
+              <p
+                className="text-[19px] leading-[1.65] text-text font-normal mb-6 pr-4"
+                style={{ borderRight: "3px solid var(--gold)" }}
+              >
+                {leadParagraph}
+              </p>
+            ) : (
+              <p
+                className="text-[19px] leading-[1.65] text-text font-normal mb-6 pr-4"
+                style={{ borderRight: "3px solid var(--gold)" }}
+              >
+                {project.title}
+              </p>
+            )}
+
+            <h3 className="font-heading font-medium text-2xl mt-8 mb-3 tracking-[-0.3px] text-text">
+              על הפרויקט
+            </h3>
+            {restParagraphs.length > 0 ? (
+              restParagraphs.map((para, i) => (
+                <p key={i} className="mb-[18px]">
+                  {para}
+                </p>
+              ))
+            ) : (
+              <p className="mb-[18px]">
+                {project.description
+                  ? ""
+                  : "פרטים נוספים על הפרויקט יתווספו בקרוב."}
+              </p>
+            )}
+
+            {project.styleTags.length > 0 && (
+              <>
+                <h3 className="font-heading font-medium text-2xl mt-8 mb-3 tracking-[-0.3px] text-text">
+                  הגישה העיצובית
+                </h3>
+                <p className="mb-[18px]">
+                  הפרויקט משלב{" "}
+                  {project.styleTags.map((tag, i) => (
+                    <span key={tag}>
+                      <strong className="text-text font-semibold">{tag}</strong>
+                      {i < project.styleTags.length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                  {" "}ליצירת חלל הרמוני ומזמין.
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* RIGHT: spec aside */}
+          <aside className="lg:sticky lg:top-[86px] space-y-4">
+            <div className="bg-white border border-border-subtle rounded-[14px] p-5 shadow-xs">
+              <h4 className="font-heading font-semibold text-[12px] text-gold-dim tracking-[0.8px] uppercase mb-3.5 mt-0">
+                פרטי הפרויקט
+              </h4>
+              <div className="flex justify-between items-start py-2.5 border-b border-border-subtle text-[13.5px]">
+                <span className="text-text-muted text-[12.5px]">סוג</span>
+                <span className="font-medium text-left">{categoryLabel}</span>
+              </div>
+              {project.designer.city && (
+                <div className="flex justify-between items-start py-2.5 border-b border-border-subtle text-[13.5px]">
+                  <span className="text-text-muted text-[12.5px]">מיקום</span>
+                  <span className="font-medium text-left">{project.designer.city}</span>
                 </div>
               )}
+              <div className="flex justify-between items-start py-2.5 border-b border-border-subtle text-[13.5px]">
+                <span className="text-text-muted text-[12.5px]">שנה</span>
+                <span className="font-medium text-left">{projectYear}</span>
+              </div>
+              {project.designer.specialization && (
+                <div className="flex justify-between items-start py-2.5 border-b border-border-subtle text-[13.5px]">
+                  <span className="text-text-muted text-[12.5px]">סגנון</span>
+                  <span className="font-medium text-left">
+                    {project.designer.specialization}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-start py-2.5 text-[13.5px]">
+                <span className="text-text-muted text-[12.5px]">תמונות</span>
+                <span className="font-medium text-left">{project.images.length}</span>
+              </div>
 
-              {/* Image Gallery */}
-              {project.images.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-heading font-semibold text-text-primary mb-5">גלריית תמונות</h2>
-                  <div className="columns-2 sm:columns-3 gap-3 space-y-3">
-                    {project.images.map((image, index) => (
-                      <button
-                        key={image.id}
-                        onClick={() => setLightboxIndex(index)}
-                        className="relative group rounded-xl overflow-hidden border border-border-subtle hover:border-[color:var(--border-gold)] transition-all block w-full break-inside-avoid bg-white shadow-xs hover:shadow-md cursor-zoom-in"
-                        style={{ borderRadius: "12px" }}
-                      >
-                        <img
-                          src={proxyImageUrl(image.imageUrl)}
-                          alt={image.caption || ""}
-                          className="w-full h-auto block group-hover:scale-[1.03] transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-white/10 transition-colors" />
-                        {image.caption && (
-                          <div className="absolute bottom-0 right-0 left-0 bg-gradient-to-t from-black/75 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <p className="text-[11px] text-white line-clamp-1">{image.caption}</p>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+              {project.styleTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3.5 pt-3.5 border-t border-border-subtle">
+                  {project.styleTags.map((tag, i) => (
+                    <span
+                      key={tag}
+                      className={i === 0 ? "badge badge-gold" : "badge badge-gray"}
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Sidebar */}
-            <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-              {/* Style Tags */}
-              {project.styleTags.length > 0 && (
-                <div className="card-static">
-                  <h3 className="text-[11px] tracking-[0.2em] uppercase text-[color:var(--gold-dim)] mb-3 font-semibold">
-                    סגנונות
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {project.styleTags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="badge-gray"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Suppliers */}
-              {project.suppliers && project.suppliers.length > 0 && (
-                <div className="card-static">
-                  <h3 className="text-[11px] tracking-[0.2em] uppercase text-[color:var(--gold-dim)] mb-3 font-semibold">
-                    ספקים בפרויקט
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    {project.suppliers.length} ספקים משתתפים
-                  </p>
-                </div>
-              )}
-
-              {/* Project Info */}
-              <div className="card-static">
-                <h3 className="text-[11px] tracking-[0.2em] uppercase text-[color:var(--gold-dim)] mb-4 font-semibold">
-                  פרטי הפרויקט
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm items-center border-b border-border-subtle pb-2.5">
-                    <span className="text-text-muted">קטגוריה</span>
-                    <span className="text-text-primary font-medium">{CATEGORIES[project.category] || project.category}</span>
-                  </div>
-                  <div className="flex justify-between text-sm items-center border-b border-border-subtle pb-2.5">
-                    <span className="text-text-muted">תאריך</span>
-                    <span className="text-text-primary font-medium">{new Date(project.createdAt).toLocaleDateString("he-IL")}</span>
-                  </div>
-                  <div className="flex justify-between text-sm items-center">
-                    <span className="text-text-muted">תמונות</span>
-                    <span className="text-text-primary font-medium">{project.images.length}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Designer spotlight */}
+            {project.suppliers && project.suppliers.length > 0 && (
               <div
-                className="rounded-2xl p-5 border"
+                className="border rounded-[14px] p-5 shadow-xs"
                 style={{
-                  background:
-                    "linear-gradient(145deg, #FFFBEF 0%, #F5ECD3 100%)",
+                  background: "linear-gradient(135deg, #FBF7ED, #F5ECD3)",
                   borderColor: "var(--border-gold)",
-                  boxShadow: "var(--shadow-gold)",
                 }}
               >
-                <h3 className="text-[11px] tracking-[0.2em] uppercase text-[color:var(--gold-dim)] mb-3 font-semibold">
-                  המעצבת
-                </h3>
-                <p className="text-base font-heading font-semibold text-text-primary mb-1">
-                  {project.designer.fullName}
-                </p>
-                {project.designer.specialization && (
-                  <p className="text-xs text-text-secondary mb-3">
-                    {project.designer.specialization}
-                  </p>
-                )}
-                <Link
-                  href={`/projects?designer=${project.designer.id}`}
-                  className="btn-outline w-full justify-center"
+                <h4
+                  className="font-heading font-semibold text-[12px] tracking-[0.8px] uppercase mb-3.5 mt-0"
+                  style={{ color: "#5A4608" }}
                 >
-                  תיק העבודות המלא
-                </Link>
+                  ספקים בפרויקט
+                </h4>
+                {project.suppliers.map((sup, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-start py-2.5 text-[13.5px]"
+                    style={{
+                      borderBottom:
+                        i < project.suppliers.length - 1
+                          ? "1px solid rgba(139,101,8,.15)"
+                          : "none",
+                    }}
+                  >
+                    <span className="text-text-muted text-[12.5px]">ספק</span>
+                    <span className="font-medium text-left">{sup}</span>
+                  </div>
+                ))}
               </div>
-            </aside>
+            )}
+          </aside>
+        </div>
+
+        {/* ========= GALLERY MASONRY ========= */}
+        {project.images.length > 0 && (
+          <div>
+            <div className="flex items-baseline justify-between flex-wrap gap-2.5 mt-7 mb-4">
+              <h3 className="font-heading font-medium text-[28px] tracking-[-0.4px] m-0 text-text">
+                הגלריה המלאה
+              </h3>
+              <span className="text-[13px] text-text-muted">
+                {project.images.length} תמונות · לחצו להגדלה
+              </span>
+            </div>
+
+            <div
+              className="gap-3.5"
+              style={{ columns: 3, columnGap: "14px" }}
+            >
+              <style>{`
+                @media (max-width: 900px) { .masonry-gallery { columns: 2 !important; } }
+                @media (max-width: 550px) { .masonry-gallery { columns: 1 !important; } }
+              `}</style>
+              <div className="masonry-gallery" style={{ columns: "inherit", columnGap: "inherit" }}>
+                {project.images.map((image, index) => (
+                  <button
+                    key={image.id}
+                    onClick={() => setLightboxIndex(index)}
+                    className="relative w-full group rounded-xl overflow-hidden border border-border-subtle hover:shadow-md hover:-translate-y-0.5 transition-all bg-bg-surface cursor-zoom-in shadow-xs"
+                    style={{
+                      breakInside: "avoid",
+                      marginBottom: "14px",
+                      display: "block",
+                    }}
+                  >
+                    <img
+                      src={proxyImageUrl(image.imageUrl)}
+                      alt={image.caption || ""}
+                      className="w-full h-auto block"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-2.5 left-2.5 w-[30px] h-[30px] rounded-lg bg-white/90 backdrop-blur grid place-items-center text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </div>
+                    {image.caption && (
+                      <div className="absolute bottom-0 right-0 left-0 bg-gradient-to-t from-black/75 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="text-[11px] text-white line-clamp-1">{image.caption}</p>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========= PROCESS STRIP ========= */}
+        <div
+          className="my-12 p-7 rounded-2xl border grid grid-cols-2 md:grid-cols-4 gap-5 text-center"
+          style={{
+            background: "linear-gradient(135deg, #FBF7ED, #F5ECD3)",
+            borderColor: "var(--border-gold)",
+          }}
+        >
+          <div>
+            <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-white grid place-items-center text-gold-dim">
+              <MessageCircle className="w-[22px] h-[22px]" />
+            </div>
+            <div className="font-heading font-semibold text-[13px] mb-0.5">שיחה ראשונית</div>
+            <div className="text-[11.5px] text-text-muted">30 דקות · חינם</div>
+          </div>
+          <div>
+            <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-white grid place-items-center text-gold-dim">
+              <LayoutTemplate className="w-[22px] h-[22px]" />
+            </div>
+            <div className="font-heading font-semibold text-[13px] mb-0.5">סקיצה ראשונית</div>
+            <div className="text-[11.5px] text-text-muted">שבועיים</div>
+          </div>
+          <div>
+            <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-white grid place-items-center text-gold-dim">
+              <Hammer className="w-[22px] h-[22px]" />
+            </div>
+            <div className="font-heading font-semibold text-[13px] mb-0.5">ליווי ביצוע</div>
+            <div className="text-[11.5px] text-text-muted">3-9 חודשים</div>
+          </div>
+          <div>
+            <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-white grid place-items-center text-gold-dim">
+              <KeyRound className="w-[22px] h-[22px]" />
+            </div>
+            <div className="font-heading font-semibold text-[13px] mb-0.5">מפתחות</div>
+            <div className="text-[11.5px] text-text-muted">עם חיוך</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========= NEXT PROJECTS ========= */}
+      <section className="bg-bg-card border-t border-border-subtle mt-15 py-12">
+        <div className="max-w-[1240px] mx-auto px-6">
+          <div className="text-center mb-5">
+            <div className="text-[11.5px] text-gold-dim font-semibold tracking-[1px] uppercase">
+              המשך לחפור
+            </div>
+            <h3 className="font-heading font-medium text-[28px] m-0 mt-1">
+              פרויקטים נוספים של {firstName}
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Link
+              href={`/projects?designer=${project.designer.id}`}
+              className="relative rounded-[14px] overflow-hidden border border-border-subtle shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all block"
+              style={{ aspectRatio: "2/1" }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "linear-gradient(135deg, #FBF7ED, #8B6914)",
+                }}
+              />
+              <div
+                className="absolute inset-0 flex flex-col justify-center px-9 text-white"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.1))",
+                }}
+              >
+                <div className="text-[11.5px] opacity-85 tracking-[1px] uppercase mb-1">
+                  פרויקטים
+                </div>
+                <h4 className="font-heading font-medium text-2xl m-0 tracking-[-0.3px]">
+                  צפי בתיק העבודות המלא
+                </h4>
+              </div>
+            </Link>
+            <Link
+              href="/projects"
+              className="relative rounded-[14px] overflow-hidden border border-border-subtle shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all block"
+              style={{ aspectRatio: "2/1" }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "linear-gradient(135deg, #FBF7ED, #D4A437)",
+                }}
+              />
+              <div
+                className="absolute inset-0 flex flex-col justify-center px-9 text-white"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.1))",
+                }}
+              >
+                <div className="text-[11.5px] opacity-85 tracking-[1px] uppercase mb-1">
+                  גלריית הקהילה
+                </div>
+                <h4 className="font-heading font-medium text-2xl m-0 tracking-[-0.3px]">
+                  עוד פרויקטים מכל הארץ
+                </h4>
+              </div>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-bg-card py-8 px-4 border-t border-border-subtle">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Logo size="sm" />
-            <p className="text-sm text-text-secondary">זירת האדריכלות</p>
-          </div>
-          <p className="text-text-muted text-sm">&copy; {new Date().getFullYear()} כל הזכויות שמורות</p>
-        </div>
+      {/* ========= FLOATING CTA ========= */}
+      <div
+        className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-white border border-border-subtle rounded-full shadow-lg"
+        style={{
+          padding: "8px 10px 8px 18px",
+          maxWidth: "calc(100vw - 40px)",
+        }}
+      >
+        <span className="text-[13px] text-text-secondary hidden sm:inline">
+          אהבת את הפרויקט?{" "}
+          <strong className="text-text font-heading font-semibold">
+            שלחי הודעה ל{firstName}
+          </strong>
+        </span>
+        <Link
+          href={`/projects?designer=${project.designer.id}`}
+          className="btn-gold"
+          style={{ padding: "9px 20px", fontSize: "12.5px" }}
+        >
+          <Send className="w-3.5 h-3.5" />
+          שלחי פנייה
+        </Link>
+      </div>
+
+      {/* ========= FOOTER ========= */}
+      <footer className="py-7 border-t border-border-subtle text-text-muted text-[12.5px] text-center bg-bg-card">
+        <Link href="/" className="text-gold-dim hover:text-gold transition-colors">
+          ← חזרה לאינדקס
+        </Link>
+        {" · "}
+        זירת האדריכלות · {" "}
+        <Link
+          href={`/projects?designer=${project.designer.id}`}
+          className="hover:text-gold-dim transition-colors"
+        >
+          לתיק העבודות של {firstName}
+        </Link>
       </footer>
     </div>
   );

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
-  Plus, X, Trash2, Edit3, Star, GripVertical,
-  Eye, EyeOff, Filter, SortDesc, ImagePlus, Save,
-  ChevronLeft, AlertCircle, FolderKanban, Link2,
-  Upload, Loader2, Share2, Copy, ExternalLink, CreditCard,
-  MessageCircle,
+  Plus, X, Trash2, Pencil, Star, GripVertical,
+  Eye, EyeOff, Save, Search, LayoutGrid, List,
+  ChevronLeft, AlertCircle, FolderOpen, Link2,
+  Upload, Share2, Copy, ExternalLink, CreditCard,
+  MessageCircle, Image as ImageIcon, Heart, TrendingUp,
+  CheckCircle2, Clock, MapPin, Ruler, Calendar, Settings,
+  ArrowRight, Sparkles, ImagePlus,
 } from "lucide-react";
 import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
 import { g } from "@/lib/gender";
@@ -70,6 +72,16 @@ const EMPTY_FORM = {
   suppliers: [] as string[],
 };
 
+// Cover gradient variants (cover-a .. cover-f)
+const COVER_GRADIENTS = [
+  "linear-gradient(135deg,#E8C97A 0%,#C9A84C 100%)",
+  "linear-gradient(135deg,#F5ECD3 0%,#D4A437 100%)",
+  "linear-gradient(135deg,#D1D0CB 0%,#374151 100%)",
+  "linear-gradient(135deg,#FBF7ED 0%,#8B6914 100%)",
+  "linear-gradient(160deg,#EEEDEA 0%,#C9A84C 100%)",
+  "linear-gradient(135deg,#F5F4F0 0%,#6B7280 100%)",
+];
+
 // ===== HELPERS =====
 function getCategoryLabel(value: string) {
   return CATEGORIES.find((c) => c.value === value)?.label ?? value;
@@ -89,31 +101,24 @@ function isGooglePhotosShareLink(url: string): boolean {
 }
 
 function convertImageUrl(url: string): string {
-  // Google Drive - use proxy
   if (url.includes("drive.google.com")) {
     return `/api/image-proxy?url=${encodeURIComponent(url)}`;
   }
-  // Instagram - use proxy
   if (url.includes("instagram.com") || url.includes("cdninstagram.com")) {
     return `/api/image-proxy?url=${encodeURIComponent(url)}`;
   }
-  // Google Photos share links - use proxy
   if (url.includes("photos.app.goo.gl") || url.includes("photos.google.com")) {
     return `/api/image-proxy?url=${encodeURIComponent(url)}`;
   }
-  // Google Photos direct lh3 links - already work
   if (url.includes("lh3.googleusercontent.com")) {
     return url;
   }
-  // Dropbox links - convert to direct download
   if (url.includes("dropbox.com")) {
     return url.replace("dl=0", "dl=1").replace("www.dropbox.com", "dl.dropboxusercontent.com");
   }
-  // OneDrive links - can't easily convert, return as-is
   if (url.includes("1drv.ms") || url.includes("onedrive.live.com")) {
     return url;
   }
-  // Direct image URLs - use as-is
   return url;
 }
 
@@ -144,6 +149,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   const [error, setError] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+
+  // New UI-only state for toolbar in list view
+  const [searchText, setSearchText] = useState("");
+  const [statusChip, setStatusChip] = useState<"all" | "public" | "private" | "working">("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Image management state
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -301,6 +311,36 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     }
   };
 
+  const handleDuplicate = (project: Project) => {
+    // Open create form prefilled from this project
+    setEditingProject(null);
+    setForm({
+      title: `${project.title} (עותק)`,
+      description: project.description || "",
+      category: project.category,
+      styleTags: [...project.styleTags],
+      coverImageUrl: project.coverImageUrl || "",
+      status: "private",
+      suppliers: [...project.suppliers],
+    });
+    setError("");
+    setView("form");
+  };
+
+  const handleShare = (project: Project) => {
+    if (!designerId) return;
+    const url = typeof window !== "undefined"
+      ? `${window.location.origin}/projects?designer=${designerId}`
+      : `/projects?designer=${designerId}`;
+    try {
+      navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (e) {
+      console.error("Share link error", e);
+    }
+  };
+
   // ===== IMAGE ACTIONS =====
   const handleAddImage = async () => {
     if (!selectedProject) return;
@@ -327,7 +367,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         setImagePreviewError(false);
         setImagePreviewValid(false);
 
-        // Auto-set as cover if project has no cover image
         if (!selectedProject.coverImageUrl) {
           try {
             await fetch(`/api/designer/projects/${selectedProject.id}`, {
@@ -341,7 +380,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           }
         }
 
-        // Refresh project data
         await fetchProjects();
       }
     } catch (e) {
@@ -380,9 +418,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   };
 
   const handleCaptionUpdate = async (imageId: string, caption: string) => {
-    // We need a caption update - use the PATCH reorder endpoint with caption
-    // Actually the API only supports sortOrder reorder, so we'll store captions locally
-    // and update via a small PATCH. For now: update local state.
     setProjectImages((prev) =>
       prev.map((img) => (img.id === imageId ? { ...img, caption } : img))
     );
@@ -411,7 +446,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     setDragIndex(null);
     setDragOverIndex(null);
 
-    // Persist order
     try {
       await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
         method: "PATCH",
@@ -430,21 +464,18 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     setDragOverIndex(null);
   };
 
-  // URL preview handler
   const handleImageUrlChange = (url: string) => {
     setGooglePhotosWarning(false);
     setMultiAddCount(null);
 
     const trimmed = url.trim();
 
-    // Check for multiple URLs (pasted with newlines)
     const urls = extractUrls(trimmed);
     if (urls.length > 1) {
       handleMultipleUrls(urls);
       return;
     }
 
-    // Store the original URL (don't convert yet - convert only when displaying/saving)
     setNewImageUrl(trimmed);
     setImagePreviewError(false);
     setImagePreviewValid(false);
@@ -453,21 +484,17 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     }
   };
 
-  // Handle file upload - convert to base64 data URL
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedProject) return;
 
-    // Reset file input so the same file can be re-selected
     e.target.value = "";
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       setUploadError("הקובץ חייב להיות תמונה (jpg, png, webp)");
       return;
     }
 
-    // Validate file size (2MB max)
     const MAX_SIZE = 2 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       setUploadError(g(gdr, "גודל הקובץ מוגבל ל-2MB. נסה לכווץ את התמונה.", "גודל הקובץ מוגבל ל-2MB. נסי לכווץ את התמונה."));
@@ -478,7 +505,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     setUploadError("");
 
     try {
-      // Convert to base64 data URL
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -486,7 +512,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         reader.readAsDataURL(file);
       });
 
-      // Save to server
       const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -500,7 +525,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         const image = await res.json();
         setProjectImages((prev) => [...prev, image]);
 
-        // Auto-set as cover if project has no cover image
         if (!selectedProject.coverImageUrl) {
           try {
             await fetch(`/api/designer/projects/${selectedProject.id}`, {
@@ -526,15 +550,13 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     }
   };
 
-  // Handle pasting multiple URLs at once
   const handleMultipleUrls = async (urls: string[]) => {
     if (!selectedProject) return;
 
-    // Check for Google Photos links in the batch
     const validUrls: string[] = [];
     for (const rawUrl of urls) {
       if (isGooglePhotosShareLink(rawUrl)) {
-        continue; // Skip Google Photos share links
+        continue;
       }
       const converted = convertImageUrl(rawUrl);
       if (isValidUrl(converted)) {
@@ -594,9 +616,39 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     }));
   };
 
+  // ===== KPI VALUES =====
+  const totalImages = useMemo(
+    () => projects.reduce((acc, p) => acc + (p.images?.length || 0), 0),
+    [projects]
+  );
+  const publicCount = useMemo(
+    () => projects.filter((p) => p.status === "public").length,
+    [projects]
+  );
+  const privateCount = useMemo(
+    () => projects.filter((p) => p.status === "private").length,
+    [projects]
+  );
+
   // ===== FILTER & SORT =====
   const filtered = projects
     .filter((p) => categoryFilter === "all" || p.category === categoryFilter)
+    .filter((p) => {
+      if (statusChip === "all") return true;
+      if (statusChip === "public") return p.status === "public";
+      if (statusChip === "private") return p.status === "private";
+      if (statusChip === "working") return p.status !== "public" && p.status !== "private";
+      return true;
+    })
+    .filter((p) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        p.title.toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q) ||
+        p.styleTags.some((t) => t.toLowerCase().includes(q))
+      );
+    })
     .sort((a, b) => {
       const da = new Date(a.createdAt).getTime();
       const db = new Date(b.createdAt).getTime();
@@ -613,19 +665,19 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         <div className="flex items-center justify-between">
           <button
             onClick={() => setView("list")}
-            className="flex items-center gap-2 text-sm text-gold hover:text-[color:var(--gold-dim)] transition-colors font-semibold"
+            className="flex items-center gap-2 text-sm text-gold hover:text-gold-dim transition-colors font-semibold"
           >
             <ChevronLeft className="w-4 h-4" />
             חזרה לרשימה
           </button>
-          <h2 className="font-heading text-xl text-text-primary">
+          <h2 className="font-heading text-xl text-text">
             תמונות — {selectedProject.title}
           </h2>
         </div>
 
         {/* Add Image */}
         <div className="card-static">
-          <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-text mb-3 flex items-center gap-2">
             <ImagePlus className="w-4 h-4 text-gold" />
             הוסף תמונה
           </h3>
@@ -693,12 +745,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         {/* No cover image notice */}
         {!selectedProject.coverImageUrl && projectImages.length > 0 && (
           <div
-            className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 border"
-            style={{
-              background: "var(--gold-50)",
-              borderColor: "var(--border-gold)",
-              color: "var(--gold-dim)",
-            }}
+            className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 border bg-gold-50 border-border text-gold-dim"
           >
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             לא נבחרה תמונה ראשית — התמונה הראשונה תוצג כשער
@@ -707,12 +754,12 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
         {/* Image Grid */}
         {projectImages.length === 0 ? (
-          <div className="bg-bg-surface rounded-2xl border-2 border-dashed border-border-subtle p-12 text-center">
+          <div className="bg-bg-surface rounded-2xl border-2 border-dashed border-border p-12 text-center">
             <ImagePlus className="w-10 h-10 text-text-faint mx-auto mb-3" />
             <p className="text-text-muted text-sm">אין תמונות עדיין</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {projectImages.map((image, index) => {
               const isCover = selectedProject.coverImageUrl === image.imageUrl;
               return (
@@ -724,86 +771,73 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
                   className={`
-                    bg-white rounded-xl border overflow-hidden group relative transition-all shadow-sm
-                    ${dragOverIndex === index ? "border-gold scale-[1.02] shadow-md" : "border-border-subtle"}
+                    relative aspect-square bg-bg-surface rounded-[10px] border overflow-hidden group cursor-grab transition-all
+                    ${dragOverIndex === index ? "border-gold scale-[1.02] shadow-md" : "border-border"}
                     ${dragIndex === index ? "opacity-50" : ""}
-                    hover:shadow-md
+                    hover:shadow-md hover:border-gold
                   `}
                 >
-                  {/* Image */}
-                  <div className="relative">
-                    {brokenImages.has(image.id) ? (
-                      <div className="w-full py-8 flex flex-col items-center justify-center bg-red-50 border-2 border-red-200 rounded-t-xl gap-2">
-                        <span className="text-2xl">&#10060;</span>
-                        <span className="text-red-700 text-xs font-medium">הלינק לא תקין</span>
-                        <button
-                          onClick={() => handleDeleteImage(image.id)}
-                          className="mt-1 px-3 py-1 bg-red-100 border border-red-300 text-red-800 text-xs rounded-lg hover:bg-red-200 transition-colors"
-                        >
-                          מחק
-                        </button>
-                      </div>
-                    ) : (
+                  {brokenImages.has(image.id) ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 gap-2 p-3">
+                      <span className="text-2xl">&#10060;</span>
+                      <span className="text-red-700 text-xs font-medium text-center">הלינק לא תקין</span>
+                      <button
+                        onClick={() => handleDeleteImage(image.id)}
+                        className="mt-1 px-3 py-1 bg-red-100 border border-red-300 text-red-800 text-xs rounded-lg hover:bg-red-200 transition-colors"
+                      >
+                        מחק
+                      </button>
+                    </div>
+                  ) : (
                     <img
                       src={image.imageUrl}
                       alt={image.caption || ""}
-                      className="w-full h-auto block"
+                      className="w-full h-full object-cover block"
                       loading="lazy"
                       onError={() => {
                         setBrokenImages((prev) => new Set(prev).add(image.id));
                       }}
                     />
-                    )}
+                  )}
 
-                    {/* Overlay controls */}
-                    <div className="absolute inset-0 bg-white/0 group-hover:bg-white/70 group-hover:backdrop-blur-sm transition-all flex items-start justify-between p-2 opacity-0 group-hover:opacity-100">
-                      {/* Drag handle */}
-                      <div className="cursor-grab active:cursor-grabbing p-1.5 rounded-lg bg-white shadow-sm text-text-secondary">
-                        <GripVertical className="w-4 h-4" />
-                      </div>
+                  {/* Cover flag */}
+                  {isCover && (
+                    <span
+                      className="absolute top-2 right-2 bg-gold text-white text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wide z-[2]"
+                    >
+                      ראשית
+                    </span>
+                  )}
 
-                      <div className="flex gap-1">
-                        {/* Set as cover */}
-                        <button
-                          onClick={() => handleSetCover(image.imageUrl)}
-                          className={`p-1.5 rounded-lg transition-colors shadow-sm ${
-                            isCover
-                              ? "bg-gold text-white"
-                              : "bg-white text-text-secondary hover:text-gold"
-                          }`}
-                          title="הגדר כתמונת כיסוי"
-                        >
-                          <Star className={`w-4 h-4 ${isCover ? "fill-current" : ""}`} />
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDeleteImage(image.id)}
-                          className="p-1.5 rounded-lg bg-white shadow-sm text-text-secondary hover:text-red-600 hover:bg-red-50 transition-colors"
-                          title="מחק תמונה"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Cover badge */}
-                    {isCover && (
-                      <div className="absolute bottom-2 right-2 badge-gold text-[10px]">
-                        <Star className="w-3 h-3 fill-current inline-block ms-0.5" /> כיסוי
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Caption */}
-                  <div className="p-3">
-                    <input
-                      type="text"
-                      placeholder="כיתוב..."
-                      value={image.caption || ""}
-                      onChange={(e) => handleCaptionUpdate(image.id, e.target.value)}
-                      className="w-full bg-transparent border-b border-border-subtle text-text-primary text-xs pb-1 focus:border-gold focus:outline-none placeholder:text-text-faint transition-colors"
-                    />
+                  {/* Overlay with actions */}
+                  <div className="absolute inset-0 bg-white/0 group-hover:bg-white/80 group-hover:backdrop-blur-sm transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const caption = prompt("כיתוב לתמונה", image.caption || "");
+                        if (caption !== null) handleCaptionUpdate(image.id, caption);
+                      }}
+                      className="w-9 h-9 rounded-[9px] grid place-items-center bg-white shadow-xs text-text-secondary hover:text-gold-dim transition-colors"
+                      title="ערוך כיתוב"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleSetCover(image.imageUrl)}
+                      className={`w-9 h-9 rounded-[9px] grid place-items-center shadow-xs transition-colors ${
+                        isCover ? "bg-gold text-white" : "bg-white text-text-secondary hover:text-gold-dim"
+                      }`}
+                      title="הגדר כתמונה ראשית"
+                    >
+                      <Star className={`w-4 h-4 ${isCover ? "fill-current" : ""}`} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteImage(image.id)}
+                      className="w-9 h-9 rounded-[9px] grid place-items-center bg-white shadow-xs text-text-secondary hover:text-red-700 transition-colors"
+                      title="מחק"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               );
@@ -822,12 +856,12 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         <div className="flex items-center justify-between">
           <button
             onClick={() => setView("list")}
-            className="flex items-center gap-2 text-sm text-gold hover:text-[color:var(--gold-dim)] transition-colors font-semibold"
+            className="flex items-center gap-2 text-sm text-gold hover:text-gold-dim transition-colors font-semibold"
           >
             <ChevronLeft className="w-4 h-4" />
             חזרה לרשימה
           </button>
-          <h2 className="font-heading text-xl text-text-primary">
+          <h2 className="font-heading text-xl text-text">
             {editingProject ? "עריכת פרויקט" : "פרויקט חדש"}
           </h2>
         </div>
@@ -842,7 +876,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         <div className="card-static space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-sm font-semibold text-text-primary mb-2">שם הפרויקט *</label>
+            <label className="form-label">שם הפרויקט *</label>
             <input
               type="text"
               value={form.title}
@@ -854,7 +888,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-text-primary mb-2">תיאור</label>
+            <label className="form-label">תיאור</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -866,7 +900,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-semibold text-text-primary mb-2">קטגוריה</label>
+            <label className="form-label">קטגוריה</label>
             <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -880,7 +914,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Style Tags */}
           <div>
-            <label className="block text-sm font-semibold text-text-primary mb-2">סגנונות</label>
+            <label className="form-label">סגנונות</label>
             <div className="flex flex-wrap gap-2">
               {STYLE_TAGS.map((tag) => {
                 const selected = form.styleTags.includes(tag);
@@ -889,13 +923,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     key={tag}
                     type="button"
                     onClick={() => toggleStyleTag(tag)}
-                    className={`
-                      px-3 py-1.5 rounded-full text-xs font-medium border transition-all
-                      ${selected
-                        ? "bg-[color:var(--gold-50)] border-[color:var(--border-gold)] text-[color:var(--gold-dim)]"
-                        : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover hover:text-text-secondary"
-                      }
-                    `}
+                    className={
+                      selected
+                        ? "badge badge-gold cursor-pointer"
+                        : "badge badge-gray cursor-pointer"
+                    }
                   >
                     {tag}
                   </button>
@@ -906,7 +938,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Cover Image */}
           <div>
-            <label className="block text-sm font-semibold text-text-primary mb-2">תמונת כיסוי</label>
+            <label className="form-label">תמונת כיסוי</label>
             <FileUpload
               category="image"
               folder="portfolio"
@@ -920,20 +952,18 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
             />
           </div>
 
-          {/* Status Toggle */}
+          {/* Status */}
           <div>
-            <label className="block text-sm font-semibold text-text-primary mb-2">סטטוס</label>
-            <div className="flex gap-3">
+            <label className="form-label">סטטוס</label>
+            <div className="flex gap-3 flex-wrap">
               <button
                 type="button"
                 onClick={() => setForm({ ...form, status: "public" })}
-                className={`
-                  flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all
-                  ${form.status === "public"
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  form.status === "public"
                     ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                    : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover"
-                  }
-                `}
+                    : "bg-bg-surface border-border text-text-muted hover:text-text-secondary"
+                }`}
               >
                 <Eye className="w-4 h-4" />
                 ציבורי
@@ -941,13 +971,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
               <button
                 type="button"
                 onClick={() => setForm({ ...form, status: "private" })}
-                className={`
-                  flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all
-                  ${form.status === "private"
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  form.status === "private"
                     ? "bg-orange-50 border-orange-300 text-orange-700"
-                    : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover"
-                  }
-                `}
+                    : "bg-bg-surface border-border text-text-muted hover:text-text-secondary"
+                }`}
               >
                 <EyeOff className="w-4 h-4" />
                 פרטי
@@ -955,10 +983,10 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
             </div>
           </div>
 
-          {/* Supplier Linking */}
+          {/* Suppliers */}
           {suppliers.length > 0 && (
             <div>
-              <label className="block text-sm font-semibold text-text-primary mb-2 flex items-center gap-2">
+              <label className="form-label flex items-center gap-2">
                 <Link2 className="w-4 h-4 text-gold" />
                 ספקים מקושרים
               </label>
@@ -970,13 +998,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                       key={sup.id}
                       type="button"
                       onClick={() => toggleSupplier(sup.id)}
-                      className={`
-                        px-3 py-1.5 rounded-full text-xs font-medium border transition-all
-                        ${linked
-                          ? "bg-[color:var(--gold-50)] border-[color:var(--border-gold)] text-[color:var(--gold-dim)]"
-                          : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover hover:text-text-secondary"
-                        }
-                      `}
+                      className={
+                        linked
+                          ? "badge badge-gold cursor-pointer"
+                          : "badge badge-gray cursor-pointer"
+                      }
                     >
                       {sup.name}
                     </button>
@@ -987,7 +1013,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           )}
         </div>
 
-        {/* Save button */}
+        {/* Save buttons */}
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setView("list")}
@@ -1009,82 +1035,232 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   }
 
   // ---------- LIST VIEW ----------
+  const publicUrl = designerId && typeof window !== "undefined"
+    ? `${window.location.origin}/projects?designer=${designerId}`
+    : designerId
+      ? `/projects?designer=${designerId}`
+      : null;
+
   return (
-    <div className="space-y-6 animate-in" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <p className="text-[11px] tracking-[0.3em] uppercase text-[color:var(--gold-dim)] font-semibold mb-1">
-            תיק העבודות שלך
-          </p>
-          <h2 className="font-heading text-2xl text-text-primary flex items-center gap-2">
-            <FolderKanban className="w-5 h-5 text-gold" />
-            תיק עבודות
-          </h2>
-          <p className="text-sm text-text-muted mt-1">
-            {projects.length} / {MAX_PROJECTS_PER_DESIGNER} פרויקטים
-            {projects.length >= MAX_PROJECTS_PER_DESIGNER && (
-              <span className="text-red-600 mr-1"> (מקסימום)</span>
-            )}
-          </p>
+    <div className="space-y-0 animate-in" dir="rtl">
+      {/* ===== PAGE HEADER ===== */}
+      <header className="pt-6 pb-4">
+        {/* Crumbs */}
+        <nav className="flex items-center gap-2 text-xs text-text-muted mb-3">
+          <span className="hover:text-gold-dim transition-colors">האזור שלי</span>
+          <ChevronLeft className="w-3 h-3" />
+          <span>תיק עבודות</span>
+        </nav>
+
+        {/* Title row */}
+        <div className="flex items-end justify-between gap-5 flex-wrap">
+          <div>
+            <h1 className="font-heading text-3xl font-bold tracking-tight text-text mb-1.5">
+              תיק העבודות שלי
+            </h1>
+            <p className="text-text-muted text-sm m-0">
+              נהלי את הפרויקטים והתמונות שלך — גררי לסידור, העלי בהמוני.
+            </p>
+          </div>
+          {publicUrl && (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-bg-surface text-text-secondary text-[12.5px] border border-border transition-all hover:bg-white hover:border-gold hover:text-gold-dim"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              צפייה כלקוח
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
         </div>
-        <button
-          onClick={openCreate}
-          className="btn-gold"
-        >
-          <Plus className="w-4 h-4" />
-          הוסף פרויקט
-        </button>
-      </div>
+
+        {/* ===== KPI STRIP ===== */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mt-7">
+          <div className="bg-bg-card border border-border rounded-[14px] p-[18px_20px] relative">
+            <div className="float-left w-[38px] h-[38px] rounded-[10px] bg-gold-50 text-gold-dim grid place-items-center">
+              <FolderOpen className="w-4 h-4" />
+            </div>
+            <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-wider">פרויקטים</div>
+            <div className="font-heading text-2xl font-bold mt-1 text-text">{projects.length}</div>
+            <span className="inline-flex items-center gap-0.5 text-[11px] text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded-full mt-1 font-medium">
+              <TrendingUp className="w-3 h-3" /> {MAX_PROJECTS_PER_DESIGNER - projects.length} פנויים
+            </span>
+          </div>
+          <div className="bg-bg-card border border-border rounded-[14px] p-[18px_20px] relative">
+            <div className="float-left w-[38px] h-[38px] rounded-[10px] bg-gold-50 text-gold-dim grid place-items-center">
+              <ImageIcon className="w-4 h-4" />
+            </div>
+            <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-wider">תמונות</div>
+            <div className="font-heading text-2xl font-bold mt-1 text-text">{totalImages}</div>
+            <span className="inline-flex items-center gap-0.5 text-[11px] text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded-full mt-1 font-medium">
+              <TrendingUp className="w-3 h-3" /> סה"כ
+            </span>
+          </div>
+          <div className="bg-bg-card border border-border rounded-[14px] p-[18px_20px] relative">
+            <div className="float-left w-[38px] h-[38px] rounded-[10px] bg-gold-50 text-gold-dim grid place-items-center">
+              <Eye className="w-4 h-4" />
+            </div>
+            <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-wider">צפיות פרופיל</div>
+            <div className="font-heading text-2xl font-bold mt-1 text-text">—</div>
+            <span className="inline-flex items-center gap-0.5 text-[11px] text-text-muted bg-bg-surface px-1.5 py-0.5 rounded-full mt-1 font-medium">
+              בקרוב
+            </span>
+          </div>
+          <div className="bg-bg-card border border-border rounded-[14px] p-[18px_20px] relative">
+            <div className="float-left w-[38px] h-[38px] rounded-[10px] bg-gold-50 text-gold-dim grid place-items-center">
+              <Heart className="w-4 h-4" />
+            </div>
+            <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-wider">לייקים</div>
+            <div className="font-heading text-2xl font-bold mt-1 text-text">—</div>
+            <span className="inline-flex items-center gap-0.5 text-[11px] text-text-muted bg-bg-surface px-1.5 py-0.5 rounded-full mt-1 font-medium">
+              בקרוב
+            </span>
+          </div>
+        </div>
+      </header>
 
       {/* Cross-link to business card */}
       {onSwitchToCard && (
         <button
           onClick={onSwitchToCard}
-          className="flex items-center gap-2 text-sm text-gold hover:text-[color:var(--gold-dim)] transition-colors font-semibold"
+          className="flex items-center gap-2 text-sm text-gold hover:text-gold-dim transition-colors font-semibold mt-4"
         >
           <CreditCard className="w-4 h-4" />
           צפה בכרטיס הביקור שלי
         </button>
       )}
 
-      {/* Public Portfolio Link */}
-      {designerId && projects.some((p) => p.status === "public") && (
+      {/* ===== TOOLBAR ===== */}
+      <div className="bg-bg-card border border-border rounded-[14px] px-[18px] py-[14px] my-5 flex items-center gap-3 flex-wrap shadow-xs">
+        <div className="flex items-center gap-2.5 flex-1 min-w-[260px] flex-wrap">
+          {/* Search */}
+          <div className="relative flex-1 max-w-xs min-w-[200px]">
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="חיפוש בפרויקטים…"
+              className="input-field w-full pr-10"
+            />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint" />
+          </div>
+
+          {/* Chips */}
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => setStatusChip("all")}
+              className={`px-3.5 py-1.5 text-xs rounded-full font-medium transition-all border ${
+                statusChip === "all"
+                  ? "bg-gold-50 text-gold-dim border-border"
+                  : "bg-bg-surface text-text-secondary border-transparent hover:bg-bg-surface-2"
+              }`}
+            >
+              הכל · {projects.length}
+            </button>
+            <button
+              onClick={() => setStatusChip("public")}
+              className={`px-3.5 py-1.5 text-xs rounded-full font-medium transition-all border ${
+                statusChip === "public"
+                  ? "bg-gold-50 text-gold-dim border-border"
+                  : "bg-bg-surface text-text-secondary border-transparent hover:bg-bg-surface-2"
+              }`}
+            >
+              פורסם · {publicCount}
+            </button>
+            <button
+              onClick={() => setStatusChip("private")}
+              className={`px-3.5 py-1.5 text-xs rounded-full font-medium transition-all border ${
+                statusChip === "private"
+                  ? "bg-gold-50 text-gold-dim border-border"
+                  : "bg-bg-surface text-text-secondary border-transparent hover:bg-bg-surface-2"
+              }`}
+            >
+              טיוטה · {privateCount}
+            </button>
+            <button
+              onClick={() => setStatusChip("working")}
+              className={`px-3.5 py-1.5 text-xs rounded-full font-medium transition-all border ${
+                statusChip === "working"
+                  ? "bg-gold-50 text-gold-dim border-border"
+                  : "bg-bg-surface text-text-secondary border-transparent hover:bg-bg-surface-2"
+              }`}
+            >
+              בעבודה · {projects.length - publicCount - privateCount}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-2.5 items-center flex-wrap">
+          {/* Sort select */}
+          <select
+            value={sortDir}
+            onChange={(e) => setSortDir(e.target.value as "desc" | "asc")}
+            className="select-field w-40"
+          >
+            <option value="desc">מיון: חדש ביותר</option>
+            <option value="asc">מיון: ישן ביותר</option>
+          </select>
+
+          {/* View toggle */}
+          <div className="flex bg-bg-surface rounded-lg p-[3px] gap-0.5">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+                viewMode === "grid" ? "bg-white text-text shadow-xs" : "text-text-muted"
+              }`}
+              title="גריד"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+                viewMode === "list" ? "bg-white text-text shadow-xs" : "text-text-muted"
+              }`}
+              title="רשימה"
+            >
+              <List className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <button onClick={openCreate} className="btn-gold">
+            <Plus className="w-3.5 h-3.5" />
+            פרויקט חדש
+          </button>
+        </div>
+      </div>
+
+      {/* Public Portfolio Link (keep existing functionality) */}
+      {publicUrl && projects.some((p) => p.status === "public") && (
         <div
-          className="rounded-2xl border p-5"
-          style={{
-            background: "var(--gold-50)",
-            borderColor: "var(--border-gold)",
-          }}
+          className="rounded-2xl border p-5 mb-5 bg-gold-50 border-border"
         >
           <div className="flex items-center gap-2 mb-3">
-            <ExternalLink className="w-4 h-4 text-[color:var(--gold-dim)]" />
-            <h3 className="text-sm font-semibold text-[color:var(--gold-dim)]">לינק ציבורי לתיק העבודות</h3>
+            <ExternalLink className="w-4 h-4 text-gold-dim" />
+            <h3 className="text-sm font-semibold text-gold-dim">לינק ציבורי לתיק העבודות</h3>
           </div>
-          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-border-subtle">
+          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-border">
             <span className="text-xs text-text-secondary truncate flex-1" dir="ltr">
-              {typeof window !== "undefined"
-                ? `${window.location.origin}/projects?designer=${designerId}`
-                : `/projects?designer=${designerId}`}
+              {publicUrl}
             </span>
           </div>
           <div className="flex gap-2 mt-3 flex-wrap">
             <button
               onClick={() => {
-                const url = `${window.location.origin}/projects?designer=${designerId}`;
-                navigator.clipboard.writeText(url);
+                navigator.clipboard.writeText(publicUrl);
                 setLinkCopied(true);
                 setTimeout(() => setLinkCopied(false), 2000);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-[color:var(--border-gold)] text-[color:var(--gold-dim)] text-xs font-semibold rounded-full hover:bg-[color:var(--gold-50)] transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-border text-gold-dim text-xs font-semibold rounded-full hover:bg-gold-50 transition-colors"
             >
               <Copy className="w-3.5 h-3.5" />
               {linkCopied ? "הועתק!" : "העתק לינק"}
             </button>
             <button
               onClick={() => {
-                const url = `${window.location.origin}/projects?designer=${designerId}`;
-                const text = encodeURIComponent(`צפו בתיק העבודות שלי: ${url}`);
+                const text = encodeURIComponent(`צפו בתיק העבודות שלי: ${publicUrl}`);
                 window.open(`https://wa.me/?text=${text}`, "_blank");
               }}
               className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold rounded-full hover:bg-emerald-100 transition-colors"
@@ -1096,164 +1272,191 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Category filter */}
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-text-muted" />
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="select-field text-xs !py-2"
-          >
-            <option value="all">כל הקטגוריות</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat.value} value={cat.value}>{cat.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Sort */}
-        <button
-          onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-          className="flex items-center gap-1.5 px-3 py-2 bg-white border border-border-subtle rounded-xl text-text-secondary text-xs hover:border-border-hover transition-colors"
-        >
-          <SortDesc className={`w-3.5 h-3.5 transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`} />
-          {sortDir === "desc" ? "חדש לישן" : "ישן לחדש"}
-        </button>
-      </div>
-
-      {/* Grid */}
+      {/* ===== PROJECTS GRID ===== */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-bg-surface rounded-xl border border-border-subtle h-64 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-bg-surface rounded-[14px] border border-border h-72 animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-bg-surface rounded-2xl border-2 border-dashed border-border-subtle p-16 text-center">
-          <FolderKanban className="w-12 h-12 text-text-faint mx-auto mb-4" />
-          <p className="text-text-muted text-sm mb-4">
+        <div className="text-center py-16 px-6 bg-bg-card border-[1.5px] border-dashed border-border rounded-[14px]">
+          <div className="w-16 h-16 bg-bg-surface rounded-2xl grid place-items-center text-text-faint mx-auto mb-4">
+            <FolderOpen className="w-8 h-8" />
+          </div>
+          <h3 className="font-heading text-lg font-semibold mb-1.5">
             {projects.length === 0 ? "אין פרויקטים עדיין" : "אין תוצאות לסינון הנוכחי"}
+          </h3>
+          <p className="text-text-muted text-sm mb-4">
+            {projects.length === 0
+              ? "התחילי בפרויקט הראשון שלך"
+              : "נסי לשנות את הסינון"}
           </p>
           {projects.length === 0 && (
-            <button
-              onClick={openCreate}
-              className="btn-gold"
-            >
+            <button onClick={openCreate} className="btn-gold">
               <Plus className="w-4 h-4" />
               {g(gdr, "צור את הפרויקט הראשון", "צרי את הפרויקט הראשון")}
             </button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((project) => (
-            <div
-              key={project.id}
-              className="bg-white rounded-2xl border border-border-subtle overflow-hidden group shadow-xs hover:shadow-md hover:border-border-hover hover:-translate-y-0.5 transition-all"
-            >
-              {/* Cover Image */}
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+              : "grid grid-cols-1 gap-4"
+          }
+        >
+          {filtered.map((project, idx) => {
+            const imageCount = project.images?.length || 0;
+            const gradient = COVER_GRADIENTS[idx % COVER_GRADIENTS.length];
+            const isPublic = project.status === "public";
+            const isPrivate = project.status === "private";
+            return (
               <div
-                className="relative bg-bg-surface overflow-hidden cursor-pointer"
-                onClick={() => openImages(project)}
+                key={project.id}
+                className="bg-bg-card border border-border rounded-[14px] overflow-hidden shadow-xs transition-all relative group hover:shadow-md hover:border-gold hover:-translate-y-0.5"
               >
-                {project.coverImageUrl ? (
-                  <img
-                    src={project.coverImageUrl}
-                    alt={project.title}
-                    className="w-full h-auto block group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full py-16 flex items-center justify-center">
-                    <ImagePlus className="w-10 h-10 text-text-faint" />
+                {/* Cover area */}
+                <div
+                  className="relative aspect-[4/3] overflow-hidden cursor-pointer"
+                  style={
+                    project.coverImageUrl
+                      ? undefined
+                      : { background: gradient }
+                  }
+                  onClick={() => openImages(project)}
+                >
+                  {project.coverImageUrl ? (
+                    <img
+                      src={project.coverImageUrl}
+                      alt={project.title}
+                      className="w-full h-full object-cover block"
+                      loading="lazy"
+                    />
+                  ) : null}
+
+                  {/* Drag handle */}
+                  <div
+                    className="absolute top-2.5 left-2.5 w-[30px] h-[30px] bg-white/90 backdrop-blur rounded-lg grid place-items-center text-text-muted cursor-grab opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="גרור"
+                  >
+                    <GripVertical className="w-3.5 h-3.5" />
                   </div>
-                )}
 
-                {/* Overlay badges */}
-                <div className="absolute top-3 right-3 flex gap-2">
-                  {/* Category */}
-                  <span className="badge-gold">
-                    {getCategoryLabel(project.category)}
-                  </span>
-                  {/* Status */}
-                  {project.status === "public" ? (
-                    <span className="badge-green">
-                      <Eye className="w-3 h-3 inline-block ms-0.5" /> ציבורי
-                    </span>
-                  ) : (
-                    <span className="badge-gray">
-                      <EyeOff className="w-3 h-3 inline-block ms-0.5" /> פרטי
-                    </span>
-                  )}
-                </div>
-
-                {/* Image count */}
-                {project.images && project.images.length > 0 && (
-                  <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-text-primary text-[10px] font-semibold px-2 py-1 rounded-full border border-border-subtle shadow-sm">
-                    {project.images.length} תמונות
-                  </div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="font-heading text-lg text-text-primary mb-2 line-clamp-1">{project.title}</h3>
-
-                {/* Style tags */}
-                {project.styleTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {project.styleTags.slice(0, 4).map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-0.5 bg-[color:var(--gold-50)] border border-[color:var(--border-gold)] text-[color:var(--gold-dim)] text-[10px] rounded-full"
-                      >
-                        {tag}
+                  {/* Status badge */}
+                  <div className="absolute top-2.5 right-2.5">
+                    {isPublic ? (
+                      <span className="badge badge-green">
+                        <CheckCircle2 className="w-3 h-3" /> פורסם
                       </span>
-                    ))}
-                    {project.styleTags.length > 4 && (
-                      <span className="px-2 py-0.5 text-text-muted text-[10px]">
-                        +{project.styleTags.length - 4}
+                    ) : isPrivate ? (
+                      <span className="badge badge-gray">
+                        <Pencil className="w-3 h-3" /> טיוטה
+                      </span>
+                    ) : (
+                      <span className="badge badge-gold">
+                        <Clock className="w-3 h-3" /> בעבודה
                       </span>
                     )}
                   </div>
-                )}
 
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
-                  <span className="text-[10px] text-text-muted">
-                    {new Date(project.createdAt).toLocaleDateString("he-IL")}
-                  </span>
-                  <div className="flex items-center gap-1">
+                  {/* Actions (hover reveal) */}
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex gap-1.5 justify-start opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
                     <button
-                      onClick={() => openImages(project)}
-                      className="p-2 rounded-lg text-text-muted hover:text-gold hover:bg-[color:var(--gold-50)] transition-colors"
-                      title="תמונות"
-                    >
-                      <ImagePlus className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => openEdit(project)}
-                      className="p-2 rounded-lg text-text-muted hover:text-gold hover:bg-[color:var(--gold-50)] transition-colors"
+                      onClick={(e) => { e.stopPropagation(); openEdit(project); }}
+                      className="w-[34px] h-[34px] rounded-[9px] bg-white/95 backdrop-blur grid place-items-center text-text-secondary shadow-xs hover:bg-white hover:text-gold-dim hover:scale-[1.06] transition-all"
                       title="ערוך"
                     >
-                      <Edit3 className="w-4 h-4" />
+                      <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(project.id)}
-                      className="p-2 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); handleDuplicate(project); }}
+                      className="w-[34px] h-[34px] rounded-[9px] bg-white/95 backdrop-blur grid place-items-center text-text-secondary shadow-xs hover:bg-white hover:text-gold-dim hover:scale-[1.06] transition-all"
+                      title="שכפל"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleShare(project); }}
+                      className="w-[34px] h-[34px] rounded-[9px] bg-white/95 backdrop-blur grid place-items-center text-text-secondary shadow-xs hover:bg-white hover:text-gold-dim hover:scale-[1.06] transition-all"
+                      title="שתף"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }}
+                      className="w-[34px] h-[34px] rounded-[9px] bg-white/95 backdrop-blur grid place-items-center text-text-secondary shadow-xs hover:bg-white hover:text-red-700 hover:scale-[1.06] transition-all"
                       title="מחק"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
+
+                {/* Body */}
+                <div className="px-[18px] pt-4 pb-[18px]">
+                  <h3 className="font-heading text-base font-semibold leading-tight tracking-tight mb-1.5">
+                    {project.title}
+                  </h3>
+                  <div className="flex items-center gap-3 text-xs text-text-muted">
+                    <span className="inline-flex items-center gap-1">
+                      <ImageIcon className="w-3.5 h-3.5" /> {imageCount} תמונות
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5" /> {getCategoryLabel(project.category)}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {new Date(project.createdAt).toLocaleDateString("he-IL")}
+                    </span>
+                  </div>
+
+                  {/* Style tags */}
+                  {project.styleTags.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap mt-2.5">
+                      {project.styleTags.slice(0, 4).map((tag, i) => (
+                        <span
+                          key={tag}
+                          className={i === 0 ? "badge badge-gold" : "badge badge-gray"}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {project.styleTags.length > 4 && (
+                        <span className="text-[10px] text-text-muted">
+                          +{project.styleTags.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
+      {/* ===== TIPS PANEL ===== */}
+      <div
+        className="mt-8 p-5 rounded-[14px] border border-border flex gap-4.5 items-start"
+        style={{ background: "linear-gradient(135deg,#FBF7ED 0%,#F5ECD3 100%)" }}
+      >
+        <div className="w-11 h-11 rounded-xl bg-white grid place-items-center text-gold-dim flex-none">
+          <Sparkles className="w-5 h-5" />
+        </div>
+        <div>
+          <h4 className="font-heading text-[15px] font-semibold mb-1.5" style={{ color: "#5A4608" }}>
+            טיפים לתיק עבודות שמושך לקוחות
+          </h4>
+          <ul className="mt-1.5 pr-5 text-text-secondary text-[13px] leading-[1.8] list-disc">
+            <li>תמונה ראשית חדה ומוארת — היא מה שהלקוח רואה ראשון</li>
+            <li>6–12 תמונות לפרויקט · יותר מדי מעייף, פחות מדי לא נותן מספיק</li>
+            <li>תאורי פרויקט קצרים · סיפור הלקוח &gt; מפרט טכני</li>
+            <li>הוסיפי תמונות "לפני ואחרי" — שמעלה פי 3 את שיעור הפניות</li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
