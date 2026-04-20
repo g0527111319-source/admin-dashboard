@@ -33,6 +33,10 @@ export async function GET(
 }
 
 // PATCH /api/designer/crm/surveys/[surveyId] — submit survey (by client via token)
+// Accepts:
+//   - freeTextComment (the review text)
+//   - publishConsent: "ANONYMOUS" | "FULL" | "DECLINED"
+//   - overallScore/communicationScore/qualityScore/timelinessScore (backward-compat; not collected from the new client form)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ surveyId: string }> }
@@ -40,7 +44,14 @@ export async function PATCH(
   try {
     const { surveyId } = await params;
     const body = await req.json();
-    const { overallScore, communicationScore, qualityScore, timelinessScore, freeTextComment } = body;
+    const {
+      overallScore,
+      communicationScore,
+      qualityScore,
+      timelinessScore,
+      freeTextComment,
+      publishConsent,
+    } = body;
 
     // Find by token or ID
     const survey = await prisma.crmSatisfactionSurvey.findFirst({
@@ -57,14 +68,21 @@ export async function PATCH(
       return NextResponse.json({ error: "הסקר כבר מולא" }, { status: 400 });
     }
 
+    // Normalize publishConsent to one of the allowed values
+    const allowedConsent = ["ANONYMOUS", "FULL", "DECLINED"] as const;
+    const normalizedConsent = allowedConsent.includes(publishConsent)
+      ? publishConsent
+      : null;
+
     const updated = await prisma.crmSatisfactionSurvey.update({
       where: { id: survey.id },
       data: {
-        overallScore: overallScore || null,
-        communicationScore: communicationScore || null,
-        qualityScore: qualityScore || null,
-        timelinessScore: timelinessScore || null,
+        overallScore: overallScore ?? null,
+        communicationScore: communicationScore ?? null,
+        qualityScore: qualityScore ?? null,
+        timelinessScore: timelinessScore ?? null,
         freeTextComment: freeTextComment?.trim() || null,
+        publishConsent: normalizedConsent,
         completedAt: new Date(),
       },
     });

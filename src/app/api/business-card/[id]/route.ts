@@ -62,15 +62,52 @@ export async function GET(
       return NextResponse.json({ error: "לא נמצא" }, { status: 404 });
     }
 
+    // Fetch published client-review surveys for this designer and merge them
+    // into the card's testimonials. Hand-curated testimonials (from the card
+    // builder) appear first; survey-sourced reviews appear after. The survey
+    // source is identified by the id prefix `survey:` so the card builder UI
+    // can distinguish them if needed later.
+    let surveyTestimonials: Array<{ id: string; name: string; text: string }> = [];
+    if (profileType === "designer") {
+      const published = await prisma.crmSatisfactionSurvey.findMany({
+        where: {
+          publishedAt: { not: null },
+          publishConsent: { in: ["ANONYMOUS", "FULL"] },
+          freeTextComment: { not: null },
+          project: { designerId: id, deletedAt: null },
+        },
+        orderBy: { publishedAt: "desc" },
+        include: {
+          client: { select: { name: true, firstName: true, lastName: true, phone: true } },
+        },
+      });
+
+      surveyTestimonials = published
+        .filter((s) => s.freeTextComment && s.freeTextComment.trim())
+        .map((s) => {
+          let displayName = "לקוח/ה";
+          if (s.publishConsent === "FULL" && s.client) {
+            const fullName = [s.client.firstName, s.client.lastName].filter(Boolean).join(" ").trim() || s.client.name || "לקוח/ה";
+            displayName = s.client.phone ? `${fullName} · ${s.client.phone}` : fullName;
+          }
+          return {
+            id: `survey:${s.id}`,
+            name: displayName,
+            text: s.freeTextComment!.trim(),
+          };
+        });
+    }
+
     // Merge extraData back into the card object for the client
     let cardData = null;
     if (card) {
       const extra = (card.extraData as Record<string, unknown>) || {};
+      const existingTestimonials = (card.testimonials as Array<{ id: string; name: string; text: string }>) || [];
       cardData = {
         fields: card.fields,
         socialLinks: card.socialLinks,
         galleryImages: card.galleryImages,
-        testimonials: card.testimonials,
+        testimonials: [...existingTestimonials, ...surveyTestimonials],
         themeId: card.themeId,
         customColors: card.customColors,
         title: card.title,
@@ -83,6 +120,11 @@ export async function GET(
         // Spread all extra fields back into the card
         ...extra,
       };
+    } else if (surveyTestimonials.length > 0) {
+      // No business card yet but there are published reviews — surface them
+      // anyway so the testimonials appear as soon as the designer sets up
+      // her card later.
+      cardData = { testimonials: surveyTestimonials };
     }
 
     return NextResponse.json({

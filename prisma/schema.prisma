@@ -1205,11 +1205,13 @@ model CrmSatisfactionSurvey {
   project            CrmProject @relation(fields: [projectId], references: [id])
   clientId           String
   client             CrmClient  @relation(fields: [clientId], references: [id])
-  overallScore       Int?       // 1-5
+  overallScore       Int?       // 1-5 — internal designer-side only; hidden from client form
   communicationScore Int?
   qualityScore       Int?
   timelinessScore    Int?
-  freeTextComment    String?
+  freeTextComment    String?    // the review the client writes; eligible for public publication
+  publishConsent     String?    // null | "ANONYMOUS" | "FULL" | "DECLINED"
+  publishedAt        DateTime?  // when the designer shared this review to her public profile
   sentAt             DateTime?
   completedAt        DateTime?
   token              String     @unique @default(uuid())
@@ -1218,6 +1220,7 @@ model CrmSatisfactionSurvey {
 
   @@index([projectId])
   @@index([clientId])
+  @@index([publishedAt])
 }
 
 // ==========================================
