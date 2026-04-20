@@ -61,8 +61,21 @@ interface Assignment {
     stylePreference: string | null;
     additionalNotes: string | null;
     status: string;
+    source: string | null;
     createdAt: string;
   };
+}
+
+// Human-readable Hebrew label for Lead.source. The source is usually
+// "landing" (the main find-designer form) or
+// "designer-portfolio:<designerId>" (the public portfolio contact form
+// on /projects?designer=<id>). We don't resolve the designer id because
+// the list is already scoped to this designer.
+function sourceLabel(source: string | null | undefined): string {
+  if (!source) return "—";
+  if (source === "landing") return "דף נחיתה ראשי";
+  if (source.startsWith("designer-portfolio:")) return "תיק עבודות ציבורי";
+  return source;
 }
 
 function fmtDate(iso: string | null | undefined): string {
@@ -679,6 +692,7 @@ function AssignmentCard({ assignment, busy, onMarkViewed, onDismiss, onUndismiss
           <Mail className="w-4 h-4 text-gold flex-shrink-0" />
           <span className="truncate">{lead.email}</span>
         </a>
+        <InfoRow icon={Sparkles} label="מקור הפנייה" value={sourceLabel(lead.source)} />
         {lead.address && <InfoRow icon={Home} label="כתובת" value={lead.address} />}
         {lead.city && <InfoRow icon={MapPin} label="עיר" value={lead.city} />}
         {lead.sizeSqm != null && <InfoRow icon={Ruler} label="גודל" value={`${lead.sizeSqm} מ״ר`} />}

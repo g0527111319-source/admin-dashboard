@@ -24,7 +24,6 @@ import {
   Hammer,
   KeyRound,
   Send,
-  Star,
 } from "lucide-react";
 
 type ProjectImage = {
@@ -188,6 +187,7 @@ export default function ProjectPage() {
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [liked, setLiked] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -216,11 +216,19 @@ export default function ProjectPage() {
     try {
       if (navigator.share) {
         await navigator.share(shareData);
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(window.location.href);
+        return;
       }
-    } catch (e) {
-      // user cancelled or unsupported — silent
+    } catch {
+      /* user cancelled */
+    }
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 2500);
+      }
+    } catch {
+      /* ignore */
     }
   }, [project]);
 
@@ -271,57 +279,47 @@ export default function ProjectPage() {
         />
       )}
 
-      {/* ========= TOPNAV (fixed, blur) ========= */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/90 backdrop-blur-md border-b border-border-subtle">
-        <div className="max-w-[1400px] mx-auto h-16 px-6 flex items-center justify-between">
-          {/* Back link (right in RTL first position) */}
-          <Link
-            href="/projects"
+      {shareToast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[60] bg-black/90 text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg">
+          הקישור הועתק
+        </div>
+      )}
+
+      {/* ========= SIMPLE TOP (not fixed — no sticky nav on public page) ========= */}
+      <div className="max-w-[1240px] mx-auto px-6 pt-6 flex items-center justify-between">
+        <Link
+          href={`/projects?designer=${project.designer.id}`}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
+        >
+          <ArrowRight className="w-3.5 h-3.5" />
+          חזרה לתיק העבודות
+        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleShare}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
           >
-            <ArrowRight className="w-3.5 h-3.5" />
-            חזרה לתיק העבודות
-          </Link>
-
-          {/* Brand center */}
-          <Link href="/" className="flex items-center gap-2.5 font-heading font-bold text-[15px]">
-            <div
-              className="w-8 h-8 rounded-lg grid place-items-center text-[#5A4608] font-extrabold"
-              style={{ background: "linear-gradient(135deg, #F5ECD3, #C9A84C)" }}
-            >
-              ז
-            </div>
-            <span className="text-[13.5px]">זירת האדריכלות</span>
-          </Link>
-
-          {/* Share / heart */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              שתף
-            </button>
-            <button
-              type="button"
-              onClick={() => setLiked((v) => !v)}
-              aria-label="הוסף למועדפים"
-              aria-pressed={liked}
-              className="inline-flex items-center justify-center px-3 py-2 text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
-            >
-              <Heart
-                className={`w-3.5 h-3.5 ${liked ? "fill-gold text-gold" : ""}`}
-              />
-            </button>
-          </div>
+            <Share2 className="w-3.5 h-3.5" />
+            שתף
+          </button>
+          <button
+            type="button"
+            onClick={() => setLiked((v) => !v)}
+            aria-label="הוסף למועדפים"
+            aria-pressed={liked}
+            className="inline-flex items-center justify-center px-3 py-2 text-text-secondary hover:bg-bg-surface hover:text-text rounded-lg transition-colors"
+          >
+            <Heart
+              className={`w-3.5 h-3.5 ${liked ? "fill-gold text-gold" : ""}`}
+            />
+          </button>
         </div>
-      </nav>
+      </div>
 
       <div className="max-w-[1240px] mx-auto px-6">
         {/* ========= PROJECT HEADER ========= */}
-        <div className="pt-[90px] pb-6">
+        <div className="pt-6 pb-6">
           {/* Breadcrumbs */}
           <nav className="text-[12.5px] text-text-muted mb-4 flex items-center gap-2 flex-wrap">
             <Link
@@ -482,11 +480,12 @@ export default function ProjectPage() {
               {project.designer.fullName}
             </div>
             <div className="text-[12px] text-text-muted flex items-center gap-2 mt-0.5 truncate">
-              <Star className="w-3 h-3 text-gold fill-gold" />
-              <span>4.9</span>
-              {project.designer.city && <span>· {project.designer.city}</span>}
+              {project.designer.city && <span>{project.designer.city}</span>}
               {project.designer.specialization && (
-                <span className="hidden sm:inline">· {project.designer.specialization}</span>
+                <span className="hidden sm:inline">
+                  {project.designer.city ? "· " : ""}
+                  {project.designer.specialization}
+                </span>
               )}
             </div>
           </div>
@@ -556,7 +555,7 @@ export default function ProjectPage() {
           </div>
 
           {/* RIGHT: spec aside */}
-          <aside className="lg:sticky lg:top-[86px] space-y-4">
+          <aside className="lg:sticky lg:top-6 space-y-4">
             <div className="bg-white border border-border-subtle rounded-[14px] p-5 shadow-xs">
               <h4 className="font-heading font-semibold text-[12px] text-gold-dim tracking-[0.8px] uppercase mb-3.5 mt-0">
                 פרטי הפרויקט

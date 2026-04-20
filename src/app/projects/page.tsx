@@ -11,13 +11,9 @@ import {
   Loader2,
   Sparkles,
   MapPin,
-  TrendingUp,
   Users,
   MessageCircle,
-  Heart,
   Share2,
-  Star,
-  Edit3,
   Calendar,
   Phone,
   Send,
@@ -43,7 +39,19 @@ type Designer = {
   city: string | null;
   area: string | null;
   specialization: string | null;
-  crmSettings?: { logoUrl: string | null; companyName: string | null } | null;
+  crmSettings?: {
+    logoUrl: string | null;
+    companyName: string | null;
+    tagline?: string | null;
+  } | null;
+};
+
+type PublicRecommendation = {
+  id: string;
+  rating: number | null;
+  text: string | null;
+  clientName: string | null;
+  createdAt: string;
 };
 
 type PublicProject = {
@@ -190,14 +198,18 @@ function ProjectsContent() {
   // =================================================================
   if (designerParam) {
     const designer = projects[0]?.designer ?? null;
-    const city = designer?.city || designer?.area || "ישראל";
+    const city = designer?.city || designer?.area || null;
     const displayName = designerName || designer?.fullName || "מעצבת פנים";
 
     return (
       <DesignerPortfolioView
+        designerId={designerParam}
         displayName={displayName}
         designerLogo={designerLogo}
         city={city}
+        specialization={designer?.specialization ?? null}
+        tagline={designer?.crmSettings?.tagline ?? null}
+        companyName={designer?.crmSettings?.companyName ?? null}
         projectsCount={projects.length}
         loading={loading}
         projects={projects}
@@ -440,9 +452,13 @@ function ProjectsContent() {
 // bar + masonry + testimonials + CTA block with contact-mini form).
 // =================================================================
 function DesignerPortfolioView({
+  designerId,
   displayName,
   designerLogo,
   city,
+  specialization,
+  tagline,
+  companyName,
   projectsCount,
   loading,
   projects,
@@ -453,9 +469,13 @@ function DesignerPortfolioView({
   categoryFilter,
   setCategoryFilter,
 }: {
+  designerId: string;
   displayName: string;
   designerLogo: string | null;
-  city: string;
+  city: string | null;
+  specialization: string | null;
+  tagline: string | null;
+  companyName: string | null;
   projectsCount: number;
   loading: boolean;
   projects: PublicProject[];
@@ -470,6 +490,55 @@ function DesignerPortfolioView({
   const [contactPhone, setContactPhone] = useState("");
   const [contactMessage, setContactMessage] = useState("");
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactToast, setContactToast] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [recommendations, setRecommendations] = useState<PublicRecommendation[]>([]);
+  const [shareToast, setShareToast] = useState(false);
+
+  // Fetch public recommendations for this designer
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRecs() {
+      try {
+        const res = await fetch(`/api/public/designer/${designerId}/recommendations`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          if (Array.isArray(data)) setRecommendations(data);
+        }
+      } catch (e) {
+        console.error("Failed to load recommendations", e);
+      }
+    }
+    loadRecs();
+    return () => {
+      cancelled = true;
+    };
+  }, [designerId]);
+
+  async function handleShare() {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    const nav = navigator as Navigator & {
+      share?: (d: ShareData) => Promise<void>;
+    };
+    try {
+      if (nav.share) {
+        await nav.share({ title: displayName, url });
+        return;
+      }
+    } catch {
+      /* user cancelled */
+    }
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 2500);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 
   // Count of projects in each category (for chip labels)
   const categoryCounts = useMemo(() => {
@@ -480,85 +549,90 @@ function DesignerPortfolioView({
     return counts;
   }, [projects]);
 
-  function handleContactSubmit(e: React.FormEvent) {
+  async function handleContactSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Visual fallback: mailto link (no new API routes invented).
-    const subject = encodeURIComponent(`פנייה חדשה מאתר זירת האדריכלות — ${displayName}`);
-    const body = encodeURIComponent(
-      `שם: ${contactName}\nטלפון: ${contactPhone}\n\n${contactMessage}`
-    );
-    // Best-effort opening of mail client; on mobile/PWA this is still helpful.
-    if (typeof window !== "undefined") {
-      window.location.href = `mailto:info@ziratadrichalut.co.il?subject=${subject}&body=${body}`;
+    const name = contactName.trim();
+    const phone = contactPhone.trim();
+    const message = contactMessage.trim();
+
+    if (!name || !phone) {
+      setContactToast({ tone: "error", text: "יש למלא שם וטלפון" });
+      setTimeout(() => setContactToast(null), 3500);
+      return;
     }
-    setContactSubmitted(true);
+
+    setContactSubmitting(true);
+    try {
+      const res = await fetch(`/api/public/designer/${designerId}/contact`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, phone, message: message || undefined }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setContactToast({
+          tone: "error",
+          text: data.error || "שליחה נכשלה — נסי שוב",
+        });
+        setTimeout(() => setContactToast(null), 4000);
+      } else {
+        setContactSubmitted(true);
+        setContactToast({ tone: "success", text: "תודה! הפנייה נשלחה" });
+        setContactName("");
+        setContactPhone("");
+        setContactMessage("");
+        setTimeout(() => setContactToast(null), 3500);
+      }
+    } catch {
+      setContactToast({ tone: "error", text: "שליחה נכשלה — נסי שוב" });
+      setTimeout(() => setContactToast(null), 4000);
+    } finally {
+      setContactSubmitting(false);
+    }
   }
 
   return (
     <div className="min-h-screen bg-bg text-text-primary overflow-x-hidden" dir="rtl">
-      {/* ============ TOP NAV ============ */}
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 border-b border-border-subtle"
-        style={{
-          background: "rgba(250,250,248,0.85)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}
-      >
-        <div className="flex items-center justify-between max-w-[1400px] mx-auto px-6 h-16">
-          <Link href="/" className="flex items-center gap-2.5 font-bold text-[15px]" style={{ fontFamily: "'Rubik', sans-serif" }}>
-            <div
-              className="w-8 h-8 rounded-lg grid place-items-center text-[#5A4608] font-extrabold"
-              style={{ background: "linear-gradient(135deg,#F5ECD3,#C9A84C)" }}
-            >
-              ז
-            </div>
-            <div>
-              זירת האדריכלות
-              <small className="block text-[10px] text-text-muted font-normal tracking-[0.5px]">
-                Ivory Blinds
-              </small>
-            </div>
-          </Link>
-          <div className="hidden md:flex gap-1">
-            {[
-              { href: "/", label: "מעצבות" },
-              { href: "/projects", label: "פרויקטים" },
-              { href: "/blog", label: "בלוג" },
-              { href: "/about", label: "עלינו" },
-            ].map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="px-3.5 py-2 text-[13px] text-text-secondary rounded-lg font-medium hover:bg-bg-surface hover:text-text-primary transition-colors"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex gap-2 items-center">
-            <Link
-              href="/designer/me"
-              className="btn-ghost inline-flex items-center gap-1.5 px-4 py-2 text-[13px] text-text-secondary font-medium rounded-lg hover:bg-bg-surface hover:text-text-primary transition-colors"
-            >
-              <Edit3 className="w-3.5 h-3.5" /> ערוך פרופיל
-            </Link>
-            <Link
-              href="/register"
-              className="btn-outline"
-              style={{ padding: "9px 18px", fontSize: "12.5px" }}
-            >
-              הרשמה
-            </Link>
-          </div>
+      {/* ============ LIGHTWEIGHT TOP (back link only — no sticky nav) ============ */}
+      <div className="max-w-[1400px] mx-auto px-6 pt-6 flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-gold-dim transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          חזרה לאינדקס
+        </Link>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] text-text-secondary hover:bg-bg-surface hover:text-text-primary rounded-lg transition-colors"
+        >
+          <Share2 className="w-3.5 h-3.5" /> שתף
+        </button>
+      </div>
+
+      {shareToast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[60] bg-black/90 text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg">
+          הקישור הועתק
         </div>
-      </nav>
+      )}
+
+      {contactToast && (
+        <div
+          className={`fixed top-5 left-1/2 -translate-x-1/2 z-[60] text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg ${
+            contactToast.tone === "success" ? "bg-emerald-600" : "bg-red-600"
+          }`}
+          role="status"
+        >
+          {contactToast.text}
+        </div>
+      )}
 
       {/* ============ HERO ============ */}
       <section
         className="relative overflow-hidden"
         style={{
-          padding: "104px 0 60px",
+          padding: "40px 0 60px",
           background: "linear-gradient(180deg,#FBF7ED 0%,#FAFAF8 100%)",
         }}
       >
@@ -571,7 +645,7 @@ function DesignerPortfolioView({
           }}
         />
         <div className="relative max-w-[1400px] mx-auto px-6 grid gap-8 lg:gap-[60px] items-center grid-cols-1 lg:[grid-template-columns:1.1fr_0.9fr]">
-          {/* LEFT: copy */}
+          {/* LEFT: copy — real designer data only, no placeholders */}
           <div>
             <span
               className="inline-flex items-center gap-1.5 text-[12px] font-medium mb-[18px] px-3.5 py-1.5 rounded-full"
@@ -582,7 +656,9 @@ function DesignerPortfolioView({
                 letterSpacing: ".3px",
               }}
             >
-              <Sparkles className="w-3 h-3" /> מעצבת פנים · {city}
+              <Sparkles className="w-3 h-3" />
+              {specialization || "מעצבת פנים"}
+              {city && ` · ${city}`}
             </span>
             <h1
               className="font-heading m-0 mb-3"
@@ -593,50 +669,51 @@ function DesignerPortfolioView({
                 fontWeight: 500,
               }}
             >
-              מרחבים ש
-              <em className="italic font-normal" style={{ color: "var(--gold-dim)" }}>
-                מספרים
-              </em>
-              <br />
-              את הסיפור שלכם.
+              {displayName}
             </h1>
-            <p
-              className="text-[18px] text-text-secondary max-w-[520px] m-0 mb-6"
-              style={{ lineHeight: 1.55 }}
-            >
-              אני {displayName} — שנים של עיצוב פנים לבתים, דירות ומשרדים.
-              תיק עבודות מלא פרויקטים חמים, תוצאה נקייה, ולקוחות שחוזרים.
-            </p>
+            {companyName && (
+              <p
+                className="text-[16px] m-0 mb-3"
+                style={{ color: "var(--gold-dim)", fontWeight: 500 }}
+              >
+                {companyName}
+              </p>
+            )}
+            {tagline && (
+              <p
+                className="text-[18px] text-text-secondary max-w-[520px] m-0 mb-6"
+                style={{ lineHeight: 1.55 }}
+              >
+                {tagline}
+              </p>
+            )}
             <div className="flex flex-wrap gap-[18px] text-[13.5px] text-text-muted mb-7">
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" style={{ color: "var(--gold)" }} />
-                {city}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <TrendingUp className="w-4 h-4" style={{ color: "var(--gold)" }} />
-                11 שנות ניסיון
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Users className="w-4 h-4" style={{ color: "var(--gold)" }} />
-                {projectsCount} פרויקטים הושלמו
-              </span>
+              {city && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4" style={{ color: "var(--gold)" }} />
+                  {city}
+                </span>
+              )}
+              {projectsCount > 0 && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="w-4 h-4" style={{ color: "var(--gold)" }} />
+                  {projectsCount} פרויקטים
+                </span>
+              )}
             </div>
             <div className="flex gap-3 flex-wrap">
               <a href="#cta-form" className="btn-gold inline-flex items-center gap-2">
                 <MessageCircle className="w-3.5 h-3.5" /> שלחי פנייה
               </a>
-              <button type="button" className="btn-outline inline-flex items-center gap-2">
-                <Heart className="w-3.5 h-3.5" /> הוסף למועדפים
-              </button>
+              <Link
+                href={`/business-card/${designerId}`}
+                className="btn-outline inline-flex items-center gap-2"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> כרטיס ביקור דיגיטלי
+              </Link>
               <button
                 type="button"
-                onClick={() => {
-                  if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
-                    (navigator as Navigator & { share: (d: ShareData) => Promise<void> })
-                      .share({ title: displayName, url: typeof window !== "undefined" ? window.location.href : "" })
-                      .catch(() => {});
-                  }
-                }}
+                onClick={handleShare}
                 className="btn-ghost inline-flex items-center gap-1.5 px-4 py-2 text-text-secondary font-medium rounded-lg hover:bg-bg-surface hover:text-text-primary"
               >
                 <Share2 className="w-3.5 h-3.5" /> שתף
@@ -726,99 +803,62 @@ function DesignerPortfolioView({
                 </small>
               </div>
             </div>
-            {/* Floating rating card */}
-            <div
-              className="absolute z-[3] bg-white rounded-[14px] px-4 py-3.5 text-[13px] border border-border-subtle"
-              style={{
-                boxShadow: "var(--shadow-lg)",
-                top: "-14px",
-                right: "-24px",
-                transform: "rotate(3deg)",
-              }}
-            >
-              <div className="flex gap-0.5 mb-1" style={{ color: "var(--gold)" }}>
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <Star key={i} className="w-[15px] h-[15px] fill-current stroke-none" />
-                ))}
-              </div>
-              <div className="font-bold text-[15px]" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                4.9{" "}
-                <span className="text-text-muted font-normal text-[12px]">· 64 ביקורות</span>
-              </div>
-            </div>
-            {/* Floating response-time card */}
-            <div
-              className="absolute z-[3] bg-white rounded-[14px] px-4 py-3.5 text-[13px] border border-border-subtle"
-              style={{
-                boxShadow: "var(--shadow-lg)",
-                bottom: "30px",
-                left: "-40px",
-                transform: "rotate(-2deg)",
-              }}
-            >
-              <div className="text-[10.5px] text-text-muted font-medium uppercase tracking-[0.5px]">
-                זמן תגובה
-              </div>
-              <div className="font-bold text-[20px] mt-0.5" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                &lt; 2 שעות
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* ============ BIO STRIP ============ */}
-      <section
-        className="bg-bg-card py-6"
-        style={{
-          borderTop: "1px solid var(--border)",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <div className="max-w-[1400px] mx-auto px-6 grid gap-8 items-center grid-cols-2 lg:[grid-template-columns:2fr_1fr_1fr_1fr]">
-          <div
-            className="text-[14.5px] text-text-secondary col-span-2 lg:col-span-1"
-            style={{ lineHeight: 1.7 }}
-          >
-            אני מאמינה שבית מעוצב הוא בית שמרגישים בו <strong>בבוקר בפיג'מה</strong> לא
-            פחות מאשר כשהאורחים בסלון. כל פרויקט מתחיל משיחה ארוכה ומסתיים עם מפתחות
-            שמתקבלים עם חיוך — בלי לחץ ובלי הפתעות בדרך.
+      {/* ============ BIO STRIP (real data only) ============ */}
+      {(projectsCount > 0 || specialization || city) && (
+        <section
+          className="bg-bg-card py-6"
+          style={{
+            borderTop: "1px solid var(--border)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <div className="max-w-[1400px] mx-auto px-6 flex flex-wrap gap-8 items-center justify-center">
+            {projectsCount > 0 && (
+              <div className="text-center">
+                <div
+                  className="text-[28px] font-bold text-text-primary"
+                  style={{ fontFamily: "'Rubik', sans-serif", letterSpacing: "-.5px" }}
+                >
+                  {projectsCount}
+                </div>
+                <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-[0.8px] mt-0.5">
+                  פרויקטים
+                </div>
+              </div>
+            )}
+            {specialization && (
+              <div className="text-center">
+                <div
+                  className="text-[18px] font-semibold text-text-primary"
+                  style={{ fontFamily: "'Rubik', sans-serif" }}
+                >
+                  {specialization}
+                </div>
+                <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-[0.8px] mt-0.5">
+                  התמחות
+                </div>
+              </div>
+            )}
+            {city && (
+              <div className="text-center">
+                <div
+                  className="text-[18px] font-semibold text-text-primary"
+                  style={{ fontFamily: "'Rubik', sans-serif" }}
+                >
+                  {city}
+                </div>
+                <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-[0.8px] mt-0.5">
+                  אזור פעילות
+                </div>
+              </div>
+            )}
           </div>
-          <div className="text-center">
-            <div
-              className="text-[28px] font-bold text-text-primary"
-              style={{ fontFamily: "'Rubik', sans-serif", letterSpacing: "-.5px" }}
-            >
-              {projectsCount}
-            </div>
-            <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-[0.8px] mt-0.5">
-              פרויקטים
-            </div>
-          </div>
-          <div className="text-center">
-            <div
-              className="text-[28px] font-bold text-text-primary"
-              style={{ fontFamily: "'Rubik', sans-serif", letterSpacing: "-.5px" }}
-            >
-              11
-            </div>
-            <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-[0.8px] mt-0.5">
-              שנות ניסיון
-            </div>
-          </div>
-          <div className="text-center">
-            <div
-              className="text-[28px] font-bold text-text-primary"
-              style={{ fontFamily: "'Rubik', sans-serif", letterSpacing: "-.5px" }}
-            >
-              4.9<span className="text-[16px]" style={{ color: "var(--gold)" }}>★</span>
-            </div>
-            <div className="text-[11.5px] text-text-muted font-medium uppercase tracking-[0.8px] mt-0.5">
-              דירוג ממוצע
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ============ FILTER BAR ============ */}
       <div className="max-w-[1240px] mx-auto px-6">
@@ -899,90 +939,84 @@ function DesignerPortfolioView({
         </div>
       </div>
 
-      {/* ============ TESTIMONIALS ============ */}
-      <section
-        className="py-[70px] mt-[60px]"
-        style={{ background: "linear-gradient(180deg,#FAFAF8 0%,#FBF7ED 100%)" }}
-      >
-        <div className="max-w-[1240px] mx-auto px-6">
-          <div className="text-center mb-2.5">
-            <div
-              className="text-[13px] font-semibold uppercase tracking-[1px] mb-1.5"
-              style={{ color: "var(--gold-dim)", fontFamily: "'Rubik', sans-serif" }}
-            >
-              ביקורות לקוחות
-            </div>
-            <h2
-              className="font-heading text-[34px] m-0"
-              style={{ fontWeight: 500, letterSpacing: "-.6px" }}
-            >
-              מה אומרים עליי
-            </h2>
-          </div>
-          <div className="grid gap-5 mt-7 grid-cols-1 lg:grid-cols-3">
-            {[
-              {
-                quote:
-                  "שנה עברה מאז המפתחות ואנחנו עדיין מוצאים את עצמנו מתלהבים מפרטים. הקשיבה לכל בקשה, אפילו לאלה שלא ידענו איך לנסח.",
-                initials: "רכ",
-                name: "רונית כהן",
-                sub: "דירת גן · רמת השרון",
-              },
-              {
-                quote:
-                  "תקציב סביר, לוחות זמנים מדויקים, ותוצאה שנראית כמו ממגזין. לא תכננו לעבוד עם מעצבת, בסוף זה היה הצעד הכי חכם שעשינו.",
-                initials: "מש",
-                name: "משפחת שפירא",
-                sub: "פנטהאוז · תל אביב",
-              },
-              {
-                quote:
-                  "ידעתי שזו היא ברגע ששלחה לי את הסקיצה הראשונה. בלי אגו, עם הרבה יוזמה. חזרנו אליה גם לדירת ההשקעה.",
-                initials: "דל",
-                name: "דנה לוי",
-                sub: "משרד ביתי · הרצליה",
-              },
-            ].map((t, i) => (
+      {/* ============ TESTIMONIALS (real, published only) ============ */}
+      {recommendations.length > 0 && (
+        <section
+          className="py-[70px] mt-[60px]"
+          style={{ background: "linear-gradient(180deg,#FAFAF8 0%,#FBF7ED 100%)" }}
+        >
+          <div className="max-w-[1240px] mx-auto px-6">
+            <div className="text-center mb-2.5">
               <div
-                key={i}
-                className="relative bg-white rounded-[14px] p-[26px] border border-border-subtle"
-                style={{ boxShadow: "var(--shadow-xs)" }}
+                className="text-[13px] font-semibold uppercase tracking-[1px] mb-1.5"
+                style={{ color: "var(--gold-dim)", fontFamily: "'Rubik', sans-serif" }}
               >
-                <span
-                  aria-hidden
-                  className="absolute top-2.5 right-5.5 font-heading text-[72px] leading-none"
-                  style={{ color: "var(--gold)", opacity: 0.18 }}
-                >
-                  &ldquo;
-                </span>
-                <p
-                  className="text-[14.5px] text-text-secondary m-0 mb-4 italic relative"
-                  style={{ lineHeight: 1.7 }}
-                >
-                  {t.quote}
-                </p>
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-10 h-10 rounded-full grid place-items-center text-white font-bold text-[13px]"
-                    style={{ background: "linear-gradient(135deg,#E8C97A,#C9A84C)" }}
-                  >
-                    {t.initials}
-                  </div>
-                  <div>
-                    <div
-                      className="font-semibold text-[13.5px]"
-                      style={{ fontFamily: "'Rubik', sans-serif" }}
-                    >
-                      {t.name}
-                    </div>
-                    <div className="text-[11.5px] text-text-muted">{t.sub}</div>
-                  </div>
-                </div>
+                המלצות לקוחות
               </div>
-            ))}
+              <h2
+                className="font-heading text-[34px] m-0"
+                style={{ fontWeight: 500, letterSpacing: "-.6px" }}
+              >
+                מה אומרים עליי
+              </h2>
+            </div>
+            <div className="grid gap-5 mt-7 grid-cols-1 lg:grid-cols-3">
+              {recommendations.map((r) => {
+                const nameForInitials = r.clientName || "";
+                const parts = nameForInitials.trim().split(/\s+/).filter(Boolean);
+                const initials =
+                  parts.length === 0
+                    ? "?"
+                    : parts.length === 1
+                    ? parts[0].charAt(0)
+                    : parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+
+                return (
+                  <div
+                    key={r.id}
+                    className="relative bg-white rounded-[14px] p-[26px] border border-border-subtle"
+                    style={{ boxShadow: "var(--shadow-xs)" }}
+                  >
+                    <span
+                      aria-hidden
+                      className="absolute top-2.5 right-5.5 font-heading text-[72px] leading-none"
+                      style={{ color: "var(--gold)", opacity: 0.18 }}
+                    >
+                      &ldquo;
+                    </span>
+                    {r.text && (
+                      <p
+                        className="text-[14.5px] text-text-secondary m-0 mb-4 italic relative"
+                        style={{ lineHeight: 1.7 }}
+                      >
+                        {r.text}
+                      </p>
+                    )}
+                    {r.clientName && (
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-10 h-10 rounded-full grid place-items-center text-white font-bold text-[13px]"
+                          style={{ background: "linear-gradient(135deg,#E8C97A,#C9A84C)" }}
+                        >
+                          {initials || "?"}
+                        </div>
+                        <div>
+                          <div
+                            className="font-semibold text-[13.5px]"
+                            style={{ fontFamily: "'Rubik', sans-serif" }}
+                          >
+                            {r.clientName}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ============ CTA FOOTER ============ */}
       <div className="max-w-[1240px] mx-auto px-6" id="cta-form">
@@ -1084,13 +1118,14 @@ function DesignerPortfolioView({
               />
               <button
                 type="submit"
-                className="btn-gold w-full mt-3 inline-flex items-center justify-center gap-2"
+                disabled={contactSubmitting}
+                className="btn-gold w-full mt-3 inline-flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                שליחה <Send className="w-3.5 h-3.5" />
+                {contactSubmitting ? "שולח..." : "שליחה"} <Send className="w-3.5 h-3.5" />
               </button>
               {contactSubmitted && (
                 <p className="text-[12px] text-text-muted mt-2 text-center">
-                  תודה! ההודעה נשלחה — אחזור בהקדם.
+                  תודה! הפנייה נשלחה — המעצבת תחזור אלייך בהקדם.
                 </p>
               )}
             </form>
@@ -1107,8 +1142,8 @@ function DesignerPortfolioView({
           <Link href="/" style={{ color: "var(--gold-dim)" }}>
             ← חזרה לאינדקס
           </Link>{" "}
-          · זירת האדריכלות · {displayName} · מעצבת פנים ·{" "}
-          <Link href="/designer/me">ערוך פרופיל</Link>
+          · זירת האדריכלות · {displayName}
+          {specialization ? ` · ${specialization}` : ""}
         </div>
       </footer>
     </div>

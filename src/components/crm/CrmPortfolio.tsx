@@ -11,6 +11,7 @@ import {
   ArrowRight, Sparkles, ImagePlus,
 } from "lucide-react";
 import FileUpload, { type UploadedFile } from "@/components/ui/FileUpload";
+import ImageEditor from "@/components/ui/ImageEditor";
 import { g } from "@/lib/gender";
 
 // ===== PORTFOLIO LIMITS =====
@@ -173,6 +174,23 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   const [uploadError, setUploadError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
+
+  // Image editor state (feature #9)
+  const [editingImage, setEditingImage] = useState<ProjectImage | null>(null);
+  const [editingImageFile, setEditingImageFile] = useState<File | null>(null);
+  const [editorSaving, setEditorSaving] = useState(false);
+
+  // Toast state (feature #13)
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 2000);
+  }, []);
+
+  // Per-card share feedback
+  const [sharedCardId, setSharedCardId] = useState<string | null>(null);
+  // Per-card publish toggle in-flight
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // ===== FETCH =====
   const fetchProjects = useCallback(async () => {
@@ -422,6 +440,142 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
       prev.map((img) => (img.id === imageId ? { ...img, caption } : img))
     );
   };
+
+  // ===== IMAGE EDIT (crop/rotate/flip/zoom) — feature #9 =====
+  const openImageEditor = useCallback(async (image: ProjectImage) => {
+    try {
+      // Fetch the image as a Blob so we can hand it to ImageEditor as a File
+      const fetchUrl = image.imageUrl.startsWith("data:")
+        ? image.imageUrl
+        : image.imageUrl;
+      const res = await fetch(fetchUrl);
+      if (!res.ok) throw new Error("שגיאה בטעינת התמונה לעריכה");
+      const blob = await res.blob();
+      const filename = `image-${image.id}.${(blob.type.split("/")[1] || "jpg").split("+")[0]}`;
+      const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+      setEditingImage(image);
+      setEditingImageFile(file);
+    } catch (e) {
+      console.error("Open image editor error", e);
+      showToast("לא ניתן לפתוח את התמונה לעריכה");
+    }
+  }, [showToast]);
+
+  const handleEditorCancel = useCallback(() => {
+    setEditingImage(null);
+    setEditingImageFile(null);
+    setEditorSaving(false);
+  }, []);
+
+  const handleEditorSave = useCallback(async (editedBlob: Blob, filename: string) => {
+    if (!selectedProject || !editingImage) return;
+    setEditorSaving(true);
+    try {
+      // 1) Upload the new image via existing /api/upload endpoint
+      const formData = new FormData();
+      const newFile = new File([editedBlob], filename, { type: editedBlob.type || "image/jpeg" });
+      formData.append("file", newFile);
+      formData.append("folder", "portfolio");
+      formData.append("category", "image");
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!uploadRes.ok) {
+        const data = await uploadRes.json().catch(() => ({}));
+        throw new Error(data.error || "שגיאה בהעלאת התמונה המעודכנת");
+      }
+      const uploadData = await uploadRes.json();
+      const newUrl: string = uploadData.url;
+
+      const oldImage = editingImage;
+      const wasCover = selectedProject.coverImageUrl === oldImage.imageUrl;
+
+      // 2) Create a new image record at the same sortOrder slot
+      const createRes = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: newUrl,
+          sortOrder: oldImage.sortOrder,
+        }),
+      });
+      if (!createRes.ok) throw new Error("שגיאה ביצירת התמונה המעודכנת");
+      const newImage: ProjectImage = await createRes.json();
+
+      // 3) Delete the old image
+      await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: oldImage.id }),
+      });
+
+      // 4) Swap in local state (preserve order)
+      setProjectImages((prev) => prev.map((img) => (img.id === oldImage.id ? { ...newImage, sortOrder: oldImage.sortOrder } : img)));
+
+      // 5) If it was the cover, repoint cover to the new URL
+      if (wasCover) {
+        try {
+          await fetch(`/api/designer/projects/${selectedProject.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ coverImageUrl: newUrl }),
+          });
+          setSelectedProject({ ...selectedProject, coverImageUrl: newUrl });
+        } catch (coverErr) {
+          console.error("Cover repoint error", coverErr);
+        }
+      }
+
+      await fetchProjects();
+      showToast("התמונה עודכנה בהצלחה");
+      setEditingImage(null);
+      setEditingImageFile(null);
+    } catch (e) {
+      console.error("Edit image error", e);
+      showToast(e instanceof Error ? e.message : "שגיאה בעדכון התמונה");
+    } finally {
+      setEditorSaving(false);
+    }
+  }, [selectedProject, editingImage, fetchProjects, showToast]);
+
+  // ===== PUBLISH TOGGLE — feature #14 =====
+  const handleTogglePublish = useCallback(async (project: Project) => {
+    if (togglingId) return;
+    setTogglingId(project.id);
+    try {
+      const nextStatus = project.status === "public" ? "private" : "public";
+      const res = await fetch(`/api/designer/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) throw new Error("שגיאה בעדכון סטטוס הפרויקט");
+      await fetchProjects();
+      showToast(nextStatus === "public" ? "הפרויקט פורסם" : "הפרויקט עבר לטיוטה");
+    } catch (e) {
+      console.error("Toggle publish error", e);
+      showToast(e instanceof Error ? e.message : "שגיאה בעדכון סטטוס");
+    } finally {
+      setTogglingId(null);
+    }
+  }, [togglingId, fetchProjects, showToast]);
+
+  // ===== SHARE PER-PROJECT LINK — feature #13 =====
+  const handleShareProjectLink = useCallback((project: Project) => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/projects/${project.id}`;
+    try {
+      navigator.clipboard.writeText(url);
+      setSharedCardId(project.id);
+      setTimeout(() => setSharedCardId(null), 2000);
+      showToast("הקישור הועתק");
+    } catch (e) {
+      console.error("Share link error", e);
+      showToast("לא ניתן להעתיק את הקישור");
+    }
+  }, [showToast]);
 
   // ===== DRAG AND DROP =====
   const handleDragStart = (index: number) => {
@@ -675,15 +829,10 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           </h2>
         </div>
 
-        {/* Add Image */}
-        <div className="card-static">
-          <h3 className="text-sm font-semibold text-text mb-3 flex items-center gap-2">
-            <ImagePlus className="w-4 h-4 text-gold" />
-            הוסף תמונה
-          </h3>
-
+        {/* Add Image — split into Main + Secondary (feature #11) */}
+        <div className="card-static space-y-5">
           {/* Limits info */}
-          <div className="mb-3 text-xs text-text-muted flex items-center gap-4 flex-wrap">
+          <div className="text-xs text-text-muted flex items-center gap-4 flex-wrap">
             <span>
               תמונות: {projectImages.length} / {MAX_IMAGES_PER_PROJECT}
               {projectImages.length >= MAX_IMAGES_PER_PROJECT && (
@@ -692,54 +841,118 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
             </span>
           </div>
 
-          {projectImages.length >= MAX_IMAGES_PER_PROJECT ? (
-            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-800 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              הגעת למקסימום {MAX_IMAGES_PER_PROJECT} תמונות לפרויקט. {g(gdr, "מחק תמונה קיימת כדי להוסיף חדשה.", "מחקי תמונה קיימת כדי להוסיף חדשה.")}
-            </div>
-          ) : (
+          {/* Main image (cover) section */}
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-2 flex items-center gap-2">
+              <Star className="w-4 h-4 text-gold fill-current" />
+              העלאת תמונה ראשית
+            </h3>
+            <p className="text-xs text-text-muted mb-3">
+              התמונה הזו תוצג כתמונת כיסוי של הפרויקט.
+            </p>
             <FileUpload
               category="image"
               folder="portfolio"
-              label="העלאת תמונות לפרויקט (ניתן לבחור כמה)"
-              multiple
-              skipEditor
+              currentUrl={selectedProject.coverImageUrl || undefined}
+              label="העלאת תמונה ראשית"
+              skipEditor={false}
               maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
               onUpload={async (file: UploadedFile) => {
                 if (!selectedProject) return;
                 try {
-                  const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      imageUrl: file.url,
-                      sortOrder: projectImages.length,
-                    }),
-                  });
-                  if (res.ok) {
-                    const image = await res.json();
-                    setProjectImages((prev) => [...prev, image]);
-                    if (!selectedProject.coverImageUrl) {
-                      try {
-                        await fetch(`/api/designer/projects/${selectedProject.id}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ coverImageUrl: file.url }),
-                        });
-                        setSelectedProject({ ...selectedProject, coverImageUrl: file.url });
-                      } catch (coverErr) {
-                        console.error("Auto-set cover error", coverErr);
-                      }
+                  // 1) Save as a regular project image (if room), so it also appears in the gallery
+                  if (projectImages.length < MAX_IMAGES_PER_PROJECT) {
+                    const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        imageUrl: file.url,
+                        sortOrder: projectImages.length,
+                      }),
+                    });
+                    if (res.ok) {
+                      const image = await res.json();
+                      setProjectImages((prev) => [...prev, image]);
                     }
-                    await fetchProjects();
                   }
+                  // 2) Set as cover
+                  await fetch(`/api/designer/projects/${selectedProject.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ coverImageUrl: file.url }),
+                  });
+                  setSelectedProject({ ...selectedProject, coverImageUrl: file.url });
+                  await fetchProjects();
+                  showToast("התמונה הראשית עודכנה");
                 } catch (e) {
-                  console.error("Add image error", e);
+                  console.error("Set main image error", e);
                 }
               }}
               onError={(err: string) => alert(err)}
             />
-          )}
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Secondary images section */}
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-2 flex items-center gap-2">
+              <ImagePlus className="w-4 h-4 text-gold" />
+              תמונות נוספות (משניות)
+            </h3>
+            <p className="text-xs text-text-muted mb-3">
+              ניתן להעלות מספר תמונות יחד. כל התמונות ישמרו אוטומטית.
+            </p>
+
+            {projectImages.length >= MAX_IMAGES_PER_PROJECT ? (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-800 text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                הגעת למקסימום {MAX_IMAGES_PER_PROJECT} תמונות לפרויקט. {g(gdr, "מחק תמונה קיימת כדי להוסיף חדשה.", "מחקי תמונה קיימת כדי להוסיף חדשה.")}
+              </div>
+            ) : (
+              <FileUpload
+                category="image"
+                folder="portfolio"
+                label="העלאת תמונות לפרויקט (ניתן לבחור כמה)"
+                multiple
+                skipEditor
+                maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+                onUpload={async (file: UploadedFile) => {
+                  if (!selectedProject) return;
+                  try {
+                    const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        imageUrl: file.url,
+                        sortOrder: projectImages.length,
+                      }),
+                    });
+                    if (res.ok) {
+                      const image = await res.json();
+                      setProjectImages((prev) => [...prev, image]);
+                      if (!selectedProject.coverImageUrl) {
+                        try {
+                          await fetch(`/api/designer/projects/${selectedProject.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ coverImageUrl: file.url }),
+                          });
+                          setSelectedProject({ ...selectedProject, coverImageUrl: file.url });
+                        } catch (coverErr) {
+                          console.error("Auto-set cover error", coverErr);
+                        }
+                      }
+                      await fetchProjects();
+                    }
+                  } catch (e) {
+                    console.error("Add image error", e);
+                  }
+                }}
+                onError={(err: string) => alert(err)}
+              />
+            )}
+          </div>
         </div>
 
         {/* No cover image notice */}
@@ -814,13 +1027,23 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        openImageEditor(image);
+                      }}
+                      className="w-9 h-9 rounded-[9px] grid place-items-center bg-white shadow-xs text-text-secondary hover:text-gold-dim transition-colors"
+                      title="ערוך תמונה (חיתוך / סיבוב)"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         const caption = prompt("כיתוב לתמונה", image.caption || "");
                         if (caption !== null) handleCaptionUpdate(image.id, caption);
                       }}
                       className="w-9 h-9 rounded-[9px] grid place-items-center bg-white shadow-xs text-text-secondary hover:text-gold-dim transition-colors"
                       title="ערוך כיתוב"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <MessageCircle className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleSetCover(image.imageUrl)}
@@ -842,6 +1065,101 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Persist / publish actions (features #10, #14) */}
+        <div className="flex justify-between gap-3 flex-wrap items-center pt-4">
+          <div className="flex gap-2 items-center">
+            {selectedProject.status === "public" ? (
+              <button
+                type="button"
+                onClick={() => handleTogglePublish(selectedProject)}
+                disabled={togglingId === selectedProject.id}
+                className="btn-outline disabled:opacity-50"
+                title="הפוך לטיוטה"
+              >
+                <EyeOff className="w-4 h-4" />
+                הפוך לטיוטה
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleTogglePublish(selectedProject)}
+                disabled={togglingId === selectedProject.id}
+                className="btn-gold disabled:opacity-50"
+                title="פרסם"
+              >
+                <Eye className="w-4 h-4" />
+                פרסם
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => handleShareProjectLink(selectedProject)}
+              className="btn-outline"
+              title="העתק קישור לפרויקט"
+            >
+              <Share2 className="w-4 h-4" />
+              {sharedCardId === selectedProject.id ? "הועתק!" : "שתף לינק"}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={async () => {
+              // Re-save project metadata + refresh to persist any pending changes (feature #10)
+              try {
+                const res = await fetch(`/api/designer/projects/${selectedProject.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    title: selectedProject.title,
+                    description: selectedProject.description,
+                    category: selectedProject.category,
+                    styleTags: selectedProject.styleTags,
+                    coverImageUrl: selectedProject.coverImageUrl,
+                    status: selectedProject.status,
+                    suppliers: selectedProject.suppliers,
+                  }),
+                });
+                if (!res.ok) throw new Error("שגיאה בשמירה");
+                await fetchProjects();
+                showToast("הפרויקט נשמר");
+              } catch (e) {
+                console.error("Save project error", e);
+                showToast(e instanceof Error ? e.message : "שגיאה בשמירה");
+              }
+            }}
+            className="btn-gold"
+            title="שמור פרויקט"
+          >
+            <Save className="w-4 h-4" />
+            שמור פרויקט
+          </button>
+        </div>
+
+        {/* Image Editor modal */}
+        {editingImage && editingImageFile && (
+          <ImageEditor
+            file={editingImageFile}
+            onSave={handleEditorSave}
+            onCancel={handleEditorCancel}
+          />
+        )}
+
+        {/* Toast */}
+        {toastMsg && (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-text text-white px-5 py-2.5 rounded-full shadow-lg text-sm font-medium z-[10000]"
+            dir="rtl"
+          >
+            {toastMsg}
+          </div>
+        )}
+        {editorSaving && !editingImage && (
+          <div className="fixed inset-0 bg-black/40 z-[9998] grid place-items-center">
+            <div className="bg-white rounded-xl px-6 py-4 text-sm">שומר...</div>
           </div>
         )}
       </div>
@@ -1014,22 +1332,61 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         </div>
 
         {/* Save buttons */}
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={() => setView("list")}
-            className="btn-outline"
-          >
-            ביטול
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn-gold disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? "שומר..." : editingProject ? "עדכן פרויקט" : "צור פרויקט"}
-          </button>
+        <div className="flex justify-between gap-3 flex-wrap items-center">
+          {/* Publish toggle (feature #14) — only for existing projects */}
+          <div>
+            {editingProject && (
+              form.status === "public" ? (
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, status: "private" })}
+                  className="btn-outline"
+                  title="הפוך לטיוטה"
+                >
+                  <EyeOff className="w-4 h-4" />
+                  הפוך לטיוטה
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, status: "public" })}
+                  className="btn-gold"
+                  title="פרסם פרויקט"
+                >
+                  <Eye className="w-4 h-4" />
+                  פרסם
+                </button>
+              )
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setView("list")}
+              className="btn-outline"
+            >
+              ביטול
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-gold disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? "שומר..." : editingProject ? "שמור פרויקט" : "צור פרויקט"}
+            </button>
+          </div>
         </div>
+
+        {/* Toast */}
+        {toastMsg && (
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-text text-white px-5 py-2.5 rounded-full shadow-lg text-sm font-medium z-[10000]"
+            dir="rtl"
+          >
+            {toastMsg}
+          </div>
+        )}
       </div>
     );
   }
@@ -1378,9 +1735,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                       <Copy className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleShare(project); }}
+                      onClick={(e) => { e.stopPropagation(); handleShareProjectLink(project); }}
                       className="w-[34px] h-[34px] rounded-[9px] bg-white/95 backdrop-blur grid place-items-center text-text-secondary shadow-xs hover:bg-white hover:text-gold-dim hover:scale-[1.06] transition-all"
-                      title="שתף"
+                      title="שתף לינק"
                     >
                       <Share2 className="w-3.5 h-3.5" />
                     </button>
@@ -1430,6 +1787,39 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                       )}
                     </div>
                   )}
+
+                  {/* Publish toggle + share link (features #13, #14) */}
+                  <div className="flex items-center gap-2 mt-3.5 flex-wrap">
+                    {isPublic ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleTogglePublish(project); }}
+                        disabled={togglingId === project.id}
+                        className="btn-outline !py-1.5 !px-3 !text-xs disabled:opacity-50"
+                        title="הפוך לטיוטה"
+                      >
+                        <EyeOff className="w-3.5 h-3.5" />
+                        {togglingId === project.id ? "…" : "הפוך לטיוטה"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleTogglePublish(project); }}
+                        disabled={togglingId === project.id}
+                        className="btn-gold !py-1.5 !px-3 !text-xs disabled:opacity-50"
+                        title="פרסם פרויקט"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        {togglingId === project.id ? "…" : "פרסם"}
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleShareProjectLink(project); }}
+                      className="btn-outline !py-1.5 !px-3 !text-xs"
+                      title="העתק קישור לפרויקט"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      {sharedCardId === project.id ? "הועתק!" : "שתף לינק"}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -1457,6 +1847,16 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           </ul>
         </div>
       </div>
+
+      {/* Toast (global) */}
+      {toastMsg && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-text text-white px-5 py-2.5 rounded-full shadow-lg text-sm font-medium z-[10000]"
+          dir="rtl"
+        >
+          {toastMsg}
+        </div>
+      )}
     </div>
   );
 }
