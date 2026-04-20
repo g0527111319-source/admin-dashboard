@@ -613,35 +613,35 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         <div className="flex items-center justify-between">
           <button
             onClick={() => setView("list")}
-            className="flex items-center gap-2 text-sm text-[#C9A84C] hover:text-[#e0c068] transition-colors"
+            className="flex items-center gap-2 text-sm text-gold hover:text-[color:var(--gold-dim)] transition-colors font-semibold"
           >
             <ChevronLeft className="w-4 h-4" />
             חזרה לרשימה
           </button>
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="font-heading text-xl text-text-primary">
             תמונות — {selectedProject.title}
           </h2>
         </div>
 
         {/* Add Image */}
-        <div className="bg-[#1a1a2e] rounded-xl border border-[#C9A84C]/20 p-5">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-            <ImagePlus className="w-4 h-4 text-[#C9A84C]" />
+        <div className="card-static">
+          <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+            <ImagePlus className="w-4 h-4 text-gold" />
             הוסף תמונה
           </h3>
 
           {/* Limits info */}
-          <div className="mb-3 text-xs text-white/50 flex items-center gap-4 flex-wrap">
+          <div className="mb-3 text-xs text-text-muted flex items-center gap-4 flex-wrap">
             <span>
               תמונות: {projectImages.length} / {MAX_IMAGES_PER_PROJECT}
               {projectImages.length >= MAX_IMAGES_PER_PROJECT && (
-                <span className="text-red-400 mr-1">(הגעת למקסימום)</span>
+                <span className="text-red-600 mr-1">(הגעת למקסימום)</span>
               )}
             </span>
           </div>
 
           {projectImages.length >= MAX_IMAGES_PER_PROJECT ? (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-800 text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               הגעת למקסימום {MAX_IMAGES_PER_PROJECT} תמונות לפרויקט. {g(gdr, "מחק תמונה קיימת כדי להוסיף חדשה.", "מחקי תמונה קיימת כדי להוסיף חדשה.")}
             </div>
@@ -652,7 +652,6 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
               label="העלאת תמונות לפרויקט (ניתן לבחור כמה)"
               multiple
               skipEditor
-              dark
               maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
               onUpload={async (file: UploadedFile) => {
                 if (!selectedProject) return;
@@ -693,7 +692,14 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
         {/* No cover image notice */}
         {!selectedProject.coverImageUrl && projectImages.length > 0 && (
-          <div className="bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-xl px-4 py-3 text-[#C9A84C] text-sm flex items-center gap-2">
+          <div
+            className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 border"
+            style={{
+              background: "var(--gold-50)",
+              borderColor: "var(--border-gold)",
+              color: "var(--gold-dim)",
+            }}
+          >
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             לא נבחרה תמונה ראשית — התמונה הראשונה תוצג כשער
           </div>
@@ -701,9 +707,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
         {/* Image Grid */}
         {projectImages.length === 0 ? (
-          <div className="bg-[#1a1a2e] rounded-xl border border-white/5 p-12 text-center">
-            <ImagePlus className="w-10 h-10 text-white/20 mx-auto mb-3" />
-            <p className="text-white/40 text-sm">אין תמונות עדיין</p>
+          <div className="bg-bg-surface rounded-2xl border-2 border-dashed border-border-subtle p-12 text-center">
+            <ImagePlus className="w-10 h-10 text-text-faint mx-auto mb-3" />
+            <p className="text-text-muted text-sm">אין תמונות עדיין</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -718,20 +724,21 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                   onDrop={(e) => handleDrop(e, index)}
                   onDragEnd={handleDragEnd}
                   className={`
-                    bg-[#1a1a2e] rounded-xl border overflow-hidden group relative transition-all
-                    ${dragOverIndex === index ? "border-[#C9A84C] scale-[1.02]" : "border-white/10"}
+                    bg-white rounded-xl border overflow-hidden group relative transition-all shadow-sm
+                    ${dragOverIndex === index ? "border-gold scale-[1.02] shadow-md" : "border-border-subtle"}
                     ${dragIndex === index ? "opacity-50" : ""}
+                    hover:shadow-md
                   `}
                 >
                   {/* Image */}
                   <div className="relative">
                     {brokenImages.has(image.id) ? (
-                      <div className="w-full py-8 flex flex-col items-center justify-center bg-[#0a0a0a] border-2 border-red-500/40 rounded-t-xl gap-2">
+                      <div className="w-full py-8 flex flex-col items-center justify-center bg-red-50 border-2 border-red-200 rounded-t-xl gap-2">
                         <span className="text-2xl">&#10060;</span>
-                        <span className="text-red-400 text-xs font-medium">הלינק לא תקין</span>
+                        <span className="text-red-700 text-xs font-medium">הלינק לא תקין</span>
                         <button
                           onClick={() => handleDeleteImage(image.id)}
-                          className="mt-1 px-3 py-1 bg-red-500/20 border border-red-500/40 text-red-400 text-xs rounded-lg hover:bg-red-500/30 transition-colors"
+                          className="mt-1 px-3 py-1 bg-red-100 border border-red-300 text-red-800 text-xs rounded-lg hover:bg-red-200 transition-colors"
                         >
                           מחק
                         </button>
@@ -749,9 +756,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     )}
 
                     {/* Overlay controls */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-start justify-between p-2 opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 bg-white/0 group-hover:bg-white/70 group-hover:backdrop-blur-sm transition-all flex items-start justify-between p-2 opacity-0 group-hover:opacity-100">
                       {/* Drag handle */}
-                      <div className="cursor-grab active:cursor-grabbing p-1.5 rounded-lg bg-black/60 text-white/80">
+                      <div className="cursor-grab active:cursor-grabbing p-1.5 rounded-lg bg-white shadow-sm text-text-secondary">
                         <GripVertical className="w-4 h-4" />
                       </div>
 
@@ -759,10 +766,10 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                         {/* Set as cover */}
                         <button
                           onClick={() => handleSetCover(image.imageUrl)}
-                          className={`p-1.5 rounded-lg transition-colors ${
+                          className={`p-1.5 rounded-lg transition-colors shadow-sm ${
                             isCover
-                              ? "bg-[#C9A84C] text-black"
-                              : "bg-black/60 text-white/80 hover:text-[#C9A84C]"
+                              ? "bg-gold text-white"
+                              : "bg-white text-text-secondary hover:text-gold"
                           }`}
                           title="הגדר כתמונת כיסוי"
                         >
@@ -772,7 +779,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                         {/* Delete */}
                         <button
                           onClick={() => handleDeleteImage(image.id)}
-                          className="p-1.5 rounded-lg bg-black/60 text-white/80 hover:text-red-400 transition-colors"
+                          className="p-1.5 rounded-lg bg-white shadow-sm text-text-secondary hover:text-red-600 hover:bg-red-50 transition-colors"
                           title="מחק תמונה"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -782,8 +789,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
                     {/* Cover badge */}
                     {isCover && (
-                      <div className="absolute bottom-2 right-2 bg-[#C9A84C] text-black text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        כיסוי
+                      <div className="absolute bottom-2 right-2 badge-gold text-[10px]">
+                        <Star className="w-3 h-3 fill-current inline-block ms-0.5" /> כיסוי
                       </div>
                     )}
                   </div>
@@ -795,7 +802,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                       placeholder="כיתוב..."
                       value={image.caption || ""}
                       onChange={(e) => handleCaptionUpdate(image.id, e.target.value)}
-                      className="w-full bg-transparent border-b border-white/10 text-white/80 text-xs pb-1 focus:border-[#C9A84C]/50 focus:outline-none placeholder:text-white/25 transition-colors"
+                      className="w-full bg-transparent border-b border-border-subtle text-text-primary text-xs pb-1 focus:border-gold focus:outline-none placeholder:text-text-faint transition-colors"
                     />
                   </div>
                 </div>
@@ -815,55 +822,55 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         <div className="flex items-center justify-between">
           <button
             onClick={() => setView("list")}
-            className="flex items-center gap-2 text-sm text-[#C9A84C] hover:text-[#e0c068] transition-colors"
+            className="flex items-center gap-2 text-sm text-gold hover:text-[color:var(--gold-dim)] transition-colors font-semibold"
           >
             <ChevronLeft className="w-4 h-4" />
             חזרה לרשימה
           </button>
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="font-heading text-xl text-text-primary">
             {editingProject ? "עריכת פרויקט" : "פרויקט חדש"}
           </h2>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-800 text-sm flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
         )}
 
-        <div className="bg-[#1a1a2e] rounded-xl border border-[#C9A84C]/20 p-6 space-y-5">
+        <div className="card-static space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">שם הפרויקט *</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">שם הפרויקט *</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="למשל: שיפוץ דירה ברחוב הרצל"
-              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors"
+              className="input-field w-full"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">תיאור</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">תיאור</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder={g(gdr, "תאר את הפרויקט...", "תארי את הפרויקט...")}
               rows={4}
-              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:border-[#C9A84C]/50 focus:outline-none transition-colors resize-none"
+              className="input-field w-full resize-none"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">קטגוריה</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">קטגוריה</label>
             <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-[#C9A84C]/50 focus:outline-none transition-colors appearance-none"
+              className="select-field w-full"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -873,7 +880,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Style Tags */}
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">סגנונות</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">סגנונות</label>
             <div className="flex flex-wrap gap-2">
               {STYLE_TAGS.map((tag) => {
                 const selected = form.styleTags.includes(tag);
@@ -885,8 +892,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     className={`
                       px-3 py-1.5 rounded-full text-xs font-medium border transition-all
                       ${selected
-                        ? "bg-[#C9A84C]/20 border-[#C9A84C] text-[#C9A84C]"
-                        : "bg-white/5 border-white/10 text-white/50 hover:border-white/30 hover:text-white/70"
+                        ? "bg-[color:var(--gold-50)] border-[color:var(--border-gold)] text-[color:var(--gold-dim)]"
+                        : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover hover:text-text-secondary"
                       }
                     `}
                   >
@@ -899,9 +906,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Cover Image */}
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">תמונת כיסוי</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">תמונת כיסוי</label>
             <FileUpload
-              dark
               category="image"
               folder="portfolio"
               currentUrl={form.coverImageUrl}
@@ -916,7 +922,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Status Toggle */}
           <div>
-            <label className="block text-sm font-semibold text-white/80 mb-2">סטטוס</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">סטטוס</label>
             <div className="flex gap-3">
               <button
                 type="button"
@@ -924,8 +930,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 className={`
                   flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all
                   ${form.status === "public"
-                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
-                    : "bg-white/5 border-white/10 text-white/40 hover:border-white/20"
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                    : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover"
                   }
                 `}
               >
@@ -938,8 +944,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 className={`
                   flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all
                   ${form.status === "private"
-                    ? "bg-orange-500/15 border-orange-500/40 text-orange-400"
-                    : "bg-white/5 border-white/10 text-white/40 hover:border-white/20"
+                    ? "bg-orange-50 border-orange-300 text-orange-700"
+                    : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover"
                   }
                 `}
               >
@@ -952,8 +958,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           {/* Supplier Linking */}
           {suppliers.length > 0 && (
             <div>
-              <label className="block text-sm font-semibold text-white/80 mb-2 flex items-center gap-2">
-                <Link2 className="w-4 h-4 text-[#C9A84C]" />
+              <label className="block text-sm font-semibold text-text-primary mb-2 flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-gold" />
                 ספקים מקושרים
               </label>
               <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
@@ -967,8 +973,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                       className={`
                         px-3 py-1.5 rounded-full text-xs font-medium border transition-all
                         ${linked
-                          ? "bg-[#C9A84C]/20 border-[#C9A84C] text-[#C9A84C]"
-                          : "bg-white/5 border-white/10 text-white/50 hover:border-white/30 hover:text-white/70"
+                          ? "bg-[color:var(--gold-50)] border-[color:var(--border-gold)] text-[color:var(--gold-dim)]"
+                          : "bg-bg-surface border-border-subtle text-text-muted hover:border-border-hover hover:text-text-secondary"
                         }
                       `}
                     >
@@ -985,14 +991,14 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setView("list")}
-            className="px-5 py-3 rounded-xl text-sm text-white/50 hover:text-white/80 border border-white/10 hover:border-white/20 transition-colors"
+            className="btn-outline"
           >
             ביטול
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-3 bg-[#C9A84C] text-black text-sm font-bold rounded-xl hover:bg-[#e0c068] transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="btn-gold disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             {saving ? "שומר..." : editingProject ? "עדכן פרויקט" : "צור פרויקט"}
@@ -1008,20 +1014,23 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <FolderKanban className="w-5 h-5 text-[#C9A84C]" />
+          <p className="text-[11px] tracking-[0.3em] uppercase text-[color:var(--gold-dim)] font-semibold mb-1">
+            תיק העבודות שלך
+          </p>
+          <h2 className="font-heading text-2xl text-text-primary flex items-center gap-2">
+            <FolderKanban className="w-5 h-5 text-gold" />
             תיק עבודות
           </h2>
-          <p className="text-sm text-white/40 mt-1">
+          <p className="text-sm text-text-muted mt-1">
             {projects.length} / {MAX_PROJECTS_PER_DESIGNER} פרויקטים
             {projects.length >= MAX_PROJECTS_PER_DESIGNER && (
-              <span className="text-red-400 mr-1"> (מקסימום)</span>
+              <span className="text-red-600 mr-1"> (מקסימום)</span>
             )}
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#C9A84C] text-black text-sm font-bold rounded-xl hover:bg-[#e0c068] transition-colors"
+          className="btn-gold"
         >
           <Plus className="w-4 h-4" />
           הוסף פרויקט
@@ -1032,7 +1041,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
       {onSwitchToCard && (
         <button
           onClick={onSwitchToCard}
-          className="flex items-center gap-2 text-sm text-[#C9A84C] hover:text-[#e0c068] transition-colors"
+          className="flex items-center gap-2 text-sm text-gold hover:text-[color:var(--gold-dim)] transition-colors font-semibold"
         >
           <CreditCard className="w-4 h-4" />
           צפה בכרטיס הביקור שלי
@@ -1041,19 +1050,25 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
       {/* Public Portfolio Link */}
       {designerId && projects.some((p) => p.status === "public") && (
-        <div className="bg-[#1a1a2e] rounded-xl border border-[#C9A84C]/30 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <ExternalLink className="w-4 h-4 text-[#C9A84C]" />
-            <h3 className="text-sm font-semibold text-[#C9A84C]">לינק ציבורי</h3>
+        <div
+          className="rounded-2xl border p-5"
+          style={{
+            background: "var(--gold-50)",
+            borderColor: "var(--border-gold)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <ExternalLink className="w-4 h-4 text-[color:var(--gold-dim)]" />
+            <h3 className="text-sm font-semibold text-[color:var(--gold-dim)]">לינק ציבורי לתיק העבודות</h3>
           </div>
-          <div className="flex items-center gap-2 bg-[#0a0a0a] rounded-lg px-3 py-2 border border-white/10">
-            <span className="text-xs text-white/60 truncate flex-1" dir="ltr">
+          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-border-subtle">
+            <span className="text-xs text-text-secondary truncate flex-1" dir="ltr">
               {typeof window !== "undefined"
                 ? `${window.location.origin}/projects?designer=${designerId}`
                 : `/projects?designer=${designerId}`}
             </span>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-3 flex-wrap">
             <button
               onClick={() => {
                 const url = `${window.location.origin}/projects?designer=${designerId}`;
@@ -1061,7 +1076,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 setLinkCopied(true);
                 setTimeout(() => setLinkCopied(false), 2000);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#C9A84C]/15 border border-[#C9A84C]/40 text-[#C9A84C] text-xs font-medium rounded-lg hover:bg-[#C9A84C]/25 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-[color:var(--border-gold)] text-[color:var(--gold-dim)] text-xs font-semibold rounded-full hover:bg-[color:var(--gold-50)] transition-colors"
             >
               <Copy className="w-3.5 h-3.5" />
               {linkCopied ? "הועתק!" : "העתק לינק"}
@@ -1072,7 +1087,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 const text = encodeURIComponent(`צפו בתיק העבודות שלי: ${url}`);
                 window.open(`https://wa.me/?text=${text}`, "_blank");
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/25 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold rounded-full hover:bg-emerald-100 transition-colors"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               שתף בוואצפ
@@ -1085,11 +1100,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
       <div className="flex flex-wrap items-center gap-3">
         {/* Category filter */}
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-white/40" />
+          <Filter className="w-4 h-4 text-text-muted" />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:border-[#C9A84C]/50 focus:outline-none transition-colors appearance-none"
+            className="select-field text-xs !py-2"
           >
             <option value="all">כל הקטגוריות</option>
             {CATEGORIES.map((cat) => (
@@ -1101,7 +1116,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         {/* Sort */}
         <button
           onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#1a1a2e] border border-white/10 rounded-xl text-white/60 text-xs hover:border-white/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 bg-white border border-border-subtle rounded-xl text-text-secondary text-xs hover:border-border-hover transition-colors"
         >
           <SortDesc className={`w-3.5 h-3.5 transition-transform ${sortDir === "asc" ? "rotate-180" : ""}`} />
           {sortDir === "desc" ? "חדש לישן" : "ישן לחדש"}
@@ -1112,20 +1127,21 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-[#1a1a2e] rounded-xl border border-white/5 h-64 animate-pulse" />
+            <div key={i} className="bg-bg-surface rounded-xl border border-border-subtle h-64 animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/5 p-16 text-center">
-          <FolderKanban className="w-12 h-12 text-white/15 mx-auto mb-4" />
-          <p className="text-white/40 text-sm mb-4">
+        <div className="bg-bg-surface rounded-2xl border-2 border-dashed border-border-subtle p-16 text-center">
+          <FolderKanban className="w-12 h-12 text-text-faint mx-auto mb-4" />
+          <p className="text-text-muted text-sm mb-4">
             {projects.length === 0 ? "אין פרויקטים עדיין" : "אין תוצאות לסינון הנוכחי"}
           </p>
           {projects.length === 0 && (
             <button
               onClick={openCreate}
-              className="px-5 py-2.5 bg-[#C9A84C] text-black text-sm font-bold rounded-xl hover:bg-[#e0c068] transition-colors"
+              className="btn-gold"
             >
+              <Plus className="w-4 h-4" />
               {g(gdr, "צור את הפרויקט הראשון", "צרי את הפרויקט הראשון")}
             </button>
           )}
@@ -1135,12 +1151,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           {filtered.map((project) => (
             <div
               key={project.id}
-              className="bg-[#1a1a2e] rounded-xl border border-white/10 overflow-hidden group hover:border-[#C9A84C]/30 transition-all"
-              style={{ borderRadius: "12px" }}
+              className="bg-white rounded-2xl border border-border-subtle overflow-hidden group shadow-xs hover:shadow-md hover:border-border-hover hover:-translate-y-0.5 transition-all"
             >
               {/* Cover Image */}
               <div
-                className="relative bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a] overflow-hidden cursor-pointer"
+                className="relative bg-bg-surface overflow-hidden cursor-pointer"
                 onClick={() => openImages(project)}
               >
                 {project.coverImageUrl ? (
@@ -1151,30 +1166,32 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full py-12 flex items-center justify-center">
-                    <ImagePlus className="w-10 h-10 text-white/10" />
+                  <div className="w-full py-16 flex items-center justify-center">
+                    <ImagePlus className="w-10 h-10 text-text-faint" />
                   </div>
                 )}
 
                 {/* Overlay badges */}
                 <div className="absolute top-3 right-3 flex gap-2">
                   {/* Category */}
-                  <span className="px-2.5 py-1 bg-[#C9A84C]/90 text-black text-[10px] font-bold rounded-full">
+                  <span className="badge-gold">
                     {getCategoryLabel(project.category)}
                   </span>
                   {/* Status */}
-                  <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${
-                    project.status === "public"
-                      ? "bg-emerald-500/90 text-white"
-                      : "bg-white/20 text-white/80 backdrop-blur-sm"
-                  }`}>
-                    {project.status === "public" ? "ציבורי" : "פרטי"}
-                  </span>
+                  {project.status === "public" ? (
+                    <span className="badge-green">
+                      <Eye className="w-3 h-3 inline-block ms-0.5" /> ציבורי
+                    </span>
+                  ) : (
+                    <span className="badge-gray">
+                      <EyeOff className="w-3 h-3 inline-block ms-0.5" /> פרטי
+                    </span>
+                  )}
                 </div>
 
                 {/* Image count */}
                 {project.images && project.images.length > 0 && (
-                  <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full">
+                  <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-text-primary text-[10px] font-semibold px-2 py-1 rounded-full border border-border-subtle shadow-sm">
                     {project.images.length} תמונות
                   </div>
                 )}
@@ -1182,7 +1199,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
               {/* Content */}
               <div className="p-4">
-                <h3 className="text-sm font-bold text-white mb-2 line-clamp-1">{project.title}</h3>
+                <h3 className="font-heading text-lg text-text-primary mb-2 line-clamp-1">{project.title}</h3>
 
                 {/* Style tags */}
                 {project.styleTags.length > 0 && (
@@ -1190,13 +1207,13 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     {project.styleTags.slice(0, 4).map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-0.5 bg-[#C9A84C]/10 border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] rounded-full"
+                        className="px-2 py-0.5 bg-[color:var(--gold-50)] border border-[color:var(--border-gold)] text-[color:var(--gold-dim)] text-[10px] rounded-full"
                       >
                         {tag}
                       </span>
                     ))}
                     {project.styleTags.length > 4 && (
-                      <span className="px-2 py-0.5 text-white/30 text-[10px]">
+                      <span className="px-2 py-0.5 text-text-muted text-[10px]">
                         +{project.styleTags.length - 4}
                       </span>
                     )}
@@ -1204,28 +1221,28 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 )}
 
                 {/* Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <span className="text-[10px] text-white/30">
+                <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
+                  <span className="text-[10px] text-text-muted">
                     {new Date(project.createdAt).toLocaleDateString("he-IL")}
                   </span>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => openImages(project)}
-                      className="p-2 rounded-lg text-white/40 hover:text-[#C9A84C] hover:bg-white/5 transition-colors"
+                      className="p-2 rounded-lg text-text-muted hover:text-gold hover:bg-[color:var(--gold-50)] transition-colors"
                       title="תמונות"
                     >
                       <ImagePlus className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => openEdit(project)}
-                      className="p-2 rounded-lg text-white/40 hover:text-[#C9A84C] hover:bg-white/5 transition-colors"
+                      className="p-2 rounded-lg text-text-muted hover:text-gold hover:bg-[color:var(--gold-50)] transition-colors"
                       title="ערוך"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(project.id)}
-                      className="p-2 rounded-lg text-white/40 hover:text-red-400 hover:bg-white/5 transition-colors"
+                      className="p-2 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
                       title="מחק"
                     >
                       <Trash2 className="w-4 h-4" />
