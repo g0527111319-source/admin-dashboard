@@ -194,6 +194,15 @@ export default function RootLayout({ children, }: Readonly<{
     return (<html lang="he" dir="rtl" suppressHydrationWarning className={`${heebo.variable} ${assistant.variable} ${frankRuhlLibre.variable} ${rubik.variable} ${secularOne.variable} ${bellefair.variable} ${davidLibre.variable} ${suezOne.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        {/* Perf: preconnect + dns-prefetch to external origins used for fonts & media */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+        {/* R2 image origins — Cloudflare public bucket + S3-compatible endpoint */}
+        <link rel="preconnect" href="https://r2.dev" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://r2.dev" />
+        <link rel="dns-prefetch" href="https://r2.cloudflarestorage.com" />
         <meta name="google-site-verification" content="yfcoIh96qYOARTamBbB2-Tq1ZTWaNmkdUce1stOym1s" />
         <meta name="theme-color" content="#C9A84C" />
         {/* iOS Safari: enable PWA mode when user adds to home screen */}

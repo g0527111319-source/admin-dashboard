@@ -74,7 +74,24 @@ interface Assignment {
 function sourceLabel(source: string | null | undefined): string {
   if (!source) return "—";
   if (source === "landing") return "דף נחיתה ראשי";
-  if (source.startsWith("designer-portfolio:")) return "תיק עבודות ציבורי";
+  if (source.startsWith("designer-portfolio:")) {
+    // Format is `designer-portfolio:<designerId>:<utmSource>`. The third
+    // segment is the utm_source that the share link carried (or "direct"
+    // when missing). Tiny lookup table → Hebrew.
+    const parts = source.split(":");
+    const utm = (parts[2] || "").toLowerCase();
+    const map: Record<string, string> = {
+      whatsapp: "תיק עבודות · WhatsApp",
+      designer_share: "תיק עבודות · קישור ישיר",
+      direct: "תיק עבודות · קישור",
+      instagram: "תיק עבודות · Instagram",
+      facebook: "תיק עבודות · Facebook",
+      email: "תיק עבודות · אימייל",
+      "": "תיק עבודות ציבורי",
+    };
+    if (map[utm]) return map[utm];
+    return `תיק עבודות · ${utm}`;
+  }
   return source;
 }
 

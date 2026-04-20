@@ -192,6 +192,12 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   // Per-card publish toggle in-flight
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // Bulk selection state (feature #10)
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+
   // ===== FETCH =====
   const fetchProjects = useCallback(async () => {
     try {
@@ -266,6 +272,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     setUploadError("");
     setUploading(false);
     setBrokenImages(new Set());
+    setSelectionMode(false);
+    setSelectedImageIds(new Set());
+    setBulkConfirmOpen(false);
     setView("images");
   };
 
@@ -441,6 +450,85 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     );
   };
 
+  // ===== BULK SELECTION ACTIONS (feature #10) =====
+  const enterSelectionMode = useCallback(() => {
+    setSelectionMode(true);
+    setSelectedImageIds(new Set());
+  }, []);
+
+  const exitSelectionMode = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedImageIds(new Set());
+    setBulkConfirmOpen(false);
+  }, []);
+
+  const toggleImageSelection = useCallback((imageId: string) => {
+    setSelectedImageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(imageId)) next.delete(imageId);
+      else next.add(imageId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedImageIds((prev) => {
+      if (prev.size === projectImages.length && projectImages.length > 0) {
+        return new Set();
+      }
+      return new Set(projectImages.map((img) => img.id));
+    });
+  }, [projectImages]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!selectedProject || selectedImageIds.size === 0) return;
+    setBulkBusy(true);
+    setBulkConfirmOpen(false);
+    showToast("מוחק...");
+    const ids = Array.from(selectedImageIds);
+    try {
+      const results = await Promise.all(
+        ids.map((imageId) =>
+          fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: imageId }),
+          })
+            .then((r) => (r.ok ? imageId : null))
+            .catch(() => null)
+        )
+      );
+      const deletedIds = new Set(results.filter((x): x is string => !!x));
+      setProjectImages((prev) => prev.filter((img) => !deletedIds.has(img.id)));
+      await fetchProjects();
+      showToast(`נמחקו ${deletedIds.size} תמונות`);
+      exitSelectionMode();
+    } catch (e) {
+      console.error("Bulk delete error", e);
+      showToast("שגיאה במחיקה");
+    } finally {
+      setBulkBusy(false);
+    }
+  }, [selectedProject, selectedImageIds, fetchProjects, showToast, exitSelectionMode]);
+
+  const handleBulkClearCaptions = useCallback(async () => {
+    if (selectedImageIds.size === 0) return;
+    setBulkBusy(true);
+    try {
+      // Match the existing single-caption flow (local-state update)
+      setProjectImages((prev) =>
+        prev.map((img) => (selectedImageIds.has(img.id) ? { ...img, caption: "" } : img))
+      );
+      showToast(`נוקו כיתובים מ-${selectedImageIds.size} תמונות`);
+      exitSelectionMode();
+    } catch (e) {
+      console.error("Bulk clear captions error", e);
+      showToast("שגיאה בניקוי כיתובים");
+    } finally {
+      setBulkBusy(false);
+    }
+  }, [selectedImageIds, showToast, exitSelectionMode]);
+
   // ===== IMAGE EDIT (crop/rotate/flip/zoom) — feature #9 =====
   const openImageEditor = useCallback(async (image: ProjectImage) => {
     try {
@@ -563,9 +651,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   }, [togglingId, fetchProjects, showToast]);
 
   // ===== SHARE PER-PROJECT LINK — feature #13 =====
+  // Share URL carries UTM params so leads coming back through the contact
+  // form are attributed to "designer_share" in CRM + community leads list.
   const handleShareProjectLink = useCallback((project: Project) => {
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}/projects/${project.id}`;
+    const url = `${window.location.origin}/projects/${project.id}?utm_source=designer_share&utm_medium=direct&utm_campaign=portfolio_link`;
     try {
       navigator.clipboard.writeText(url);
       setSharedCardId(project.id);
@@ -841,6 +931,16 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
             </span>
           </div>
 
+          {/* Before/After hint (feature #4) — captions starting with "לפני"
+              or "אחרי" auto-pair into an interactive comparison slider on
+              the public project page. */}
+          <div className="text-[12px] text-gold-dim bg-gold-50 border border-border-gold rounded-lg px-3 py-2 flex items-start gap-2">
+            <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+            <span>
+              טיפ: תמונות שמתחילות בכיתוב &ldquo;לפני&rdquo; או &ldquo;אחרי&rdquo; יוצגו אוטומטית במחוון השוואה בדף הציבורי.
+            </span>
+          </div>
+
           {/* Main image (cover) section */}
           <div>
             <h3 className="text-sm font-semibold text-text mb-2 flex items-center gap-2">
@@ -965,6 +1065,33 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           </div>
         )}
 
+        {/* Selection mode toolbar (feature #10) */}
+        {projectImages.length > 0 && (
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              {!selectionMode ? (
+                <button
+                  type="button"
+                  onClick={enterSelectionMode}
+                  className="btn-outline"
+                  title="בחירת תמונות"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  בחירת תמונות
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className="text-sm text-gold hover:text-gold-dim font-semibold"
+                >
+                  {selectedImageIds.size === projectImages.length ? "בטל הכל" : "בחר הכל"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Image Grid */}
         {projectImages.length === 0 ? (
           <div className="bg-bg-surface rounded-2xl border-2 border-dashed border-border p-12 text-center">
@@ -975,19 +1102,25 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {projectImages.map((image, index) => {
               const isCover = selectedProject.coverImageUrl === image.imageUrl;
+              const isSelected = selectedImageIds.has(image.id);
               return (
                 <div
                   key={image.id}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onDragEnd={handleDragEnd}
+                  draggable={!selectionMode}
+                  onDragStart={() => !selectionMode && handleDragStart(index)}
+                  onDragOver={(e) => !selectionMode && handleDragOver(e, index)}
+                  onDrop={(e) => !selectionMode && handleDrop(e, index)}
+                  onDragEnd={() => !selectionMode && handleDragEnd()}
+                  onClick={() => {
+                    if (selectionMode) toggleImageSelection(image.id);
+                  }}
                   className={`
-                    relative aspect-square bg-bg-surface rounded-[10px] border overflow-hidden group cursor-grab transition-all
+                    relative aspect-square bg-bg-surface rounded-[10px] border overflow-hidden group transition-all
+                    ${selectionMode ? "cursor-pointer" : "cursor-grab"}
                     ${dragOverIndex === index ? "border-gold scale-[1.02] shadow-md" : "border-border"}
                     ${dragIndex === index ? "opacity-50" : ""}
-                    hover:shadow-md hover:border-gold
+                    ${isSelected ? "ring-[3px] ring-gold scale-[0.97]" : ""}
+                    ${!selectionMode ? "hover:shadow-md hover:border-gold" : ""}
                   `}
                 >
                   {brokenImages.has(image.id) ? (
@@ -1022,8 +1155,27 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     </span>
                   )}
 
+                  {/* Selection checkbox (feature #10) */}
+                  {selectionMode && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleImageSelection(image.id);
+                      }}
+                      aria-label={isSelected ? "בטל בחירה" : "בחר תמונה"}
+                      className={`absolute top-2 left-2 w-7 h-7 rounded-full grid place-items-center border-2 z-[3] transition-all ${
+                        isSelected
+                          ? "bg-gold border-gold text-white"
+                          : "bg-white/90 border-border text-transparent hover:border-gold"
+                      }`}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                  )}
+
                   {/* Overlay with actions */}
-                  <div className="absolute inset-0 bg-white/0 group-hover:bg-white/80 group-hover:backdrop-blur-sm transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                  <div className={`absolute inset-0 bg-white/0 ${selectionMode ? "" : "group-hover:bg-white/80 group-hover:backdrop-blur-sm"} transition-all flex items-center justify-center gap-2 opacity-0 ${selectionMode ? "" : "group-hover:opacity-100"}`}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1138,6 +1290,90 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
             שמור פרויקט
           </button>
         </div>
+
+        {/* Bulk selection sticky bar (feature #10) */}
+        {selectionMode && (
+          <div
+            className="fixed bottom-0 inset-x-0 z-[9997] bg-white border-t border-border shadow-lg px-4 py-3"
+            dir="rtl"
+          >
+            <div className="max-w-5xl mx-auto flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-sm font-semibold text-text">
+                {selectedImageIds.size} נבחרו
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleBulkClearCaptions}
+                  disabled={bulkBusy || selectedImageIds.size === 0}
+                  className="btn-outline disabled:opacity-50"
+                >
+                  נקה כיתובים
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkConfirmOpen(true)}
+                  disabled={bulkBusy || selectedImageIds.size === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  מחק נבחרים
+                </button>
+                <button
+                  type="button"
+                  onClick={exitSelectionMode}
+                  disabled={bulkBusy}
+                  className="btn-outline disabled:opacity-50"
+                >
+                  בטל
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk delete confirmation (feature #10) */}
+        {bulkConfirmOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 z-[9999] grid place-items-center px-4"
+            dir="rtl"
+            onClick={() => setBulkConfirmOpen(false)}
+          >
+            <div
+              className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-heading text-lg text-text mb-1">אישור מחיקה</h3>
+                  <p className="text-sm text-text-muted">
+                    למחוק {selectedImageIds.size} תמונות? פעולה זו לא ניתנת לביטול.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBulkConfirmOpen(false)}
+                  disabled={bulkBusy}
+                  className="btn-outline disabled:opacity-50"
+                >
+                  ביטול
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDelete}
+                  disabled={bulkBusy}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  מחק
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Image Editor modal */}
         {editingImage && editingImageFile && (

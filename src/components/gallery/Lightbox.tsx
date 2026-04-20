@@ -21,7 +21,12 @@ import {
   useReducedMotion,
   type PanInfo,
 } from "framer-motion";
+import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+
+// Cream (brand ivory #FBF7ED) 10x10 SVG, pre-encoded to avoid runtime btoa.
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMCAxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjRkJGN0VEIi8+PC9zdmc+";
 
 export type LightboxImage = {
   src: string;
@@ -234,11 +239,17 @@ export default function Lightbox({
                 onDragEnd={onDragEnd}
                 className="cursor-grab active:cursor-grabbing"
               >
-                <img
+                <Image
                   src={current.src}
                   alt={current.alt ?? ""}
-                  className="max-w-[92vw] max-h-[86vh] object-contain rounded-xl shadow-2xl select-none"
+                  width={1920}
+                  height={1280}
+                  sizes="92vw"
+                  placeholder="blur"
+                  blurDataURL={BLUR_PLACEHOLDER}
+                  priority
                   draggable={false}
+                  className="max-w-[92vw] max-h-[86vh] w-auto h-auto object-contain rounded-xl shadow-2xl select-none"
                 />
               </motion.div>
             </AnimatePresence>

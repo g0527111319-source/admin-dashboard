@@ -22,7 +22,25 @@ type ContactBody = {
   name?: string;
   phone?: string;
   message?: string;
+  // UTM attribution — set by the public portfolio client when the visitor
+  // arrives through a share link carrying utm_source/medium/campaign query
+  // params. Optional and free-form; we sanitize before storing.
+  utm?: {
+    source?: string;
+    medium?: string;
+    campaign?: string;
+  };
 };
+
+// Whitelist characters — UTM values land inside Lead.source which is
+// displayed in the leads UI and exported. Keep them boring.
+function cleanUtm(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const trimmed = v.trim().slice(0, 40);
+  if (!trimmed) return null;
+  if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) return null;
+  return trimmed;
+}
 
 function isValidPhone(p: string): boolean {
   const digits = p.replace(/\D/g, "");
@@ -111,7 +129,7 @@ export async function POST(
       scope: message || "פנייה מתיק עבודות — ללא פירוט נוסף",
       additionalNotes: message,
       status: "NEW",
-      source: `designer-portfolio:${designerId}`,
+      source: `designer-portfolio:${designerId}:${cleanUtm(body.utm?.source) || "direct"}`,
       consentedAt: new Date(),
       ipAddress: ip !== "unknown" ? ip.substring(0, 64) : null,
       userAgent: userAgent.substring(0, 500) || null,

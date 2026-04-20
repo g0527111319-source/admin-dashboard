@@ -23,8 +23,15 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
+
+// 10x10 cream SVG (brand ivory #FBF7ED) encoded once at build time.
+// Used as next/image placeholder="blur" dataURL — avoids runtime btoa which
+// isn't available during Node SSR of this module.
+const BLUR_PLACEHOLDER =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMCAxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjRkJGN0VEIi8+PC9zdmc+";
 
 export type MasonryItem = {
   src: string;
@@ -33,6 +40,10 @@ export type MasonryItem = {
   href?: string; // if provided, tile wraps in Link (useful for project detail pages)
   badge?: string; // small gold pill in the corner (e.g. category label)
   overlay?: ReactNode; // rich overlay content rendered on hover
+  // Optional intrinsic dimensions — when present, next/image reserves the
+  // correct aspect ratio avoiding CLS. If absent we fall back to a 4:3 default.
+  width?: number;
+  height?: number;
 };
 
 type Props = {
@@ -71,6 +82,9 @@ export default function MasonryGallery({
   return (
     <div className={`${colClasses} ${className}`}>
       {items.map((item, i) => {
+        const imgW = item.width ?? 1200;
+        const imgH = item.height ?? 900;
+        const isPriority = i < 3;
         const tileInner = (
           <motion.div
             layoutId={`${layoutIdPrefix}-${i}`}
@@ -92,13 +106,22 @@ export default function MasonryGallery({
             />
 
             <div className="relative overflow-hidden rounded-2xl">
-              {/* Image — intrinsic aspect → masonry heights vary organically */}
-              <motion.img
+              {/* Image — intrinsic aspect → masonry heights vary organically.
+                  next/image gives us lazy loading, responsive srcset, blur-up
+                  placeholder and AVIF/WebP conversion. We pass width/height so
+                  the browser reserves space (avoids CLS); `h-auto` keeps the
+                  layout fluid inside the column. */}
+              <Image
                 src={item.src}
                 alt={item.alt ?? ""}
-                loading="lazy"
-                className="w-full h-auto block transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/tile:scale-[1.08]"
+                width={imgW}
+                height={imgH}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
+                priority={isPriority}
                 draggable={false}
+                className="w-full h-auto block transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/tile:scale-[1.08]"
               />
 
               {/* Dark scrim that animates in on hover */}
