@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         if (resend) {
             try {
                 await resend.emails.send({
-                    from: txt("src/app/api/auth/forgot-password/route.ts::003", "\u05D6\u05D9\u05E8\u05EA \u05D4\u05D0\u05D3\u05E8\u05D9\u05DB\u05DC\u05D5\u05EA <noreply@zirat.co.il>"),
+                    from: txt("src/app/api/auth/forgot-password/route.ts::003", "\u05D6\u05D9\u05E8\u05EA \u05D4\u05D0\u05D3\u05E8\u05D9\u05DB\u05DC\u05D5\u05EA <noreply@ziratadrichalut.co.il>"),
                     to: email,
                     subject: txt("src/app/api/auth/forgot-password/route.ts::004", "\u05D0\u05D9\u05E4\u05D5\u05E1 \u05E1\u05D9\u05E1\u05DE\u05D4 \u2014 \u05D6\u05D9\u05E8\u05EA \u05D4\u05D0\u05D3\u05E8\u05D9\u05DB\u05DC\u05D5\u05EA"),
                     html: `

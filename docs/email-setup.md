@@ -1,7 +1,7 @@
 # הגדרת שליחת מייל ללקוחות — מדריך שלב אחר שלב
 
 **זמן כולל:** 15–30 דקות (רוב הזמן הוא המתנה להתפשטות DNS).
-**דרוש:** גישה ל-Resend, ל-Vercel, ולפאנל ניהול DNS של הדומיין `zirat.co.il`.
+**דרוש:** גישה ל-Resend, ל-Vercel, ולפאנל ניהול DNS של הדומיין `ziratadrichalut.co.il`.
 
 ## הבעיה — למה רק ישראל גולדשמיד מקבל מיילים?
 
@@ -23,26 +23,26 @@
 
 1. פתחי https://resend.com/login והיכנסי לחשבון.
 2. בצד שמאל → **Domains** → **Add Domain**.
-3. הקלידי: `zirat.co.il` → **Add**.
+3. הקלידי: `ziratadrichalut.co.il` → **Add**.
 4. Resend תציג טבלה עם ערכי DNS שצריך להוסיף (3 רשומות TXT + אפשר 1 MX + 1 DKIM):
    ```
    Type   Name                        Value
    ----   ----                        -----
-   MX     send.zirat.co.il            feedback-smtp.us-east-1.amazonses.com   (priority 10)
-   TXT    send.zirat.co.il            "v=spf1 include:amazonses.com ~all"
-   TXT    resend._domainkey.zirat.co.il   p=MIGfMA0GCSqG...   (מחרוזת ארוכה)
+   MX     send.ziratadrichalut.co.il            feedback-smtp.us-east-1.amazonses.com   (priority 10)
+   TXT    send.ziratadrichalut.co.il            "v=spf1 include:amazonses.com ~all"
+   TXT    resend._domainkey.ziratadrichalut.co.il   p=MIGfMA0GCSqG...   (מחרוזת ארוכה)
    ```
    **השאירי את החלון פתוח — נחזור אליו.**
 
-5. פתחי טאב חדש — פאנל ניהול ה-DNS של `zirat.co.il`. לרוב זה:
+5. פתחי טאב חדש — פאנל ניהול ה-DNS של `ziratadrichalut.co.il`. לרוב זה:
    - **Cloudflare** (אם הדומיין עליהם)
    - **GoDaddy** (אם שם רכשת את הדומיין)
    - **Netim / Name.com / 013 / פרטנר / etc.** — תלוי איפה הדומיין
-   - אם אינך בטוחה, הקלידי `whois zirat.co.il` ב-https://whois.domaintools.com — יופיע שם הרשם.
+   - אם אינך בטוחה, הקלידי `whois ziratadrichalut.co.il` ב-https://whois.domaintools.com — יופיע שם הרשם.
 
 6. העתיקי **אחת-אחת** את השורות מ-Resend לפאנל ה-DNS. לכל שורה:
    - בחרי Type (MX / TXT)
-   - הדביקי את ה-Name (בלי הסיומת `.zirat.co.il` — רוב הפאנלים מוסיפים אותה לבד, אז רק `send` או `resend._domainkey`)
+   - הדביקי את ה-Name (בלי הסיומת `.ziratadrichalut.co.il` — רוב הפאנלים מוסיפים אותה לבד, אז רק `send` או `resend._domainkey`)
    - הדביקי את ה-Value בדיוק כפי שמופיע
 
 7. חזרי ל-Resend → לחצי **Verify DNS records**.
@@ -56,7 +56,7 @@
 3. לחצי **Add New**. הגדירי:
    ```
    Name:        FROM_EMAIL
-   Value:       זירת האדריכלות <noreply@zirat.co.il>
+   Value:       זירת האדריכלות <noreply@ziratadrichalut.co.il>
    Environment: Production, Preview, Development (סמני את שלושתם)
    ```
 4. **Save**.
@@ -76,7 +76,7 @@
    ```json
    {
      "config": {
-       "fromEmail": "זירת האדריכלות <noreply@zirat.co.il>",
+       "fromEmail": "זירת האדריכלות <noreply@ziratadrichalut.co.il>",
        "isSandbox": false,
        "hasApiKey": true,
        ...

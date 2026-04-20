@@ -9,7 +9,7 @@ const resend = process.env.RESEND_API_KEY
 // the account owner's own email. Any mail to a third party silently gets
 // 403'd. To deliver to real clients you MUST verify a domain at
 // https://resend.com/domains and set `FROM_EMAIL` on Vercel to an address
-// under that domain, e.g. `זירת האדריכלות <noreply@zirat.co.il>`.
+// under that domain, e.g. `זירת האדריכלות <noreply@ziratadrichalut.co.il>`.
 const FROM_EMAIL = process.env.FROM_EMAIL || "זירת האדריכלות <noreply@resend.dev>";
 const FROM_IS_SANDBOX = /@resend\.dev>?\s*$/i.test(FROM_EMAIL);
 

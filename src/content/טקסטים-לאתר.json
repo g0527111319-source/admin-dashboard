@@ -680,7 +680,7 @@
     "src/app/api/auth/register/route.ts::004": "שגיאה בהרשמה",
     "src/app/api/auth/forgot-password/route.ts::001": "נדרש אימייל",
     "src/app/api/auth/forgot-password/route.ts::002": "אם האימייל קיים במערכת, קישור לאיפוס סיסמה נשלח אליו",
-    "src/app/api/auth/forgot-password/route.ts::003": "זירת האדריכלות <noreply@zirat.co.il>",
+    "src/app/api/auth/forgot-password/route.ts::003": "זירת האדריכלות <noreply@ziratadrichalut.co.il>",
     "src/app/api/auth/forgot-password/route.ts::004": "איפוס סיסמה — זירת האדריכלות",
     "src/app/api/auth/forgot-password/route.ts::005": "אם האימייל קיים במערכת, קישור לאיפוס סיסמה נשלח אליו",
     "src/app/api/auth/forgot-password/route.ts::006": "שגיאה בשליחת קישור איפוס",

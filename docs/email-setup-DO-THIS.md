@@ -9,7 +9,7 @@
 
 ### 1.1 — היכנסי לחשבון
 פתחי: **https://resend.com/login**
-- אם לא זכרת סיסמה: "Forgot password" → יגיע מייל ל-`tamar@zirat.co.il` (המייל שרשום אצלי כ-ADMIN_EMAIL).
+- אם לא זכרת סיסמה: "Forgot password" → יגיע מייל ל-`z.adrichalut@gmail.com` (המייל שרשום אצלי כ-ADMIN_EMAIL).
 - אם אין לך חשבון כלל — ייתכן שהחשבון על שם ישראל. אז תצטרכי לבקש ממנו להוסיף אותך כמנהלת: https://resend.com/team
 
 ### 1.2 — הוסיפי דומיין
@@ -17,7 +17,7 @@
 
 1. בתפריט השמאלי — לחצי **Domains**
 2. למעלה מימין — לחצי **+ Add Domain**
-3. הקלידי בדיוק ככה: `zirat.co.il` (בלי www, בלי https)
+3. הקלידי בדיוק ככה: `ziratadrichalut.co.il` (בלי www, בלי https)
 4. ב-Region בחרי: **Frankfurt (eu-west-1)** — קרוב יותר לישראל מ-US (כבר הגדרתי את הקוד שיעבוד עם זה)
 5. לחצי **Add**
 
@@ -45,7 +45,7 @@ TXT       resend._domainkey              p=MIGfMA0GCSq... (מחרוזת ארוכ
 
 ### 2.2 — מצאי את הדומיין
 - אחרי ההתחברות תראי רשימה של דומיינים
-- לחצי על **zirat.co.il**
+- לחצי על **ziratadrichalut.co.il**
 - בתפריט בצד — לחצי **DNS** → **Records**
 
 ### 2.3 — הוסיפי 3 שורות
@@ -53,7 +53,7 @@ TXT       resend._domainkey              p=MIGfMA0GCSq... (מחרוזת ארוכ
 
 1. לחצי **+ Add record** (כפתור כחול למעלה)
 2. תבחרי **Type** (MX או TXT — לפי מה ש-Resend אמר)
-3. ב-**Name** — הדביקי רק את ה-prefix (לדוגמה `send` או `resend._domainkey`). Cloudflare יוסיף `.zirat.co.il` אוטומטית — אל תכתבי את זה.
+3. ב-**Name** — הדביקי רק את ה-prefix (לדוגמה `send` או `resend._domainkey`). Cloudflare יוסיף `.ziratadrichalut.co.il` אוטומטית — אל תכתבי את זה.
 4. ב-**Mail server / Content** — הדביקי את ה-Value המלא מ-Resend
 5. עבור MX: יש גם **Priority** → הקלידי `10`
 6. **Proxy status** — ודאי שזה **DNS only** (ענן אפור, לא כתום). לחצי על הענן הכתום אם הוא כתום — חובה שיהיה אפור לרשומות של מייל.
@@ -82,7 +82,7 @@ TXT       resend._domainkey              p=MIGfMA0GCSq... (מחרוזת ארוכ
 
 זהו. ברגע ש-Resend מראה 3 וי ירוקים, כתבי לי הודעה `"סיימתי את ה-DNS"` ואני מבצע תוך 30 שניות:
 
-1. מגדיר `FROM_EMAIL=זירת האדריכלות <noreply@zirat.co.il>` ב-Vercel
+1. מגדיר `FROM_EMAIL=זירת האדריכלות <noreply@ziratadrichalut.co.il>` ב-Vercel
 2. מפעיל Redeploy
 3. שולח מייל בדיקה שמוודא שהכל עובד
 
