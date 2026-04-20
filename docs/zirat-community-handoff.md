@@ -11,7 +11,7 @@ _מסמך מכיל את כל המידע הנדרש כדי שמפתח או בינ
 | דומיין עיקרי | `ziratadrichalut.co.il` (www) |
 | דומיין legacy | `ziratadrichal.co.il` (301 redirect עם שמירת path) |
 | טכנולוגיה | Next.js 14.2 (App Router) + TypeScript + Prisma + PostgreSQL |
-| תאריך עדכון | 2026-04-19 |
+| תאריך עדכון | 2026-04-20 |
 | שפה | עברית (RTL), תמיכה ב-English ללקוחות |
 
 ---
@@ -62,7 +62,7 @@ _מסמך מכיל את כל המידע הנדרש כדי שמפתח או בינ
 |---|---|
 | מסד נתונים | PostgreSQL (hosted — Vercel Postgres / Supabase) |
 | ORM | Prisma 7.4.2 (client מיוצר ל-`src/generated/prisma`) |
-| מספר מודלים | 79 מודלים (`schema.prisma` — 2,122 שורות) |
+| מספר מודלים | 85 מודלים (`schema.prisma` — 2,263 שורות) |
 | Driver | `pg` + `@prisma/adapter-pg` |
 
 ### אימות ואבטחה
@@ -100,7 +100,7 @@ src/app/              — App Router (כל הדפים וה-API)
 src/components/       — רכיבים משותפים
 src/lib/              — לוגיקה עסקית (auth, email, contracts, dunning)
 src/generated/prisma/ — Prisma Client (מיוצר, לא לעריכה ידנית)
-prisma/schema.prisma  — סכמת DB (79 מודלים)
+prisma/schema.prisma  — סכמת DB (85 מודלים)
 prisma/seed.ts        — נתוני דוגמה
 public/               — משאבים סטטיים, pdfjs
 docs/                 — תיעוד פרויקט
@@ -110,7 +110,7 @@ vercel.json           — הגדרות Vercel + cron jobs
 
 ---
 
-## 3. מודלי Prisma (79 מודלים)
+## 3. מודלי Prisma (85 מודלים)
 
 המודלים מחולקים לקטגוריות. הרשימה המלאה עם כל השדות נמצאת ב-`prisma/schema.prisma`.
 
@@ -130,6 +130,7 @@ vercel.json           — הגדרות Vercel + cron jobs
 | **PublishingSlot** | משבצות זמן מורשות לפרסום |
 | **BusinessCard** | כרטיס ביקור דיגיטלי (למעצבת/ספק) |
 | **SupplierReservation** | הזמנת יומן לספק |
+| **SupplierDesignerReview** | ביקורת שספק שולח למעצבת. דירוגים פנימיים אופציונליים (זמינות/אמינות/מחיר) לעיני הספק בלבד. טקסט הביקורת + `publishConsent` של המעצבת (FULL/ANONYMOUS/DECLINED) + `publishedAt` מאפשרים לספק לשתף את הביקורת בכרטיס הביקור שלו. |
 | **Event** | אירוע קהילתי (חינם/בתשלום) |
 | **EventRegistration** | הרשמה של מעצבת לאירוע (כולל תשלום iCount) |
 | **WhatsAppLog** | לוג כללי לפעולות ווטסאפ |
@@ -158,7 +159,7 @@ vercel.json           — הגדרות Vercel + cron jobs
 | **CrmMoodboard / Item** | לוח השראה משותף עם הלקוח |
 | **CrmCalendarEvent** | פגישה/משימה ביומן (סנכרון Google) |
 | **DesignerGoogleCalendar** | טוקנים של Google Calendar |
-| **CrmSatisfactionSurvey** | סקר שביעות רצון ללקוח |
+| **CrmSatisfactionSurvey** | סקר שביעות רצון ללקוח. דירוגי כוכבים פנימיים לעיני המעצבת בלבד; `freeTextComment` + `publishConsent` (FULL/ANONYMOUS/DECLINED) + `publishedAt` מאפשרים למעצבת לשתף את הביקורת הכתובה בכרטיס הביקור שלה. |
 | **CrmWebhookEndpoint / Log** | Webhooks ל-Zapier/Make |
 | **ClientPortalToken / Otp** | גישת לקוח ללא סיסמה |
 
@@ -251,6 +252,25 @@ vercel.json           — הגדרות Vercel + cron jobs
 5. מייל welcome נשלח ב-async (Resend)
 6. המעצבת יכולה מעכשיו להיכנס ולהתקדם ל-onboarding
 
+### 4.5 ביקורות לכרטיסי הביקור (דו־כיווני: מעצבת↔לקוח וספק↔מעצבת)
+
+**זרימה א׳ — מעצבת → לקוח (`CrmSatisfactionSurvey`):**
+1. מעצבת שולחת סקר מתוך CRM (`/api/designer/crm/surveys`) → נוצרת רשומה עם `token` ייחודי.
+2. נשלח מייל ללקוח עם לינק `/survey/[token]`. אם המייל נכשל, ה-UI מציג `emailWarning` + לינק להעתקה.
+3. הלקוח ממלא טקסט ביקורת ובוחר אחת משלוש אפשרויות: פרסום מלא (שם+פלאפון) / אנונימי / ללא פרסום.
+4. המעצבת רואה את הטקסט בלבד בכרטיסיית הסקרים שלה (הדירוגים הכוכביים — אם קיימים — הם פנימיים).
+5. אם הלקוח אישר פרסום (FULL/ANONYMOUS), כפתור "שתף ביקורת" מופיע. קליק → `POST .../surveys/[id]/publish` → הביקורת משתקפת אוטומטית בכרטיס הביקור (`/card/[id]` → `/api/business-card/[id]`).
+6. "הסר מהכרטיס" או מחיקת הסקר לגמרי (`DELETE .../surveys/[id]`) תמיד זמינים.
+
+**זרימה ב׳ — ספק → מעצבת (`SupplierDesignerReview`):**
+1. הספק פותח את טאב "ביקורות מעצבות" בדשבורד הספק ובוחר מעצבת מרשימה — הרשימה חושפת **רק** שם / עיר / טלפון / מייל, ללא כל דירוג פנימי (מוגש מ-`/api/supplier/designers`).
+2. `POST /api/supplier/reviews` → נוצרת רשומה עם טוקן, נשלח מייל למעצבת עם לינק `/supplier-review/[token]`.
+3. המעצבת ממלאת את הביקורת (UX זהה לטופס הלקוח).
+4. הספק רואה את הטקסט בדשבורד, יכול להזין דירוג פנימי אופציונלי (זמינות / אמינות / מחיר) שרק הוא רואה, וללחוץ "שיתוף בכרטיס" → `POST .../reviews/[id]/publish` → הביקורת מופיעה בכרטיס הביקור של הספק.
+5. אפשרויות "הסרה מהכרטיס" ומחיקת הביקורת (`DELETE .../reviews/[id]`) זמינות תמיד.
+
+**חוק ברזל:** אף צד אינו חשוף לנתוני הדירוג של הצד השני. רק מנהלת הקהילה מקבלת מידע אגרגטיבי על איכות הספקים, דרך דיווחי עסקאות.
+
 ---
 
 ## 5. מפת API ראשית
@@ -264,7 +284,7 @@ vercel.json           — הגדרות Vercel + cron jobs
 `dashboard`, `stats`, `actions`, `suppliers`, `designers`, `subscriptions` (+analytics/plan-change/grant-trial/collaboration-report), `coupons`, `waitlist`, `settings`, `migrate-subscriptions`, `2fa` (request/verify), `whatsapp-bot` (logs/settings)
 
 ### 5.3 `/api/designer/crm/*` — CRM (ענקי)
-`projects`, `phases`, `materials`, `moodboards`, `quotes`, `contracts` + `templates`, `approvals`, `tasks`, `budget`, `schedule` (Gantt), `handoff-checklists`, `inspiration-boards`, `workflows`, `onboarding-templates`, `style-quiz`, `recommendations`, `automations`, `webhooks`, `surveys`, `whatsapp`, `activity-log`, `settings`, `plans`, `suppliers`, `time-entries`, `client-uploads`, `before-after`, `templates` (message)
+`projects`, `phases`, `materials`, `moodboards`, `quotes`, `contracts` + `templates`, `approvals`, `tasks`, `budget`, `schedule` (Gantt), `handoff-checklists`, `inspiration-boards`, `workflows`, `onboarding-templates`, `style-quiz`, `recommendations`, `automations`, `webhooks`, `surveys` (כולל `[id]/publish` לשיתוף בכרטיס הביקור + `DELETE [id]`), `whatsapp`, `activity-log`, `settings`, `plans`, `suppliers`, `time-entries`, `client-uploads`, `before-after`, `templates` (message)
 
 ### 5.4 `/api/designer/subscription/*` — מנוי מעצבת
 `pause`, `resume`, `cancel`, `cancel-downgrade`, `change-plan`, `apply-coupon`, `payment-url`
@@ -294,6 +314,22 @@ vercel.json           — הגדרות Vercel + cron jobs
 
 ### 5.9 `/api/webhooks/*`
 `iCount` (אירועי חיוב + קבלות), ועוד
+
+### 5.10 `/api/supplier/*` — פורטל הספק
+- `profile` — GET/PATCH פרופיל הספק
+- `posts`, `insights` — ניהול פרסומים ותובנות
+- `designers` — GET בלבד, רשימת מעצבות עבור בוחר הביקורות; חושף **רק** שם / עיר / טלפון / מייל (ללא דירוגים / פרטים פנימיים).
+- `reviews` — POST (שליחת בקשת ביקורת + מייל למעצבת), GET (רשימה של הביקורות ששלח הספק)
+- `reviews/[id]` — PATCH (עדכון דירוגים פנימיים של הספק), DELETE (מחיקה)
+- `reviews/[id]/publish` — POST (toggle של `publishedAt` — מופיע/לא מופיע בכרטיס הביקור)
+- `reviews/token/[token]` — GET + PATCH ציבוריים, דרך הטופס של `/supplier-review/[token]`
+
+### 5.11 `/api/business-card/[id]` — כרטיס ביקור ציבורי
+- GET: מחזיר את הכרטיס המאוחסן + פרופיל בסיסי + ביקורות פומביות שמוזגו אוטומטית:
+  - אם `profileType === "designer"` — מוזגים סקרי `CrmSatisfactionSurvey` עם `publishedAt != null` ו-`publishConsent` מתוך (ANONYMOUS, FULL). IDs בתחילית `survey:`.
+  - אם `profileType === "supplier"` — מוזגים `SupplierDesignerReview`. IDs בתחילית `sdr:`.
+- הביקורות שנוצרו ידנית מופיעות ראשונות, הביקורות המפורסמות אחריהן. שם מוצג רק אם הצד השני בחר FULL.
+- PUT: שמירת הכרטיס עצמו (header, themes, fields, testimonials מקוריים).
 
 ---
 
@@ -414,6 +450,9 @@ const result = await sendEmail({
 
 סדר יורד — החדש ביותר למעלה.
 
+- `0e93179` — feat(reviews): מחזור ביקורות ספק→מעצבת + מחיקה וביטול שיתוף של סקרי שביעות רצון. מודל `SupplierDesignerReview`, APIs ב-`/api/supplier/reviews`, דף ציבורי `/supplier-review/[token]`, טאב "ביקורות מעצבות" ב-`/supplier/[id]`, מיזוג ביקורות אוטומטי ל-`/api/business-card/[id]` עבור ספקים, והוספת DELETE + כפתור מחיקה לסקרי לקוחות.
+- `94c8877` — feat(surveys): ביקורות פומביות בכרטיס הביקור (שלב 1 — מעצבת↔לקוח). הוספת `freeTextComment` / `publishConsent` / `publishedAt` ל-`CrmSatisfactionSurvey`, דף ציבורי `/survey/[token]`, endpoint `[id]/publish`, מיזוג ל-`/api/business-card/[id]`.
+- `177a42e` — feat(ui): עיצוב חדש לכפתורים — "ivory blinds" (גוון שמנת, מסגרת כפולה בשחור + זהב, צל עדין בהובר) על כל כפתורי `.btn-gold` / `.btn-outline` + `.ds-twist-*` באתר.
 - `1de2095` — docs(email): מדריך קצרצר לתמר — שני שלבים בלבד
 - `a9c07a0` — fix(email): חשיפת כשלי שליחת מייל + אבחון Resend sandbox
 - `b1cf571` — fix(contracts): 5 תיקונים במערכת החתמת לקוחות
@@ -559,7 +598,7 @@ npx prisma migrate deploy
 
 | קובץ | תיאור |
 |---|---|
-| `prisma/schema.prisma` | סכמת DB — 79 מודלים |
+| `prisma/schema.prisma` | סכמת DB — 85 מודלים |
 | `src/middleware.ts` | אכיפת תפקידים, headers בטיחות |
 | `src/lib/auth.ts` | login/register/reset-password |
 | `src/lib/email.ts` | תבניות מייל + `sendEmail()` |
@@ -571,6 +610,11 @@ npx prisma migrate deploy
 | `tailwind.config.ts` | פלטת צבעים + shadcn config |
 | `docs/email-setup*.md` | מדריך להגדרת Resend |
 | `docs/google-verification/` | מסמכי אימות Google OAuth |
+| `src/components/crm/CrmSurveys.tsx` | ניהול סקרי שביעות רצון של המעצבת (שליחה, מחיקה, שיתוף בכרטיס) |
+| `src/components/supplier/SupplierReviews.tsx` | טאב ביקורות מעצבות בדשבורד הספק |
+| `src/app/survey/[token]/page.tsx` + `SurveyForm.tsx` | טופס ציבורי למילוי סקר לקוח |
+| `src/app/supplier-review/[token]/page.tsx` + `SupplierReviewForm.tsx` | טופס ציבורי למילוי ביקורת מעצבת על ספק |
+| `src/app/api/business-card/[id]/route.ts` | שליפת כרטיס ביקור + מיזוג אוטומטי של ביקורות פומביות |
 
 ### 12.3 פקודות Git שימושיות
 
