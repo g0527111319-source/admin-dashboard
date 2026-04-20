@@ -670,8 +670,8 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
             <Workflow className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">תבניות תהליך</h2>
-            <p className="text-white/50" style={{ fontSize: "10px" }}>
+            <h2 className="text-lg font-bold text-text-primary">תבניות תהליך</h2>
+            <p className="text-text-muted" style={{ fontSize: "10px" }}>
               ניהול תבניות עבודה לפרויקטים
             </p>
           </div>
@@ -702,12 +702,12 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
       {showPresets && (
         <div className="card-static space-y-3 animate-in border-2 border-gold/20">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-gold" />
               {`תבניות מוכנות — ${g(gdr, "בחר", "בחרי")} ${g(gdr, "והתאם", "והתאימי")} לצרכייך`}
             </h3>
-            <button onClick={() => setShowPresets(false)} className="p-1 rounded hover:bg-white/10">
-              <X className="w-4 h-4 text-white/40" />
+            <button onClick={() => setShowPresets(false)} className="p-1 rounded hover:bg-bg-surface-2">
+              <X className="w-4 h-4 text-text-muted" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -715,13 +715,13 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
               <button
                 key={key}
                 onClick={() => loadPreset(key)}
-                className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-gold/10 hover:border-gold/30 transition-all text-right group"
+                className="p-4 rounded-xl border border-border-subtle bg-bg-surface hover:bg-gold/10 hover:border-gold/30 transition-all text-right group"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Workflow className="w-5 h-5 text-gold" />
-                  <span className="text-sm font-semibold text-white">{preset.name}</span>
+                  <span className="text-sm font-semibold text-text-primary">{preset.name}</span>
                 </div>
-                <p className="text-white/40 mb-2" style={{ fontSize: "10px" }}>{preset.description}</p>
+                <p className="text-text-muted mb-2" style={{ fontSize: "10px" }}>{preset.description}</p>
                 <div className="flex gap-2 flex-wrap">
                   <span className="badge-blue">{preset.phases.length} שלבים</span>
                   <span className="badge-gray">{preset.phases.reduce((sum, p) => sum + p.tasks.length, 0)} משימות</span>
@@ -757,14 +757,14 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
           {templates.map((t) => (
             <div key={t.id} className="card-static overflow-hidden">
               <div
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition"
+                className="p-4 flex items-center justify-between cursor-pointer hover:bg-bg-surface transition"
                 onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
               >
                 <div className="flex items-center gap-3">
-                  <Workflow className="w-5 h-5 text-amber-400" />
+                  <Workflow className="w-5 h-5 text-gold" />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-white">{t.name}</span>
+                      <span className="text-sm font-semibold text-text-primary">{t.name}</span>
                       <span className="badge-blue">{t.phases.length} שלבים</span>
                       {t.isDefault && (
                         <span className="badge-gold flex items-center gap-1">
@@ -775,7 +775,7 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
                       {t.projectType && <span className="badge-gray">{t.projectType}</span>}
                     </div>
                     {t.description && (
-                      <p className="text-white/40 mt-1" style={{ fontSize: "10px" }}>
+                      <p className="text-text-muted mt-1" style={{ fontSize: "10px" }}>
                         {t.description}
                       </p>
                     )}
@@ -800,33 +800,33 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
                   <button className="btn-ghost p-1" onClick={(e) => { e.stopPropagation(); startEdit(t); }}>
                     <Edit3 className="w-4 h-4" />
                   </button>
-                  <button className="btn-ghost p-1 text-red-400" onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }}>
+                  <button className="btn-ghost p-1 text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }}>
                     <Trash2 className="w-4 h-4" />
                   </button>
                   {expandedId === t.id ? (
-                    <ChevronUp className="w-4 h-4 text-white/40" />
+                    <ChevronUp className="w-4 h-4 text-text-muted" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-white/40" />
+                    <ChevronDown className="w-4 h-4 text-text-muted" />
                   )}
                 </div>
               </div>
 
               {/* Expanded Details */}
               {expandedId === t.id && (
-                <div className="border-t border-white/10 p-4 space-y-4">
+                <div className="border-t border-border-subtle p-4 space-y-4">
                   {/* Phases */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Clock className="w-4 h-4 text-amber-400" />
-                      <h4 className="text-sm font-semibold text-white">שלבים</h4>
+                      <Clock className="w-4 h-4 text-gold" />
+                      <h4 className="text-sm font-semibold text-text-primary">שלבים</h4>
                     </div>
                     <div className="space-y-2">
                       {t.phases.map((phase, idx) => (
-                        <div key={idx} className="p-3 rounded-lg bg-white/5">
+                        <div key={idx} className="p-3 rounded-lg bg-bg-surface">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-white font-medium">{phase.name}</span>
+                            <span className="text-sm text-text-primary font-medium">{phase.name}</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-white/40" style={{ fontSize: "10px" }}>
+                              <span className="text-text-muted" style={{ fontSize: "10px" }}>
                                 יום {phase.daysFromStart} | {phase.duration} ימים
                               </span>
                             </div>
@@ -847,8 +847,8 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
                   {t.budgetCategories.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <DollarSign className="w-4 h-4 text-amber-400" />
-                        <h4 className="text-sm font-semibold text-white">קטגוריות תקציב</h4>
+                        <DollarSign className="w-4 h-4 text-gold" />
+                        <h4 className="text-sm font-semibold text-text-primary">קטגוריות תקציב</h4>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {t.budgetCategories.map((cat, idx) => (
@@ -862,14 +862,14 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
                   {t.autoMessages.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare className="w-4 h-4 text-amber-400" />
-                        <h4 className="text-sm font-semibold text-white">הודעות אוטומטיות</h4>
+                        <MessageSquare className="w-4 h-4 text-gold" />
+                        <h4 className="text-sm font-semibold text-text-primary">הודעות אוטומטיות</h4>
                       </div>
                       <div className="space-y-1">
                         {t.autoMessages.map((msg, idx) => (
-                          <div key={idx} className="p-2 rounded bg-white/5 flex items-start gap-2">
+                          <div key={idx} className="p-2 rounded bg-bg-surface flex items-start gap-2">
                             <span className="badge-gold flex-shrink-0">{msg.phase}</span>
-                            <span className="text-white/60" style={{ fontSize: "10px" }}>{msg.message}</span>
+                            <span className="text-text-secondary" style={{ fontSize: "10px" }}>{msg.message}</span>
                           </div>
                         ))}
                       </div>
@@ -890,7 +890,7 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-text-primary">
                 {editId ? "עריכת תבנית" : "תבנית חדשה"}
               </h3>
               <button className="btn-ghost p-1" onClick={() => { setShowForm(false); setEditId(null); }}>
@@ -954,8 +954,8 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <ListChecks className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-sm font-semibold text-white">שלבים ({form.phases.length})</h4>
+                    <ListChecks className="w-4 h-4 text-gold" />
+                    <h4 className="text-sm font-semibold text-text-primary">שלבים ({form.phases.length})</h4>
                   </div>
                   <button className="btn-ghost flex items-center gap-1" onClick={addPhase}>
                     <Plus className="w-3 h-3" />
@@ -965,12 +965,12 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
 
                 <div className="space-y-3">
                   {form.phases.map((phase, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-white/5 space-y-3">
+                    <div key={idx} className="p-3 rounded-lg bg-bg-surface space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-white/40" style={{ fontSize: "10px" }}>
+                        <span className="text-text-muted" style={{ fontSize: "10px" }}>
                           שלב {idx + 1}
                         </span>
-                        <button className="btn-ghost p-1 text-red-400" onClick={() => removePhase(idx)}>
+                        <button className="btn-ghost p-1 text-red-600" onClick={() => removePhase(idx)}>
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
@@ -1044,8 +1044,8 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
               {/* Budget Categories */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-4 h-4 text-amber-400" />
-                  <h4 className="text-sm font-semibold text-white">קטגוריות תקציב ({form.budgetCategories.length})</h4>
+                  <DollarSign className="w-4 h-4 text-gold" />
+                  <h4 className="text-sm font-semibold text-text-primary">קטגוריות תקציב ({form.budgetCategories.length})</h4>
                 </div>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {form.budgetCategories.map((cat, idx) => (
@@ -1081,8 +1081,8 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-sm font-semibold text-white">הודעות אוטומטיות ({form.autoMessages.length})</h4>
+                    <MessageSquare className="w-4 h-4 text-gold" />
+                    <h4 className="text-sm font-semibold text-text-primary">הודעות אוטומטיות ({form.autoMessages.length})</h4>
                   </div>
                   <button className="btn-ghost flex items-center gap-1" onClick={addAutoMessage}>
                     <Plus className="w-3 h-3" />
@@ -1091,7 +1091,7 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
                 </div>
                 <div className="space-y-2">
                   {form.autoMessages.map((msg, idx) => (
-                    <div key={idx} className="flex items-start gap-2 p-2 rounded bg-white/5">
+                    <div key={idx} className="flex items-start gap-2 p-2 rounded bg-bg-surface">
                       <select
                         className="select-field max-w-[140px]"
                         value={msg.phase}
@@ -1108,7 +1108,7 @@ export default function CrmWorkflowTemplates({ gender }: { gender?: string } = {
                         onChange={(e) => updateAutoMessage(idx, "message", e.target.value)}
                         placeholder="תוכן ההודעה"
                       />
-                      <button className="btn-ghost p-1 text-red-400" onClick={() => removeAutoMessage(idx)}>
+                      <button className="btn-ghost p-1 text-red-600" onClick={() => removeAutoMessage(idx)}>
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
