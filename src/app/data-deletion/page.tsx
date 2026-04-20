@@ -72,7 +72,7 @@ export default function DataDeletionPage() {
             </p>
             <p className="text-text-muted text-sm">
               לשאלות, ניתן ליצור קשר ישיר ב-
-              <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline">tamar@zirat.co.il</a>.
+              <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline">z.adrichalut@gmail.com</a>.
             </p>
           </div>
         ) : (
@@ -158,7 +158,7 @@ export default function DataDeletionPage() {
             <a href="/privacy" className="text-gold hover:underline">מדיניות הפרטיות המלאה</a>.
           </p>
           <p className="mt-2">
-            יצירת קשר ישיר: <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline">tamar@zirat.co.il</a>
+            יצירת קשר ישיר: <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline">z.adrichalut@gmail.com</a>
           </p>
         </section>
 
@@ -169,7 +169,7 @@ export default function DataDeletionPage() {
           <p>
             Under our privacy policy, any user may request complete deletion of their personal data from Zirat Architecture.
             Fill in the form above with the email address registered to your account, or send a request to{" "}
-            <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline">tamar@zirat.co.il</a>
+            <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline">z.adrichalut@gmail.com</a>
             {" "}with the subject &quot;Delete my account&quot;.
             Deletion is completed within 30 days and includes all profile data, user-generated content, Google OAuth tokens,
             and related records. Security logs are retained for at most 90 days and then purged. Backups are retained for at

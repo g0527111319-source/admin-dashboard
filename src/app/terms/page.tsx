@@ -54,7 +54,8 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-heading text-text-primary">7. יצירת קשר</h2>
           <p className="text-text-secondary leading-relaxed">
-            לשאלות בנוגע לתנאי השימוש, ניתן לפנות אלינו בכתובת: tamar@zirat.co.il
+            לשאלות בנוגע לתנאי השימוש, ניתן לפנות אלינו בכתובת:{" "}
+            <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline">z.adrichalut@gmail.com</a>
           </p>
         </section>
       </div>

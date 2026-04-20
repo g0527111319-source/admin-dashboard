@@ -136,7 +136,7 @@ export function welcomeDesignerEmail(name: string, gender?: string) {
           <li style="color: #e5e5e5; margin-bottom: 8px;">להשתתף באירועים והגרלות</li>
         </ul>
         <div style="text-align: center; margin-top: 30px;">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app"}/login"
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il"}/login"
              style="background: #C9A84C; color: #000; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
             כניסה לאזור האישי
           </a>
@@ -185,7 +185,7 @@ export function reminderEmail(name: string, message: string) {
 // Subscription lifecycle email templates
 // ==========================================
 
-const BRAND_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
+const BRAND_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
 
 function brandWrap(title: string, body: string): string {
   return `

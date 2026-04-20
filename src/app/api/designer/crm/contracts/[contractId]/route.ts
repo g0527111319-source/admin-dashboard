@@ -99,7 +99,7 @@ export async function PATCH(
             select: { fullName: true },
           });
           const contractTitle = (body.title || existing.title || `חוזה ${existing.contractNumber}`).trim();
-          const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
+          const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
           const signUrl = `${APP_URL}/contract/sign/${existing.signToken}`;
 
           const result = await sendEmail({

@@ -56,14 +56,18 @@ export default function AccessibilityPage() {
             נשמח לשמוע ממך. ניתן לפנות אלינו בכל עת:
           </p>
           <ul className="list-disc pr-6 space-y-1">
-            <li>דוא&quot;ל: accessibility@zirat.co.il</li>
-            <li>טלפון: 03-1234567</li>
+            <li>
+              דוא&quot;ל:{" "}
+              <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline">
+                z.adrichalut@gmail.com
+              </a>
+            </li>
           </ul>
 
           <h2 className="text-lg font-heading font-semibold text-text-primary">
             תאריך עדכון ההצהרה
           </h2>
-          <p>הצהרה זו עודכנה לאחרונה בתאריך מרץ 2026.</p>
+          <p>הצהרה זו עודכנה לאחרונה בתאריך אפריל 2026.</p>
         </div>
 
         {/* Back Link */}

@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }, clientIp);
 
     // Notify the operator.
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "tamar@zirat.co.il";
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "z.adrichalut@gmail.com";
     try {
       await sendEmail({
         to: ADMIN_EMAIL,

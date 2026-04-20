@@ -189,7 +189,7 @@ export async function POST(
       });
 
       const contractTitle = contract.title || `חוזה ${contract.contractNumber}`;
-      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://zirat-design.vercel.app";
+      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.ziratadrichalut.co.il";
 
       // ── If this signature completes the contract, build the archival PDF
       //    once and reuse the bytes for the email attachment + R2 upload. We

@@ -61,7 +61,7 @@ const DEFAULT_SETTINGS: AdminSettings = {
     pass: "",
   },
   security: {
-    adminEmail: "tamar@zirat.co.il",
+    adminEmail: "z.adrichalut@gmail.com",
   },
   permissions: {},
   banners: [],

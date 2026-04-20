@@ -455,7 +455,7 @@ async function appendCertificatePage(
   }
 
   // Tiny footer
-  page.drawText("zirat-design.vercel.app", {
+  page.drawText("www.ziratadrichalut.co.il", {
     x: marginX,
     y: 30,
     size: 8,

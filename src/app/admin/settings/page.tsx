@@ -142,7 +142,7 @@ export default function SettingsPage() {
   const [showPass, setShowPass] = useState(false);
 
   // Security state
-  const [adminEmail, setAdminEmail] = useState("tamar@zirat.co.il");
+  const [adminEmail, setAdminEmail] = useState("z.adrichalut@gmail.com");
   const [newPassword, setNewPassword] = useState("");
 
   // Loading / saving state

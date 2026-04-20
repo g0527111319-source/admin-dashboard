@@ -13,7 +13,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-heading text-text-primary">1. כללי</h2>
           <p className="text-text-secondary leading-relaxed">
             זירת האדריכלות (&quot;האתר&quot;, &quot;השירות&quot;, &quot;אנחנו&quot;) מפעילה פלטפורמה למעצבי פנים ואדריכלים, בכתובת
-            <a href="https://zirat-design.vercel.app" className="text-gold hover:underline"> https://zirat-design.vercel.app</a>.
+            <a href="https://www.ziratadrichalut.co.il" className="text-gold hover:underline"> https://www.ziratadrichalut.co.il</a>.
             מדיניות זו מפרטת אילו נתונים אנו אוספים, כיצד אנו משתמשים בהם, כיצד אנו מאחסנים ומגנים עליהם, עם מי אנו חולקים אותם וכיצד ניתן לבקש למחוק אותם.
             מדיניות זו חלה על כל המשתמשים באתר ובמיוחד על משתמשים שמחברים את חשבון Google שלהם לשירות.
           </p>
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
             <li><strong>בקשת מחיקה מלאה של החשבון:</strong> ניתן בכל עת דרך
               {" "}<a href="/data-deletion" className="text-gold hover:underline font-semibold">טופס מחיקת הנתונים הציבורי שלנו</a>
               {" "}או על ידי שליחת אימייל ל-
-              <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline">tamar@zirat.co.il</a>
+              <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline">z.adrichalut@gmail.com</a>
               {" "}עם הנושא &quot;Delete my account&quot;. המחיקה תבוצע בתוך 30 יום ותכלול את כל נתוני הפרופיל, התוכן, הטוקנים של Google, והרשומות המשויכות. לוגים של אבטחה ישמרו לכל היותר 90 יום לצרכי אבטחה וציות.
             </li>
             <li><strong>Backups:</strong> עותקי גיבוי של בסיס הנתונים נשמרים עד 30 יום ולאחר מכן נמחקים לצמיתות.</li>
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-heading text-text-primary">6. זכויות המשתמש</h2>
           <p className="text-text-secondary leading-relaxed">
             בכל עת באפשרותך לבקש: לעיין במידע שלנו עליך, לתקן מידע שגוי, לייצא את המידע, או למחוק את המידע באופן מלא. הפנייה בדוא&quot;ל אל
-            <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline"> tamar@zirat.co.il</a>.
+            <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline"> z.adrichalut@gmail.com</a>.
             אם חיברת את חשבון Google שלך, באפשרותך בכל עת לבטל את הגישה של זירת האדריכלות דרך
             <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline"> https://myaccount.google.com/permissions</a>.
           </p>
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-heading text-text-primary">10. יצירת קשר</h2>
           <p className="text-text-secondary leading-relaxed">
             אחראית הגנת הפרטיות: תמר. לכל שאלה בנושא פרטיות, אבטחה או מחיקת מידע:
-            <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline"> tamar@zirat.co.il</a>.
+            <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline"> z.adrichalut@gmail.com</a>.
           </p>
         </section>
 
@@ -166,7 +166,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-heading text-text-primary">Privacy Policy (English Summary for Google Verification)</h2>
           <p className="text-text-secondary leading-relaxed" dir="ltr">
             Zirat Architecture operates the platform at
-            <a href="https://zirat-design.vercel.app" className="text-gold hover:underline"> https://zirat-design.vercel.app</a>.
+            <a href="https://www.ziratadrichalut.co.il" className="text-gold hover:underline"> https://www.ziratadrichalut.co.il</a>.
           </p>
           <p className="text-text-secondary leading-relaxed" dir="ltr">
             <strong>Data Accessed from Google:</strong> We request the OAuth scopes <code>openid email profile</code> for sign-in (Google account ID, email, name, profile picture) and <code>https://www.googleapis.com/auth/calendar</code> (only when the user explicitly connects Google Calendar in the CRM settings) to create and update calendar events on the user&apos;s primary calendar.
@@ -186,7 +186,7 @@ export default function PrivacyPage() {
             Full account deletion can be requested via our public
             {" "}<a href="/data-deletion" className="text-gold hover:underline font-semibold">Data Deletion form</a>
             {" "}or by emailing
-            <a href="mailto:tamar@zirat.co.il" className="text-gold hover:underline"> tamar@zirat.co.il</a>
+            <a href="mailto:z.adrichalut@gmail.com" className="text-gold hover:underline"> z.adrichalut@gmail.com</a>
             {" "}with the subject &quot;Delete my account&quot;; deletion is completed within 30 days and includes all Google OAuth tokens, profile data, and user-generated content.
           </p>
           <p className="text-text-secondary leading-relaxed" dir="ltr">
