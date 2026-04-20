@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var W=["https://claude.ai","https://preview.claude.ai","https://eap-omelette.claude.ai"];var Y=30000;document.addEventListener("DOMContentLoaded",()=>{const D="transform-react-jsx-source";document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((C,F)=>{const Q=C.getAttribute("data-plugins")||"";if(Q.indexOf(D)<0){C.setAttribute("data-plugins",Q?`${Q},${D}`:D)}if(!C.hasAttribute("data-filename")){C.setAttribute("data-filename",C.getAttribute("src")||`inline-${F}`)}})});var K=window.parent;if(K&&K!==window){const D=(k,f)=>{try{K.postMessage({__omelette_log:true,type:k,data:f},"*")}catch{}};["log","warn","error"].forEach((k)=>{const f=console[k];console[k]=(...w)=>{const z=w.map((h)=>{try{return typeof h==="object"?JSON.stringify(h):String(h)}catch{try{return String(h)}catch{return"[unstringifiable]"}}}).join(" ");D(k,z);f.apply(console,w)}});window.addEventListener("error",(k)=>{const f=k.target;if(f&&f!==window&&f.tagName){const w=f.src||f.href||"";D("resource_error",`${f.tagName} failed to load: ${w}`)}else{D("error",`${k.message||"Unknown error"} at ${k.filename||"?"}:${k.lineno||0}:${k.colno||0}`)}},true);window.addEventListener("unhandledrejection",(k)=>{const f=k.reason;const w=f instanceof Error?`${f.message} ${f.stack}`:String(f);D("error",`Unhandled rejection: ${w}`)});const C=()=>{try{K.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")C();else window.addEventListener("load",C);if(window.ResizeObserver)new ResizeObserver(C).observe(document.documentElement);const F={};let Q=0;window.claude={complete(k){return new Promise((f,w)=>{if(!W.length){w(new Error("claude.complete: no parent origin"));return}const z=`c${++Q}`;const h=()=>setTimeout(()=>{delete F[z];w(new Error(`claude.complete: no data for ${Y/1000}s`))},Y);const J=h();F[z]={resolve:f,reject:w,text:"",t:J,arm:h};try{for(const V of W){K.postMessage({__om_api:true,id:z,body:k},V)}}catch(V){clearTimeout(J);delete F[z];w(V)}})}};const X=(k)=>{try{return JSON.stringify(k)}catch{return JSON.stringify(String(k))}};window.addEventListener("message",(k)=>{if(W.indexOf(k.origin)<0)return;if(k.source!==K)return;const f=k.data;if(!f)return;if(f.__om_api_r){const h=F[f.id];if(!h)return;if(f.error!=null){clearTimeout(h.t);delete F[f.id];h.reject(new Error(f.error));return}if(f.chunk!=null){clearTimeout(h.t);h.t=h.arm();h.text+=f.chunk;return}if(f.done){clearTimeout(h.t);delete F[f.id];h.resolve(f.text!=null?f.text:h.text);return}return}if(!f.__om_eval)return;const w=f;const z=(h)=>{k.source.postMessage({...h,__om_eval_r:1,id:w.id},k.origin)};try{const h=(0,eval)(w.code);if(h&&typeof h.then==="function"){h.then((J)=>z({ok:1,v:X(J)}),(J)=>z({ok:0,e:String(J)}))}else{z({ok:1,v:X(h)})}}catch(h){z({ok:0,e:String(h)})}})}})();
+</script>
+
+<meta charset="utf-8"><title>מיכל שהם · עיצוב פנים | זירת האדריכלות</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Rubik:wght@400;500;600;700;800&family=Frank+Ruhl+Libre:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root{
+    --gold:#C9A84C; --gold-light:#E8C97A; --gold-dim:#8B6914; --gold-50:#FBF7ED; --gold-100:#F5ECD3;
+    --bg:#FAFAF8; --bg-card:#FFFFFF; --bg-card-hover:#FDFCFA; --bg-surface:#F5F4F0; --bg-surface-2:#EEEDEA;
+    --text:#111111; --text-secondary:#374151; --text-muted:#6B7280; --text-faint:#9CA3AF;
+    --border:#E5E5E0; --border-hover:#D1D0CB; --border-gold:rgba(201,168,76,.25);
+    --shadow-xs:0 1px 2px rgba(0,0,0,.03); --shadow-md:0 4px 16px rgba(0,0,0,.06); --shadow-lg:0 8px 32px rgba(0,0,0,.08);
+    --shadow-xl:0 16px 48px rgba(0,0,0,.1),0 4px 16px rgba(0,0,0,.05);
+    --shadow-gold:0 4px 20px rgba(201,168,76,.12);
+    --radius-md:8px; --radius-lg:12px; --radius-card:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;line-height:1.5}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  .container{max-width:1240px;margin:0 auto;padding:0 24px}
+  .wide{max-width:1400px;margin:0 auto;padding:0 24px}
+
+  /* ================= TOP NAV ================= */
+  .topnav{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(250,250,248,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .topnav .inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1400px;margin:0 auto;padding:0 24px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Rubik';font-weight:700;font-size:15px}
+  .brand-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#F5ECD3,#C9A84C);display:grid;place-items:center;color:#5A4608;font-weight:800}
+  .brand small{display:block;font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:.5px}
+  .topnav-links{display:flex;gap:4px}
+  .topnav-links a{padding:8px 14px;font-size:13px;color:var(--text-secondary);border-radius:8px;font-weight:500}
+  .topnav-links a:hover{background:var(--bg-surface);color:var(--text)}
+
+  /* ================= BUTTONS ================= */
+  .btn-gold,.btn-outline{font-family:'Rubik';font-weight:600;font-size:13px;padding:12px 26px;position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:9999px;cursor:pointer;letter-spacing:.2px;transition:transform .45s cubic-bezier(.33,1,.68,1),filter .45s cubic-bezier(.33,1,.68,1),letter-spacing .4s ease,color .4s ease,border-color .4s ease}
+  .btn-gold{color:#1a1a1a;border:1.4px solid #1a1a1a;background:linear-gradient(180deg,#faf5e8 0%,#f0e8d0 50%,#e4d9b8 100%);filter:drop-shadow(2px 3px 3px rgba(0,0,0,.15)) drop-shadow(1px 1px 1px rgba(0,0,0,.08))}
+  .btn-gold::before{content:'';position:absolute;inset:4px;border:1.2px solid #B8860B;border-radius:9999px;opacity:.85;pointer-events:none}
+  .btn-gold:hover{transform:translateX(-6px) translateY(-1px);letter-spacing:.4px;filter:drop-shadow(6px 5px 8px rgba(0,0,0,.20)) drop-shadow(3px 2px 4px rgba(0,0,0,.12)) drop-shadow(2px 2px 3px rgba(139,101,8,.18))}
+  .btn-gold:hover::before{border-color:#D4A437;border-width:1.6px;opacity:1}
+  .btn-outline{color:#1a1a1a;border:1.4px solid #1a1a1a;background:linear-gradient(180deg,rgba(250,245,232,.7),rgba(240,232,208,.65),rgba(228,217,184,.65));filter:drop-shadow(1px 2px 2px rgba(0,0,0,.10))}
+  .btn-outline::before{content:'';position:absolute;inset:4px;border:1.2px solid #B8860B;border-radius:9999px;opacity:.7;pointer-events:none}
+  .btn-outline:hover{transform:translateX(-6px) translateY(-1px);letter-spacing:.4px;filter:drop-shadow(5px 4px 7px rgba(0,0,0,.16))}
+  .btn-ghost{color:var(--text-secondary);padding:8px 16px;font-weight:500;border-radius:8px}
+  .btn-ghost:hover{background:var(--bg-surface);color:var(--text)}
+
+  /* ================= BADGES ================= */
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;font-size:11.5px;font-weight:500;border-radius:9999px}
+  .badge-gold{background:#FBF7ED;color:#92700A;border:1px solid rgba(201,168,76,.22)}
+  .badge-gray{background:#F3F4F6;color:#374151;border:1px solid rgba(107,114,128,.18)}
+  .badge-green{background:#ECFDF5;color:#065F46;border:1px solid rgba(16,185,129,.18)}
+
+  /* ================= HERO ================= */
+  .hero{position:relative;padding:104px 0 60px;overflow:hidden;background:linear-gradient(180deg,#FBF7ED 0%,#FAFAF8 100%)}
+  .hero::before{content:'';position:absolute;inset:0;background:
+    radial-gradient(600px 300px at 85% 30%,rgba(232,201,122,.35),transparent 70%),
+    radial-gradient(500px 260px at 10% 70%,rgba(201,168,76,.2),transparent 70%);
+    pointer-events:none}
+  .hero-grid{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:60px;align-items:center}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:32px}}
+
+  .hero-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--gold-dim);background:rgba(255,255,255,.6);padding:6px 14px;border-radius:9999px;border:1px solid var(--border-gold);margin-bottom:18px;font-weight:500;letter-spacing:.3px}
+  .hero h1{font-family:'Frank Ruhl Libre','Rubik',serif;font-size:clamp(40px,5.2vw,64px);line-height:1.05;letter-spacing:-1.2px;margin:0 0 12px;font-weight:500}
+  .hero h1 em{font-style:italic;color:var(--gold-dim);font-weight:400}
+  .hero-tagline{font-size:18px;color:var(--text-secondary);max-width:520px;line-height:1.55;margin:0 0 24px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:18px;font-size:13.5px;color:var(--text-muted);margin-bottom:28px}
+  .hero-meta span{display:inline-flex;align-items:center;gap:6px}
+  .hero-meta i{color:var(--gold)}
+  .hero-ctas{display:flex;gap:12px;flex-wrap:wrap}
+
+  /* Designer photo / visual column */
+  .hero-visual{position:relative;aspect-ratio:5/6;width:100%;max-width:460px;justify-self:end}
+  .hero-photo{position:absolute;inset:0;border-radius:22px;overflow:hidden;box-shadow:var(--shadow-xl);background:linear-gradient(160deg,#C9A84C,#8B6914);transform:rotate(-2deg) translateY(0);transition:transform .8s cubic-bezier(.33,1,.68,1)}
+  .hero-photo::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.3));z-index:1}
+  .hero-photo svg{width:100%;height:100%;position:relative}
+  .hero-photo-tag{position:absolute;bottom:20px;right:20px;z-index:2;color:white;font-family:'Rubik';font-weight:700;font-size:18px;letter-spacing:.3px}
+  .hero-photo-tag small{display:block;font-weight:400;font-size:11.5px;opacity:.85;letter-spacing:.5px;text-transform:uppercase;margin-top:2px}
+  .hero-card{position:absolute;z-index:3;background:white;border-radius:14px;box-shadow:var(--shadow-lg);padding:14px 18px;font-size:13px;border:1px solid var(--border)}
+  .hero-card-top{top:-14px;right:-24px;transform:rotate(3deg)}
+  .hero-card-bot{bottom:30px;left:-40px;transform:rotate(-2deg)}
+  .rating-stars{color:var(--gold);display:inline-flex;gap:1px;margin-bottom:3px}
+  .rating-stars i{width:15px;height:15px;fill:currentColor;stroke:none}
+  .stat-label{font-size:10.5px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+  .stat-value{font-family:'Rubik';font-size:20px;font-weight:700;margin-top:2px}
+
+  /* ================= BIO STRIP ================= */
+  .bio-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg-card);padding:24px 0}
+  .bio-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;align-items:center}
+  @media(max-width:800px){.bio-grid{grid-template-columns:1fr 1fr;gap:16px}}
+  .bio-text{font-size:14.5px;line-height:1.7;color:var(--text-secondary)}
+  .bio-stat{text-align:center}
+  .bio-stat .stat-value{font-size:28px;letter-spacing:-.5px;color:var(--text)}
+  .bio-stat .stat-label{font-size:11.5px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+
+  /* ================= FILTER BAR ================= */
+  .filter-bar{padding:36px 0 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+  .section-kicker{font-family:'Rubik';font-size:13px;color:var(--gold-dim);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin:0 0 6px}
+  .section-h{font-family:'Frank Ruhl Libre',serif;font-size:34px;font-weight:500;letter-spacing:-.6px;margin:0}
+  .chip-group{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:7px 16px;font-size:12.5px;border-radius:9999px;background:var(--bg-surface);color:var(--text-secondary);border:1px solid transparent;cursor:pointer;font-weight:500;transition:all .2s}
+  .chip:hover{background:var(--bg-surface-2)}
+  .chip.active{background:var(--gold-50);color:var(--gold-dim);border-color:var(--border-gold)}
+
+  /* ================= MASONRY PROJECTS ================= */
+  .masonry{columns:3;column-gap:18px;padding-bottom:20px}
+  @media(max-width:900px){.masonry{columns:2}}
+  @media(max-width:600px){.masonry{columns:1}}
+  .project-item{break-inside:avoid;margin-bottom:18px;position:relative;border-radius:var(--radius-card);overflow:hidden;box-shadow:var(--shadow-xs);border:1px solid var(--border);background:white;transition:all .3s cubic-bezier(.16,1,.3,1);cursor:pointer}
+  .project-item:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px);border-color:var(--border-gold)}
+  .project-item:hover .project-overlay{opacity:1}
+  .project-item:hover .project-cover-svg{transform:scale(1.04)}
+  .project-cover-wrap{position:relative;overflow:hidden}
+  .project-cover-svg{width:100%;display:block;transition:transform .6s cubic-bezier(.33,1,.68,1)}
+  .project-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.1) 40%,rgba(255,255,255,.88));backdrop-filter:blur(1px);opacity:0;transition:opacity .25s;display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
+  .project-overlay h3{font-family:'Rubik';font-size:17px;font-weight:600;margin:0 0 4px;color:var(--text);letter-spacing:-.2px}
+  .project-overlay .meta-line{font-size:12px;color:var(--text-muted);margin-bottom:10px;display:flex;gap:10px}
+  .project-overlay-cta{display:inline-flex;align-items:center;gap:6px;font-family:'Rubik';font-size:12px;font-weight:600;color:var(--gold-dim);align-self:flex-start}
+  .project-overlay-cta i{transition:transform .3s}
+  .project-item:hover .project-overlay-cta i{transform:translateX(-4px)}
+
+  .project-badge-ribbon{position:absolute;top:12px;right:12px;z-index:2;display:flex;gap:6px}
+
+  /* Varied cover heights for masonry */
+  .cover-tall{aspect-ratio:3/4}
+  .cover-med{aspect-ratio:4/4}
+  .cover-short{aspect-ratio:4/3}
+  .cover-wide{aspect-ratio:5/3}
+
+  /* ================= TESTIMONIALS ================= */
+  .testimonials{background:linear-gradient(180deg,#FAFAF8 0%,#FBF7ED 100%);padding:70px 0;margin:60px 0 0}
+  .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px}
+  @media(max-width:820px){.testi-grid{grid-template-columns:1fr}}
+  .testi-card{background:white;border-radius:var(--radius-card);padding:26px;border:1px solid var(--border);box-shadow:var(--shadow-xs);position:relative}
+  .testi-card::before{content:'"';position:absolute;top:10px;right:22px;font-family:'Frank Ruhl Libre',serif;font-size:72px;color:var(--gold);opacity:.18;line-height:1}
+  .testi-quote{font-size:14.5px;line-height:1.7;color:var(--text-secondary);margin:0 0 18px;font-style:italic;position:relative}
+  .testi-foot{display:flex;align-items:center;gap:10px}
+  .testi-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8C97A,#C9A84C);color:white;display:grid;place-items:center;font-weight:700;font-size:13px}
+  .testi-name{font-family:'Rubik';font-weight:600;font-size:13.5px}
+  .testi-sub{font-size:11.5px;color:var(--text-muted)}
+
+  /* ================= CTA FOOTER ================= */
+  .cta-block{margin:70px 0 40px;padding:48px 40px;background:linear-gradient(135deg,#FBF7ED 0%,#F5ECD3 100%);border:1px solid var(--border-gold);border-radius:24px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;box-shadow:var(--shadow-gold);position:relative;overflow:hidden}
+  .cta-block::before{content:'';position:absolute;top:-50%;left:-10%;width:400px;height:400px;background:radial-gradient(closest-side,rgba(201,168,76,.25),transparent);pointer-events:none}
+  @media(max-width:800px){.cta-block{grid-template-columns:1fr;padding:36px 28px}}
+  .cta-block h2{font-family:'Frank Ruhl Libre',serif;font-size:36px;font-weight:500;letter-spacing:-.8px;margin:0 0 10px;line-height:1.15}
+  .cta-block p{color:var(--text-secondary);margin:0 0 22px;font-size:15px;line-height:1.65;max-width:420px}
+  .cta-block-right{position:relative;z-index:1}
+  .contact-mini{background:white;border-radius:16px;padding:20px 22px;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+  .contact-mini label{display:block;font-size:12px;color:var(--text-muted);margin:10px 0 4px;font-weight:500}
+  .contact-mini input,.contact-mini textarea{width:100%;padding:10px 12px;font-size:13px;border:1px solid var(--border);border-radius:8px;outline:none;font-family:inherit;background:white}
+  .contact-mini input:focus,.contact-mini textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.1)}
+
+  /* ================= FOOTER ================= */
+  footer{padding:28px 0 30px;border-top:1px solid var(--border);color:var(--text-muted);font-size:12.5px;text-align:center;background:var(--bg-card)}
+
+  [data-lucide]{width:15px;height:15px;stroke-width:1.8}
+  .icon-sm{width:13px;height:13px}
+</style>
+</head><body>
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="inner">
+    <a href="../index.html" class="brand">
+      <div class="brand-mark">ז</div>
+      <div>זירת האדריכלות<small>Ivory Blinds</small></div>
+    </a>
+    <div class="topnav-links">
+      <a href="client-directory.html">מעצבות</a>
+      <a href="#">פרויקטים</a>
+      <a href="#">בלוג</a>
+      <a href="#">עלינו</a>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a href="portfolio-crm.html" class="btn-ghost"><i data-lucide="edit-3" class="icon-sm"></i> ערוך פרופיל</a>
+      <button class="btn-outline" style="padding:9px 18px;font-size:12.5px">הרשמה</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wide hero-grid">
+    <div>
+      <span class="hero-eyebrow"><i data-lucide="sparkles" class="icon-sm"></i> מעצבת פנים · תל אביב והסביבה</span>
+      <h1>מרחבים ש<em>מספרים</em><br>את הסיפור שלכם.</h1>
+      <p class="hero-tagline">אני מיכל — 11 שנים של עיצוב פנים לבתים, דירות ומשרדים ברחבי המרכז. תיק עבודות מלא פרויקטים חמים, תוצאה נקייה, ולקוחות שחוזרים.</p>
+      <div class="hero-meta">
+        <span><i data-lucide="map-pin"></i> תל אביב · השרון · המרכז</span>
+        <span><i data-lucide="trending-up"></i> 11 שנות ניסיון</span>
+        <span><i data-lucide="users"></i> 87 פרויקטים הושלמו</span>
+      </div>
+      <div class="hero-ctas">
+        <button class="btn-gold"><i data-lucide="message-circle" class="icon-sm"></i> שלחי פנייה</button>
+        <button class="btn-outline"><i data-lucide="heart" class="icon-sm"></i> הוסף למועדפים</button>
+        <button class="btn-ghost"><i data-lucide="share-2" class="icon-sm"></i> שתף</button>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-photo">
+        <svg viewBox="0 0 400 480" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hero-g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#E8C97A"/>
+              <stop offset=".5" stop-color="#C9A84C"/>
+              <stop offset="1" stop-color="#8B6914"/>
+            </linearGradient>
+            <linearGradient id="wall-g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#FBF7ED"/>
+              <stop offset="1" stop-color="#F5ECD3"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="480" fill="url(#hero-g)"/>
+          <!-- Room sketch -->
+          <rect x="60" y="80" width="280" height="260" fill="url(#wall-g)" opacity=".75"/>
+          <rect x="60" y="340" width="280" height="40" fill="rgba(139,101,8,.4)"/>
+          <!-- Sofa -->
+          <rect x="100" y="240" width="140" height="80" fill="rgba(26,20,16,.5)" rx="6"/>
+          <rect x="110" y="250" width="45" height="60" fill="rgba(255,255,255,.3)" rx="4"/>
+          <rect x="165" y="250" width="45" height="60" fill="rgba(255,255,255,.3)" rx="4"/>
+          <!-- Pendant light -->
+          <line x1="250" y1="80" x2="250" y2="170" stroke="rgba(26,20,16,.4)" stroke-width="1.5"/>
+          <circle cx="250" cy="180" r="18" fill="rgba(255,235,180,.9)"/>
+          <!-- Plant -->
+          <rect x="270" y="280" width="30" height="40" fill="rgba(26,20,16,.4)"/>
+          <path d="M275 280 Q285 260 295 280 M280 280 Q275 250 290 260 M285 280 Q295 245 305 270" stroke="rgba(46,80,40,.7)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <!-- Art frame -->
+          <rect x="115" y="130" width="100" height="80" fill="rgba(255,255,255,.8)" stroke="rgba(26,20,16,.3)" stroke-width="2"/>
+          <circle cx="145" cy="170" r="14" fill="rgba(201,168,76,.8)"/>
+          <rect x="170" y="160" width="30" height="30" fill="rgba(139,101,8,.5)"/>
+        </svg>
+        <div class="hero-photo-tag">מיכל שהם<small>Interior Designer</small></div>
+      </div>
+      <div class="hero-card hero-card-top">
+        <div class="rating-stars">
+          <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+        </div>
+        <div style="font-family:'Rubik';font-weight:700;font-size:15px">4.9 <span style="color:var(--text-muted);font-weight:400;font-size:12px">· 64 ביקורות</span></div>
+      </div>
+      <div class="hero-card hero-card-bot">
+        <div class="stat-label">זמן תגובה</div>
+        <div class="stat-value">&lt; 2 שעות</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BIO STRIP ============ -->
+<section class="bio-strip">
+  <div class="wide bio-grid">
+    <div class="bio-text">
+      אני מאמינה שבית מעוצב הוא בית שמרגישים בו <strong>בבוקר בפיג'מה</strong> לא פחות מאשר כשהאורחים בסלון.
+      כל פרויקט מתחיל משיחה ארוכה ומסתיים עם מפתחות שמתקבלים עם חיוך — בלי לחץ ובלי הפתעות בדרך.
+    </div>
+    <div class="bio-stat"><div class="stat-value">87</div><div class="stat-label">פרויקטים</div></div>
+    <div class="bio-stat"><div class="stat-value">11</div><div class="stat-label">שנות ניסיון</div></div>
+    <div class="bio-stat"><div class="stat-value">4.9<span style="font-size:16px;color:var(--gold)">★</span></div><div class="stat-label">דירוג ממוצע</div></div>
+  </div>
+</section>
+
+<!-- ============ STYLES / CHIPS ============ -->
+<div class="container">
+  <div class="filter-bar">
+    <div>
+      <div class="section-kicker">הפרויקטים שלי</div>
+      <h2 class="section-h">12 סיפורים מהשנים האחרונות</h2>
+    </div>
+    <div class="chip-group">
+      <button class="chip active">הכל · 12</button>
+      <button class="chip">דירות · 6</button>
+      <button class="chip">בתים פרטיים · 3</button>
+      <button class="chip">משרדים · 2</button>
+      <button class="chip">מטבחים · 4</button>
+      <button class="chip">חדרי שינה · 3</button>
+    </div>
+  </div>
+
+  <!-- ============ MASONRY ============ -->
+  <div class="masonry">
+
+    <!-- Project 1 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-tall" viewBox="0 0 400 533" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5ECD3"/><stop offset="1" stop-color="#C9A84C"/></linearGradient></defs>
+          <rect width="400" height="533" fill="url(#pg1)"/>
+          <rect x="60" y="100" width="280" height="330" fill="rgba(255,255,255,.5)" rx="6"/>
+          <rect x="90" y="300" width="220" height="110" fill="rgba(26,20,16,.35)" rx="6"/>
+          <rect x="105" y="315" width="60" height="85" fill="rgba(255,255,255,.4)" rx="3"/>
+          <rect x="175" y="315" width="60" height="85" fill="rgba(255,255,255,.4)" rx="3"/>
+          <rect x="245" y="315" width="55" height="85" fill="rgba(255,255,255,.4)" rx="3"/>
+          <circle cx="200" cy="180" r="35" fill="rgba(139,101,8,.5)"/>
+          <circle cx="200" cy="180" r="18" fill="rgba(255,240,200,.9)"/>
+        </svg>
+        <div class="project-badge-ribbon"><span class="badge badge-gold"><i data-lucide="star" class="icon-sm"></i> נבחר</span></div>
+      </div>
+      <div class="project-overlay">
+        <h3>דירת גן ברמת השרון</h3>
+        <div class="meta-line"><span>סלון · מודרני · 140 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 2 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-med" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#D4A437"/></linearGradient></defs>
+          <rect width="400" height="400" fill="url(#pg2)"/>
+          <rect x="0" y="260" width="400" height="140" fill="rgba(26,20,16,.12)"/>
+          <rect x="60" y="100" width="70" height="220" fill="rgba(255,255,255,.6)" rx="3"/>
+          <rect x="150" y="80" width="90" height="240" fill="rgba(139,101,8,.3)" rx="3"/>
+          <rect x="260" y="120" width="80" height="200" fill="rgba(255,255,255,.5)" rx="3"/>
+          <circle cx="320" cy="90" r="28" fill="rgba(201,168,76,.8)"/>
+        </svg>
+      </div>
+      <div class="project-overlay">
+        <h3>פנטהאוז תל אביב · מרפסת פתוחה</h3>
+        <div class="meta-line"><span>דירה · מינימליסטי · 180 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 3 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-short" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#EEEDEA"/><stop offset="1" stop-color="#374151"/></linearGradient></defs>
+          <rect width="400" height="300" fill="url(#pg3)"/>
+          <rect x="60" y="80" width="280" height="160" fill="rgba(255,255,255,.4)" rx="4"/>
+          <rect x="100" y="120" width="60" height="100" fill="rgba(201,168,76,.6)" rx="3"/>
+          <rect x="170" y="120" width="60" height="100" fill="rgba(255,255,255,.5)" rx="3"/>
+          <rect x="240" y="120" width="60" height="100" fill="rgba(201,168,76,.6)" rx="3"/>
+          <line x1="80" y1="100" x2="320" y2="100" stroke="rgba(26,20,16,.4)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="project-overlay">
+        <h3>מטבח בוטיק · מבנה לשימור</h3>
+        <div class="meta-line"><span>מטבח · קלאסי · 24 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 4 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-tall" viewBox="0 0 400 533" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#8B6914"/></linearGradient></defs>
+          <rect width="400" height="533" fill="url(#pg4)"/>
+          <rect x="40" y="60" width="320" height="420" fill="rgba(255,255,255,.4)" rx="8"/>
+          <rect x="60" y="80" width="130" height="380" fill="rgba(201,168,76,.5)" rx="4"/>
+          <rect x="210" y="80" width="130" height="180" fill="rgba(139,101,8,.4)" rx="4"/>
+          <rect x="210" y="280" width="130" height="180" fill="rgba(255,255,255,.7)" rx="4"/>
+          <circle cx="275" cy="370" r="18" fill="rgba(139,101,8,.6)"/>
+        </svg>
+        <div class="project-badge-ribbon"><span class="badge badge-green"><i data-lucide="award" class="icon-sm"></i> זוכה 2024</span></div>
+      </div>
+      <div class="project-overlay">
+        <h3>סטודיו אמנית · חלל עבודה ביתי</h3>
+        <div class="meta-line"><span>משרד ביתי · אומנותי · 40 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 5 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-med" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEEDEA"/><stop offset="1" stop-color="#C9A84C"/></linearGradient></defs>
+          <rect width="400" height="400" fill="url(#pg5)"/>
+          <circle cx="200" cy="180" r="120" fill="rgba(255,255,255,.55)"/>
+          <rect x="60" y="320" width="280" height="80" fill="rgba(26,20,16,.12)"/>
+          <rect x="100" y="250" width="200" height="80" fill="rgba(201,168,76,.5)" rx="4"/>
+          <circle cx="200" cy="180" r="55" fill="rgba(139,101,8,.4)"/>
+          <circle cx="200" cy="180" r="25" fill="rgba(255,235,180,.9)"/>
+        </svg>
+      </div>
+      <div class="project-overlay">
+        <h3>חדר שינה הורים · שכונת מונטיפיורי</h3>
+        <div class="meta-line"><span>חדר שינה · רומנטי · 22 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 6 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-short" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg6" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5F4F0"/><stop offset="1" stop-color="#6B7280"/></linearGradient></defs>
+          <rect width="400" height="300" fill="url(#pg6)"/>
+          <rect x="30" y="60" width="340" height="200" fill="rgba(26,20,16,.1)" rx="6"/>
+          <rect x="50" y="80" width="90" height="160" fill="rgba(255,255,255,.5)" rx="3"/>
+          <rect x="155" y="80" width="90" height="160" fill="rgba(201,168,76,.4)" rx="3"/>
+          <rect x="260" y="80" width="90" height="160" fill="rgba(255,255,255,.5)" rx="3"/>
+          <line x1="200" y1="60" x2="200" y2="260" stroke="rgba(26,20,16,.2)" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="project-overlay">
+        <h3>משרד עורכי דין · רחוב רוטשילד</h3>
+        <div class="meta-line"><span>מסחרי · אלגנטי · 90 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 7 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-wide" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg7" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#E8C97A"/></linearGradient></defs>
+          <rect width="400" height="240" fill="url(#pg7)"/>
+          <rect x="40" y="140" width="320" height="80" fill="rgba(26,20,16,.25)" rx="4"/>
+          <rect x="40" y="60" width="100" height="120" fill="rgba(255,255,255,.6)" rx="3"/>
+          <rect x="150" y="40" width="100" height="140" fill="rgba(139,101,8,.35)" rx="3"/>
+          <rect x="260" y="60" width="100" height="120" fill="rgba(255,255,255,.5)" rx="3"/>
+        </svg>
+      </div>
+      <div class="project-overlay">
+        <h3>חלל משותף · בית קפה עם ספרייה</h3>
+        <div class="meta-line"><span>מסחרי · בוהמייני · 120 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 8 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-med" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg8" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5ECD3"/><stop offset="1" stop-color="#374151"/></linearGradient></defs>
+          <rect width="400" height="400" fill="url(#pg8)"/>
+          <rect x="60" y="100" width="280" height="240" fill="rgba(255,255,255,.4)" rx="8"/>
+          <circle cx="200" cy="180" r="60" fill="rgba(201,168,76,.6)"/>
+          <rect x="100" y="270" width="200" height="60" fill="rgba(26,20,16,.3)" rx="4"/>
+        </svg>
+      </div>
+      <div class="project-overlay">
+        <h3>לופט ביפו העתיקה</h3>
+        <div class="meta-line"><span>דירה · אקלקטי · 75 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+
+    <!-- Project 9 -->
+    <div class="project-item">
+      <div class="project-cover-wrap">
+        <svg class="project-cover-svg cover-tall" viewBox="0 0 400 533" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="pg9" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8C97A"/><stop offset="1" stop-color="#8B6914"/></linearGradient></defs>
+          <rect width="400" height="533" fill="url(#pg9)"/>
+          <rect x="50" y="80" width="300" height="400" fill="rgba(255,255,255,.35)" rx="6"/>
+          <rect x="80" y="110" width="240" height="160" fill="rgba(26,20,16,.3)" rx="4"/>
+          <rect x="80" y="290" width="115" height="170" fill="rgba(139,101,8,.4)" rx="4"/>
+          <rect x="205" y="290" width="115" height="170" fill="rgba(255,255,255,.5)" rx="4"/>
+        </svg>
+      </div>
+      <div class="project-overlay">
+        <h3>בית פרטי · הרצליה פיתוח</h3>
+        <div class="meta-line"><span>בית פרטי · קונטרסט · 240 מ"ר</span></div>
+        <span class="project-overlay-cta">צפי בפרויקט <i data-lucide="arrow-left" class="icon-sm"></i></span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin:30px 0 20px">
+    <button class="btn-outline"><i data-lucide="arrow-down" class="icon-sm"></i> טענו עוד פרויקטים</button>
+  </div>
+</div>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section class="testimonials">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:10px">
+      <div class="section-kicker">ביקורות לקוחות</div>
+      <h2 class="section-h">מה אומרים עליי</h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <p class="testi-quote">שנה עברה מאז המפתחות ואנחנו עדיין מוצאים את עצמנו מתלהבים מפרטים. מיכל הקשיבה לכל בקשה, אפילו לאלה שלא ידענו איך לנסח.</p>
+        <div class="testi-foot">
+          <div class="testi-avatar">רכ</div>
+          <div><div class="testi-name">רונית כהן</div><div class="testi-sub">דירת גן · רמת השרון</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <p class="testi-quote">תקציב סביר, לוחות זמנים מדויקים, ותוצאה שנראית כמו ממגזין. לא תכננו לעבוד עם מעצבת, בסוף זה היה הצעד הכי חכם שעשינו.</p>
+        <div class="testi-foot">
+          <div class="testi-avatar">מש</div>
+          <div><div class="testi-name">משפחת שפירא</div><div class="testi-sub">פנטהאוז · תל אביב</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <p class="testi-quote">ידעתי שזו מיכל ברגע ששלחה לי את הסקיצה הראשונה. בלי אגו, עם הרבה יוזמה. חזרנו אליה גם לדירת ההשקעה.</p>
+        <div class="testi-foot">
+          <div class="testi-avatar">דל</div>
+          <div><div class="testi-name">דנה לוי</div><div class="testi-sub">משרד ביתי · הרצליה</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA FOOTER ============ -->
+<div class="container">
+  <div class="cta-block">
+    <div>
+      <h2>רוצים להתחיל לדמיין<br>את הבית שלכם יחד?</h2>
+      <p>שיחת ייעוץ ראשונית של 30 דקות ללא עלות. מספרים לי על החלל, על החיים בתוכו, ועל מה שחלמתם אבל לא ידעתם איך לבקש.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-gold"><i data-lucide="calendar" class="icon-sm"></i> קבעו שיחת ייעוץ</button>
+        <button class="btn-outline"><i data-lucide="phone" class="icon-sm"></i> 054-7123456</button>
+      </div>
+    </div>
+    <div class="cta-block-right">
+      <div class="contact-mini">
+        <div style="font-family:'Rubik';font-weight:600;margin-bottom:4px">שלחי הודעה מהירה</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">אחזור תוך 2 שעות</div>
+        <label>שם</label><input placeholder="השם שלך">
+        <label>טלפון</label><input placeholder="050-0000000">
+        <label>ספרי לי על הפרויקט</label><textarea rows="2" placeholder="דירת 4 חדרים בתל אביב, רוצים לעצב מחדש את הסלון והמטבח..."></textarea>
+        <button class="btn-gold" style="width:100%;margin-top:12px">שליחה <i data-lucide="send" class="icon-sm"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>
+    <a href="../index.html" style="color:var(--gold-dim)">← חזרה לאינדקס</a> · 
+    זירת האדריכלות · מיכל שהם · מעצבת פנים · 
+    <a href="portfolio-crm.html">ערוך פרופיל</a>
+  </div>
+</footer>
+
+<script>lucide.createIcons();</script>
+</body></html>

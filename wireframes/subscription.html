@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var W=["https://claude.ai","https://preview.claude.ai","https://eap-omelette.claude.ai"];var Y=30000;document.addEventListener("DOMContentLoaded",()=>{const D="transform-react-jsx-source";document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((C,F)=>{const Q=C.getAttribute("data-plugins")||"";if(Q.indexOf(D)<0){C.setAttribute("data-plugins",Q?`${Q},${D}`:D)}if(!C.hasAttribute("data-filename")){C.setAttribute("data-filename",C.getAttribute("src")||`inline-${F}`)}})});var K=window.parent;if(K&&K!==window){const D=(k,f)=>{try{K.postMessage({__omelette_log:true,type:k,data:f},"*")}catch{}};["log","warn","error"].forEach((k)=>{const f=console[k];console[k]=(...w)=>{const z=w.map((h)=>{try{return typeof h==="object"?JSON.stringify(h):String(h)}catch{try{return String(h)}catch{return"[unstringifiable]"}}}).join(" ");D(k,z);f.apply(console,w)}});window.addEventListener("error",(k)=>{const f=k.target;if(f&&f!==window&&f.tagName){const w=f.src||f.href||"";D("resource_error",`${f.tagName} failed to load: ${w}`)}else{D("error",`${k.message||"Unknown error"} at ${k.filename||"?"}:${k.lineno||0}:${k.colno||0}`)}},true);window.addEventListener("unhandledrejection",(k)=>{const f=k.reason;const w=f instanceof Error?`${f.message} ${f.stack}`:String(f);D("error",`Unhandled rejection: ${w}`)});const C=()=>{try{K.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")C();else window.addEventListener("load",C);if(window.ResizeObserver)new ResizeObserver(C).observe(document.documentElement);const F={};let Q=0;window.claude={complete(k){return new Promise((f,w)=>{if(!W.length){w(new Error("claude.complete: no parent origin"));return}const z=`c${++Q}`;const h=()=>setTimeout(()=>{delete F[z];w(new Error(`claude.complete: no data for ${Y/1000}s`))},Y);const J=h();F[z]={resolve:f,reject:w,text:"",t:J,arm:h};try{for(const V of W){K.postMessage({__om_api:true,id:z,body:k},V)}}catch(V){clearTimeout(J);delete F[z];w(V)}})}};const X=(k)=>{try{return JSON.stringify(k)}catch{return JSON.stringify(String(k))}};window.addEventListener("message",(k)=>{if(W.indexOf(k.origin)<0)return;if(k.source!==K)return;const f=k.data;if(!f)return;if(f.__om_api_r){const h=F[f.id];if(!h)return;if(f.error!=null){clearTimeout(h.t);delete F[f.id];h.reject(new Error(f.error));return}if(f.chunk!=null){clearTimeout(h.t);h.t=h.arm();h.text+=f.chunk;return}if(f.done){clearTimeout(h.t);delete F[f.id];h.resolve(f.text!=null?f.text:h.text);return}return}if(!f.__om_eval)return;const w=f;const z=(h)=>{k.source.postMessage({...h,__om_eval_r:1,id:w.id},k.origin)};try{const h=(0,eval)(w.code);if(h&&typeof h.then==="function"){h.then((J)=>z({ok:1,v:X(J)}),(J)=>z({ok:0,e:String(J)}))}else{z({ok:1,v:X(h)})}}catch(h){z({ok:0,e:String(h)})}})}})();
+</script>
+
+<meta charset="utf-8"><title>Designer · ניהול מנוי</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Bellefair&family=Suez+One&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_shared.css">
+<style>
+  /* ============ page-specific helpers ============ */
+  .sub-page{padding:40px;display:grid;gap:32px;max-width:1280px;margin:0 auto}
+  .sub-header .breadcrumb{font-size:12px;color:var(--ink-muted);letter-spacing:.08em}
+  .sub-header h1{font-family:'Suez One';font-size:38px;margin:8px 0 6px;font-weight:400}
+  .sub-header p{color:var(--ink-muted);max-width:560px;margin:0}
+
+  /* banners */
+  .banner{padding:14px 20px;border-radius:16px;border:1px solid;display:flex;align-items:center;gap:12px;font-size:14px}
+  .banner .ic{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .banner-success{background:rgba(91,140,62,.08);border-color:rgba(91,140,62,.3);color:#3a5a20}
+  .banner-success .ic{background:#3a5a20;color:#fff}
+  .banner-error{background:rgba(180,60,60,.08);border-color:rgba(180,60,60,.3);color:#7a2020}
+  .banner-error .ic{background:#7a2020;color:#fff}
+  .banner-info{background:linear-gradient(90deg,rgba(201,168,76,.08),rgba(232,201,122,.12));border-color:var(--border-strong);color:var(--gold-deep)}
+  .banner-info .ic{background:var(--gold);color:#fff}
+
+  /* current plan hero */
+  .current-hero{display:grid;grid-template-columns:1.3fr 1fr;gap:0;overflow:hidden;border-radius:24px;border:1px solid var(--border-strong);background:linear-gradient(135deg,#FFFBEF 0%,#F5ECD3 100%);position:relative}
+  .current-hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 85% 20%,rgba(232,201,122,.35),transparent 40%);pointer-events:none}
+  .current-hero > *{position:relative}
+  .hero-l{padding:40px 40px 36px}
+  .hero-l .tag-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .hero-l .plan-name{font-family:'Suez One';font-size:48px;line-height:1;margin:10px 0 0}
+  .hero-l .plan-price{display:flex;align-items:baseline;gap:10px;margin:14px 0 18px}
+  .hero-l .plan-price .p{font-family:'Suez One';font-size:38px;color:var(--ink)}
+  .hero-l .plan-price .per{color:var(--ink-muted)}
+  .hero-l .renewal{font-size:13px;color:var(--ink-muted);display:flex;align-items:center;gap:8px;margin-bottom:20px}
+  .hero-l .renewal::before{content:"◷";color:var(--gold)}
+  .hero-l .features{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 20px}
+  .hero-l .features li{font-size:14px;display:flex;align-items:start;gap:8px;color:var(--ink)}
+  .hero-l .features li::before{content:"✓";color:var(--gold-dim);font-weight:700;margin-top:2px}
+  .hero-r{padding:40px 36px;background:rgba(26,20,16,.03);border-right:1px solid rgba(201,168,76,.25);display:flex;flex-direction:column;gap:18px;justify-content:center}
+  .hero-r h4{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-dim);margin:0 0 6px}
+  .usage-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .usage-bar{height:8px;background:rgba(201,168,76,.15);border-radius:9999px;overflow:hidden}
+  .usage-bar > div{height:100%;background:linear-gradient(90deg,#8B6914,#E8C97A)}
+
+  /* plans block */
+  .plans-head{text-align:center;max-width:600px;margin:0 auto}
+  .plans-head h2{font-family:'Suez One';font-size:32px;margin:10px 0 8px;font-weight:400}
+  .plans-head p{color:var(--ink-muted);margin:0}
+  .toggle-wrap{display:flex;justify-content:center;align-items:center;gap:14px;margin:24px 0}
+  .savings-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:9999px;background:linear-gradient(90deg,#5A4608,#C9A84C);color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em}
+  .savings-badge::before{content:"✦"}
+
+  .plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:stretch}
+  .plan{padding:28px 24px;border-radius:22px;background:rgba(255,253,247,.85);border:1px solid var(--border);display:flex;flex-direction:column;position:relative;transition:all .2s}
+  .plan:hover{transform:translateY(-4px);box-shadow:0 30px 60px -30px rgba(26,20,16,.25)}
+  .plan.recommended{background:linear-gradient(145deg,#FFFBEF,#F5ECD3);border:2px solid var(--gold);transform:scale(1.03);z-index:1}
+  .plan.current-plan{background:linear-gradient(145deg,rgba(91,140,62,.05),rgba(91,140,62,.12));border:2px solid rgba(91,140,62,.35)}
+  .plan .ribbon{position:absolute;top:-12px;right:22px;background:linear-gradient(90deg,#5A4608,#C9A84C);color:#fff;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:4px 12px;border-radius:9999px;box-shadow:0 4px 12px -4px rgba(90,70,8,.4)}
+  .plan .ribbon.active-badge{background:rgba(91,140,62,.9);right:auto;left:22px}
+  .plan .tier{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-dim)}
+  .plan h3{font-family:'Bellefair';font-size:28px;margin:6px 0 2px;font-weight:400}
+  .plan .desc{font-size:12px;color:var(--ink-muted);margin:0 0 18px}
+  .plan .price-row{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}
+  .plan .price-row .amt{font-family:'Suez One';font-size:44px;line-height:1}
+  .plan .price-row .per{font-size:13px;color:var(--ink-muted)}
+  .plan .price-strike{font-size:13px;color:var(--ink-muted);text-decoration:line-through;margin-bottom:14px;min-height:20px}
+  .plan ul.feats{list-style:none;padding:0;margin:16px 0 22px;display:grid;gap:10px;font-size:13.5px;line-height:1.5;flex:1}
+  .plan ul.feats li{display:flex;align-items:start;gap:10px}
+  .plan ul.feats li::before{content:"✓";color:var(--gold-dim);font-weight:700;margin-top:2px}
+  .plan ul.feats li.off{opacity:.45}
+  .plan ul.feats li.off::before{content:"—";color:var(--ink-muted)}
+  .plan-cta{display:block;width:100%;text-align:center;height:48px;line-height:48px;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--border-strong);background:rgba(255,253,247,.8);color:var(--gold-deep);text-decoration:none;transition:all .15s}
+  .plan-cta:hover{background:rgba(201,168,76,.12)}
+  .plan-cta.primary{background:linear-gradient(135deg,#F5D77F,#C9A84C 50%,#8B6914);border:2px solid rgba(58,42,16,.4);color:#FFF8E8;text-shadow:0 1px 2px rgba(58,42,16,.35);box-shadow:inset 0 2px 8px rgba(255,253,247,.4),inset 0 -4px 10px rgba(58,42,16,.3)}
+  .plan-cta.current{background:rgba(91,140,62,.12);border-color:rgba(91,140,62,.35);color:#3a5a20;cursor:default}
+  .plan-cta.current::before{content:"✓ ";font-weight:700}
+
+  /* payment method */
+  .two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:24px}
+  .section-title{font-family:'Suez One';font-size:22px;font-weight:400;margin:0 0 4px}
+  .section-sub{color:var(--ink-muted);font-size:13px;margin:0 0 16px}
+
+  .cc-card{background:linear-gradient(135deg,#1a1410 0%,#2a1f17 100%);border:1px solid rgba(201,168,76,.3);color:#F5ECD3;border-radius:20px;padding:28px;position:relative;overflow:hidden;aspect-ratio:1.6/1;max-width:380px;display:flex;flex-direction:column;justify-content:space-between}
+  .cc-card::before{content:"";position:absolute;top:-40px;left:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(201,168,76,.25),transparent 65%);pointer-events:none}
+  .cc-card::after{content:"";position:absolute;bottom:-30px;right:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(201,168,76,.15),transparent 65%);pointer-events:none}
+  .cc-top{display:flex;align-items:start;justify-content:space-between;position:relative}
+  .cc-chip{width:42px;height:32px;border-radius:5px;background:linear-gradient(135deg,#E8C97A,#8B6914);box-shadow:inset 0 1px 2px rgba(255,253,247,.3)}
+  .cc-scheme{font-family:'Bellefair';font-size:20px;color:var(--gold-light);letter-spacing:.05em}
+  .cc-num{font-family:'Rubik';font-size:21px;letter-spacing:.25em;position:relative;font-weight:400}
+  .cc-bottom{display:flex;justify-content:space-between;align-items:end;position:relative;font-size:12px}
+  .cc-bottom .lbl{color:rgba(245,236,211,.5);font-size:10px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:4px}
+  .cc-name{font-family:'Bellefair';font-size:15px;letter-spacing:.08em}
+  .payment-actions{display:flex;flex-direction:column;gap:10px;justify-content:center}
+  .payment-meta{background:rgba(255,253,247,.6);border:1px dashed var(--border-strong);border-radius:14px;padding:16px;font-size:12.5px;color:var(--ink-muted);line-height:1.7}
+  .payment-meta b{color:var(--ink);display:block;margin-bottom:4px;font-size:13px;font-weight:600}
+
+  /* billing history */
+  .table-shell{border:1px solid var(--border);border-radius:20px;overflow:hidden;background:rgba(255,253,247,.5)}
+  .status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:600}
+  .status-pill.paid{background:rgba(91,140,62,.14);color:#3a5a20}
+  .status-pill.paid::before{content:"●";font-size:8px}
+  .status-pill.pending{background:rgba(201,168,76,.2);color:var(--gold-deep)}
+  .status-pill.pending::before{content:"◷"}
+  .status-pill.failed{background:rgba(180,60,60,.15);color:#7a2020}
+  .status-pill.failed::before{content:"✕"}
+
+  /* MODALS — always rendered here as an overlay-less showcase strip */
+  .modal-showcase{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:40px;background:
+    linear-gradient(rgba(201,168,76,.09) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(201,168,76,.09) 1px,transparent 1px);
+    background-size:24px 24px;background-color:var(--cream-3);
+    border-radius:28px;border:1px dashed var(--border-strong);margin-top:8px}
+  .modal-showcase .label{grid-column:1/-1;display:flex;align-items:center;gap:10px;color:var(--gold-dim);font-size:11px;letter-spacing:.3em;text-transform:uppercase;margin-bottom:0}
+  .modal-showcase .label::before,.modal-showcase .label::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border-strong))}
+  .modal{background:#fff;border-radius:20px;border:1px solid var(--border);box-shadow:0 30px 80px -30px rgba(26,20,16,.35),0 2px 0 rgba(201,168,76,.08);padding:24px;display:flex;flex-direction:column;gap:14px}
+  .modal h4{font-family:'Suez One';font-size:20px;margin:0;font-weight:400}
+  .modal .close-x{position:absolute;top:14px;left:14px;background:none;border:none;color:var(--ink-muted);cursor:pointer;font-size:20px}
+  .modal-head{display:flex;justify-content:space-between;align-items:start;gap:12px}
+  .modal-body{font-size:13.5px;color:var(--ink-muted);line-height:1.6}
+  .modal-summary{background:rgba(245,236,211,.4);border:1px solid var(--border);border-radius:14px;padding:14px;display:grid;gap:8px;font-size:13px}
+  .summary-row{display:flex;justify-content:space-between}
+  .summary-row.total{padding-top:8px;border-top:1px dashed var(--border-strong);font-weight:600;color:var(--ink);font-size:15px}
+  .modal-actions{display:flex;gap:8px;margin-top:4px}
+  .modal-actions button,.modal-actions a{flex:1}
+
+  /* modal state variants */
+  .state-tag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:9999px;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+  .state-tag.loading{background:rgba(201,168,76,.18);color:var(--gold-deep)}
+  .state-tag.success{background:rgba(91,140,62,.14);color:#3a5a20}
+  .state-tag.error{background:rgba(180,60,60,.15);color:#7a2020}
+
+  .spinner{width:44px;height:44px;border-radius:50%;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);animation:spin 1s linear infinite;margin:18px auto 8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .big-check,.big-x{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:6px auto 8px;font-size:30px;font-weight:700;color:#fff}
+  .big-check{background:linear-gradient(135deg,#6fa03f,#3a5a20);box-shadow:0 8px 20px -8px rgba(58,90,32,.5)}
+  .big-x{background:linear-gradient(135deg,#b94a4a,#7a2020);box-shadow:0 8px 20px -8px rgba(122,32,32,.5)}
+
+  /* danger modal tint */
+  .modal.danger .modal-head h4{color:#7a2020}
+  .modal.danger .warning{background:rgba(180,60,60,.06);border:1px solid rgba(180,60,60,.25);border-radius:12px;padding:12px;font-size:12.5px;color:#7a2020}
+
+  .cc-mini-form{display:grid;gap:10px}
+  .cc-mini-form .row-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style>
+</head><body>
+
+<div style="padding:40px 40px 20px;background:var(--cream-2);border-bottom:1px solid var(--border)">
+  <div id="ab-header"></div>
+</div>
+
+<div style="display:flex;background:var(--cream-3);min-height:100vh">
+  <div id="sidebar"></div>
+
+  <main style="flex:1;display:flex;flex-direction:column">
+    <div id="topbar"></div>
+
+    <div class="sub-page">
+
+      <!-- 1. PAGE HEADER -->
+      <header class="sub-header">
+        <div class="breadcrumb muted">דשבורד / החשבון שלי / <b style="color:var(--ink)">ניהול מנוי</b></div>
+        <h1>ניהול מנוי</h1>
+        <p>נהלי את תוכנית המנוי שלך, שיטת התשלום וההיסטוריה הפיננסית שלך במקום אחד.</p>
+      </header>
+
+      <!-- 2. BANNERS (shown contextually — rendered for reference) -->
+      <div style="display:grid;gap:10px">
+        <div class="banner banner-success">
+          <span class="ic">✓</span>
+          <div><b>התשלום התקבל בהצלחה.</b> המנוי שלך עודכן ל-Premium והקבלה נשלחה למייל.</div>
+        </div>
+        <div class="banner banner-error">
+          <span class="ic">!</span>
+          <div><b>לא הצלחנו לעבד את התשלום.</b> בדקי את פרטי כרטיס האשראי או נסי שיטה אחרת.</div>
+        </div>
+      </div>
+
+      <!-- 3. CURRENT PLAN -->
+      <section class="current-hero">
+        <div class="hero-l">
+          <div class="tag-row">
+            <span class="eyebrow">המנוי הנוכחי שלך</span>
+            <span class="badge badge-ok">● פעיל</span>
+          </div>
+          <h2 class="plan-name">Premium</h2>
+          <div class="plan-price">
+            <span class="p">₪299</span>
+            <span class="per">/ לחודש · חיוב חודשי</span>
+          </div>
+          <div class="renewal">מתחדש אוטומטית ב-28 במרץ 2025 · <b style="color:var(--ink);margin:0 6px">₪299</b> דרך כרטיס •••• 4218</div>
+          <ul class="features">
+            <li>פרופיל ציבורי מורחב עם וידאו</li>
+            <li>עד 25 לידים חמים בחודש</li>
+            <li>גלריית פורטפוליו ללא הגבלה</li>
+            <li>השתתפות פעילה בקהילה</li>
+            <li>ציון Premium בתוצאות חיפוש</li>
+            <li>גישה ל-40+ הנחות אצל ספקים</li>
+          </ul>
+        </div>
+        <div class="hero-r">
+          <h4>ניצול חודשי</h4>
+          <div>
+            <div class="usage-row"><span>לידים</span><b dir="ltr">18 / 25</b></div>
+            <div class="usage-bar"><div style="width:72%"></div></div>
+          </div>
+          <div>
+            <div class="usage-row"><span>תמונות פורטפוליו</span><b dir="ltr">127 / ∞</b></div>
+            <div class="usage-bar"><div style="width:18%;background:linear-gradient(90deg,#6fa03f,#A8D675)"></div></div>
+          </div>
+          <div>
+            <div class="usage-row"><span>צפיות בפרופיל</span><b>2,340</b></div>
+            <div class="usage-bar"><div style="width:88%"></div></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button class="twist-btn twist-secondary sm" style="flex:1"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">שדרגי תוכנית</span></button>
+            <button class="twist-btn twist-secondary sm" style="min-width:auto;padding:0 16px" title="ביטול מנוי"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">בטלי</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. SUPPLIER DISCOUNT NOTICE -->
+      <section class="banner banner-info" style="padding:18px 22px;gap:16px;align-items:start">
+        <span class="ic" style="width:36px;height:36px">✦</span>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <b style="color:var(--ink);font-size:15px">הנחת שותף פעילה</b>
+            <span class="badge badge-new">הנחה של 15%</span>
+          </div>
+          <div style="font-size:13px;color:var(--ink-muted);line-height:1.6">תודות לשיתוף הפעולה שלך עם <b style="color:var(--ink)">חברת "אריגי האורקל"</b>, מחיר המנוי שלך מופחת ב-15% לצמיתות. ההנחה מיושמת אוטומטית בכל תשלום.</div>
+        </div>
+        <a href="#" style="color:var(--gold-deep);font-size:13px;text-decoration:underline;white-space:nowrap">פרטים נוספים</a>
+      </section>
+
+      <!-- 5. PLANS GRID -->
+      <section>
+        <div class="plans-head">
+          <div class="eyebrow">שדרוג או מעבר</div>
+          <h2>בחרי את התוכנית שמתאימה לך</h2>
+          <p>גלי את כל מה שהפלטפורמה מציעה — עם הגמישות לשדרג, להוריד או לבטל בכל עת.</p>
+        </div>
+
+        <div class="toggle-wrap">
+          <span style="font-size:13px;color:var(--ink-muted)">חיוב</span>
+          <div class="pill-tabs"><button class="active">חודשי</button><button>שנתי</button></div>
+          <span class="savings-badge">חסכי 20% בשנתי</span>
+        </div>
+
+        <div class="plans-grid">
+          <!-- Starter -->
+          <div class="plan">
+            <div class="tier">מתחילות</div>
+            <h3>Starter</h3>
+            <p class="desc">לכל מי שרק התחילה את דרכה</p>
+            <div class="price-row"><span class="amt">₪0</span><span class="per">/ לחודש</span></div>
+            <div class="price-strike">&nbsp;</div>
+            <ul class="feats">
+              <li>פרופיל בסיסי</li>
+              <li>עד 3 פרויקטים בפורטפוליו</li>
+              <li>2 לידים בחודש</li>
+              <li>צפייה בקהילה</li>
+              <li class="off">ללא הנחות ספקים</li>
+              <li class="off">ללא ציון Premium</li>
+            </ul>
+            <a class="plan-cta">בחרי תוכנית</a>
+          </div>
+
+          <!-- Pro -->
+          <div class="plan">
+            <div class="tier">מתקדמות</div>
+            <h3>Pro</h3>
+            <p class="desc">בשביל להתחיל לצמוח</p>
+            <div class="price-row"><span class="amt">₪149</span><span class="per">/ לחודש</span></div>
+            <div class="price-strike"><s dir="ltr">₪179/mo</s> בשנתי</div>
+            <ul class="feats">
+              <li>פורטפוליו ללא הגבלה</li>
+              <li>10 לידים בחודש</li>
+              <li>קהילה פעילה</li>
+              <li>הנחות אצל 20 ספקים</li>
+              <li class="off">ללא וידאו בפרופיל</li>
+              <li class="off">ללא ציון Premium</li>
+            </ul>
+            <a class="plan-cta">בחרי תוכנית</a>
+          </div>
+
+          <!-- Premium (recommended + current) -->
+          <div class="plan recommended current-plan">
+            <span class="ribbon">מומלץ</span>
+            <span class="ribbon active-badge">התוכנית שלך</span>
+            <div class="tier">הכי פופולרי</div>
+            <h3 class="gold-text">Premium</h3>
+            <p class="desc">לבעלות סטודיו שמייצרות הכנסה</p>
+            <div class="price-row"><span class="amt">₪299</span><span class="per">/ לחודש</span></div>
+            <div class="price-strike"><s dir="ltr">₪359/mo</s> בשנתי</div>
+            <ul class="feats">
+              <li>הכל מ-Pro</li>
+              <li>25 לידים בחודש</li>
+              <li>וידאו בפרופיל</li>
+              <li>ציון Premium בחיפוש</li>
+              <li>40+ הנחות אצל ספקים</li>
+              <li>תמיכה בצ'אט</li>
+            </ul>
+            <a class="plan-cta current">התוכנית הנוכחית שלך</a>
+          </div>
+
+          <!-- Studio -->
+          <div class="plan">
+            <div class="tier">Studio</div>
+            <h3>Studio</h3>
+            <p class="desc">לסטודיו מבוסס עם צוות</p>
+            <div class="price-row"><span class="amt">₪599</span><span class="per">/ לחודש</span></div>
+            <div class="price-strike"><s dir="ltr">₪699/mo</s> בשנתי</div>
+            <ul class="feats">
+              <li>הכל מ-Premium</li>
+              <li>לידים ללא הגבלה</li>
+              <li>3 חשבונות צוות</li>
+              <li>אנליטיקה מתקדמת</li>
+              <li>תמיכה VIP טלפונית</li>
+              <li>API גישה</li>
+            </ul>
+            <a class="plan-cta primary">בחרי תוכנית</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. PAYMENT METHOD -->
+      <section class="two-col">
+        <div>
+          <h3 class="section-title">שיטת תשלום</h3>
+          <p class="section-sub">כרטיס האשראי שמור ומוצפן ב-iCount. לא נשמור אצלנו פרטי אשראי.</p>
+
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center">
+            <div class="cc-card">
+              <div class="cc-top">
+                <div class="cc-chip"></div>
+                <span class="cc-scheme">VISA</span>
+              </div>
+              <div class="cc-num">•••• •••• •••• 4218</div>
+              <div class="cc-bottom">
+                <div>
+                  <div class="lbl">בעל הכרטיס</div>
+                  <div class="cc-name">RONIT LEVI</div>
+                </div>
+                <div style="text-align:left">
+                  <div class="lbl">תוקף</div>
+                  <div class="cc-name" dir="ltr">07/27</div>
+                </div>
+              </div>
+            </div>
+            <div class="payment-actions">
+              <button class="twist-btn twist-secondary sm"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">עדכני כרטיס</span></button>
+              <button class="twist-btn twist-secondary sm" style="min-width:auto"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">הסירי שיטת תשלום</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="section-title">תשלומים ב-iCount</h3>
+          <p class="section-sub">המערכת שלנו עובדת דרך מסלקה מוסמכת עם תקן PCI-DSS.</p>
+          <div class="payment-meta">
+            <b>מזהה לקוח iCount</b>
+            <span dir="ltr" style="font-family:monospace;font-size:12px">cust_9f8a3e2b1d4c</span>
+            <div style="margin-top:10px"><b>תאריך חיוב הבא</b>28 במרץ 2025 (בעוד 11 ימים)</div>
+            <div style="margin-top:10px"><b>סוג חיוב</b>אוטומטי · חודשי</div>
+            <a href="#" style="color:var(--gold-deep);font-size:12px;display:inline-block;margin-top:12px;text-decoration:underline">צפי בחשבונית הבאה ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. BILLING HISTORY -->
+      <section>
+        <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:14px">
+          <div>
+            <h3 class="section-title">היסטוריית חיובים</h3>
+            <p class="section-sub">כל התשלומים שלך — עם אפשרות להוריד חשבונית.</p>
+          </div>
+          <a href="#" style="color:var(--gold-deep);font-size:13px;text-decoration:underline">ייצוא CSV ↓</a>
+        </div>
+
+        <div class="table-shell">
+          <table class="data">
+            <thead><tr>
+              <th>תאריך</th>
+              <th>תיאור</th>
+              <th>אמצעי תשלום</th>
+              <th>סכום</th>
+              <th>סטטוס</th>
+              <th>חשבונית</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>28/02/2025</td>
+                <td>מנוי Premium · חודשי</td>
+                <td dir="ltr" style="color:var(--ink-muted)">VISA •••• 4218</td>
+                <td><b>₪299.00</b></td>
+                <td><span class="status-pill paid">שולם</span></td>
+                <td><a href="#" style="color:var(--gold-deep);text-decoration:underline;font-size:13px">הורדה</a></td>
+              </tr>
+              <tr>
+                <td>28/01/2025</td>
+                <td>מנוי Premium · חודשי</td>
+                <td dir="ltr" style="color:var(--ink-muted)">VISA •••• 4218</td>
+                <td><b>₪299.00</b></td>
+                <td><span class="status-pill paid">שולם</span></td>
+                <td><a href="#" style="color:var(--gold-deep);text-decoration:underline;font-size:13px">הורדה</a></td>
+              </tr>
+              <tr>
+                <td>15/01/2025</td>
+                <td>שדרוג · Pro → Premium</td>
+                <td dir="ltr" style="color:var(--ink-muted)">VISA •••• 4218</td>
+                <td><b>₪150.00</b></td>
+                <td><span class="status-pill paid">שולם</span></td>
+                <td><a href="#" style="color:var(--gold-deep);text-decoration:underline;font-size:13px">הורדה</a></td>
+              </tr>
+              <tr>
+                <td>28/12/2024</td>
+                <td>מנוי Pro · חודשי</td>
+                <td dir="ltr" style="color:var(--ink-muted)">VISA •••• 4218</td>
+                <td><b>₪149.00</b></td>
+                <td><span class="status-pill failed">כשל</span></td>
+                <td style="color:var(--ink-muted);font-size:13px">—</td>
+              </tr>
+              <tr>
+                <td>28/11/2024</td>
+                <td>מנוי Pro · חודשי</td>
+                <td dir="ltr" style="color:var(--ink-muted)">VISA •••• 4218</td>
+                <td><b>₪149.00</b></td>
+                <td><span class="status-pill paid">שולם</span></td>
+                <td><a href="#" style="color:var(--gold-deep);text-decoration:underline;font-size:13px">הורדה</a></td>
+              </tr>
+              <tr>
+                <td>18/03/2025</td>
+                <td>חידוש Premium · צפוי</td>
+                <td dir="ltr" style="color:var(--ink-muted)">VISA •••• 4218</td>
+                <td><b>₪299.00</b></td>
+                <td><span class="status-pill pending">ממתין</span></td>
+                <td style="color:var(--ink-muted);font-size:13px">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 8. MODALS SHOWCASE -->
+      <section>
+        <div class="eyebrow">Modals · 3 סוגים</div>
+        <h3 class="section-title" style="margin:8px 0 14px">חלונות דו-שיח</h3>
+
+        <!-- Payment modal — 4 states -->
+        <div class="modal-showcase" style="grid-template-columns:repeat(4,1fr)">
+          <div class="label">אישור תשלום · 4 מצבים</div>
+
+          <!-- Idle / Confirm -->
+          <div class="modal" style="position:relative">
+            <button class="close-x">×</button>
+            <div class="modal-head">
+              <div><h4>אישור שדרוג</h4><div class="muted text-xs mt-1">עוברים מ-Pro ל-Premium</div></div>
+              <span class="state-tag loading">Idle</span>
+            </div>
+            <div class="modal-summary">
+              <div class="summary-row"><span>Premium · חודשי</span><b>₪299.00</b></div>
+              <div class="summary-row muted"><span>הנחת שותף (15%)</span><span>-₪44.85</span></div>
+              <div class="summary-row muted"><span>מע"מ</span><span>כלול</span></div>
+              <div class="summary-row total"><span>לתשלום היום</span><span>₪254.15</span></div>
+            </div>
+            <div class="modal-body" style="font-size:12px">חיוב דרך VISA •••• 4218. תוכלי לבטל בכל עת.</div>
+            <div class="modal-actions">
+              <button class="twist-btn twist-secondary sm" style="min-width:auto"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">ביטול</span></button>
+              <button class="twist-btn twist-primary sm" style="min-width:auto"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">אשרי ושלמי</span></button>
+            </div>
+          </div>
+
+          <!-- Processing -->
+          <div class="modal">
+            <div class="modal-head">
+              <div><h4>מעבדים תשלום…</h4><div class="muted text-xs mt-1">אל תסגרי את החלון</div></div>
+              <span class="state-tag loading">Processing</span>
+            </div>
+            <div class="spinner"></div>
+            <div class="modal-body" style="text-align:center;font-size:13px">שולחים ל-iCount · מאמתים את כרטיס האשראי · מחייבים. התהליך יכול לקחת עד 30 שניות.</div>
+            <div class="usage-bar" style="margin-top:4px"><div style="width:55%;transition:width 1s"></div></div>
+          </div>
+
+          <!-- Success -->
+          <div class="modal">
+            <div class="modal-head">
+              <div><h4>התשלום אושר</h4><div class="muted text-xs mt-1">מעולה! המנוי שודרג</div></div>
+              <span class="state-tag success">Success</span>
+            </div>
+            <div class="big-check">✓</div>
+            <div class="modal-summary">
+              <div class="summary-row"><span>חויב</span><b>₪254.15</b></div>
+              <div class="summary-row muted"><span>אסמכתא</span><span dir="ltr" style="font-family:monospace;font-size:11px">TXN-a8f9e2</span></div>
+              <div class="summary-row muted"><span>תוכנית חדשה</span><span>Premium</span></div>
+            </div>
+            <div class="modal-actions">
+              <a class="twist-btn twist-secondary sm" style="min-width:auto"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">הורידי קבלה</span></a>
+              <button class="twist-btn twist-primary sm" style="min-width:auto"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">סיימתי</span></button>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div class="modal danger">
+            <div class="modal-head">
+              <div><h4>התשלום נדחה</h4><div class="muted text-xs mt-1">משהו השתבש</div></div>
+              <span class="state-tag error">Error</span>
+            </div>
+            <div class="big-x">✕</div>
+            <div class="warning"><b>קוד שגיאה 402 · Insufficient funds</b><br>בנק ההנפקה דחה את החיוב. בדקי את מסגרת האשראי או נסי בכרטיס אחר.</div>
+            <div class="modal-actions">
+              <button class="twist-btn twist-secondary sm" style="min-width:auto"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">ביטול</span></button>
+              <button class="twist-btn twist-primary sm" style="min-width:auto"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">נסי שוב</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cancel + Update card -->
+        <div class="modal-showcase" style="grid-template-columns:1fr 1fr;margin-top:16px">
+          <div class="label">ביטול מנוי & עדכון כרטיס</div>
+
+          <!-- Cancel confirmation -->
+          <div class="modal danger">
+            <div class="modal-head">
+              <div><h4>ביטול מנוי Premium</h4><div class="muted text-xs mt-1">זה צעד שאי אפשר לבטל בלחיצת כפתור</div></div>
+              <span class="state-tag error">Danger</span>
+            </div>
+            <div class="warning">
+              <b>מה יקרה אם תבטלי?</b>
+              <ul style="padding:0;margin:6px 0 0;list-style:none;font-size:12.5px;line-height:1.7;color:#7a2020">
+                <li>• הגישה תישמר עד 28/03/2025</li>
+                <li>• לאחר מכן תעברי אוטומטית ל-Starter</li>
+                <li>• לידים חדשים ייפסקו מיד</li>
+                <li>• הפורטפוליו יישאר — אבל ללא ציון Premium</li>
+              </ul>
+            </div>
+            <div>
+              <label class="lbl">סיבת הביטול (אופציונלי — יעזור לנו להשתפר)</label>
+              <select class="inp">
+                <option>— בחרי סיבה —</option>
+                <option>התוכנית יקרה מדי</option>
+                <option>לא קיבלתי מספיק לידים</option>
+                <option>עוברת לפלטפורמה אחרת</option>
+                <option>השתנו הנסיבות שלי</option>
+                <option>אחר</option>
+              </select>
+            </div>
+            <div class="modal-actions">
+              <button class="twist-btn twist-secondary sm"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">תשאירי אותי ב-Premium</span></button>
+              <button class="twist-btn sm" style="min-width:auto;background:rgba(180,60,60,.1);border:1.5px solid rgba(180,60,60,.4);border-radius:9999px;color:#7a2020;font-weight:600">בטלי לצמיתות</button>
+            </div>
+          </div>
+
+          <!-- Update credit card -->
+          <div class="modal">
+            <div class="modal-head">
+              <div><h4>עדכון כרטיס אשראי</h4><div class="muted text-xs mt-1">טופס מאובטח של iCount — לא נראה אצלנו</div></div>
+              <span class="badge" style="background:rgba(26,20,16,.08);color:var(--ink);letter-spacing:0">🔒 SSL</span>
+            </div>
+            <div class="cc-mini-form">
+              <div>
+                <label class="lbl">מספר כרטיס</label>
+                <input class="inp" dir="ltr" placeholder="0000 0000 0000 0000">
+              </div>
+              <div class="row-two">
+                <div><label class="lbl">תוקף</label><input class="inp" dir="ltr" placeholder="MM/YY"></div>
+                <div><label class="lbl">CVV</label><input class="inp" dir="ltr" placeholder="•••"></div>
+              </div>
+              <div>
+                <label class="lbl">שם בעל הכרטיס</label>
+                <input class="inp" placeholder="כמופיע על הכרטיס">
+              </div>
+              <div>
+                <label class="lbl">ת.ז. בעל הכרטיס</label>
+                <input class="inp" dir="ltr" placeholder="9 ספרות">
+              </div>
+              <label style="display:flex;gap:8px;font-size:12.5px;color:var(--ink-muted);cursor:pointer;align-items:start">
+                <input type="checkbox" checked style="margin-top:2px"> שמרי את הכרטיס לחיובים עתידיים
+              </label>
+            </div>
+            <div class="modal-actions">
+              <button class="twist-btn twist-secondary sm"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">ביטול</span></button>
+              <button class="twist-btn twist-primary sm"><span class="twist-halo"></span><span class="twist-blob"></span><span class="label">שמרי כרטיס</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script src="_chrome.js"></script>
+<script>
+  document.getElementById('ab-header').innerHTML = WF.artboardHeader({
+    flow:'Designer · Subscription',
+    title:'ניהול מנוי',
+    subtitle:'Wireframe ממוסגר ב-Ivory Blinds — מיפוי ישיר ל-src/app/designer/[id]/subscription/page.tsx. 8 סקשנים + 3 מודלים + 4 states.',
+    meta:'Page: /designer/[id]/subscription<br>Components: PlanComparisonTable · SavingsBadge',
+    backHref:'index.html', backLabel:'← חזרה לאינדקס'
+  });
+  document.getElementById('sidebar').innerHTML = WF.designerSidebar('subscription');
+  document.getElementById('topbar').innerHTML = WF.topbar({crumb:'מנוי ותשלומים', user:'רונית לוי'});
+</script>
+</body></html>

@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var W=["https://claude.ai","https://preview.claude.ai","https://eap-omelette.claude.ai"];var Y=30000;document.addEventListener("DOMContentLoaded",()=>{const D="transform-react-jsx-source";document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((C,F)=>{const Q=C.getAttribute("data-plugins")||"";if(Q.indexOf(D)<0){C.setAttribute("data-plugins",Q?`${Q},${D}`:D)}if(!C.hasAttribute("data-filename")){C.setAttribute("data-filename",C.getAttribute("src")||`inline-${F}`)}})});var K=window.parent;if(K&&K!==window){const D=(k,f)=>{try{K.postMessage({__omelette_log:true,type:k,data:f},"*")}catch{}};["log","warn","error"].forEach((k)=>{const f=console[k];console[k]=(...w)=>{const z=w.map((h)=>{try{return typeof h==="object"?JSON.stringify(h):String(h)}catch{try{return String(h)}catch{return"[unstringifiable]"}}}).join(" ");D(k,z);f.apply(console,w)}});window.addEventListener("error",(k)=>{const f=k.target;if(f&&f!==window&&f.tagName){const w=f.src||f.href||"";D("resource_error",`${f.tagName} failed to load: ${w}`)}else{D("error",`${k.message||"Unknown error"} at ${k.filename||"?"}:${k.lineno||0}:${k.colno||0}`)}},true);window.addEventListener("unhandledrejection",(k)=>{const f=k.reason;const w=f instanceof Error?`${f.message} ${f.stack}`:String(f);D("error",`Unhandled rejection: ${w}`)});const C=()=>{try{K.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")C();else window.addEventListener("load",C);if(window.ResizeObserver)new ResizeObserver(C).observe(document.documentElement);const F={};let Q=0;window.claude={complete(k){return new Promise((f,w)=>{if(!W.length){w(new Error("claude.complete: no parent origin"));return}const z=`c${++Q}`;const h=()=>setTimeout(()=>{delete F[z];w(new Error(`claude.complete: no data for ${Y/1000}s`))},Y);const J=h();F[z]={resolve:f,reject:w,text:"",t:J,arm:h};try{for(const V of W){K.postMessage({__om_api:true,id:z,body:k},V)}}catch(V){clearTimeout(J);delete F[z];w(V)}})}};const X=(k)=>{try{return JSON.stringify(k)}catch{return JSON.stringify(String(k))}};window.addEventListener("message",(k)=>{if(W.indexOf(k.origin)<0)return;if(k.source!==K)return;const f=k.data;if(!f)return;if(f.__om_api_r){const h=F[f.id];if(!h)return;if(f.error!=null){clearTimeout(h.t);delete F[f.id];h.reject(new Error(f.error));return}if(f.chunk!=null){clearTimeout(h.t);h.t=h.arm();h.text+=f.chunk;return}if(f.done){clearTimeout(h.t);delete F[f.id];h.resolve(f.text!=null?f.text:h.text);return}return}if(!f.__om_eval)return;const w=f;const z=(h)=>{k.source.postMessage({...h,__om_eval_r:1,id:w.id},k.origin)};try{const h=(0,eval)(w.code);if(h&&typeof h.then==="function"){h.then((J)=>z({ok:1,v:X(J)}),(J)=>z({ok:0,e:String(J)}))}else{z({ok:1,v:X(h)})}}catch(h){z({ok:0,e:String(h)})}})}})();
+</script>
+
+<meta charset="utf-8"><title>דירת גן ברמת השרון · מיכל שהם</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Rubik:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root{
+    --gold:#C9A84C; --gold-dim:#8B6914; --gold-50:#FBF7ED; --gold-100:#F5ECD3;
+    --bg:#FAFAF8; --bg-card:#FFFFFF; --bg-surface:#F5F4F0; --bg-surface-2:#EEEDEA;
+    --text:#111111; --text-secondary:#374151; --text-muted:#6B7280; --text-faint:#9CA3AF;
+    --border:#E5E5E0; --border-gold:rgba(201,168,76,.25);
+    --shadow-xs:0 1px 2px rgba(0,0,0,.03); --shadow-md:0 4px 16px rgba(0,0,0,.06); --shadow-lg:0 8px 32px rgba(0,0,0,.08);
+    --radius-card:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;line-height:1.6}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  .container{max-width:1240px;margin:0 auto;padding:0 24px}
+  .narrow{max-width:780px;margin:0 auto;padding:0 24px}
+
+  /* NAV */
+  .topnav{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(250,250,248,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .topnav .inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1400px;margin:0 auto;padding:0 24px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Rubik';font-weight:700;font-size:15px}
+  .brand-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#F5ECD3,#C9A84C);display:grid;place-items:center;color:#5A4608;font-weight:800}
+  .topnav-back{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:13px;color:var(--text-secondary);border-radius:8px}
+  .topnav-back:hover{background:var(--bg-surface);color:var(--text)}
+
+  /* BUTTONS */
+  .btn-gold,.btn-outline{font-family:'Rubik';font-weight:600;font-size:13px;padding:11px 22px;position:relative;display:inline-flex;align-items:center;gap:8px;border-radius:9999px;cursor:pointer;letter-spacing:.2px;transition:transform .45s cubic-bezier(.33,1,.68,1),filter .45s,letter-spacing .4s,color .4s,border-color .4s}
+  .btn-gold{color:#1a1a1a;border:1.4px solid #1a1a1a;background:linear-gradient(180deg,#faf5e8,#f0e8d0,#e4d9b8);filter:drop-shadow(2px 3px 3px rgba(0,0,0,.15))}
+  .btn-gold::before{content:'';position:absolute;inset:4px;border:1.2px solid #B8860B;border-radius:9999px;opacity:.85}
+  .btn-gold:hover{transform:translateX(-6px) translateY(-1px);letter-spacing:.4px;filter:drop-shadow(6px 5px 8px rgba(0,0,0,.20))}
+  .btn-outline{color:#1a1a1a;border:1.4px solid #1a1a1a;background:linear-gradient(180deg,rgba(250,245,232,.6),rgba(240,232,208,.55),rgba(228,217,184,.55));filter:drop-shadow(1px 2px 2px rgba(0,0,0,.10))}
+  .btn-outline::before{content:'';position:absolute;inset:4px;border:1.2px solid #B8860B;border-radius:9999px;opacity:.7}
+  .btn-outline:hover{transform:translateX(-6px) translateY(-1px);letter-spacing:.4px}
+  .btn-ghost{color:var(--text-secondary);padding:8px 14px;font-weight:500;border-radius:8px;font-size:13px}
+  .btn-ghost:hover{background:var(--bg-surface);color:var(--text)}
+
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 11px;font-size:11.5px;font-weight:500;border-radius:9999px}
+  .badge-gold{background:#FBF7ED;color:#92700A;border:1px solid rgba(201,168,76,.22)}
+  .badge-gray{background:#F3F4F6;color:#374151;border:1px solid rgba(107,114,128,.18)}
+
+  /* ============ PROJECT HEADER ============ */
+  .proj-top{padding:90px 0 24px}
+  .crumbs{font-size:12.5px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .crumbs a:hover{color:var(--gold-dim)}
+  .proj-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--gold-dim);font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+  .proj-title{font-family:'Frank Ruhl Libre',serif;font-size:clamp(34px,4.8vw,52px);line-height:1.1;letter-spacing:-1px;font-weight:500;margin:0 0 14px;max-width:820px}
+  .proj-meta-row{display:flex;flex-wrap:wrap;gap:22px;font-size:14px;color:var(--text-secondary);padding:12px 0}
+  .proj-meta-row span{display:inline-flex;align-items:center;gap:6px}
+  .proj-meta-row i{color:var(--gold)}
+
+  /* ============ HERO IMAGE ============ */
+  .proj-hero{margin:14px 0 0;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);aspect-ratio:16/9;position:relative;background:linear-gradient(135deg,#E8C97A,#8B6914)}
+  .proj-hero svg{width:100%;height:100%;display:block}
+  .proj-hero-tag{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);padding:6px 14px;border-radius:9999px;font-size:12px;font-weight:500;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+
+  /* ============ DESIGNER CARD (floating) ============ */
+  .designer-pill{margin-top:-40px;position:relative;z-index:10;background:white;border-radius:16px;box-shadow:var(--shadow-lg);border:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;gap:14px;max-width:460px;margin-inline:auto}
+  .designer-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#E8C97A,#8B6914);color:white;display:grid;place-items:center;font-family:'Rubik';font-weight:700;font-size:16px;flex:none}
+  .designer-info{flex:1;min-width:0}
+  .designer-name{font-family:'Rubik';font-weight:600;font-size:14.5px}
+  .designer-sub{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px;margin-top:2px}
+  .designer-sub .star{color:var(--gold)}
+
+  /* ============ BODY GRID ============ */
+  .body-grid{display:grid;grid-template-columns:1fr 300px;gap:50px;padding:50px 0 40px;align-items:start}
+  @media(max-width:900px){.body-grid{grid-template-columns:1fr;gap:30px}}
+
+  .story{font-family:'Heebo',sans-serif;font-size:16px;line-height:1.85;color:var(--text-secondary)}
+  .story p{margin:0 0 18px}
+  .story .lead{font-size:19px;line-height:1.65;color:var(--text);font-weight:400;margin-bottom:24px;border-right:3px solid var(--gold);padding-right:16px}
+  .story h3{font-family:'Frank Ruhl Libre',serif;font-size:24px;margin:34px 0 12px;font-weight:500;letter-spacing:-.3px;color:var(--text)}
+  .story strong{color:var(--text);font-weight:600}
+
+  .spec-aside{position:sticky;top:86px}
+  .spec-card{background:white;border:1px solid var(--border);border-radius:var(--radius-card);padding:20px;box-shadow:var(--shadow-xs)}
+  .spec-card h4{font-family:'Rubik';font-size:12px;font-weight:600;color:var(--gold-dim);letter-spacing:.8px;text-transform:uppercase;margin:0 0 14px}
+  .spec-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+  .spec-row:last-child{border-bottom:0}
+  .spec-row .k{color:var(--text-muted);font-size:12.5px}
+  .spec-row .v{font-weight:500;text-align:left}
+  .tags-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+
+  /* ============ BEFORE / AFTER ============ */
+  .ba-block{margin:10px 0 40px}
+  .ba-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:14px}
+  .ba-head h3{font-family:'Frank Ruhl Libre',serif;font-size:28px;font-weight:500;letter-spacing:-.4px;margin:0}
+  .ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .ba-item{border-radius:var(--radius-card);overflow:hidden;box-shadow:var(--shadow-xs);border:1px solid var(--border);position:relative;aspect-ratio:4/3;background:var(--bg-surface)}
+  .ba-tag{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);padding:4px 12px;border-radius:9999px;font-size:11px;font-weight:600;letter-spacing:.3px;z-index:2}
+  .ba-item svg{width:100%;height:100%;display:block}
+
+  /* ============ GALLERY MASONRY ============ */
+  .gal-head{margin:30px 0 18px;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .gal-head h3{font-family:'Frank Ruhl Libre',serif;font-size:28px;font-weight:500;letter-spacing:-.4px;margin:0}
+  .gal-count{font-size:13px;color:var(--text-muted)}
+  .gallery{columns:3;column-gap:14px}
+  @media(max-width:900px){.gallery{columns:2}}
+  @media(max-width:550px){.gallery{columns:1}}
+  .gal-item{break-inside:avoid;margin-bottom:14px;border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-xs);cursor:zoom-in;transition:all .3s;position:relative}
+  .gal-item:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+  .gal-item:hover .zoom-hint{opacity:1}
+  .gal-item svg{width:100%;display:block}
+  .zoom-hint{position:absolute;top:10px;left:10px;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.9);backdrop-filter:blur(6px);display:grid;place-items:center;color:var(--text-secondary);opacity:0;transition:opacity .2s}
+
+  /* ============ FLOATING CTA ============ */
+  .float-cta{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:45;display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:9999px;padding:8px 10px 8px 18px;box-shadow:var(--shadow-lg);max-width:calc(100vw - 40px)}
+  .float-cta-text{font-size:13px;color:var(--text-secondary)}
+  .float-cta-text strong{color:var(--text);font-weight:600;font-family:'Rubik'}
+  @media(max-width:560px){.float-cta-text{display:none}}
+
+  /* ============ NEXT PROJECT ============ */
+  .next-proj{background:var(--bg-card);border-top:1px solid var(--border);margin-top:60px;padding:48px 0}
+  .next-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:800px){.next-grid{grid-template-columns:1fr}}
+  .next-card{position:relative;border-radius:var(--radius-card);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-xs);aspect-ratio:2/1;cursor:pointer;transition:all .3s}
+  .next-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:var(--border-gold)}
+  .next-card svg{width:100%;height:100%;display:block}
+  .next-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.1));display:flex;flex-direction:column;justify-content:center;padding:30px 36px;color:white}
+  .next-kick{font-size:11.5px;opacity:.85;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+  .next-card h4{font-family:'Frank Ruhl Libre',serif;font-size:24px;font-weight:500;margin:0;letter-spacing:-.3px}
+
+  footer{padding:28px 0;border-top:1px solid var(--border);color:var(--text-muted);font-size:12.5px;text-align:center;background:var(--bg-card)}
+
+  [data-lucide]{width:15px;height:15px;stroke-width:1.8}
+  .icon-sm{width:13px;height:13px}
+</style>
+</head><body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <div class="inner">
+    <a href="portfolio-public.html" class="topnav-back">
+      <i data-lucide="arrow-right" class="icon-sm"></i>
+      חזרה לתיק העבודות
+    </a>
+    <a href="../index.html" class="brand">
+      <div class="brand-mark">ז</div>
+      <div style="font-size:13.5px">זירת האדריכלות</div>
+    </a>
+    <div style="display:flex;gap:8px">
+      <button class="btn-ghost"><i data-lucide="share-2" class="icon-sm"></i> שתף</button>
+      <button class="btn-ghost"><i data-lucide="heart" class="icon-sm"></i></button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="proj-top">
+    <nav class="crumbs">
+      <a href="portfolio-public.html">מיכל שהם</a>
+      <i data-lucide="chevron-left" class="icon-sm"></i>
+      <a href="portfolio-public.html">תיק עבודות</a>
+      <i data-lucide="chevron-left" class="icon-sm"></i>
+      <span>דירת גן ברמת השרון</span>
+    </nav>
+
+    <span class="proj-eyebrow"><i data-lucide="star" class="icon-sm"></i> פרויקט נבחר</span>
+    <h1 class="proj-title">כשחלון גדול הפך לסלון שלם: דירת גן ברמת השרון</h1>
+    <div class="proj-meta-row">
+      <span><i data-lucide="map-pin"></i> רמת השרון</span>
+      <span><i data-lucide="ruler"></i> 140 מ"ר</span>
+      <span><i data-lucide="calendar"></i> הסתיים 2024</span>
+      <span><i data-lucide="users"></i> משפחה · 5 נפשות</span>
+      <span><i data-lucide="dollar-sign"></i> תקציב בינוני-גבוה</span>
+    </div>
+  </div>
+
+  <!-- HERO IMAGE -->
+  <div class="proj-hero">
+    <svg viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="h-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#E8C97A"/></linearGradient>
+        <linearGradient id="h-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B6914"/><stop offset="1" stop-color="#5A4608"/></linearGradient>
+      </defs>
+      <rect width="1200" height="675" fill="url(#h-sky)"/>
+      <!-- Back wall -->
+      <rect x="0" y="0" width="1200" height="520" fill="#F5ECD3"/>
+      <!-- Floor -->
+      <rect x="0" y="520" width="1200" height="155" fill="url(#h-floor)"/>
+      <!-- Big window -->
+      <rect x="650" y="100" width="420" height="380" fill="rgba(255,255,255,.75)" stroke="rgba(26,20,16,.3)" stroke-width="3"/>
+      <line x1="860" y1="100" x2="860" y2="480" stroke="rgba(26,20,16,.2)" stroke-width="2"/>
+      <line x1="650" y1="290" x2="1070" y2="290" stroke="rgba(26,20,16,.2)" stroke-width="2"/>
+      <!-- Garden through window -->
+      <circle cx="750" cy="220" r="60" fill="rgba(46,80,40,.3)"/>
+      <circle cx="950" cy="260" r="80" fill="rgba(46,80,40,.25)"/>
+      <!-- Sofa -->
+      <rect x="150" y="380" width="400" height="150" fill="rgba(80,60,40,.55)" rx="10"/>
+      <rect x="170" y="400" width="120" height="120" fill="rgba(245,236,211,.6)" rx="6"/>
+      <rect x="300" y="400" width="120" height="120" fill="rgba(245,236,211,.6)" rx="6"/>
+      <rect x="430" y="400" width="105" height="120" fill="rgba(245,236,211,.6)" rx="6"/>
+      <!-- Coffee table -->
+      <rect x="220" y="545" width="270" height="70" fill="rgba(26,20,16,.4)" rx="4"/>
+      <!-- Pendant lamp -->
+      <line x1="350" y1="0" x2="350" y2="220" stroke="rgba(26,20,16,.4)" stroke-width="2"/>
+      <ellipse cx="350" cy="240" rx="60" ry="25" fill="rgba(255,240,200,.9)"/>
+      <!-- Art -->
+      <rect x="110" y="140" width="180" height="160" fill="rgba(255,255,255,.95)" stroke="rgba(26,20,16,.3)" stroke-width="2"/>
+      <circle cx="170" cy="210" r="30" fill="rgba(201,168,76,.7)"/>
+      <rect x="210" y="180" width="60" height="80" fill="rgba(139,101,8,.5)"/>
+      <!-- Plant -->
+      <rect x="580" y="440" width="50" height="80" fill="rgba(80,60,40,.6)"/>
+      <path d="M590 440 Q605 390 620 440 M595 440 Q590 400 610 410 M605 440 Q625 395 635 420 M595 440 Q605 380 595 390" stroke="rgba(46,80,40,.85)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="proj-hero-tag"><i data-lucide="image" class="icon-sm"></i> 1 מתוך 14 תמונות</div>
+  </div>
+
+  <!-- Designer pill -->
+  <div class="designer-pill">
+    <div class="designer-avatar">מש</div>
+    <div class="designer-info">
+      <div class="designer-name">מיכל שהם</div>
+      <div class="designer-sub"><span class="star">★</span> 4.9 · 64 ביקורות · תל אביב והסביבה</div>
+    </div>
+    <a href="portfolio-public.html"><button class="btn-outline" style="padding:8px 16px;font-size:12px">לפרופיל המלא</button></a>
+  </div>
+
+  <!-- STORY + SPECS -->
+  <div class="body-grid">
+    <div class="story">
+      <p class="lead">דירת גן של 140 מ"ר, עם הרבה אור וקצת יותר מדי קירות פנימיים. המשפחה — זוג עם שלושה ילדים — רצו שהסלון "יזרום החוצה". החלטנו להוריד שני קירות ולתת לגינה להיכנס.</p>
+
+      <p>כשהגעתי לפגישה הראשונה, רונית (בעלת הבית) ישבה בפינת האוכל הזעירה שהייתה אז בין המטבח לחדר מגורים, ואמרה לי: "אני רוצה להרגיש שאני ברחוב היפה שבחוץ, גם כשאני בפיג'מה". <strong>זה היה הבריף.</strong></p>
+
+      <h3>מה עשינו בפועל</h3>
+      <p>הורדנו את הקיר שבין המטבח לסלון, הצרנו את המסדרון הארוך בעשרים ס"מ, והחלפנו את חלון הגינה הישן בדלת זכוכית מתקפלת ברוחב 4.8 מטר. כל פעולה קטנה שינתה את תחושת החלל יותר מהצפוי.</p>
+
+      <p>בחרנו פלטת צבעים חמה-בהירה: <strong>שמנת, זהב עתיק, ועץ אלון מעושן</strong>. רצפת פורצלן גדולה (120×120) בגוון אבן טבעית המשיכה מהסלון אל המרפסת בלי הפרעה, כדי להגדיל את תחושת הרצף.</p>
+
+      <h3>שלושה פרטים שאני הכי גאה בהם</h3>
+      <p><strong>1. ספריית הבונוס.</strong> יצרנו עומק של 38 ס"מ מאחורי הספה והפכנו אותו לספרייה פתוחה עם תאורה חמה. רונית אמרה שזה החלל שהבנים הכי אוהבים.</p>
+      <p><strong>2. המטבח ללא ידיות.</strong> בחרנו גימור עם push-to-open והתוצאה היא קו רציף ונקי שמחליק את העין אל הגינה ולא עוצר.</p>
+      <p><strong>3. פינת הקריאה הקטנה.</strong> שבנינו מתחת למדרגות, עם כרית ארוכה, שתי נישות לספרים ומנורת קריאה שמתחברת לתקרה בזרוע מתכווננת. לא היה בתכנית המקורית — הוספנו בסוף.</p>
+
+      <h3>מה היה מאתגר</h3>
+      <p>הקיר שהורדנו היה נושא. בנינו עמוד מגלם חשוף בפני עצמו, שהפך להיות אלמנט עיצובי מרכזי. מה שנראה בתחילה כמגבלה הפך להיות הדבר שכל מי שנכנס לדירה שואל עליו.</p>
+    </div>
+
+    <aside class="spec-aside">
+      <div class="spec-card">
+        <h4>פרטי הפרויקט</h4>
+        <div class="spec-row"><span class="k">סוג</span><span class="v">דירת גן</span></div>
+        <div class="spec-row"><span class="k">שטח</span><span class="v">140 מ"ר</span></div>
+        <div class="spec-row"><span class="k">מיקום</span><span class="v">רמת השרון</span></div>
+        <div class="spec-row"><span class="k">שנה</span><span class="v">2024</span></div>
+        <div class="spec-row"><span class="k">משך ביצוע</span><span class="v">9 חודשים</span></div>
+        <div class="spec-row"><span class="k">תקציב</span><span class="v">בינוני-גבוה</span></div>
+        <div class="spec-row"><span class="k">סגנון</span><span class="v">מודרני-חם</span></div>
+        <div class="tags-wrap">
+          <span class="badge badge-gold">סלון</span>
+          <span class="badge badge-gray">מטבח</span>
+          <span class="badge badge-gray">מינימליסטי</span>
+          <span class="badge badge-gray">אור טבעי</span>
+        </div>
+      </div>
+
+      <div class="spec-card" style="margin-top:16px;background:linear-gradient(135deg,#FBF7ED,#F5ECD3);border-color:var(--border-gold)">
+        <h4 style="color:#5A4608">ספקים בפרויקט</h4>
+        <div class="spec-row" style="border-color:rgba(139,101,8,.15)"><span class="k">מטבחים</span><span class="v">דוריאן</span></div>
+        <div class="spec-row" style="border-color:rgba(139,101,8,.15)"><span class="k">קרמיקה</span><span class="v">נגב קרמיקה</span></div>
+        <div class="spec-row" style="border-color:rgba(139,101,8,.15)"><span class="k">תאורה</span><span class="v">Light Studio</span></div>
+        <div class="spec-row" style="border-color:rgba(139,101,8,.15)"><span class="k">נגרות</span><span class="v">אייל בן-דוד</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- BEFORE / AFTER -->
+  <div class="ba-block">
+    <div class="ba-head">
+      <h3>לפני · אחרי</h3>
+      <span style="font-size:12.5px;color:var(--text-muted)">הסלון והמטבח</span>
+    </div>
+    <div class="ba-grid">
+      <div class="ba-item">
+        <span class="ba-tag">לפני</span>
+        <svg viewBox="0 0 600 450" preserveAspectRatio="xMidYMid slice">
+          <rect width="600" height="450" fill="#EEEDEA"/>
+          <rect x="0" y="0" width="600" height="350" fill="#D1D0CB"/>
+          <rect x="0" y="350" width="600" height="100" fill="#9B9994"/>
+          <rect x="280" y="0" width="20" height="450" fill="#6B7280"/>
+          <rect x="50" y="220" width="200" height="130" fill="rgba(80,60,40,.55)" rx="3"/>
+          <rect x="360" y="100" width="200" height="120" fill="rgba(255,255,255,.8)" stroke="rgba(26,20,16,.3)" stroke-width="2"/>
+          <rect x="380" y="250" width="180" height="100" fill="rgba(80,60,40,.3)"/>
+        </svg>
+      </div>
+      <div class="ba-item">
+        <span class="ba-tag" style="background:var(--gold);color:white">אחרי</span>
+        <svg viewBox="0 0 600 450" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="ba-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#F5ECD3"/></linearGradient></defs>
+          <rect width="600" height="450" fill="url(#ba-sky)"/>
+          <rect x="0" y="350" width="600" height="100" fill="#8B6914"/>
+          <rect x="330" y="60" width="250" height="290" fill="rgba(255,255,255,.7)" stroke="rgba(26,20,16,.25)" stroke-width="2"/>
+          <circle cx="400" cy="150" r="35" fill="rgba(46,80,40,.3)"/>
+          <circle cx="510" cy="180" r="45" fill="rgba(46,80,40,.25)"/>
+          <rect x="50" y="220" width="260" height="110" fill="rgba(80,60,40,.55)" rx="8"/>
+          <rect x="60" y="235" width="80" height="85" fill="rgba(245,236,211,.6)" rx="4"/>
+          <rect x="150" y="235" width="80" height="85" fill="rgba(245,236,211,.6)" rx="4"/>
+          <rect x="240" y="235" width="65" height="85" fill="rgba(245,236,211,.6)" rx="4"/>
+          <rect x="90" y="350" width="180" height="40" fill="rgba(26,20,16,.35)" rx="3"/>
+          <line x1="180" y1="0" x2="180" y2="130" stroke="rgba(26,20,16,.3)" stroke-width="2"/>
+          <ellipse cx="180" cy="145" rx="32" ry="14" fill="rgba(255,240,200,.9)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- GALLERY -->
+  <div>
+    <div class="gal-head">
+      <h3>הגלריה המלאה</h3>
+      <span class="gal-count">14 תמונות · לחצו להגדלה</span>
+    </div>
+    <div class="gallery">
+      <div class="gal-item"><svg viewBox="0 0 400 533"><defs><linearGradient id="gal1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5ECD3"/><stop offset="1" stop-color="#C9A84C"/></linearGradient></defs><rect width="400" height="533" fill="url(#gal1)"/><rect x="60" y="100" width="280" height="350" fill="rgba(255,255,255,.5)" rx="6"/><rect x="90" y="300" width="220" height="130" fill="rgba(26,20,16,.35)" rx="6"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 300"><defs><linearGradient id="gal2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#E8C97A"/></linearGradient></defs><rect width="400" height="300" fill="url(#gal2)"/><rect x="40" y="80" width="320" height="160" fill="rgba(255,255,255,.55)"/><circle cx="200" cy="160" r="40" fill="rgba(139,101,8,.5)"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 400"><defs><linearGradient id="gal3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEEDEA"/><stop offset="1" stop-color="#8B6914"/></linearGradient></defs><rect width="400" height="400" fill="url(#gal3)"/><rect x="80" y="120" width="240" height="200" fill="rgba(255,255,255,.45)" rx="6"/><rect x="100" y="200" width="100" height="100" fill="rgba(201,168,76,.6)"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 450"><defs><linearGradient id="gal4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#D4A437"/></linearGradient></defs><rect width="400" height="450" fill="url(#gal4)"/><rect x="50" y="80" width="300" height="300" fill="rgba(255,255,255,.5)" rx="4"/><rect x="120" y="150" width="160" height="180" fill="rgba(139,101,8,.4)" rx="3"/><circle cx="200" cy="240" r="35" fill="rgba(201,168,76,.8)"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 300"><rect width="400" height="300" fill="#F5F4F0"/><rect x="60" y="60" width="280" height="180" fill="rgba(255,255,255,.8)" stroke="rgba(26,20,16,.25)" stroke-width="2"/><line x1="200" y1="60" x2="200" y2="240" stroke="rgba(26,20,16,.15)" stroke-width="1.5"/><line x1="60" y1="150" x2="340" y2="150" stroke="rgba(26,20,16,.15)" stroke-width="1.5"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 500"><defs><linearGradient id="gal6" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8C97A"/><stop offset="1" stop-color="#8B6914"/></linearGradient></defs><rect width="400" height="500" fill="url(#gal6)"/><rect x="30" y="40" width="340" height="420" fill="rgba(255,255,255,.3)" rx="6"/><rect x="80" y="100" width="240" height="140" fill="rgba(26,20,16,.35)" rx="5"/><rect x="80" y="260" width="110" height="170" fill="rgba(139,101,8,.45)" rx="5"/><rect x="210" y="260" width="110" height="170" fill="rgba(255,255,255,.5)" rx="5"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 350"><rect width="400" height="350" fill="#FBF7ED"/><rect x="0" y="250" width="400" height="100" fill="#8B6914"/><rect x="80" y="100" width="240" height="160" fill="rgba(26,20,16,.15)" rx="4"/><circle cx="200" cy="180" r="50" fill="rgba(201,168,76,.7)"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 400"><defs><linearGradient id="gal8" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F5ECD3"/><stop offset="1" stop-color="#374151"/></linearGradient></defs><rect width="400" height="400" fill="url(#gal8)"/><rect x="60" y="80" width="280" height="260" fill="rgba(255,255,255,.4)" rx="8"/><rect x="100" y="140" width="80" height="160" fill="rgba(201,168,76,.6)" rx="3"/><rect x="200" y="140" width="140" height="160" fill="rgba(139,101,8,.5)" rx="3"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+      <div class="gal-item"><svg viewBox="0 0 400 300"><defs><linearGradient id="gal9" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#D4A437"/></linearGradient></defs><rect width="400" height="300" fill="url(#gal9)"/><ellipse cx="200" cy="180" rx="140" ry="70" fill="rgba(255,255,255,.6)"/><rect x="120" y="200" width="160" height="50" fill="rgba(26,20,16,.25)" rx="3"/></svg><div class="zoom-hint"><i data-lucide="maximize-2" class="icon-sm"></i></div></div>
+    </div>
+  </div>
+
+  <!-- TIPS / PROCESS strip -->
+  <div style="margin:48px 0;padding:30px;background:linear-gradient(135deg,#FBF7ED,#F5ECD3);border:1px solid var(--border-gold);border-radius:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center">
+    <style>@media(max-width:800px){.process-grid{grid-template-columns:repeat(2,1fr)!important}}</style>
+    <div class="process-grid" style="display:contents"></div>
+    <div><div style="width:48px;height:48px;margin:0 auto 10px;border-radius:12px;background:white;display:grid;place-items:center;color:var(--gold-dim)"><i data-lucide="message-circle" style="width:22px;height:22px"></i></div><div style="font-family:'Rubik';font-weight:600;font-size:13px;margin-bottom:3px">שיחה ראשונית</div><div style="font-size:11.5px;color:var(--text-muted)">30 דקות · חינם</div></div>
+    <div><div style="width:48px;height:48px;margin:0 auto 10px;border-radius:12px;background:white;display:grid;place-items:center;color:var(--gold-dim)"><i data-lucide="layout-template" style="width:22px;height:22px"></i></div><div style="font-family:'Rubik';font-weight:600;font-size:13px;margin-bottom:3px">סקיצה ראשונית</div><div style="font-size:11.5px;color:var(--text-muted)">שבועיים</div></div>
+    <div><div style="width:48px;height:48px;margin:0 auto 10px;border-radius:12px;background:white;display:grid;place-items:center;color:var(--gold-dim)"><i data-lucide="hammer" style="width:22px;height:22px"></i></div><div style="font-family:'Rubik';font-weight:600;font-size:13px;margin-bottom:3px">ליווי ביצוע</div><div style="font-size:11.5px;color:var(--text-muted)">3-9 חודשים</div></div>
+    <div><div style="width:48px;height:48px;margin:0 auto 10px;border-radius:12px;background:white;display:grid;place-items:center;color:var(--gold-dim)"><i data-lucide="key-round" style="width:22px;height:22px"></i></div><div style="font-family:'Rubik';font-weight:600;font-size:13px;margin-bottom:3px">מפתחות</div><div style="font-size:11.5px;color:var(--text-muted)">עם חיוך</div></div>
+  </div>
+
+</div>
+
+<!-- NEXT PROJECT -->
+<section class="next-proj">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:11.5px;color:var(--gold-dim);font-weight:600;letter-spacing:1px;text-transform:uppercase">המשך לחפור</div>
+      <h3 style="font-family:'Frank Ruhl Libre',serif;font-size:28px;font-weight:500;margin:4px 0 0">פרויקטים נוספים של מיכל</h3>
+    </div>
+    <div class="next-grid">
+      <div class="next-card">
+        <svg viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="nc1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#8B6914"/></linearGradient></defs><rect width="800" height="400" fill="url(#nc1)"/><rect x="100" y="80" width="600" height="280" fill="rgba(255,255,255,.4)" rx="10"/><rect x="150" y="120" width="200" height="200" fill="rgba(201,168,76,.5)" rx="6"/><rect x="380" y="120" width="270" height="200" fill="rgba(139,101,8,.4)" rx="6"/></svg>
+        <div class="next-overlay"><div class="next-kick">פרויקט הבא</div><h4>סטודיו אמנית · חלל עבודה ביתי</h4></div>
+      </div>
+      <div class="next-card">
+        <svg viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="nc2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBF7ED"/><stop offset="1" stop-color="#D4A437"/></linearGradient></defs><rect width="800" height="400" fill="url(#nc2)"/><rect x="0" y="300" width="800" height="100" fill="rgba(26,20,16,.2)"/><rect x="120" y="100" width="140" height="200" fill="rgba(255,255,255,.6)" rx="4"/><rect x="290" y="80" width="180" height="220" fill="rgba(139,101,8,.3)" rx="4"/><rect x="500" y="120" width="160" height="180" fill="rgba(255,255,255,.5)" rx="4"/></svg>
+        <div class="next-overlay"><div class="next-kick">קודם</div><h4>פנטהאוז תל אביב · מרפסת פתוחה</h4></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Floating CTA -->
+<div class="float-cta">
+  <span class="float-cta-text">אהבת את הפרויקט? <strong>שלחי הודעה למיכל</strong></span>
+  <button class="btn-gold" style="padding:9px 20px;font-size:12.5px"><i data-lucide="send" class="icon-sm"></i> שלחי פנייה</button>
+</div>
+
+<footer>
+  <a href="../index.html" style="color:var(--gold-dim)">← חזרה לאינדקס</a> · 
+  זירת האדריכלות · <a href="portfolio-public.html">לתיק העבודות של מיכל</a>
+</footer>
+
+<script>lucide.createIcons();</script>
+</body></html>
