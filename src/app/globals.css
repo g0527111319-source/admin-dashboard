@@ -378,73 +378,138 @@ p {
    ============================ */
 
 /* ───────────────────────────────────────────────────────────
-   .btn-gold — upgraded to carry the Zirat DS "twist" aesthetic.
-   Organic asymmetric border-radius that morphs on hover, matching
-   the signature look of <TwistButton variant="primary">. Pure CSS;
-   no HTML/JSX changes needed — every existing .btn-gold button in
-   the codebase inherits this automatically.
+   .btn-gold — "תריס שנהב" aesthetic. Ivory gradient fill,
+   fine black outer border, inner gold stroke via ::before,
+   soft drop-shadow that deepens on hover with a warm gold tint.
+   Responsive pill silhouette — close approximation of the SVG
+   almond shape, works at every button size.
+   Cascade: every existing .btn-gold in the codebase inherits
+   this automatically — no JSX changes.
    ─────────────────────────────────────────────────────────── */
 .btn-gold {
-  @apply text-white font-semibold px-7 py-3 text-sm
-         transition-all ease-out;
+  @apply font-semibold px-7 py-3 text-sm;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   font-family: var(--font-rubik), "Rubik", sans-serif;
-  border-radius: 62% 38% 58% 42% / 50% 60% 40% 50%;
-  background-image: linear-gradient(135deg, #F5D77F 0%, #C9A84C 40%, #8B6914 80%, #5A4608 100%);
-  border: 2px solid rgba(58, 42, 16, 0.4);
-  color: #FFF8E8 !important;
-  text-shadow: 0 1px 2px rgba(58, 42, 16, 0.35);
-  box-shadow:
-    inset 0 3px 12px rgba(255, 253, 247, 0.45),
-    inset 0 -6px 14px rgba(58, 42, 16, 0.35);
-  transition: border-radius 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.3s ease;
+  color: #1a1a1a !important;
+  text-shadow: none;
+  letter-spacing: 0.2px;
+  border: 1.4px solid #1a1a1a;
+  border-radius: 9999px;
+  background-image: linear-gradient(180deg, #faf5e8 0%, #f0e8d0 50%, #e4d9b8 100%);
+  box-shadow: none;
+  cursor: pointer;
+  overflow: visible;
+  filter:
+    drop-shadow(2px 3px 3px rgba(0, 0, 0, 0.15))
+    drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.08));
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+              filter 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+              letter-spacing 0.4s ease,
+              color 0.4s ease,
+              border-color 0.4s ease;
 }
+.btn-gold::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1.2px solid #B8860B;
+  border-radius: 9999px;
+  opacity: 0.85;
+  pointer-events: none;
+  background: transparent;
+  left: 4px;
+  width: auto;
+  height: auto;
+  transition: border-color 0.4s ease, border-width 0.4s ease, opacity 0.4s ease;
+}
+.btn-gold::after { content: none; }
 .btn-gold:hover {
-  border-radius: 38% 62% 42% 58% / 60% 40% 54% 46%;
-  transform: rotate(-1.5deg) scale(1.03);
-  background-image: linear-gradient(135deg, #F5D77F 0%, #C9A84C 40%, #8B6914 80%, #5A4608 100%);
+  transform: translateX(-6px) translateY(-1px);
+  border-color: #000;
+  color: #000 !important;
+  letter-spacing: 0.4px;
+  filter:
+    drop-shadow(6px 5px 8px rgba(0, 0, 0, 0.20))
+    drop-shadow(3px 2px 4px rgba(0, 0, 0, 0.12))
+    drop-shadow(2px 2px 3px rgba(139, 101, 8, 0.18));
+}
+.btn-gold:hover::before {
+  border-color: #D4A437;
+  border-width: 1.6px;
+  opacity: 1;
+  left: 4px;
 }
 .btn-gold:active {
-  transform: rotate(-0.5deg) scale(0.98);
+  transform: translateX(-4px) translateY(0) scale(0.995);
+  filter:
+    drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.15))
+    drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.10));
 }
 .btn-gold:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
+  filter: none;
 }
 
 /* ───────────────────────────────────────────────────────────
-   .btn-outline — secondary twist: cream fill with gold border.
-   Matches <TwistButton variant="secondary">.
+   .btn-outline — light variant of the blinds aesthetic.
+   More transparent fill, softer shadow, same silhouette.
    ─────────────────────────────────────────────────────────── */
 .btn-outline {
-  @apply font-semibold px-7 py-3 text-sm transition-all ease-out;
+  @apply font-semibold px-7 py-3 text-sm;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   font-family: var(--font-rubik), "Rubik", sans-serif;
-  border-radius: 62% 38% 58% 42% / 50% 60% 40% 50%;
-  background-image: linear-gradient(135deg, #FFFDF6 0%, #FAF2DD 55%, #F5ECD3 100%);
-  border: 2px solid rgba(139, 105, 20, 0.5);
-  color: #5A4608 !important;
-  box-shadow:
-    inset 0 3px 10px rgba(255, 253, 247, 0.9),
-    inset 0 -6px 14px rgba(201, 168, 76, 0.22);
-  transition: border-radius 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #1a1a1a !important;
+  letter-spacing: 0.2px;
+  border: 1.4px solid #1a1a1a;
+  border-radius: 9999px;
+  background-image: linear-gradient(180deg, rgba(250,245,232,0.6) 0%, rgba(240,232,208,0.55) 50%, rgba(228,217,184,0.55) 100%);
+  cursor: pointer;
+  overflow: visible;
+  filter:
+    drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.10))
+    drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.06));
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+              filter 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+              letter-spacing 0.4s ease,
+              color 0.4s ease,
+              border-color 0.4s ease;
+}
+.btn-outline::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1.2px solid #B8860B;
+  border-radius: 9999px;
+  opacity: 0.7;
+  pointer-events: none;
+  background: transparent;
+  transition: border-color 0.4s ease, border-width 0.4s ease, opacity 0.4s ease;
 }
 .btn-outline:hover {
-  border-radius: 38% 62% 42% 58% / 60% 40% 54% 46%;
-  transform: rotate(-1.2deg) scale(1.03);
+  transform: translateX(-6px) translateY(-1px);
+  border-color: #000;
+  letter-spacing: 0.4px;
+  filter:
+    drop-shadow(5px 4px 7px rgba(0, 0, 0, 0.16))
+    drop-shadow(2px 2px 3px rgba(139, 101, 8, 0.15));
+}
+.btn-outline:hover::before {
+  border-color: #D4A437;
+  border-width: 1.6px;
+  opacity: 1;
 }
 .btn-outline:active {
-  transform: rotate(-0.4deg) scale(0.98);
+  transform: translateX(-4px) scale(0.995);
 }
 .btn-outline:disabled {
   opacity: 0.55;
@@ -1083,29 +1148,8 @@ textarea.input-field {
    PREMIUM BUTTONS v3.0
    ============================ */
 
-/* Shimmer hover effect on gold button */
-.btn-gold {
-  position: relative;
-  overflow: hidden;
-}
-.btn-gold::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
-}
-.btn-gold:hover::before {
-  left: 100%;
-}
+/* Shimmer hover effect removed — replaced by the blinds-ivory
+   aesthetic where ::before carries the inner gold stroke. */
 
 /* Glow button variant */
 .btn-gold-glow {
