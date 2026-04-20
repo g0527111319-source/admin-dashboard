@@ -61,6 +61,7 @@ model Supplier {
   recommendations   Recommendation[]
   recommenders      SupplierRecommender[]
   reservations      SupplierReservation[]
+  designerReviews   SupplierDesignerReview[]
 }
 
 // ==========================================
@@ -183,6 +184,9 @@ model Designer {
   // Leads — קהילה
   leadInterests        LeadInterest[]
   leadAssignments      LeadAssignment[]
+
+  // Reviews written by suppliers about this designer
+  supplierReviews      SupplierDesignerReview[]
 }
 
 // ==========================================
@@ -1220,6 +1224,42 @@ model CrmSatisfactionSurvey {
 
   @@index([projectId])
   @@index([clientId])
+  @@index([publishedAt])
+}
+
+// ==========================================
+// Supplier → Designer Reviews
+// Sent by a supplier to a designer via email link. Optional star ratings
+// (availability / reliability / price) are private to the supplier.
+// The free-text review can be published to the designer's business card
+// only after the designer explicitly consents (publishConsent = "FULL"
+// or "ANONYMOUS") AND the supplier presses "share on card" (publishedAt).
+// ==========================================
+model SupplierDesignerReview {
+  id                 String    @id @default(uuid())
+  supplierId         String
+  supplier           Supplier  @relation(fields: [supplierId], references: [id])
+  designerId         String
+  designer           Designer  @relation(fields: [designerId], references: [id])
+
+  // private — only the supplier sees these
+  availabilityScore  Int?      // 1-5
+  reliabilityScore   Int?      // 1-5
+  priceScore         Int?      // 1-5
+
+  // public-eligible
+  freeTextComment    String?
+  publishConsent     String?   // null | "ANONYMOUS" | "FULL" | "DECLINED"  — set by designer on the public form
+  publishedAt        DateTime? // when the supplier chose to share it on the designer's card
+
+  token              String    @unique @default(uuid())
+  sentAt             DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([supplierId])
+  @@index([designerId])
   @@index([publishedAt])
 }
 

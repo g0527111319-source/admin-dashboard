@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   Star, Send, Plus, X, CheckCircle2, Clock, Copy,
-  BarChart3, MessageSquare, Share2, ShieldCheck, UserX,
+  BarChart3, MessageSquare, Share2, ShieldCheck, UserX, Trash2,
 } from "lucide-react";
 
 type Survey = {
@@ -127,6 +127,26 @@ export default function CrmSurveys({ clientId, projectId }: { clientId?: string;
     navigator.clipboard.writeText(url);
     setCopiedId(token);
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  async function deleteSurvey(surveyId: string, isCompleted: boolean) {
+    const msg = isCompleted
+      ? "למחוק את הסקר שמולא? הביקורת תוסר גם מכרטיס הביקור. הפעולה לא ניתנת לביטול."
+      : "למחוק את בקשת הסקר שנשלחה? הלינק שכבר נשלח יפסיק לעבוד.";
+    if (!confirm(msg)) return;
+    try {
+      const res = await fetch(`/api/designer/crm/surveys/${surveyId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setNotice({ kind: "warn", text: data.error || "שגיאה במחיקת הסקר" });
+        return;
+      }
+      setSurveys(prev => prev.filter(s => s.id !== surveyId));
+      setNotice({ kind: "info", text: "הסקר נמחק." });
+    } catch (e) {
+      console.error(e);
+      setNotice({ kind: "warn", text: "שגיאת רשת במחיקה" });
+    }
   }
 
   function renderStars(score: number | null) {
@@ -318,6 +338,13 @@ export default function CrmSurveys({ clientId, projectId }: { clientId?: string;
                     title="העתק לינק לסקר"
                   >
                     {copiedId === s.token ? <CheckCircle2 size={16} className="text-green-500" /> : <Copy size={16} />}
+                  </button>
+                  <button
+                    onClick={() => deleteSurvey(s.id, !!s.completedAt)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                    title="מחיקת הסקר"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

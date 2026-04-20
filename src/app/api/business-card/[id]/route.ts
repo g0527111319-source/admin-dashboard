@@ -62,11 +62,11 @@ export async function GET(
       return NextResponse.json({ error: "לא נמצא" }, { status: 404 });
     }
 
-    // Fetch published client-review surveys for this designer and merge them
-    // into the card's testimonials. Hand-curated testimonials (from the card
-    // builder) appear first; survey-sourced reviews appear after. The survey
-    // source is identified by the id prefix `survey:` so the card builder UI
-    // can distinguish them if needed later.
+    // Fetch published reviews and merge them into the card's testimonials.
+    // Hand-curated testimonials (from the card builder) appear first;
+    // review-sourced entries appear after.
+    //   - Designers: client satisfaction surveys (id prefix `survey:`)
+    //   - Suppliers: designer reviews of the supplier (id prefix `sdr:`)
     let surveyTestimonials: Array<{ id: string; name: string; text: string }> = [];
     if (profileType === "designer") {
       const published = await prisma.crmSatisfactionSurvey.findMany({
@@ -94,6 +94,37 @@ export async function GET(
             id: `survey:${s.id}`,
             name: displayName,
             text: s.freeTextComment!.trim(),
+          };
+        });
+    } else if (profileType === "supplier") {
+      const published = await prisma.supplierDesignerReview.findMany({
+        where: {
+          supplierId: id,
+          publishedAt: { not: null },
+          publishConsent: { in: ["ANONYMOUS", "FULL"] },
+          freeTextComment: { not: null },
+        },
+        orderBy: { publishedAt: "desc" },
+        include: {
+          designer: { select: { fullName: true, firstName: true, lastName: true, phone: true } },
+        },
+      });
+
+      surveyTestimonials = published
+        .filter((r) => r.freeTextComment && r.freeTextComment.trim())
+        .map((r) => {
+          let displayName = "מעצבת";
+          if (r.publishConsent === "FULL" && r.designer) {
+            const fullName =
+              [r.designer.firstName, r.designer.lastName].filter(Boolean).join(" ").trim() ||
+              r.designer.fullName ||
+              "מעצבת";
+            displayName = r.designer.phone ? `${fullName} · ${r.designer.phone}` : fullName;
+          }
+          return {
+            id: `sdr:${r.id}`,
+            name: displayName,
+            text: r.freeTextComment!.trim(),
           };
         });
     }

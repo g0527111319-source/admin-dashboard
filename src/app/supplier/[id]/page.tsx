@@ -5,8 +5,9 @@ import { useParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import StarRating from "@/components/ui/StarRating";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { FileText, HandCoins, Star, Calendar, Upload, Clock, Send, Edit, Image as ImageIcon, BarChart3, Eye, TrendingUp, CheckCircle2, XCircle, Phone, Mail, Globe, MapPin, Camera, UserPlus, X, Plus, CreditCard, ShieldCheck, Loader2, } from "lucide-react";
+import { FileText, HandCoins, Star, Calendar, Upload, Clock, Send, Edit, Image as ImageIcon, BarChart3, Eye, TrendingUp, CheckCircle2, XCircle, Phone, Mail, Globe, MapPin, Camera, UserPlus, X, Plus, CreditCard, ShieldCheck, Loader2, MessageSquare, } from "lucide-react";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
+import SupplierReviews from "@/components/supplier/SupplierReviews";
 
 interface SupplierData {
     name: string;
@@ -83,11 +84,11 @@ export default function SupplierDashboard() {
     const [recentDeals, setRecentDeals] = useState<DealItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    type SupplierTab = "overview" | "posts" | "deals" | "newpost" | "profile" | "card";
+    type SupplierTab = "overview" | "posts" | "deals" | "newpost" | "profile" | "card" | "reviews";
     const [activeTab, setActiveTabRaw] = useState<SupplierTab>(() => {
         if (typeof window !== "undefined") {
             const hash = window.location.hash.replace("#", "") as SupplierTab;
-            if (hash && ["overview", "posts", "deals", "newpost", "profile", "card"].includes(hash)) return hash;
+            if (hash && ["overview", "posts", "deals", "newpost", "profile", "card", "reviews"].includes(hash)) return hash;
         }
         return "overview";
     });
@@ -142,6 +143,7 @@ export default function SupplierDashboard() {
         { key: "newpost", label: txt("src/app/supplier/[id]/page.tsx::020", "שלח פרסום"), icon: Upload },
         { key: "profile", label: txt("src/app/supplier/[id]/page.tsx::021", "ערוך פרופיל"), icon: Edit },
         { key: "card", label: txt("src/app/supplier/[id]/page.tsx::022", "כרטיס ביקור"), icon: CreditCard },
+        { key: "reviews", label: txt("src/app/supplier/[id]/page.tsx::reviews-tab", "ביקורות מעצבות"), icon: MessageSquare },
     ] as const;
     if (loading) {
         return (
@@ -634,6 +636,9 @@ export default function SupplierDashboard() {
         {activeTab === "card" && (<div className="animate-in">
             <BusinessCardBuilder designerId={routeParams.id} userName={supplierData.contactName} userRole={supplierData.category} userPhone={supplierData.phone} userEmail={supplierData.email}/>
           </div>)}
+
+        {/* ===== REVIEWS TAB ===== */}
+        {activeTab === "reviews" && <SupplierReviews />}
       </main>
     </div>);
 }

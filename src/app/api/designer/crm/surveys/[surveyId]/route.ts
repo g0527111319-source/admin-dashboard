@@ -93,3 +93,37 @@ export async function PATCH(
     return NextResponse.json({ error: "שגיאה בשמירת סקר" }, { status: 500 });
   }
 }
+
+// DELETE /api/designer/crm/surveys/[surveyId] — designer removes a sent/filled
+// survey from her CRM. Requires ownership via the project.
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ surveyId: string }> }
+) {
+  try {
+    const designerId = req.headers.get("x-user-id");
+    if (!designerId) {
+      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    }
+
+    const { surveyId } = await params;
+
+    const survey = await prisma.crmSatisfactionSurvey.findUnique({
+      where: { id: surveyId },
+      include: { project: { select: { designerId: true } } },
+    });
+
+    if (!survey) {
+      return NextResponse.json({ error: "סקר לא נמצא" }, { status: 404 });
+    }
+    if (survey.project?.designerId !== designerId) {
+      return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
+    }
+
+    await prisma.crmSatisfactionSurvey.delete({ where: { id: surveyId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Survey delete error:", error);
+    return NextResponse.json({ error: "שגיאה במחיקת סקר" }, { status: 500 });
+  }
+}
