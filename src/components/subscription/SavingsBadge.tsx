@@ -7,8 +7,6 @@ type Props = {
   planName: string;
 };
 
-const GOLD = "#C9A84C";
-
 export default function SavingsBadge({
   supplierCount,
   needed,
@@ -20,29 +18,31 @@ export default function SavingsBadge({
   const near = !reached && ratio >= 0.6;
   const remaining = Math.max(0, needed - supplierCount);
 
-  let bg = "rgba(255,255,255,0.05)";
-  let border = "rgba(255,255,255,0.15)";
-  let color = "rgba(255,255,255,0.7)";
-  let icon = "🤝";
+  // Variant: info / near / success — each mapped to ivory-blinds tokens
+  let wrapperClass =
+    "bg-bg-surface border border-border-subtle text-text-secondary";
+  let iconBg = "bg-[color:var(--gold-50)] text-[color:var(--gold-dim)]";
+  let iconChar = "✦";
   let text = `${supplierCount}/${needed} שיתופי פעולה עם ספקי הקהילה`;
-  let className = "savings-badge-info";
+  let barTrackClass = "bg-bg-surface-2";
+  let barFillClass = "bg-text-muted";
+  let animateClass = "";
 
   if (reached) {
-    bg = "rgba(34,197,94,0.12)";
-    border = "rgba(34,197,94,0.5)";
-    color = "#4ade80";
-    icon = "🎉";
+    wrapperClass = "bg-green-50 border border-green-200 text-green-800";
+    iconBg = "bg-green-100 text-green-700";
+    iconChar = "✓";
     text = `חוסכת ₪${savedAmount.toLocaleString("he-IL")} בחודש — ${planName}`;
-    className = "savings-badge-success";
   } else if (near) {
-    bg = "rgba(201,168,76,0.12)";
-    border = GOLD;
-    color = GOLD;
-    icon = "✨";
+    wrapperClass =
+      "bg-[color:var(--gold-50)] border border-[color:var(--border-gold)] text-[color:var(--gold-dim)]";
+    iconBg =
+      "bg-gradient-to-br from-[color:var(--gold-dim)] to-[color:var(--gold)] text-white";
+    iconChar = "✦";
     text = `עוד ${remaining} שיתופי פעולה וחוסכת ₪${savedAmount.toLocaleString(
       "he-IL"
     )}`;
-    className = "savings-badge-near";
+    animateClass = "savings-badge-near-pulse";
   }
 
   return (
@@ -50,53 +50,36 @@ export default function SavingsBadge({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          @keyframes savingsPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
-            50% { box-shadow: 0 0 24px 4px rgba(201,168,76,0.5); }
+          @keyframes savingsPulseLight {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.25); }
+            50% { box-shadow: 0 0 18px 2px rgba(201,168,76,0.35); }
           }
-          .savings-badge-near {
-            animation: savingsPulse 2.4s ease-in-out infinite;
+          .savings-badge-near-pulse {
+            animation: savingsPulseLight 2.4s ease-in-out infinite;
           }
           `,
         }}
       />
       <div
-        className={className}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 12,
-          background: bg,
-          border: `1px solid ${border}`,
-          color,
-          padding: "12px 18px",
-          borderRadius: 999,
-          fontSize: 14,
-          fontWeight: 600,
-        }}
+        className={`inline-flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-semibold ${wrapperClass} ${animateClass}`}
       >
-        <span style={{ fontSize: 18 }}>{icon}</span>
+        <span
+          className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-base font-bold ${iconBg}`}
+        >
+          {iconChar}
+        </span>
         <span>{text}</span>
         {!reached && needed > 0 && (
           <span
-            style={{
-              display: "inline-block",
-              width: 80,
-              height: 6,
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: 999,
-              overflow: "hidden",
-              marginInlineStart: 4,
-            }}
+            className={`inline-block w-20 h-1.5 rounded-full overflow-hidden ${barTrackClass} ms-1`}
           >
             <span
-              style={{
-                display: "block",
-                height: "100%",
-                width: `${Math.min(100, Math.round(ratio * 100))}%`,
-                background: near ? GOLD : "rgba(255,255,255,0.4)",
-                transition: "width 0.4s",
-              }}
+              className={`block h-full rounded-full transition-[width] duration-500 ${
+                near
+                  ? "bg-gradient-to-l from-[color:var(--gold-dim)] to-[color:var(--gold)]"
+                  : barFillClass
+              }`}
+              style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }}
             />
           </span>
         )}

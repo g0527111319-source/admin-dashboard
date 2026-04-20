@@ -21,11 +21,6 @@ type Props = {
   gender?: string;
 };
 
-const GOLD = "#C9A84C";
-const GOLD_SOFT = "#e0c068";
-const DARK_BG = "#1a1a2e";
-const DARKER_BG = "#0f0f1e";
-
 const FEATURE_ROWS: { key: string; label: string }[] = [
   { key: "crm", label: "מערכת CRM" },
   { key: "businessCard", label: "כרטיס ביקור דיגיטלי" },
@@ -56,14 +51,14 @@ export default function PlanComparisonTable({
   const visiblePlans = useMemo(() => plans.slice(0, 4), [plans]);
 
   return (
-    <div dir="rtl" style={{ width: "100%" }}>
+    <div dir="rtl" className="w-full">
       <style
         dangerouslySetInnerHTML={{
           __html: `
           .pct-grid {
             display: grid;
             grid-template-columns: repeat(${visiblePlans.length}, minmax(0, 1fr));
-            gap: 16px;
+            gap: 20px;
           }
           @media (max-width: 900px) {
             .pct-grid { grid-template-columns: 1fr 1fr; }
@@ -71,8 +66,81 @@ export default function PlanComparisonTable({
           @media (max-width: 600px) {
             .pct-grid { grid-template-columns: 1fr; }
           }
-          .pct-btn:hover { background: ${GOLD_SOFT} !important; }
-          .pct-btn-outline:hover { background: rgba(201,168,76,0.1) !important; }
+          .plan-card {
+            position: relative;
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-xs);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.3s ease;
+          }
+          .plan-card:not(.plan-card--current):hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
+          }
+          .plan-card--recommended {
+            background: linear-gradient(145deg, #FFFBEF 0%, #F5ECD3 100%);
+            border: 2px solid var(--gold);
+            box-shadow: var(--shadow-gold);
+            transform: scale(1.02);
+          }
+          .plan-card--recommended:hover {
+            transform: scale(1.02) translateY(-4px);
+            box-shadow: var(--shadow-gold-lg);
+          }
+          .plan-card--current {
+            border: 2px solid rgba(34,197,94,0.45);
+            background: linear-gradient(145deg, #fff 0%, #f0fdf4 100%);
+          }
+          .plan-ribbon {
+            position: absolute;
+            top: -12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            white-space: nowrap;
+          }
+          .plan-ribbon--gold {
+            right: 20px;
+            background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+            color: #fff;
+          }
+          .plan-ribbon--green {
+            left: 20px;
+            background: #16a34a;
+            color: #fff;
+          }
+          .feat-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+          }
+          .feat-row:last-child { border-bottom: none; }
+          .feat-row--on { color: var(--text-secondary); }
+          .feat-row--off { color: var(--text-faint); text-decoration: line-through; }
+          .feat-icon {
+            display: inline-flex;
+            width: 20px;
+            height: 20px;
+            border-radius: 9999px;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 11px;
+            flex-shrink: 0;
+          }
+          .feat-icon--on { background: rgba(34,197,94,0.12); color: #15803d; }
+          .feat-icon--off { background: var(--bg-surface); color: var(--text-faint); }
           `,
         }}
       />
@@ -80,153 +148,51 @@ export default function PlanComparisonTable({
         {visiblePlans.map((plan) => {
           const isCurrent = plan.id === currentPlanId;
           const isHighlighted = plan.slug === highlightedPlanSlug;
-          const borderColor = isHighlighted
-            ? GOLD
-            : isCurrent
-            ? "rgba(34,197,94,0.6)"
-            : "rgba(255,255,255,0.1)";
+          const cardClass = [
+            "plan-card",
+            isHighlighted ? "plan-card--recommended" : "",
+            isCurrent ? "plan-card--current" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
 
           return (
-            <div
-              key={plan.id}
-              style={{
-                position: "relative",
-                background: DARK_BG,
-                border: `2px solid ${borderColor}`,
-                borderRadius: 16,
-                padding: 24,
-                paddingTop: 32,
-                display: "flex",
-                flexDirection: "column",
-                boxShadow: isHighlighted
-                  ? `0 0 24px rgba(201,168,76,0.25)`
-                  : "none",
-              }}
-            >
+            <div key={plan.id} className={cardClass}>
               {isHighlighted && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -14,
-                    right: 16,
-                    background: GOLD,
-                    color: "#000",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    padding: "4px 12px",
-                    borderRadius: 999,
-                  }}
-                >
-                  מומלץ
-                </span>
+                <span className="plan-ribbon plan-ribbon--gold">✦ מומלץ</span>
               )}
               {isCurrent && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -14,
-                    left: 16,
-                    background: "#22c55e",
-                    color: "#fff",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    padding: "4px 12px",
-                    borderRadius: 999,
-                  }}
-                >
-                  תוכנית נוכחית
-                </span>
+                <span className="plan-ribbon plan-ribbon--green">● התוכנית שלך</span>
               )}
 
-              <h3
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "#fff",
-                  marginBottom: 4,
-                }}
-              >
+              <h3 className="font-heading text-2xl font-semibold text-text-primary mb-1">
                 {plan.name}
               </h3>
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.5)",
-                  marginBottom: 16,
-                  minHeight: 32,
-                }}
-              >
+              <p className="text-xs text-text-muted mb-5 min-h-[32px] leading-relaxed">
                 {plan.description || ""}
               </p>
 
-              <div style={{ marginBottom: 20 }}>
-                <span
-                  style={{
-                    fontSize: 36,
-                    fontWeight: 800,
-                    color: GOLD,
-                    lineHeight: 1,
-                  }}
-                >
+              <div className="mb-5 flex items-baseline gap-1">
+                <span className="font-heading text-4xl font-semibold text-text-primary leading-none">
                   {formatPrice(plan.price, plan.currency)}
                 </span>
                 {Number(plan.price) > 0 && (
-                  <span
-                    style={{
-                      fontSize: 12,
-                      color: "rgba(255,255,255,0.5)",
-                      marginRight: 6,
-                    }}
-                  >
-                    / חודש
-                  </span>
+                  <span className="text-xs text-text-muted">/ חודש</span>
                 )}
               </div>
 
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: 0,
-                  marginBottom: 24,
-                  flex: 1,
-                }}
-              >
+              <ul className="list-none p-0 m-0 mb-6 flex-1">
                 {FEATURE_ROWS.map((row) => {
                   const enabled = !!plan.features?.[row.key];
                   return (
                     <li
                       key={row.key}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 0",
-                        fontSize: 13,
-                        color: enabled
-                          ? "rgba(255,255,255,0.85)"
-                          : "rgba(255,255,255,0.3)",
-                        textDecoration: enabled ? "none" : "line-through",
-                        borderBottom: "1px solid rgba(255,255,255,0.05)",
-                      }}
+                      className={`feat-row ${enabled ? "feat-row--on" : "feat-row--off"}`}
                     >
                       <span
-                        style={{
-                          display: "inline-flex",
-                          width: 18,
-                          height: 18,
-                          borderRadius: 999,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: enabled
-                            ? "rgba(34,197,94,0.15)"
-                            : "rgba(255,255,255,0.05)",
-                          color: enabled ? "#22c55e" : "rgba(255,255,255,0.3)",
-                          fontWeight: 700,
-                          fontSize: 12,
-                        }}
+                        className={`feat-icon ${enabled ? "feat-icon--on" : "feat-icon--off"}`}
                       >
-                        {enabled ? "✓" : "✗"}
+                        {enabled ? "✓" : "—"}
                       </span>
                       {row.label}
                     </li>
@@ -237,32 +203,26 @@ export default function PlanComparisonTable({
               <button
                 onClick={() => onSelect?.(plan.id)}
                 disabled={isCurrent || loading}
-                className={isCurrent ? "" : "pct-btn"}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 12,
-                  border: "none",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  cursor: isCurrent || loading ? "not-allowed" : "pointer",
-                  opacity: loading && !isCurrent ? 0.7 : 1,
-                  background: isCurrent
-                    ? "rgba(255,255,255,0.05)"
+                className={
+                  isCurrent
+                    ? "w-full py-3 rounded-full border-2 border-green-600/30 bg-green-50 text-green-800 font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed"
                     : isHighlighted
-                    ? GOLD
-                    : GOLD,
-                  color: isCurrent ? "rgba(255,255,255,0.4)" : "#000",
-                  transition: "background 0.2s, opacity 0.2s",
-                }}
+                    ? "btn-gold w-full"
+                    : "btn-outline w-full"
+                }
               >
-                {isCurrent
-                  ? "תוכנית נוכחית"
-                  : loading
-                  ? "מעבד..."
-                  : isHighlighted
-                  ? g(gender, "שדרג", "שדרגי")
-                  : g(gender, "בחר תוכנית", "בחרי תוכנית")}
+                {isCurrent ? (
+                  <>
+                    <span>✓</span>
+                    התוכנית הנוכחית שלך
+                  </>
+                ) : loading ? (
+                  "מעבד..."
+                ) : isHighlighted ? (
+                  g(gender, "שדרג", "שדרגי")
+                ) : (
+                  g(gender, "בחר תוכנית", "בחרי תוכנית")
+                )}
               </button>
             </div>
           );
