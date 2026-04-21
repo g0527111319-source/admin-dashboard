@@ -41,3 +41,11 @@ next-env.d.ts
 .vercel
 .env*.local
 .env.test
+.env.vercel
+
+# scratch / local-only
+build.log
+cookies*.txt
+test-upload.png
+.design-ref/
+.claude/scheduled_tasks.lock

@@ -1891,6 +1891,7 @@ model DesignerProject {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   images         DesignerProjectImage[]
+  models3d       Model3D[]
 
   @@index([designerId])
   @@index([status])
@@ -1914,6 +1915,82 @@ model DesignerProjectImage {
 
   @@index([projectId])
   @@index([fileHash])
+}
+
+// ==========================================
+// מודלי 3D ואנוטציות — 3D Viewer + Annotations
+// ==========================================
+enum AnnotationStatus {
+  OPEN
+  ANSWERED
+  RESOLVED
+  PINNED
+}
+
+model Model3D {
+  id               String   @id @default(cuid())
+  projectId        String
+  project          DesignerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title            String?
+  originalUrl      String   // R2 URL של הקובץ המקורי
+  originalR2Key    String   // מפתח R2 למחיקה
+  originalFormat   String   // "ifc" | "glb" | "gltf" | "obj" | "fbx" | "dae"
+  originalSize     Int      // bytes
+  gltfUrl          String?  // glTF דחוס אחרי המרה
+  gltfR2Key        String?
+  gltfSize         Int?
+  conversionStatus String   @default("pending") // pending | processing | ready | failed
+  conversionError  String?
+  thumbnailUrl     String?  // screenshot ראשוני
+  shareToken       String   @unique @default(cuid()) // לשיתוף ציבורי
+  expiresAt        DateTime // 3 חודשים מהעלאה — נמחק אוטומטית
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  annotations      Annotation[]
+
+  @@index([projectId])
+  @@index([expiresAt])
+  @@index([shareToken])
+}
+
+model Annotation {
+  id             String   @id @default(cuid())
+  modelId        String
+  model          Model3D  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  // position במרחב (world coords)
+  posX           Float
+  posY           Float
+  posZ           Float
+  // normal של המשטח (לכיוון הסיכה)
+  normX          Float
+  normY          Float
+  normZ          Float
+  label          String?  // כותרת קצרה
+  question       String?  // שאלה מלאה
+  status         AnnotationStatus @default(OPEN)
+  createdBy      String   // client email או designer id
+  createdByType  String   // "client" | "designer"
+  expiresAt      DateTime // לפי רול ה-TTL (24h/48h/כל הפרויקט)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  comments       AnnotationComment[]
+
+  @@index([modelId])
+  @@index([expiresAt])
+  @@index([status])
+}
+
+model AnnotationComment {
+  id            String   @id @default(cuid())
+  annotationId  String
+  annotation    Annotation @relation(fields: [annotationId], references: [id], onDelete: Cascade)
+  body          String
+  authorType    String   // "client" | "designer"
+  authorName    String
+  authorEmail   String?
+  createdAt     DateTime @default(now())
+
+  @@index([annotationId])
 }
 
 // ==========================================

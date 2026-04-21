@@ -3,7 +3,7 @@ import { txt } from "@/content/siteText";
 import { useState, useEffect } from "react";
 import Logo from "@/components/ui/Logo";
 import Image from "next/image";
-import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban, Loader2, Hash, Briefcase, ListChecks, Inbox } from "lucide-react";
+import { HandCoins, Trophy, Calendar as CalendarIcon, Search, MapPin, MessageCircle, Plus, Grid3X3, List, Heart, X, Star, User, Clock, CheckCircle2, History, Phone, Mail, Globe, Instagram, CreditCard, Users, Settings, Building2, MessageSquare, Zap, ChevronLeft, ChevronRight, Menu, Home, Workflow, Bell, TrendingUp, Activity, FileText, Copy, ShieldCheck, FolderKanban, Loader2, Hash, Briefcase, ListChecks, Inbox, Box } from "lucide-react";
 import CrmClients from "@/components/crm/CrmClients";
 import CrmSettings from "@/components/crm/CrmSettings";
 import CrmSuppliers from "@/components/crm/CrmSuppliers";
@@ -41,7 +41,7 @@ import AccountSettings from "@/components/designer/AccountSettings";
 import TodayDashboard from "@/components/designer/TodayDashboard";
 import InboxView from "@/components/designer/InboxView";
 import CommunityLeadsFeed from "@/components/leads/CommunityLeadsFeed";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import DepthSection from "@/components/motion/DepthSection";
 import { DEPTH_IMAGES } from "@/lib/depth-images";
 
@@ -107,7 +107,11 @@ type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "
 
 interface NavGroup {
   title: string;
-  items: { key: TabKey; label: string; icon: typeof Home }[];
+  // `href` is optional — when present, the sidebar navigates to a separate
+  // route instead of flipping the active tab. Used for features that live
+  // on their own page (e.g. the 3D models viewer) without absorbing them
+  // into this component's tab renderer.
+  items: { key: TabKey | string; label: string; icon: typeof Home; href?: string }[];
 }
 
 const navGroups: NavGroup[] = [
@@ -152,6 +156,9 @@ const navGroups: NavGroup[] = [
       { key: "before-after", label: "לפני/אחרי", icon: Grid3X3 },
       { key: "style-quiz", label: "שאלון סגנון", icon: Star },
       { key: "crm-suppliers", label: "ספקים שלי", icon: Building2 },
+      // 3D models live on their own route so the viewer can own the whole
+      // viewport (sidebar collapses visually inside the page).
+      { key: "models-3d", label: "מודלים תלת-ממדיים", icon: Box, href: "models" },
     ]
   },
   {
@@ -182,6 +189,7 @@ const ALL_DESIGNER_FILTER = "__ALL__";
 export default function DesignerDashboard() {
     const routeParams = useParams<{ id: string }>();
     const designerIdForGate = routeParams?.id || undefined;
+    const router = useRouter();
 
     // Designer profile state — loaded from API
     const [designerData, setDesignerData] = useState(EMPTY_DESIGNER_DATA);
@@ -463,12 +471,21 @@ export default function DesignerDashboard() {
                 )}
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = activeTab === item.key;
+                  const isActive = !item.href && activeTab === item.key;
                   return (
                     <button
                       key={item.key}
                       onClick={() => {
-                        setActiveTab(item.key);
+                        if (item.href) {
+                          // Route-style nav item — push to the dedicated
+                          // page. Uses the current designer id from the
+                          // route params so the href stays stable even
+                          // when the dashboard is embedded elsewhere.
+                          const base = routeParams?.id ? `/designer/${routeParams.id}` : "";
+                          router.push(`${base}/${item.href}`);
+                        } else {
+                          setActiveTab(item.key as TabKey);
+                        }
                         setMobileSidebarOpen(false);
                       }}
                       className={`
