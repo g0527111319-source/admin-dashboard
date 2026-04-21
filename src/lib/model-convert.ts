@@ -7,12 +7,18 @@
 //   glb / gltf  → Draco-optimize (often halves size)
 //   obj         → obj2gltf → glb → Draco
 //   ifc         → web-ifc StreamAllMeshes → @gltf-transform Document → Draco
-//   fbx/dae     → throws UnsupportedFormatError (roadmap)
+//   fbx / dae   → assimpjs → glb2 → Draco
 //
 // All conversions output binary GLB (self-contained, best for CDN
 // delivery). Draco compression is applied at the default quality
 // settings — tuned for interior-design geometry (most wins come from
 // de-duplicated vertices, not aggressive quantization).
+//
+// Known limitations we surface as friendlier errors:
+//   - gltf (JSON) with external .bin/.png siblings will fail to convert,
+//     since the uploader only passes one file. Detected via buffer URI scan.
+//   - obj with external .mtl materials will succeed geometrically but
+//     without materials — the user is warned at upload time.
 
 import { NodeIO, Document } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
@@ -27,6 +33,17 @@ export class UnsupportedFormatError extends Error {
   constructor(format: string) {
     super(`הפורמט ${format.toUpperCase()} עדיין לא נתמך להמרה אוטומטית. המירי ל-glTF או GLB ונסי שוב.`);
     this.name = "UnsupportedFormatError";
+  }
+}
+
+export class ExternalResourcesError extends Error {
+  constructor(format: string, missing: string[]) {
+    const sample = missing.slice(0, 3).join(", ");
+    super(
+      `קובץ ה-${format.toUpperCase()} מפנה לקבצים חיצוניים (${sample}${missing.length > 3 ? "..." : ""}). ` +
+        `יש לייצא כ-GLB (קובץ יחיד) או להטמיע את המשאבים בתוך ה-glTF.`
+    );
+    this.name = "ExternalResourcesError";
   }
 }
 
@@ -89,6 +106,24 @@ async function convertGltf(buffer: Buffer): Promise<Buffer> {
   // GLB (self-contained) or GLTF already-inlined (data URIs).
   const io = await getIO();
   const json = JSON.parse(new TextDecoder().decode(buffer));
+
+  // Scan for URIs that reference external files — anything not starting
+  // with "data:" means the designer exported in multi-file mode and we
+  // won't be able to resolve the sibling files here. Surface a clean,
+  // actionable error instead of the cryptic "cannot read resource" from
+  // gltf-transform.
+  const externalUris: string[] = [];
+  const collect = (uri?: string) => {
+    if (uri && typeof uri === "string" && !uri.startsWith("data:")) {
+      externalUris.push(uri);
+    }
+  };
+  for (const buf of json.buffers ?? []) collect(buf.uri);
+  for (const img of json.images ?? []) collect(img.uri);
+  if (externalUris.length > 0) {
+    throw new ExternalResourcesError("gltf", externalUris);
+  }
+
   const doc = await io.readJSON({ json, resources: {} });
   await compressWithDraco(doc);
   const out = await io.writeBinary(doc);
@@ -109,6 +144,68 @@ async function convertObj(buffer: Buffer): Promise<Buffer> {
   } finally {
     await safeUnlink(objPath);
   }
+}
+
+// ─── FBX / DAE via assimpjs ─────────────────────────────────────────
+// assimpjs is a WASM build of Assimp (~6MB). We use it specifically for
+// the formats that @gltf-transform can't handle natively. The module
+// init loads the .wasm from disk — in Vercel the file gets traced
+// automatically via our next.config.mjs outputFileTracingIncludes entry.
+
+type AssimpInstance = {
+  FileList: new () => {
+    AddFile: (name: string, content: Uint8Array) => void;
+  };
+  ConvertFileList: (
+    fileList: unknown,
+    format: string
+  ) => {
+    IsSuccess: () => boolean;
+    FileCount: () => number;
+    GetErrorCode: () => string;
+    GetFile: (i: number) => { GetContent: () => Uint8Array };
+  };
+};
+
+let assimpPromise: Promise<AssimpInstance> | null = null;
+async function getAssimp(): Promise<AssimpInstance> {
+  if (!assimpPromise) {
+    assimpPromise = (async () => {
+      // assimpjs exports a CommonJS factory. The top-level call returns
+      // a Promise<AssimpInstance>. We dynamic-import so the WASM only
+      // loads when actually needed (FBX/DAE uploads are rare).
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const assimpjs = require("assimpjs");
+      return (await assimpjs()) as AssimpInstance;
+    })();
+  }
+  return assimpPromise;
+}
+
+async function convertWithAssimp(
+  buffer: Buffer,
+  inputExt: "fbx" | "dae"
+): Promise<Buffer> {
+  const ajs = await getAssimp();
+  const fileList = new ajs.FileList();
+  // The filename gets passed back in error messages — keep it simple.
+  fileList.AddFile(`input.${inputExt}`, new Uint8Array(buffer));
+
+  // "glb2" = glTF 2.0 binary. This is self-contained (meshes + materials
+  // + textures in one file) which matches what the rest of the pipeline
+  // expects.
+  const result = ajs.ConvertFileList(fileList, "glb2");
+  if (!result.IsSuccess() || result.FileCount() === 0) {
+    const code = result.GetErrorCode();
+    throw new Error(
+      `assimp לא הצליח להמיר את קובץ ה-${inputExt.toUpperCase()}: ${code || "שגיאה לא ידועה"}`
+    );
+  }
+  const outFile = result.GetFile(0);
+  const glb = Buffer.from(outFile.GetContent());
+  // Run through our Draco pipeline to shrink the result — assimp emits
+  // uncompressed GLBs which can be large for complex models.
+  return await convertGlb(glb);
 }
 
 // ─── IFC ────────────────────────────────────────────────────────────
@@ -138,14 +235,25 @@ function colorKey(c: { x: number; y: number; z: number; w: number }): string {
 }
 
 async function convertIfc(buffer: Buffer): Promise<Buffer> {
-  const { IfcAPI } = await import("web-ifc");
+  // web-ifc ships two bundles: a Node CommonJS build that loads
+  // `web-ifc-node.wasm` from disk via fs.readFileSync, and a browser ESM
+  // build that fetch()'s `web-ifc.wasm`. The package's `exports` map
+  // `require`/`node` → node build and `import` → browser build. When we
+  // used `await import("web-ifc")` here, Next.js's webpack sometimes
+  // resolved the `import` condition (or the package's `"module"` field),
+  // giving us the browser bundle — which then blows up in Node because
+  // it tries to fetch() a WASM URL. Plain require() forces the CJS/node
+  // branch unconditionally, matching what we do for assimpjs above.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { IfcAPI } = require("web-ifc") as typeof import("web-ifc");
   const ifcApi = new IfcAPI();
 
-  // web-ifc's default locate handler resolves WASM relative to its own
-  // module path (node_modules/web-ifc/*.wasm). Vercel's nft tracer picks
-  // that up via the dynamic import above. forceSingleThread: true avoids
-  // the mt WASM which needs SharedArrayBuffer (not available in
-  // serverless runtimes).
+  // forceSingleThread: true avoids the mt WASM which needs
+  // SharedArrayBuffer (not available in Vercel serverless runtimes).
+  // web-ifc's default locator uses __dirname of web-ifc-api-node.js,
+  // which resolves to node_modules/web-ifc/ at runtime — and our
+  // next.config.mjs outputFileTracingIncludes entry copies the sibling
+  // `web-ifc-node.wasm` into the lambda next to it.
   await ifcApi.Init(undefined, true);
 
   const modelID = ifcApi.OpenModel(new Uint8Array(buffer), {
@@ -291,7 +399,8 @@ export async function convertModel(
       break;
     case "fbx":
     case "dae":
-      throw new UnsupportedFormatError(fmt);
+      glb = await convertWithAssimp(buffer, fmt);
+      break;
     default:
       throw new UnsupportedFormatError(fmt);
   }

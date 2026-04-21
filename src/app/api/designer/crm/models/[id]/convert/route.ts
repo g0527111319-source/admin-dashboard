@@ -6,7 +6,11 @@ export const maxDuration = 300; // seconds
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { uploadToR2, generateFileKey, getPublicUrl, deleteFromR2 } from "@/lib/r2";
-import { convertModel, UnsupportedFormatError } from "@/lib/model-convert";
+import {
+  convertModel,
+  UnsupportedFormatError,
+  ExternalResourcesError,
+} from "@/lib/model-convert";
 
 // ==========================================
 // Convert a model to Draco-compressed GLB
@@ -39,19 +43,48 @@ export async function POST(
     return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
   }
 
+  // Explicit opt-out of the "don't duplicate work" guards. The retry
+  // button and the client auto-heal both send this. Without it, a
+  // "processing" row <90s old would bounce every retry and the designer
+  // would see an indefinitely stuck spinner.
+  const force = new URL(req.url).searchParams.get("force") === "1";
+
   const model = await loadOwned(designerId, params.id);
   if (!model) {
     return NextResponse.json({ error: "לא נמצא" }, { status: 404 });
   }
 
-  // Don't re-convert a model that's already ready or currently in flight.
-  // Fail-state IS allowed to retry so the designer can re-kick after a
-  // fix.
-  if (model.conversionStatus === "ready") {
+  console.log(
+    `[convert] model=${model.id} status=${model.conversionStatus} format=${model.originalFormat} size=${model.originalSize}B force=${force}`
+  );
+
+  // Don't re-convert a model that's already ready. Fail-state IS allowed
+  // to retry so the designer can re-kick after fixing the source file.
+  // force=1 (explicit retry) skips this too — useful if the gltf output
+  // got corrupted somehow.
+  if (!force && model.conversionStatus === "ready") {
     return NextResponse.json({ ok: true, alreadyReady: true });
   }
-  if (model.conversionStatus === "processing") {
-    return NextResponse.json({ ok: true, inFlight: true });
+  // If a previous convert is truly in-flight we back off — but if the row
+  // has been "processing" for longer than our stale threshold without
+  // updating, the previous invocation crashed or timed out. We reclaim
+  // it so the model doesn't stay stuck forever. Serverless has no
+  // graceful shutdown, so this stale-check is the only way to recover.
+  //
+  // Threshold is intentionally tight: our measured IFC conversion on a
+  // 50MB building ran in ~31s locally, and Vercel's maxDuration for this
+  // route is 300s. 90s covers typical running convert jobs (plus R2
+  // download + cold start) while still reclaiming quickly enough that
+  // the designer isn't staring at a stuck spinner.
+  const STALE_AFTER_MS = 90 * 1000;
+  if (!force && model.conversionStatus === "processing") {
+    const age = Date.now() - model.updatedAt.getTime();
+    if (age < STALE_AFTER_MS) {
+      return NextResponse.json({ ok: true, inFlight: true, ageMs: age });
+    }
+    console.warn(
+      `[convert] model ${model.id} was stuck in "processing" for ${Math.round(age / 1000)}s — reclaiming`
+    );
   }
 
   await prisma.model3D.update({
@@ -59,21 +92,34 @@ export async function POST(
     data: { conversionStatus: "processing", conversionError: null },
   });
 
+  const startedAt = Date.now();
   try {
     // ── Download original from R2 ─────────────────────────────────
+    const tDl = Date.now();
     const fetchRes = await fetch(model.originalUrl);
     if (!fetchRes.ok) {
       throw new Error(`הורדה מ-R2 נכשלה (${fetchRes.status})`);
     }
     const inputBuffer = Buffer.from(await fetchRes.arrayBuffer());
+    console.log(
+      `[convert] model=${model.id} downloaded ${inputBuffer.length}B from R2 in ${Date.now() - tDl}ms`
+    );
 
     // ── Convert ──────────────────────────────────────────────────
+    const tConv = Date.now();
     const { glb, size } = await convertModel(inputBuffer, model.originalFormat);
+    console.log(
+      `[convert] model=${model.id} converted ${model.originalFormat} → glb (${size}B) in ${Date.now() - tConv}ms`
+    );
 
     // ── Upload result to R2 ──────────────────────────────────────
+    const tUp = Date.now();
     const key = generateFileKey("models-3d-gltf", `${model.id}.glb`, designerId);
     await uploadToR2(glb, key, "model/gltf-binary");
     const publicUrl = getPublicUrl(key);
+    console.log(
+      `[convert] model=${model.id} uploaded glb to R2 in ${Date.now() - tUp}ms (total ${Date.now() - startedAt}ms)`
+    );
 
     // ── Update DB ────────────────────────────────────────────────
     // Replace any stale gltf from a prior failed conversion.
@@ -108,6 +154,8 @@ export async function POST(
     const msg =
       error instanceof UnsupportedFormatError
         ? error.message
+        : error instanceof ExternalResourcesError
+        ? error.message
         : error instanceof Error
         ? error.message
         : "שגיאה לא ידועה בהמרה";
@@ -121,9 +169,15 @@ export async function POST(
       },
     });
 
+    // UnsupportedFormatError + ExternalResourcesError are user input
+    // problems — return 400 so the UI shows a fix-it-yourself message
+    // rather than a "retry" retry-the-server spinner.
+    const isUserError =
+      error instanceof UnsupportedFormatError ||
+      error instanceof ExternalResourcesError;
     return NextResponse.json(
       { ok: false, error: msg },
-      { status: error instanceof UnsupportedFormatError ? 400 : 500 }
+      { status: isUserError ? 400 : 500 }
     );
   }
 }
