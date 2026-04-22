@@ -7,8 +7,18 @@ declare module "draco3dgltf" {
   // The WASM modules expose a grab-bag of encoder/decoder methods that
   // @gltf-transform calls internally — we don't touch them directly, so
   // we leave the module shape opaque but typed.
-  export function createDecoderModule(): Promise<unknown>;
-  export function createEncoderModule(): Promise<unknown>;
+  // Emscripten factories accept an optional Module config; we use
+  // { locateFile } to point the loader at the nft-copied .wasm files
+  // since webpack breaks the default __dirname-based resolution.
+  type DracoFactoryOptions = {
+    locateFile?: (file: string) => string;
+  };
+  export function createDecoderModule(
+    options?: DracoFactoryOptions
+  ): Promise<unknown>;
+  export function createEncoderModule(
+    options?: DracoFactoryOptions
+  ): Promise<unknown>;
   const draco3d: {
     createDecoderModule: typeof createDecoderModule;
     createEncoderModule: typeof createEncoderModule;
