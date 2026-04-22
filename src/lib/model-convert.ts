@@ -250,11 +250,26 @@ async function convertIfc(buffer: Buffer): Promise<Buffer> {
 
   // forceSingleThread: true avoids the mt WASM which needs
   // SharedArrayBuffer (not available in Vercel serverless runtimes).
-  // web-ifc's default locator uses __dirname of web-ifc-api-node.js,
-  // which resolves to node_modules/web-ifc/ at runtime — and our
-  // next.config.mjs outputFileTracingIncludes entry copies the sibling
-  // `web-ifc-node.wasm` into the lambda next to it.
-  await ifcApi.Init(undefined, true);
+  //
+  // web-ifc's default locator uses `__dirname + "/" + path` inside
+  // web-ifc-api-node.js. In production that file gets webpack-bundled
+  // into .next/server/chunks/, so __dirname points at the chunks dir
+  // and the default locator builds `.next/server/chunks/web-ifc-node.wasm`
+  // — which doesn't exist. The nft tracer (via
+  // `outputFileTracingIncludes` in next.config.mjs) instead copies the
+  // wasm to `node_modules/web-ifc/web-ifc-node.wasm` inside the lambda.
+  //
+  // We resolve that real path explicitly via process.cwd(). Vercel
+  // serverless functions run with cwd=/var/task, and the traced
+  // node_modules tree lives there — so cwd + "node_modules/web-ifc/" is
+  // stable across lambda invocations. Locally (npm run dev, test scripts)
+  // cwd is the project root, and the same path works. `require.resolve`
+  // doesn't help here because webpack rewrites it to the chunks path.
+  const wasmDir = path.join(process.cwd(), "node_modules", "web-ifc");
+  await ifcApi.Init(
+    (file: string) => path.join(wasmDir, file),
+    true
+  );
 
   const modelID = ifcApi.OpenModel(new Uint8Array(buffer), {
     COORDINATE_TO_ORIGIN: true,
