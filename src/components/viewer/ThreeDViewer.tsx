@@ -260,24 +260,40 @@ const ThreeDViewer = forwardRef<ThreeDViewerHandle, Props>(function ThreeDViewer
           scene.add(modelRoot);
 
           // Fit the camera to the model's post-scale bounding box so every
-          // upload — 2m cube or 50m building — frames the same way. At
-          // fov=50° the viewport half-height at distance D is D·tan(25°);
-          // we solve for D so the longest model axis fills ~65% of the
-          // viewport (comfortable breathing room). An isometric-ish
-          // direction (1, 0.7, 1) reads depth well without feeling like a
-          // top-down floorplan. Retune OrbitControls min/maxDistance around
-          // the fit distance so zoom feels consistent at any model scale.
+          // upload — 2m cube or 50m building — frames the same way.
+          //
+          // Subtle but critical: the centering step above runs
+          // `modelRoot.position.sub(center)` BEFORE `modelRoot.scale.setScalar(scale)`.
+          // Because three.js composes transforms as T·R·S, the scaled
+          // vertices end up at world_pos = -center + scale·v, so the
+          // model's world-space center lands at center·(scale−1), NOT at
+          // (0,0,0). If we point the camera at (0,0,0) the model appears
+          // off to one side and OrbitControls orbits around empty space —
+          // which felt "off-center and uncomfortable to navigate."
+          //
+          // Fix: re-measure the bounding box AFTER scaling and point the
+          // camera + orbit pivot at that actual world center. Everything
+          // downstream (pan, zoom, orbit) now pivots around the model.
+          //
+          // Framing math: at fov=50° the viewport half-height at distance
+          // D is D·tan(25°); we solve for D so the longest model axis
+          // fills ~65% of the viewport (comfortable breathing room). An
+          // isometric-ish direction (1, 0.7, 1) reads depth well without
+          // feeling like a top-down floorplan. Retune OrbitControls
+          // min/maxDistance around the fit distance so zoom feels
+          // consistent at any model scale.
           const fitBox = new THREE.Box3().setFromObject(modelRoot);
           const fitSize = fitBox.getSize(new THREE.Vector3());
+          const fitCenter = fitBox.getCenter(new THREE.Vector3());
           const fitMax = Math.max(fitSize.x, fitSize.y, fitSize.z) || 8;
           const halfFov = (camera.fov * Math.PI) / 360;
           const distance = fitMax / 2 / Math.tan(halfFov) / 0.65;
           const dir = new THREE.Vector3(1, 0.7, 1).normalize();
-          camera.position.copy(dir.multiplyScalar(distance));
-          camera.lookAt(0, 0, 0);
-          controls.target.set(0, 0, 0);
-          controls.minDistance = distance * 0.1;
-          controls.maxDistance = distance * 10;
+          camera.position.copy(fitCenter).add(dir.multiplyScalar(distance));
+          camera.lookAt(fitCenter);
+          controls.target.copy(fitCenter);
+          controls.minDistance = distance * 0.05;
+          controls.maxDistance = distance * 20;
           controls.update();
 
           onLoadComplete?.();
