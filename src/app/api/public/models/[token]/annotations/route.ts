@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { ttlForStatus } from "@/lib/annotation-ttl";
 import { sendEmail } from "@/lib/email";
+import { validateShapeInput, type ShapeInput } from "@/lib/annotation-shapes";
 
 // ==========================================
 // Public annotations for a shared model
@@ -82,22 +83,12 @@ export async function GET(
   }
 }
 
-type CreateBody = {
-  posX?: number;
-  posY?: number;
-  posZ?: number;
-  normX?: number;
-  normY?: number;
-  normZ?: number;
+type CreateBody = ShapeInput & {
   label?: string;
   question?: string;
   clientName?: string;
   clientEmail?: string;
 };
-
-function isFiniteNum(n: unknown): n is number {
-  return typeof n === "number" && Number.isFinite(n);
-}
 
 export async function POST(
   req: NextRequest,
@@ -118,17 +109,13 @@ export async function POST(
   try {
     const body: CreateBody = await req.json();
 
-    // All 6 coords must be real numbers — the client has to raycast onto
-    // the mesh, get a world position + surface normal, and send both.
-    if (
-      !isFiniteNum(body.posX) || !isFiniteNum(body.posY) || !isFiniteNum(body.posZ) ||
-      !isFiniteNum(body.normX) || !isFiniteNum(body.normY) || !isFiniteNum(body.normZ)
-    ) {
-      return NextResponse.json(
-        { error: "חסרים ערכי מיקום תקינים" },
-        { status: 400 }
-      );
+    // Shape + coords validation lives in one shared helper so the public
+    // and client-portal routes stay in lockstep.
+    const validation = validateShapeInput(body);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+    const shape = validation.data;
 
     const model = await resolveModelByToken(params.token);
     if (!model) {
@@ -150,12 +137,20 @@ export async function POST(
     const annotation = await prisma.annotation.create({
       data: {
         modelId: model.id,
-        posX: body.posX,
-        posY: body.posY,
-        posZ: body.posZ,
-        normX: body.normX,
-        normY: body.normY,
-        normZ: body.normZ,
+        shape: shape.shape,
+        posX: shape.posX,
+        posY: shape.posY,
+        posZ: shape.posZ,
+        normX: shape.normX,
+        normY: shape.normY,
+        normZ: shape.normZ,
+        pos2X: shape.pos2X,
+        pos2Y: shape.pos2Y,
+        pos2Z: shape.pos2Z,
+        norm2X: shape.norm2X,
+        norm2Y: shape.norm2Y,
+        norm2Z: shape.norm2Z,
+        radius: shape.radius,
         label,
         question,
         status: "OPEN",

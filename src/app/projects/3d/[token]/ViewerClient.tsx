@@ -1,14 +1,15 @@
 "use client";
 
 // ==========================================
-// ViewerClient — public 3D viewer + pin threading
+// ViewerClient — public 3D viewer + shape threading
 // ==========================================
 // Wires together:
 //   - ThreeDViewer (three.js canvas, loaded lazily)
-//   - PinOverlay (HTML pins projected over the canvas)
-//   - AnnotationDrawer (thread panel for the active pin)
-//   - SWR polling every 10s on annotations so the client sees
-//     the designer's reply land without refreshing
+//   - PinOverlay (HTML pins projected over the canvas for POINT shapes)
+//   - AnnotationDrawer (thread panel for the active annotation)
+//   - Shape toolbar (POINT / LINE / RECTANGLE / CIRCLE)
+//   - SWR polling every 10s on annotations so the client sees the
+//     designer's reply land without refreshing
 //
 // Name persistence: we stash the client's self-entered name in
 // localStorage so repeat visits to the same share link don't re-prompt.
@@ -16,11 +17,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import useSWR from "swr";
+import {
+  MousePointer2,
+  Minus,
+  Square,
+  Circle as CircleIcon,
+  Send,
+  X,
+  Loader2,
+  MessageCircle,
+} from "lucide-react";
 import PinOverlay, { type PinData } from "@/components/viewer/PinOverlay";
 import AnnotationDrawer, {
   type AnnotationThread,
 } from "@/components/viewer/AnnotationDrawer";
-import type { ThreeDViewerHandle, Vec3 } from "@/components/viewer/ThreeDViewer";
+import type {
+  ThreeDViewerHandle,
+  ShapeName,
+  ShapePlaceResult,
+  AnnotationPrimitive,
+} from "@/components/viewer/ThreeDViewer";
 
 // three.js is ~600KB — keep it off the initial bundle.
 const ThreeDViewer = dynamic(() => import("@/components/viewer/ThreeDViewer"), {
@@ -43,6 +59,8 @@ const ThreeDViewer = dynamic(() => import("@/components/viewer/ThreeDViewer"), {
   ),
 });
 
+type AnnotationFull = AnnotationThread & AnnotationPrimitive;
+
 type ModelResponse = {
   model: {
     id: string;
@@ -64,7 +82,7 @@ type ModelResponse = {
 };
 
 type AnnotationsResponse = {
-  annotations: AnnotationThread[];
+  annotations: AnnotationFull[];
 };
 
 const fetcher = async (url: string) => {
@@ -75,18 +93,47 @@ const fetcher = async (url: string) => {
 
 const NAME_STORAGE_KEY = "zirat:3d:clientName";
 
+const SHAPE_TOOLS: Array<{
+  shape: ShapeName;
+  label: string;
+  hint: string;
+  Icon: typeof MousePointer2;
+}> = [
+  { shape: "POINT", label: "נקודה", hint: "לחיצה אחת", Icon: MousePointer2 },
+  { shape: "LINE", label: "קו", hint: "שתי לחיצות", Icon: Minus },
+  { shape: "RECTANGLE", label: "ריבוע", hint: "שתי פינות", Icon: Square },
+  { shape: "CIRCLE", label: "עיגול", hint: "מרכז + שוליים", Icon: CircleIcon },
+];
+
+function shapeHebrew(s: ShapeName): string {
+  if (s === "POINT") return "נקודה";
+  if (s === "LINE") return "קו";
+  if (s === "RECTANGLE") return "ריבוע";
+  return "עיגול";
+}
+
+function statusHebrew(s: AnnotationThread["status"]): string {
+  if (s === "OPEN") return "פתוח";
+  if (s === "ANSWERED") return "נענה";
+  if (s === "RESOLVED") return "נפתר";
+  return "קבוע";
+}
+
 export default function ViewerClient({ token }: { token: string }) {
   const viewerRef = useRef<ThreeDViewerHandle>(null);
+  const [shape, setShape] = useState<ShapeName>("POINT");
   const [placementMode, setPlacementMode] = useState(false);
+  const [partialStage, setPartialStage] = useState<"idle" | "first">("idle");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loadPct, setLoadPct] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [frameTick, setFrameTick] = useState(0);
   const [clientName, setClientName] = useState("");
-  const [pendingPin, setPendingPin] = useState<{ pos: Vec3; normal: Vec3 } | null>(null);
+  const [pending, setPending] = useState<ShapePlaceResult | null>(null);
   const [pendingQuestion, setPendingQuestion] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Restore name from last visit
   useEffect(() => {
@@ -121,19 +168,22 @@ export default function ViewerClient({ token }: { token: string }) {
     { refreshInterval: 10000 }
   );
 
-  const annotations = annData?.annotations ?? [];
+  const annotations = useMemo(() => annData?.annotations ?? [], [annData]);
 
-  // ── Map annotations into PinData for overlay ──────────────────────
+  // Only POINT shapes get HTML pin overlays. LINE/RECT/CIRCLE are rendered
+  // in-world by the viewer itself.
   const pins: PinData[] = useMemo(
     () =>
-      annotations.map((a, i) => ({
-        id: a.id,
-        pos: { x: (a as any).posX, y: (a as any).posY, z: (a as any).posZ },
-        status: a.status,
-        expiresAt: a.expiresAt,
-        label: a.label,
-        index: i + 1,
-      })),
+      annotations
+        .filter((a) => a.shape === "POINT")
+        .map((a, i) => ({
+          id: a.id,
+          pos: { x: a.posX, y: a.posY, z: a.posZ },
+          status: a.status,
+          expiresAt: a.expiresAt,
+          label: a.label,
+          index: i + 1,
+        })),
     [annotations]
   );
 
@@ -152,40 +202,76 @@ export default function ViewerClient({ token }: { token: string }) {
     }
   }, []);
 
-  // ── Pin placement flow ────────────────────────────────────────────
-  const onPinPlace = useCallback((pos: Vec3, normal: Vec3) => {
-    setPendingPin({ pos, normal });
+  // ── Shape placement flow ──────────────────────────────────────────
+  const onShapePlace = useCallback((result: ShapePlaceResult) => {
+    setPending(result);
+    setPartialStage("idle");
     setPlacementMode(false);
   }, []);
 
-  async function submitPendingPin() {
-    if (!pendingPin) return;
+  const onPartialPlace = useCallback((stage: "first" | "cleared") => {
+    setPartialStage(stage === "first" ? "first" : "idle");
+  }, []);
+
+  function startPlacement(nextShape: ShapeName) {
+    // Require a name up front so the drawer later can attribute replies.
+    if (!clientName.trim()) {
+      const name = prompt("השם שלך:");
+      if (!name?.trim()) return;
+      setClientName(name.trim());
+    }
+    setShape(nextShape);
+    setPlacementMode(true);
+    setActiveId(null);
+    setPending(null);
+    setPartialStage("idle");
+  }
+
+  async function submitPending() {
+    if (!pending) return;
     if (!clientName.trim()) {
       alert("נא להזין שם לפני שליחה");
       return;
     }
     setSubmitting(true);
     try {
+      const body: Record<string, unknown> = {
+        shape: pending.shape,
+        posX: pending.pos.x,
+        posY: pending.pos.y,
+        posZ: pending.pos.z,
+        normX: pending.normal.x,
+        normY: pending.normal.y,
+        normZ: pending.normal.z,
+        question: pendingQuestion,
+        clientName: clientName.trim(),
+      };
+      if (pending.pos2) {
+        body.pos2X = pending.pos2.x;
+        body.pos2Y = pending.pos2.y;
+        body.pos2Z = pending.pos2.z;
+      }
+      if (pending.norm2) {
+        body.norm2X = pending.norm2.x;
+        body.norm2Y = pending.norm2.y;
+        body.norm2Z = pending.norm2.z;
+      }
+      if (pending.radius) body.radius = pending.radius;
+
       const res = await fetch(`/api/public/models/${token}/annotations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          posX: pendingPin.pos.x,
-          posY: pendingPin.pos.y,
-          posZ: pendingPin.pos.z,
-          normX: pendingPin.normal.x,
-          normY: pendingPin.normal.y,
-          normZ: pendingPin.normal.z,
-          question: pendingQuestion,
-          clientName: clientName.trim(),
-        }),
+        body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`${res.status}`);
-      const body = await res.json();
-      setPendingPin(null);
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "שגיאה בשליחה");
+      }
+      const resp = await res.json();
+      setPending(null);
       setPendingQuestion("");
       await refreshAnnotations();
-      setActiveId(body.annotation?.id ?? null);
+      setActiveId(resp.annotation?.id ?? null);
     } catch (e) {
       alert("שגיאה בשליחה: " + (e instanceof Error ? e.message : "unknown"));
     } finally {
@@ -206,6 +292,13 @@ export default function ViewerClient({ token }: { token: string }) {
     );
     if (!res.ok) throw new Error("שגיאה בתגובה");
     await refreshAnnotations();
+  }
+
+  function selectAnnotation(id: string) {
+    setActiveId(id);
+    const a = annotations.find((x) => x.id === id);
+    if (a) viewerRef.current?.focusOnAnnotation(a);
+    setSidebarOpen(false);
   }
 
   // ── Render: various error/loading states ──────────────────────────
@@ -305,12 +398,15 @@ export default function ViewerClient({ token }: { token: string }) {
           zIndex: 40,
         }}
       >
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div
             style={{
               fontFamily: "'Frank Ruhl Libre', serif",
               fontSize: 18,
               color: "#1A1A1A",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
             {model.projectTitle || model.title || "פרויקט"}
@@ -320,42 +416,180 @@ export default function ViewerClient({ token }: { token: string }) {
           </div>
         </div>
 
+        {/* "My annotations" button — always available, toggles sidebar */}
         <button
-          onClick={() => {
-            if (!loaded) return;
-            if (!clientName.trim()) {
-              const name = prompt("השם שלך:");
-              if (!name?.trim()) return;
-              setClientName(name.trim());
-            }
-            setPlacementMode((v) => !v);
-            setActiveId(null);
-          }}
-          disabled={!loaded}
+          type="button"
+          onClick={() => setSidebarOpen((v) => !v)}
+          aria-label={`הערות (${annotations.length})`}
           style={{
-            padding: "10px 20px",
-            background: placementMode ? "#1A1A1A" : "#C9A84C",
-            color: placementMode ? "#FAFAF8" : "#1A1A1A",
-            border: "none",
-            borderRadius: 24,
+            position: "relative",
+            padding: "8px 14px",
+            background: sidebarOpen ? "#1A1A1A" : "transparent",
+            color: sidebarOpen ? "#FAFAF8" : "#8B6914",
+            border: "1px solid " + (sidebarOpen ? "#1A1A1A" : "#E5E1D4"),
+            borderRadius: 999,
             fontFamily: "Rubik, sans-serif",
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: loaded ? "pointer" : "not-allowed",
-            opacity: loaded ? 1 : 0.5,
+            fontSize: 13,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
-          {placementMode ? "ביטול" : "+ הוסף הערה"}
+          <MessageCircle size={16} />
+          הערות
+          {annotations.length > 0 && (
+            <span
+              style={{
+                background: "#C9A84C",
+                color: "#1A1A1A",
+                borderRadius: 999,
+                padding: "0 6px",
+                fontSize: 11,
+                fontWeight: 600,
+                minWidth: 20,
+                textAlign: "center",
+              }}
+            >
+              {annotations.length}
+            </span>
+          )}
         </button>
       </header>
+
+      {/* Shape toolbar — vertical, right-pinned under header */}
+      <div
+        role="group"
+        aria-label="כלי סימון"
+        style={{
+          position: "absolute",
+          top: 72,
+          right: 12,
+          zIndex: 40,
+          background: "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid #E5E1D4",
+          borderRadius: 12,
+          padding: 6,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        }}
+      >
+        {SHAPE_TOOLS.map((tool) => {
+          const active = placementMode && shape === tool.shape;
+          return (
+            <button
+              key={tool.shape}
+              type="button"
+              onClick={() => startPlacement(tool.shape)}
+              disabled={!loaded}
+              aria-pressed={active}
+              aria-label={`${tool.label} · ${tool.hint}`}
+              title={`${tool.label} · ${tool.hint}`}
+              style={{
+                width: 40,
+                height: 40,
+                border: "none",
+                borderRadius: 8,
+                background: active ? "#C9A84C" : "transparent",
+                color: active ? "#FAFAF8" : "#8B6914",
+                cursor: loaded ? "pointer" : "not-allowed",
+                opacity: loaded ? 1 : 0.5,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <tool.Icon size={18} />
+            </button>
+          );
+        })}
+        {placementMode && (
+          <button
+            type="button"
+            onClick={() => {
+              setPlacementMode(false);
+              setPartialStage("idle");
+            }}
+            aria-label="ביטול סימון"
+            title="ביטול"
+            style={{
+              width: 40,
+              height: 40,
+              border: "none",
+              borderRadius: 8,
+              background: "transparent",
+              color: "#B00020",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <X size={18} />
+          </button>
+        )}
+      </div>
+
+      {/* Placement hint */}
+      {placementMode && (
+        <div
+          style={{
+            position: "absolute",
+            top: 72,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 40,
+            background: "#1A1A1A",
+            color: "#FAFAF8",
+            padding: "6px 14px",
+            borderRadius: 999,
+            fontSize: 12,
+            maxWidth: "calc(100vw - 140px)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {shape === "POINT" && "לחצ/י על המודל לסימון נקודה"}
+          {(shape === "LINE" || shape === "RECTANGLE") &&
+            (partialStage === "first"
+              ? "לחצ/י שוב לקבלת הנקודה השנייה"
+              : shape === "LINE"
+              ? "לחצ/י על נקודת התחלה"
+              : "לחצ/י על פינה ראשונה")}
+          {shape === "CIRCLE" &&
+            (partialStage === "first"
+              ? "לחצ/י על שולי העיגול"
+              : "לחצ/י על מרכז העיגול")}
+        </div>
+      )}
 
       {/* Canvas */}
       <div style={{ position: "absolute", inset: 0, top: 60 }}>
         <ThreeDViewer
           ref={viewerRef}
           gltfUrl={model.gltfUrl}
+          shape={shape}
           placementMode={placementMode}
-          onPinPlace={onPinPlace}
+          onShapePlace={onShapePlace}
+          onPartialPlace={onPartialPlace}
+          annotations={annotations.map((a) => ({
+            id: a.id,
+            shape: a.shape,
+            posX: a.posX,
+            posY: a.posY,
+            posZ: a.posZ,
+            normX: a.normX,
+            normY: a.normY,
+            normZ: a.normZ,
+            pos2X: a.pos2X,
+            pos2Y: a.pos2Y,
+            pos2Z: a.pos2Z,
+            radius: a.radius,
+          }))}
+          highlightedId={activeId}
           onLoadProgress={setLoadPct}
           onLoadComplete={() => {
             setLoaded(true);
@@ -434,7 +668,7 @@ export default function ViewerClient({ token }: { token: string }) {
           </div>
         )}
 
-        {/* Pins overlay */}
+        {/* Pin overlay (only for POINT annotations) */}
         {loaded && (
           <PinOverlay
             viewerRef={viewerRef}
@@ -449,28 +683,119 @@ export default function ViewerClient({ token }: { token: string }) {
         )}
       </div>
 
-      {/* Placement helper banner */}
-      {placementMode && !pendingPin && (
-        <div
+      {/* Annotations sidebar — slides in from left, always reachable */}
+      {sidebarOpen && (
+        <aside
+          dir="rtl"
           style={{
             position: "absolute",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "#1A1A1A",
-            color: "#FAFAF8",
-            padding: "10px 20px",
-            borderRadius: 24,
-            fontSize: 14,
+            top: 60,
+            bottom: 0,
+            left: 0,
+            width: "min(340px, 90vw)",
+            background: "#FFFFFF",
+            borderLeft: "1px solid #E5E1D4",
+            boxShadow: "2px 0 12px rgba(0,0,0,0.08)",
             zIndex: 45,
+            overflowY: "auto",
+            padding: 16,
           }}
         >
-          לחצ/י על המודל כדי להניח סיכה
-        </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 12,
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: "'Frank Ruhl Libre', serif",
+                fontSize: 16,
+                color: "#1A1A1A",
+                margin: 0,
+              }}
+            >
+              הערות על המודל ({annotations.length})
+            </h2>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="סגור"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#8B6914",
+                cursor: "pointer",
+                padding: 4,
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          {annotations.length === 0 ? (
+            <p style={{ fontSize: 13, color: "#8B6914", opacity: 0.75 }}>
+              עדיין לא נוספו הערות. לחצ/י על אחד מכלי הסימון כדי להתחיל.
+            </p>
+          ) : (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {annotations.map((a, i) => (
+                <li key={a.id} style={{ marginBottom: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => selectAnnotation(a.id)}
+                    style={{
+                      width: "100%",
+                      textAlign: "right",
+                      padding: 10,
+                      borderRadius: 8,
+                      border:
+                        "1px solid " +
+                        (activeId === a.id ? "#C9A84C" : "#E5E1D4"),
+                      background: activeId === a.id ? "#F5F1E8" : "#FFFFFF",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span style={{ fontSize: 11, color: "#8B6914" }}>
+                        #{i + 1} · {shapeHebrew(a.shape)}
+                      </span>
+                      <span style={{ fontSize: 10, color: "#8B6914" }}>
+                        {statusHebrew(a.status)}
+                      </span>
+                    </div>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "#1A1A1A",
+                        margin: 0,
+                        lineHeight: 1.4,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {a.question || a.label || "ללא טקסט"}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
       )}
 
-      {/* Pending-pin dialog */}
-      {pendingPin && (
+      {/* Pending-annotation composer */}
+      {pending && (
         <div
           style={{
             position: "absolute",
@@ -501,7 +826,7 @@ export default function ViewerClient({ token }: { token: string }) {
                 color: "#8B6914",
               }}
             >
-              הערה חדשה
+              {shapeHebrew(pending.shape)} חדש
             </h2>
             <p style={{ fontSize: 13, color: "#8B6914", margin: "0 0 14px" }}>
               ⏱ נמחק אוטומטית אחרי 24 שעות אם לא נענה
@@ -529,7 +854,7 @@ export default function ViewerClient({ token }: { token: string }) {
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
               <button
                 onClick={() => {
-                  setPendingPin(null);
+                  setPending(null);
                   setPendingQuestion("");
                 }}
                 style={btnSecondary}
@@ -537,7 +862,7 @@ export default function ViewerClient({ token }: { token: string }) {
                 ביטול
               </button>
               <button
-                onClick={submitPendingPin}
+                onClick={submitPending}
                 disabled={submitting || !clientName.trim() || !pendingQuestion.trim()}
                 style={{
                   ...btnPrimary,
@@ -545,8 +870,17 @@ export default function ViewerClient({ token }: { token: string }) {
                     submitting || !clientName.trim() || !pendingQuestion.trim()
                       ? 0.5
                       : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
                 }}
               >
+                {submitting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Send size={16} />
+                )}
                 {submitting ? "שולח..." : "שלח"}
               </button>
             </div>

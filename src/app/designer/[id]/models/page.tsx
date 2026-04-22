@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 
 type Project = { id: string; title: string };
 type Model = {
@@ -32,6 +32,27 @@ type Model = {
   expiresAt: string;
   createdAt: string;
   _count?: { annotations: number };
+};
+
+// A stripped-down annotation shape for the global sidebar. The full shape
+// lives in the dedicated annotations page; here we only need enough to
+// render a one-line preview and a deep-link to the viewer.
+type GlobalAnnotation = {
+  id: string;
+  label: string | null;
+  question: string | null;
+  status: "OPEN" | "ANSWERED" | "RESOLVED" | "PINNED";
+  createdAt: string;
+  expiresAt: string;
+  createdByType: "client" | "designer";
+  model: {
+    id: string;
+    title: string | null;
+    projectId: string;
+    project: { id: string; title: string };
+    crmClient: { id: string; name: string } | null;
+    crmProject: { id: string; name: string } | null;
+  };
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -62,6 +83,35 @@ export default function DesignerModelsPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Global annotations inbox — every live pin across every model the
+  // designer owns. Fetched separately so the global count and previews
+  // don't depend on which project is selected above.
+  const [globalAnnotations, setGlobalAnnotations] = useState<GlobalAnnotation[]>([]);
+
+  useEffect(() => {
+    if (!designerId) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/designer/crm/annotations?all=true`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setGlobalAnnotations(data.annotations ?? []);
+      } catch {
+        /* silent — the sidebar simply shows an empty state */
+      }
+    };
+    load();
+    // Poll every 20s so the designer sees new questions trickle in.
+    const id = setInterval(load, 20_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [designerId]);
+
   // ── Load portfolio projects (DesignerProject) ─────────────────────
   useEffect(() => {
     if (!designerId) return;
@@ -83,6 +133,33 @@ export default function DesignerModelsPage() {
     };
   }, [designerId]);
 
+  // Tracks models we've already kicked this page-load so we don't
+  // hammer /convert on every poll. The kick IS itself idempotent via
+  // the route's state-machine check, but keeping a client-side guard
+  // cuts needless network round-trips.
+  // Map of modelId → timestamp of last kick. We re-kick if a model stays
+  // stuck in pending/processing for more than ~45s since the last kick
+  // (the convert route's own stale guard will dedupe if truly in-flight).
+  const lastKickAtRef = useRef<Map<string, number>>(new Map());
+
+  /**
+   * Fire /convert for a specific model. Used both by the background
+   * poller (auto-heal) and the "retry" button. The convert route is
+   * idempotent — it'll no-op (inFlight) if the model is already ready
+   * or truly in-flight. Passing force=true bypasses the inFlight guard
+   * on the server for the explicit retry case.
+   */
+  const kickConversion = useCallback(async (modelId: string, force = false) => {
+    try {
+      await fetch(
+        `/api/designer/crm/models/${modelId}/convert${force ? "?force=1" : ""}`,
+        { method: "POST" }
+      );
+    } catch {
+      /* silent — next poll will try again */
+    }
+  }, []);
+
   const loadModels = useCallback(async () => {
     if (!projectId) {
       setModels([]);
@@ -92,15 +169,71 @@ export default function DesignerModelsPage() {
       const res = await fetch(`/api/designer/crm/models?projectId=${projectId}`);
       if (!res.ok) return;
       const data = await res.json();
-      setModels(data.models ?? []);
+      const list: Model[] = data.models ?? [];
+      setModels(list);
+
+      // Self-heal: fire-and-forget kick for models stuck in pending or
+      // processing. We trigger from the browser rather than the server
+      // because the upload-time fire-and-forget fetch is unreliable in
+      // Vercel's serverless runtime (the parent function terminates
+      // before the outbound request connects). A browser-initiated call
+      // runs as its own fresh invocation with full maxDuration budget.
+      //
+      // First kick: 3s after row creation (quickly after the server's
+      // own kick had a chance to connect).
+      // Re-kick: every 45s thereafter if still stuck. 45s covers the
+      // typical convert time (IFC on a 50MB house ≈ 31s) while still
+      // re-attempting quickly if the first kick never reached the server.
+      const now = Date.now();
+      const FIRST_KICK_AFTER_MS = 3_000;
+      const REKICK_EVERY_MS = 45_000;
+      for (const m of list) {
+        if (m.conversionStatus !== "pending" && m.conversionStatus !== "processing") {
+          continue;
+        }
+        const lastKickAt = lastKickAtRef.current.get(m.id);
+        const createdAgeMs = now - new Date(m.createdAt).getTime();
+        if (lastKickAt === undefined) {
+          // Never kicked by this client. Wait briefly so we don't race
+          // the server's own initial kick.
+          if (createdAgeMs < FIRST_KICK_AFTER_MS) continue;
+        } else {
+          // Already kicked — back off and retry periodically.
+          if (now - lastKickAt < REKICK_EVERY_MS) continue;
+        }
+        lastKickAtRef.current.set(m.id, now);
+        void kickConversion(m.id);
+      }
     } catch {
       /* keep previous list */
     }
-  }, [projectId]);
+  }, [projectId, kickConversion]);
 
   useEffect(() => {
     loadModels();
+    // Poll every 8s while we have pending/processing models. Even when
+    // everything is ready, a slower background poll keeps the UI in sync
+    // if the designer uploads from another tab.
+    const id = setInterval(loadModels, 8_000);
+    return () => clearInterval(id);
   }, [loadModels]);
+
+  /**
+   * Manually re-trigger conversion for a failed or stuck model. Sends
+   * force=1 so the server bypasses the "inFlight" guard — otherwise
+   * clicking the retry button on a model stuck in "processing" for <90s
+   * would just get an inFlight ack and nothing would actually happen.
+   */
+  async function retryConversion(modelId: string) {
+    lastKickAtRef.current.set(modelId, Date.now());
+    // Don't await — kickConversion can take the full conversion time
+    // (30s+ for a 50MB IFC). We fire it and refresh the list so the UI
+    // flips to "processing" quickly.
+    void kickConversion(modelId, true);
+    setTimeout(() => {
+      void loadModels();
+    }, 600);
+  }
 
   // ── Upload handler ────────────────────────────────────────────────
   const onFile = useCallback(
@@ -198,7 +331,8 @@ export default function DesignerModelsPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-[#FAFAF8] py-8 px-4 lg:px-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:items-start">
+        <div className="min-w-0">
         <Link
           href={`/designer/${designerId}`}
           className="inline-flex items-center gap-1 text-sm text-[#8B6914] hover:text-[#C9A84C] mb-4"
@@ -280,9 +414,9 @@ export default function DesignerModelsPage() {
               {uploading ? `מעלה... ${Math.round(progress)}%` : "בחרי קובץ"}
             </label>
             <div className="text-xs text-[#8B6914] mt-3 leading-relaxed">
-              <div>פורמטים נתמכים: GLB, glTF, OBJ, IFC · עד 500MB</div>
+              <div>פורמטים נתמכים: GLB, glTF, OBJ, IFC, FBX, DAE · עד 500MB</div>
               <div className="opacity-70">
-                FBX, DAE — בקרוב. המירי בינתיים ל-glTF (Blender מייצא ישירות)
+                טיפ: glTF רב-קבצי (עם .bin/.png נפרדים) לא נתמך — יש לייצא GLB.
               </div>
             </div>
             {uploading && (
@@ -390,6 +524,20 @@ export default function DesignerModelsPage() {
                     {m.conversionError && (
                       <div className="text-xs text-red-700 mt-1">{m.conversionError}</div>
                     )}
+                    {(m.conversionStatus === "failed" ||
+                      m.conversionStatus === "pending" ||
+                      m.conversionStatus === "processing") && (
+                      <button
+                        type="button"
+                        onClick={() => retryConversion(m.id)}
+                        className="text-xs text-[#8B6914] hover:text-[#C9A84C] underline mt-1"
+                        style={{ fontFamily: "Rubik, sans-serif" }}
+                      >
+                        {m.conversionStatus === "failed"
+                          ? "נסה שוב"
+                          : "זרז המרה"}
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex gap-2 flex-wrap">
@@ -408,6 +556,22 @@ export default function DesignerModelsPage() {
                         >
                           פתח
                         </a>
+                        <Link
+                          href={`/designer/${designerId}/models/${m.id}/annotations`}
+                          className="px-3 py-2 rounded-lg text-sm border"
+                          style={{
+                            borderColor: "#8B6914",
+                            color: "#8B6914",
+                            fontFamily: "Rubik, sans-serif",
+                          }}
+                        >
+                          הערות
+                          {m._count && m._count.annotations > 0 ? (
+                            <span className="mr-1 text-[10px] opacity-75">
+                              ({m._count.annotations})
+                            </span>
+                          ) : null}
+                        </Link>
                         <button
                           onClick={() => copyShareLink(m.shareToken)}
                           className="px-3 py-2 rounded-lg text-sm border"
@@ -438,6 +602,94 @@ export default function DesignerModelsPage() {
             })}
           </div>
         </section>
+        </div>
+
+        {/* Global annotations sidebar — every live pin across every model */}
+        <aside
+          className="hidden lg:block bg-white rounded-2xl border p-4 sticky top-8 max-h-[calc(100vh-4rem)] overflow-auto mt-4 lg:mt-0"
+          style={{ borderColor: "#E5E1D4" }}
+          aria-label="שאלות פתוחות מלקוחות"
+        >
+          <h2
+            className="text-base mb-3 flex items-center gap-2"
+            style={{
+              fontFamily: "'Frank Ruhl Libre', serif",
+              color: "#1A1A1A",
+            }}
+          >
+            <MessageCircle className="w-4 h-4 text-[#8B6914]" />
+            שאלות פתוחות מלקוחות
+            {globalAnnotations.length > 0 && (
+              <span
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={{ background: "#F5F1E8", color: "#8B6914" }}
+              >
+                {globalAnnotations.length}
+              </span>
+            )}
+          </h2>
+
+          {globalAnnotations.length === 0 ? (
+            <p className="text-xs text-[#8B6914] opacity-75">
+              עדיין אין שאלות מלקוחות על מודלים שלך.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {globalAnnotations.map((a) => {
+                const projectTitle =
+                  a.model.crmProject?.name ||
+                  a.model.project?.title ||
+                  "פרויקט";
+                const clientName = a.model.crmClient?.name;
+                return (
+                  <li key={a.id}>
+                    <Link
+                      href={`/designer/${designerId}/models/${a.model.id}/annotations`}
+                      className="block p-2 rounded-lg border hover:bg-[#FAFAF8] transition"
+                      style={{ borderColor: "#E5E1D4" }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-[#1A1A1A] truncate">
+                          {a.model.title || "מודל"}
+                        </span>
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded"
+                          style={{
+                            background:
+                              a.status === "OPEN"
+                                ? "#F5F1E8"
+                                : a.status === "ANSWERED"
+                                ? "#E8EFF5"
+                                : a.status === "PINNED"
+                                ? "#1A1A1A"
+                                : "#ECF5EC",
+                            color:
+                              a.status === "PINNED" ? "#FAFAF8" : "#1A1A1A",
+                          }}
+                        >
+                          {a.status === "OPEN"
+                            ? "פתוח"
+                            : a.status === "ANSWERED"
+                            ? "נענה"
+                            : a.status === "PINNED"
+                            ? "חשוב"
+                            : "נפתר"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#1A1A1A] line-clamp-2 leading-snug">
+                        {a.question || a.label || "ללא טקסט"}
+                      </p>
+                      <p className="text-[10px] text-[#8B6914] mt-1 truncate">
+                        {projectTitle}
+                        {clientName ? ` · ${clientName}` : ""}
+                      </p>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </aside>
       </div>
     </div>
   );

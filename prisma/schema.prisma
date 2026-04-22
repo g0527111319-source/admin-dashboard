@@ -620,6 +620,9 @@ model CrmClient {
   activityLogs         CrmActivityLog[]     @relation("ClientActivityLogs")
   recommendations      CrmClientRecommendation[]
 
+  // מודלים תלת-מימדיים משויכים ללקוח
+  models3d             Model3D[]
+
   @@index([designerId])
 }
 
@@ -672,6 +675,9 @@ model CrmProject {
   budgetItems         CrmBudgetItem[]
   scheduleBlocks      CrmScheduleBlock[]
   inspirationBoards   CrmInspirationBoard[]
+
+  // מודלים תלת-מימדיים
+  models3d            Model3D[]
 
   @@index([designerId])
   @@index([clientId])
@@ -1927,10 +1933,22 @@ enum AnnotationStatus {
   PINNED
 }
 
+enum AnnotationShape {
+  POINT
+  LINE
+  RECTANGLE
+  CIRCLE
+}
+
 model Model3D {
   id               String   @id @default(cuid())
   projectId        String
   project          DesignerProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // קישור אופציונלי ללקוח CRM — אם מלא, המודל מופיע באזור האישי של הלקוח
+  crmClientId      String?
+  crmClient        CrmClient? @relation(fields: [crmClientId], references: [id], onDelete: SetNull)
+  crmProjectId     String?
+  crmProject       CrmProject? @relation(fields: [crmProjectId], references: [id], onDelete: SetNull)
   title            String?
   originalUrl      String   // R2 URL של הקובץ המקורי
   originalR2Key    String   // מפתח R2 למחיקה
@@ -1949,6 +1967,8 @@ model Model3D {
   annotations      Annotation[]
 
   @@index([projectId])
+  @@index([crmClientId])
+  @@index([crmProjectId])
   @@index([expiresAt])
   @@index([shareToken])
 }
@@ -1957,7 +1977,9 @@ model Annotation {
   id             String   @id @default(cuid())
   modelId        String
   model          Model3D  @relation(fields: [modelId], references: [id], onDelete: Cascade)
-  // position במרחב (world coords)
+  // צורה — POINT (ברירת-מחדל, תואם לאחור), LINE, RECTANGLE, CIRCLE
+  shape          AnnotationShape @default(POINT)
+  // position ראשית במרחב (world coords) — למעגל זה המרכז
   posX           Float
   posY           Float
   posZ           Float
@@ -1965,6 +1987,15 @@ model Annotation {
   normX          Float
   normY          Float
   normZ          Float
+  // נקודה שנייה — רק LINE / RECTANGLE (פינה נגדית)
+  pos2X          Float?
+  pos2Y          Float?
+  pos2Z          Float?
+  norm2X         Float?
+  norm2Y         Float?
+  norm2Z         Float?
+  // רדיוס — רק CIRCLE (ביחידות world)
+  radius         Float?
   label          String?  // כותרת קצרה
   question       String?  // שאלה מלאה
   status         AnnotationStatus @default(OPEN)

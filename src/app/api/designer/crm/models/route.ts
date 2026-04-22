@@ -17,6 +17,9 @@ interface CreateModelBody {
   originalR2Key: string;
   originalFormat: string;
   originalSize: number;
+  // אופציונליים — קישור לאזור האישי של לקוח CRM
+  crmClientId?: string | null;
+  crmProjectId?: string | null;
 }
 
 // Verify that the project belongs to the designer
@@ -26,6 +29,22 @@ async function assertOwnsProject(designerId: string, projectId: string) {
     select: { id: true },
   });
   return !!project;
+}
+
+async function assertOwnsCrmClient(designerId: string, crmClientId: string) {
+  const client = await prisma.crmClient.findFirst({
+    where: { id: crmClientId, designerId, deletedAt: null },
+    select: { id: true },
+  });
+  return !!client;
+}
+
+async function assertOwnsCrmProject(designerId: string, crmProjectId: string, crmClientId: string) {
+  const p = await prisma.crmProject.findFirst({
+    where: { id: crmProjectId, designerId, clientId: crmClientId, deletedAt: null },
+    select: { id: true },
+  });
+  return !!p;
 }
 
 export async function GET(req: NextRequest) {
@@ -51,6 +70,8 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { annotations: true } },
+        crmClient: { select: { id: true, name: true } },
+        crmProject: { select: { id: true, name: true } },
       },
     });
 
@@ -69,7 +90,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body: CreateModelBody = await req.json();
-    const { projectId, title, originalUrl, originalR2Key, originalFormat, originalSize } = body;
+    const { projectId, title, originalUrl, originalR2Key, originalFormat, originalSize, crmClientId, crmProjectId } = body;
 
     if (!projectId || !originalUrl || !originalR2Key || !originalFormat || !originalSize) {
       return NextResponse.json(
@@ -80,6 +101,18 @@ export async function POST(req: NextRequest) {
 
     if (!(await assertOwnsProject(designerId, projectId))) {
       return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
+    }
+
+    // אם המעצבת שייכה לקוח/פרויקט CRM — לוודא שהם שלה
+    if (crmClientId) {
+      if (!(await assertOwnsCrmClient(designerId, crmClientId))) {
+        return NextResponse.json({ error: "לקוח לא נמצא" }, { status: 403 });
+      }
+      if (crmProjectId) {
+        if (!(await assertOwnsCrmProject(designerId, crmProjectId, crmClientId))) {
+          return NextResponse.json({ error: "פרויקט CRM לא נמצא" }, { status: 403 });
+        }
+      }
     }
 
     const expiresAt = new Date(Date.now() + THREE_MONTHS_MS);
@@ -107,6 +140,11 @@ export async function POST(req: NextRequest) {
         gltfR2Key: servesRawImmediately ? originalR2Key : null,
         gltfSize: servesRawImmediately ? originalSize : null,
         expiresAt,
+        // Optional CRM linkage — lets the client portal list this model
+        // for the right CrmClient/CrmProject. Both may be null if the
+        // designer is just uploading to her portfolio.
+        crmClientId: crmClientId ?? null,
+        crmProjectId: crmProjectId ?? null,
       },
     });
 

@@ -1,11 +1,15 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 
 // ==========================================
 // Designer annotations list (inbox view)
-// GET /api/designer/crm/annotations?modelId=X
-// GET /api/designer/crm/annotations?projectId=X
+// GET /api/designer/crm/annotations?modelId=X   → annotations on one model
+// GET /api/designer/crm/annotations?projectId=X → annotations on one project
+// GET /api/designer/crm/annotations?all=true    → every annotation across
+//                                                 every model the designer
+//                                                 owns (global sidebar)
 // ==========================================
 // Returns only annotations that still have time left — the designer
 // doesn't need to see the cron's graveyard.
@@ -20,24 +24,32 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const modelId = searchParams.get("modelId");
     const projectId = searchParams.get("projectId");
+    const all = searchParams.get("all") === "true";
 
-    if (!modelId && !projectId) {
+    if (!modelId && !projectId && !all) {
       return NextResponse.json(
-        { error: "חסר modelId או projectId" },
+        { error: "חסר modelId או projectId (או all=true)" },
         { status: 400 }
       );
     }
 
     // Scope everything through the designer ownership chain so someone
     // guessing a modelId can't leak another designer's annotations.
-    const where = modelId
+    const where: Prisma.AnnotationWhereInput = modelId
       ? {
           modelId,
           model: { project: { designerId } },
           expiresAt: { gt: new Date() },
         }
+      : projectId
+      ? {
+          model: { projectId, project: { designerId } },
+          expiresAt: { gt: new Date() },
+        }
       : {
-          model: { projectId: projectId!, project: { designerId } },
+          // all=true — every annotation on every model of every project
+          // this designer owns. Still honour TTL.
+          model: { project: { designerId } },
           expiresAt: { gt: new Date() },
         };
 
@@ -49,7 +61,15 @@ export async function GET(req: NextRequest) {
           orderBy: { createdAt: "asc" },
         },
         model: {
-          select: { id: true, title: true, projectId: true },
+          select: {
+            id: true,
+            title: true,
+            projectId: true,
+            originalFormat: true,
+            project: { select: { id: true, title: true } },
+            crmClient: { select: { id: true, name: true } },
+            crmProject: { select: { id: true, name: true } },
+          },
         },
       },
     });
