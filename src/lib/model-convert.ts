@@ -50,14 +50,30 @@ export class ExternalResourcesError extends Error {
 // NodeIO must register the Draco encoder+decoder up front — otherwise
 // transform(draco()) silently leaves geometry unpacked. We create the
 // IO once and memoize, since module loading the WASM is expensive.
+//
+// Same __dirname-is-wrong problem as web-ifc: draco3dgltf's Emscripten
+// bundle uses `__dirname + file` as its default locator, and webpack
+// bundling into the route chunk makes that path point at
+// `/var/task/.next/server/app/<route>/draco_decoder_gltf.wasm` — which
+// doesn't exist. The nft tracer (via outputFileTracingIncludes) copies
+// the .wasm to `node_modules/draco3dgltf/` in the lambda, so we point
+// the locateFile callback at process.cwd() + node_modules/draco3dgltf/.
+// Works locally (cwd=project root) and on Vercel (cwd=/var/task).
+const dracoWasmDir = path.join(process.cwd(), "node_modules", "draco3dgltf");
+const dracoLocateFile = (file: string) => path.join(dracoWasmDir, file);
+
 let ioPromise: Promise<NodeIO> | null = null;
 async function getIO(): Promise<NodeIO> {
   if (!ioPromise) {
     ioPromise = (async () => {
       const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
       io.registerDependencies({
-        "draco3d.decoder": await draco3d.createDecoderModule(),
-        "draco3d.encoder": await draco3d.createEncoderModule(),
+        "draco3d.decoder": await draco3d.createDecoderModule({
+          locateFile: dracoLocateFile,
+        }),
+        "draco3d.encoder": await draco3d.createEncoderModule({
+          locateFile: dracoLocateFile,
+        }),
       });
       return io;
     })();
@@ -174,9 +190,22 @@ async function getAssimp(): Promise<AssimpInstance> {
       // assimpjs exports a CommonJS factory. The top-level call returns
       // a Promise<AssimpInstance>. We dynamic-import so the WASM only
       // loads when actually needed (FBX/DAE uploads are rare).
+      //
+      // Same __dirname-is-wrong problem as web-ifc and draco3dgltf:
+      // webpack bundles the JS into the route chunk so the default
+      // locator searches the wrong directory. Point locateFile at the
+      // nft-copied .wasm in node_modules/assimpjs/dist/.
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const assimpjs = require("assimpjs");
-      return (await assimpjs()) as AssimpInstance;
+      const assimpWasmDir = path.join(
+        process.cwd(),
+        "node_modules",
+        "assimpjs",
+        "dist"
+      );
+      return (await assimpjs({
+        locateFile: (file: string) => path.join(assimpWasmDir, file),
+      })) as AssimpInstance;
     })();
   }
   return assimpPromise;
