@@ -183,14 +183,17 @@ const ThreeDViewer = forwardRef<ThreeDViewerHandle, Props>(function ThreeDViewer
       scene.background = new THREE.Color(0xfafaf8); // Ivory cream
       sceneRef.current = scene;
 
-      // Subtle grid so empty space has orientation. Gold-dim lines matching
-      // the brand palette.
-      const grid = new THREE.GridHelper(50, 50, 0xe5e1d4, 0xe5e1d4);
-      (grid.material as any).opacity = 0.4;
-      (grid.material as any).transparent = true;
-      scene.add(grid);
+      // No ground grid — earlier versions drew a 50x50 GridHelper so empty
+      // scenes had orientation, but for models of varying real-world sizes
+      // (a 2m cube vs a 50m building) the grid was either enormous under a
+      // tiny model or barely visible under a large one, and it never
+      // communicated useful depth. The auto-fit camera below gives
+      // orientation directly from the model's bounding box.
 
       // ── Camera ────────────────────────────────────────────────────────
+      // Initial position is a placeholder — after the model loads we
+      // compute a fit distance from its bounding box and reposition so
+      // every model frames the same regardless of scale.
       const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 2000);
       camera.position.set(6, 5, 6);
       cameraRef.current = camera;
@@ -255,6 +258,28 @@ const ThreeDViewer = forwardRef<ThreeDViewerHandle, Props>(function ThreeDViewer
             modelRoot.scale.setScalar(scale);
           }
           scene.add(modelRoot);
+
+          // Fit the camera to the model's post-scale bounding box so every
+          // upload — 2m cube or 50m building — frames the same way. At
+          // fov=50° the viewport half-height at distance D is D·tan(25°);
+          // we solve for D so the longest model axis fills ~65% of the
+          // viewport (comfortable breathing room). An isometric-ish
+          // direction (1, 0.7, 1) reads depth well without feeling like a
+          // top-down floorplan. Retune OrbitControls min/maxDistance around
+          // the fit distance so zoom feels consistent at any model scale.
+          const fitBox = new THREE.Box3().setFromObject(modelRoot);
+          const fitSize = fitBox.getSize(new THREE.Vector3());
+          const fitMax = Math.max(fitSize.x, fitSize.y, fitSize.z) || 8;
+          const halfFov = (camera.fov * Math.PI) / 360;
+          const distance = fitMax / 2 / Math.tan(halfFov) / 0.65;
+          const dir = new THREE.Vector3(1, 0.7, 1).normalize();
+          camera.position.copy(dir.multiplyScalar(distance));
+          camera.lookAt(0, 0, 0);
+          controls.target.set(0, 0, 0);
+          controls.minDistance = distance * 0.1;
+          controls.maxDistance = distance * 10;
+          controls.update();
+
           onLoadComplete?.();
         },
         (event) => {
