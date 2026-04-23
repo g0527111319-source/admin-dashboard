@@ -281,7 +281,8 @@ function LoginContent() {
                 </TwistButton>
               </form>
 
-              {true && (<div className="mt-6 space-y-4">
+              <div className="mt-6 space-y-4">
+                  {selectedRole !== "admin" && (<>
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-border-subtle"/>
@@ -305,6 +306,7 @@ function LoginContent() {
                       </svg>
                     )}
                     {googleLoading ? "מתחבר..." : "כניסה עם Google"}</button>
+                  </>)}
 
                   <div className="text-center text-sm">
                     <a href="/forgot-password" className="text-gold hover:text-gold-dark transition-colors">
@@ -318,7 +320,7 @@ function LoginContent() {
                         {siteText.auth.common.registerLink}
                       </a>
                     </p>)}
-                </div>)}
+                </div>
 
             </div>)}
         </div>
