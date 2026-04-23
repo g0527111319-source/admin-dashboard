@@ -60,7 +60,7 @@ function LoginContent() {
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
     const handleGoogleLogin = () => {
-        if (!selectedRole || selectedRole === "admin") return;
+        if (!selectedRole) return;
         setGoogleLoading(true);
         const params = new URLSearchParams({ role: selectedRole });
         if (redirect) params.set("redirect", redirect);
@@ -281,7 +281,7 @@ function LoginContent() {
                 </TwistButton>
               </form>
 
-              {selectedRole !== "admin" && (<div className="mt-6 space-y-4">
+              {true && (<div className="mt-6 space-y-4">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-border-subtle"/>
@@ -320,11 +320,6 @@ function LoginContent() {
                     </p>)}
                 </div>)}
 
-              {selectedRole === "admin" && (<p className="text-center text-text-muted text-sm mt-4">
-                  <a href="/forgot-password" className="text-gold hover:text-gold-dark transition-colors">
-                    {siteText.auth.common.forgotPassword}
-                  </a>
-                </p>)}
             </div>)}
         </div>
       </div>

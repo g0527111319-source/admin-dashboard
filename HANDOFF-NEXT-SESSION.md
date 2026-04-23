@@ -213,7 +213,7 @@ npm run lint || true   # עדיף בלי errors חדשים
 
 ---
 
-## 🎯 מצב נוכחי — פאזות 1+2+3+4 הושלמו
+## 🎯 מצב נוכחי — פאזות 1–5 הושלמו + נבדקו בפרודקשן (אפריל 2026)
 
 ### ✅ פאזה 1 (Prisma + R2 upload)
 - Models: `Model3D`, `Annotation`, `AnnotationComment` + enum `AnnotationStatus`
@@ -260,39 +260,109 @@ npm run lint || true   # עדיף בלי errors חדשים
 - `src/types/model-convert.d.ts` — ambient types ל-draco3dgltf ו-obj2gltf
 - UI של models page עודכן: "פורמטים נתמכים: GLB, glTF, OBJ, IFC · עד 500MB"
 
-### ✅ פאזה 5 — חלק ראשון (IFC + dashboard link + thumbnails) — נוסף בסשן הזה
+### ✅ פאזה 5 — מלאה (IFC + Shapes + E2E testing + Admin Google login)
+
+**חלק א' — IFC + dashboard + thumbnails:**
 - `convertIfc()` ב-`src/lib/model-convert.ts` — web-ifc WASM → StreamAllMeshes → CPU-side transform → color-bucketed primitives → @gltf-transform Document → Draco.
 - `IfcAPI.Init(undefined, true)` (single-thread; serverless-friendly).
-- `COORDINATE_TO_ORIGIN: true` כדי שהמודל יהיה סביב origin אחרי המרה (מועיל ל-auto-fit בviewer).
-- קישור מה-dashboard (`src/app/designer/[id]/page.tsx`) ל-`/designer/[id]/models` דרך entry חדש בקבוצת "עיצוב" בסיידבר (עם `href` optional על NavGroup item).
-- **Thumbnail generation:**
-  - `captureThumbnail(maxWidth, quality)` ב-`ThreeDViewerHandle` — render→downscale→`toBlob("image/jpeg")`.
-  - `WebGLRenderer` הוגדר עם `preserveDrawingBuffer: true` כדי ש-toBlob יחזיר פיקסלים אמיתיים.
-  - `POST /api/public/models/[token]/thumbnail` — first-write-wins, magic-byte validation (JPEG/PNG), 300KB cap, rate-limited 30/שעה לפי IP.
-  - `ViewerClient` מפעיל capture 600ms אחרי loadComplete, רק אם אין כבר `thumbnailUrl`.
-  - דף הדשבורד של המודלים מציג thumbnail (88×66) לצד כל רשומה.
+- `COORDINATE_TO_ORIGIN: true` כדי שהמודל יהיה סביב origin אחרי המרה.
+- קישור מה-dashboard (`src/app/designer/[id]/page.tsx`) ל-`/designer/[id]/models`.
+- **Thumbnail generation:** `captureThumbnail` → `toBlob("image/jpeg")` → POST `/api/public/models/[token]/thumbnail`.
+
+**חלק ב' — 4 צורות Annotations בסצנה (commits `454d35e`, `dc2389f`):**
+- `src/lib/annotation-shapes.ts` — **קריטי: קובץ זה היה untracked ולא ב-git; נוסף ב-commit `dc2389f`!** מייצא `ShapeInput`, `ShapeValidated`, `normalizeShape`, `validateShapeInput`, `focusFromShape`. חייב להיות ב-git אחרת Vercel build נכשל.
+- `src/components/viewer/ThreeDViewer.tsx` — נכתב מחדש מלא תמיכה ב-LINE/RECTANGLE/CIRCLE:
+  - Two-click placement ל-LINE ו-RECTANGLE
+  - Center+edge ל-CIRCLE (RingGeometry)
+  - Dual-pass rendering: depth-tested + translucent occluded
+  - Surface-aligned shapes via `tangentBasis()`
+  - Polygon offset -2,-2 + SURFACE_OFFSET=0.004 נגד z-fighting
+  - `focusOnAnnotation(a)` — fly-to עם `easeInOutCubic` על 650ms
+  - Props חדשים: `shape`, `placementMode`, `onShapePlace`, `onPartialPlace`, `annotations`, `highlightedId`
+- `src/app/projects/3d/[token]/ViewerClient.tsx` — shape toolbar תמיד גלוי (position:absolute top:72 right:12), 4 כפתורים, hint bar בתחתית בזמן placement
+- `prisma/schema.prisma` — enum `AnnotationShape { POINT LINE RECTANGLE CIRCLE }`, שדות `pos2X/Y/Z`, `norm2X/Y/Z`, `radius` ב-Annotation model
+
+**חלק ג' — Admin Google OAuth:**
+- `src/app/login/page.tsx` — הוסר חסם Google login לאדמין (הייתה שורה `|| selectedRole === "admin"`). כעת גם אדמין יכול להתחבר עם Google. המייל של מנהלת הקהילה: `z.adrichalut@gmail.com`.
+
+**בדיקות end-to-end על פרודקשן (2026-04-23):**
+| צורה | תוצאה |
+|------|--------|
+| POINT | ✅ |
+| LINE | ✅ (קו זהב בסצנה) |
+| RECTANGLE | ✅ (מלבן זהב בסצנה) |
+| CIRCLE | ✅ (טבעת זהב בסצנה) |
+
+**פורמטי קבצים שנבדקו על פרודקשן:**
+| פורמט | קובץ | תוצאה |
+|-------|------|--------|
+| IFC | BasicHouse.ifc (50.3MB) | ✅ המרה + viewer |
+| GLB | duck.glb (118KB) | ✅ textures מלאות |
+| GLB | avocado.glb (7.9MB) | ✅ PBR textures |
 
 ---
 
-## ⚠️ מה שעדיין חסר (פאזה 5 — המשך Polish)
+## ⚠️ מה שעדיין פתוח
 
 ### 1. 🟡 FBX support
-אין פתרון pure-JS טוב. אפשרויות:
-- Client-side: OBJLoader/FBXLoader של three בדפדפן, export ל-glTF, upload חזרה
-- Binary: `fbx2gltf` של Facebook (צריך container)
-- המלצה: השאר unsupported, תבקש מהמשתמש לייצא ל-glTF מ-3ds Max
+אין פתרון pure-JS טוב. המלצה: השאר unsupported, בקש לייצא ל-glTF מ-3ds Max.
 
-### 3. ✅ Thumbnail generation — בוצע (client-side)
-capture אחרי `onLoadComplete` → JPEG 512 max → POST ל-`/api/public/models/[token]/thumbnail`. first-write-wins.
+### 2. 🔴 Google OAuth Trust & Safety — **בטיפול**
+- **הבעיה:** ב-Google Cloud Console הURL הישן (`zirat-design.vercel.app`) עדיין רשום כ-Homepage + Privacy Policy. גוגל מחזירה שגיאה "unresponsive homepage URL".
+- **מה צריך לעשות (ידני — רק ישראל יכול לעשות):**
+  1. **Google Cloud Console** → APIs & Services → OAuth consent screen → עדכן Homepage URL ל-`https://www.ziratadrichalut.co.il` ועדכן Privacy Policy URL ל-`https://www.ziratadrichalut.co.il/privacy`
+  2. **Domain Verification** → Google Search Console → הוסף Domain Property (לא URL Prefix!) עבור `ziratadrichalut.co.il` → קבל TXT record → הוסף לספק הדומיין → לחץ Verify
+  3. **Demo video חדש** — הקלט סרטון שמראה: (א) כניסה לאתר עם Google OAuth, (ב) מסך הסכמה של Google, (ג) שימוש ביומן CRM
+  4. **שלח תגובה לגוגל** (ראה טיוטה בסוף קובץ זה)
+- **מה כבר בסדר:** `src/app/privacy/page.tsx` כולל תיאור מלא של Google API scopes בעברית ובאנגלית, כולל Limited Use statement. `z.adrichalut@gmail.com` כבר מופיע כאיש קשר בפרטיות ובתנאים.
 
-### 4. ✅ Designer dashboard link — בוצע
-נוסף entry "מודלים תלת-ממדיים" בקבוצת "עיצוב" בסיידבר של הדשבורד (`src/app/designer/[id]/page.tsx`). ה-NavGroup item מקבל `href` אופציונלי ונתיב הוא `/designer/[id]/models`.
+### 3. 🟡 ניקיון
+- Content-Security-Policy של `https://www.gstatic.com/draco/`
+- Rate limit על convert route
+- Mobile touch polish
 
-### 5. 🟡 ניקיון
-- Mobile touch events — OrbitControls תומך native אבל כדאי לבדוק
-- Content-Security-Policy של `https://www.gstatic.com/draco/` (אם יש)
-- Rate limit על convert route (כרגע לא מוגבל)
-- בדיקה עם `npm run build` (נעשה רק `tsc --noEmit`)
+---
+
+## ✉️ טיוטת תגובה לגוגל Trust & Safety
+
+**לשלוח כ-reply לאימייל מ-api-oauth-dev-verification-reply+3t6qfik9uqws21d@google.com:**
+
+```
+Hello Trust & Safety team,
+
+Thank you for your detailed feedback. I have addressed all the items:
+
+1. Homepage URL — Updated to https://www.ziratadrichalut.co.il
+   (the old zirat-design.vercel.app domain is no longer active)
+
+2. Privacy Policy URL — Updated to https://www.ziratadrichalut.co.il/privacy
+   The policy includes a dedicated section (section 4) in both Hebrew and English
+   detailing our use of Google API data, scopes, Limited Use compliance,
+   data retention and deletion procedures, and contact information.
+
+3. Domain Verification — I have verified ziratadrichalut.co.il as a
+   Domain Property (not URL prefix) in Google Search Console using the DNS TXT method.
+   [ADD: "Verification completed on [DATE]" once you do it]
+
+4. Demo Video — New video showing the complete OAuth workflow:
+   [ADD YOUR VIDEO LINK HERE — record: login page → click "כניסה עם Google" →
+    Google consent screen showing scopes → redirect back → CRM calendar page]
+
+5. App Functionality Video — The video also demonstrates the core features:
+   client management (CRM), project portfolio, Google Calendar sync for meetings.
+
+The scopes we request are:
+- openid email profile (sign-in only)
+- https://www.googleapis.com/auth/calendar (only when user explicitly connects
+  Google Calendar in CRM settings, to sync meeting events)
+
+Please let me know if anything else is needed.
+
+Thank you,
+Israel Goldschmid
+ziratadrichalut.co.il
+z.adrichalut@gmail.com
+```
 
 ---
 
