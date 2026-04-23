@@ -177,10 +177,25 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
 
-  // Before/After pair upload state
+  // Caption for the next batch of uploaded images (applied to each image in the batch)
+  const [uploadCaption, setUploadCaption] = useState<string>("");
+
+  // Before/After pair upload state (used in the project images view)
   const [pairBeforeUrl, setPairBeforeUrl] = useState<string>("");
   const [pairAfterUrl, setPairAfterUrl] = useState<string>("");
   const [pairSaving, setPairSaving] = useState(false);
+
+  // Inline edit state (used on the project images view — pencil icons per field)
+  const [inlineField, setInlineField] = useState<string | null>(null);
+  const [inlineDraft, setInlineDraft] = useState<string>("");
+  const [inlineDraftTags, setInlineDraftTags] = useState<string[]>([]);
+  const [inlineSaving, setInlineSaving] = useState(false);
+
+  // Before/After pair upload state (used inside the create/edit form)
+  const [formPairBeforeUrl, setFormPairBeforeUrl] = useState<string>("");
+  const [formPairAfterUrl, setFormPairAfterUrl] = useState<string>("");
+  const [pendingPairs, setPendingPairs] = useState<{ beforeUrl: string; afterUrl: string }[]>([]);
+  const [formPairSaving, setFormPairSaving] = useState(false);
 
   // Image editor state (feature #9)
   const [editingImage, setEditingImage] = useState<ProjectImage | null>(null);
@@ -202,6 +217,16 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   // Portfolio hero image (shown on public portfolio page header)
   const [portfolioHeroImageUrl, setPortfolioHeroImageUrl] = useState<string | null>(null);
   const [savingHero, setSavingHero] = useState(false);
+
+  // Process durations (shown under the 4 steps on public project page)
+  const [processDurations, setProcessDurations] = useState({
+    initialCall: "30 דקות · חינם",
+    initialSketch: "שבועיים",
+    executionSupport: "3-9 חודשים",
+    handoff: "עם חיוך",
+  });
+  const [processOpen, setProcessOpen] = useState(false);
+  const [savingProcess, setSavingProcess] = useState(false);
 
   // Bulk selection state (feature #10)
   const [selectionMode, setSelectionMode] = useState(false);
@@ -253,6 +278,26 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         if (res.ok && !cancelled) {
           const data = await res.json();
           setPortfolioHeroImageUrl(data.portfolioHeroImageUrl || null);
+          let pd: Record<string, unknown> | null = null;
+          if (data.processDurations) {
+            if (typeof data.processDurations === "string") {
+              try {
+                pd = JSON.parse(data.processDurations);
+              } catch {
+                pd = null;
+              }
+            } else if (typeof data.processDurations === "object") {
+              pd = data.processDurations as Record<string, unknown>;
+            }
+          }
+          if (pd) {
+            setProcessDurations((prev) => ({
+              initialCall: typeof pd!.initialCall === "string" ? (pd!.initialCall as string) : prev.initialCall,
+              initialSketch: typeof pd!.initialSketch === "string" ? (pd!.initialSketch as string) : prev.initialSketch,
+              executionSupport: typeof pd!.executionSupport === "string" ? (pd!.executionSupport as string) : prev.executionSupport,
+              handoff: typeof pd!.handoff === "string" ? (pd!.handoff as string) : prev.handoff,
+            }));
+          }
         }
       } catch {
         /* ignore */
@@ -285,6 +330,79 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     }
   }, [showToast]);
 
+  const startInlineEdit = useCallback((field: string, currentValue: string | string[]) => {
+    setInlineField(field);
+    if (Array.isArray(currentValue)) {
+      setInlineDraftTags(currentValue);
+      setInlineDraft("");
+    } else {
+      setInlineDraft(currentValue ?? "");
+      setInlineDraftTags([]);
+    }
+  }, []);
+
+  const cancelInlineEdit = useCallback(() => {
+    setInlineField(null);
+    setInlineDraft("");
+    setInlineDraftTags([]);
+  }, []);
+
+  const saveInlineField = useCallback(async (field: string) => {
+    if (!selectedProject) return;
+    setInlineSaving(true);
+    try {
+      const body: Record<string, unknown> = {};
+      if (field === "styleTags") {
+        body.styleTags = inlineDraftTags;
+      } else if (field === "description") {
+        body.description = inlineDraft.trim() ? inlineDraft : null;
+      } else {
+        body[field] = inlineDraft;
+      }
+      const res = await fetch(`/api/designer/projects/${selectedProject.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setSelectedProject(updated);
+        await fetchProjects();
+        showToast("נשמר");
+        setInlineField(null);
+        setInlineDraft("");
+        setInlineDraftTags([]);
+      } else {
+        showToast("שגיאה בשמירה");
+      }
+    } catch {
+      showToast("שגיאה בשמירה");
+    } finally {
+      setInlineSaving(false);
+    }
+  }, [selectedProject, inlineDraft, inlineDraftTags, fetchProjects, showToast]);
+
+  const saveProcessDurations = useCallback(async () => {
+    setSavingProcess(true);
+    try {
+      const res = await fetch("/api/designer/crm/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ processDurations }),
+      });
+      if (res.ok) {
+        showToast("זמני התהליך נשמרו");
+        setProcessOpen(false);
+      } else {
+        showToast("שגיאה בשמירה");
+      }
+    } catch {
+      showToast("שגיאה בשמירה");
+    } finally {
+      setSavingProcess(false);
+    }
+  }, [processDurations, showToast]);
+
   // ===== FORM ACTIONS =====
   const openCreate = () => {
     if (projects.length >= MAX_PROJECTS_PER_DESIGNER) {
@@ -294,6 +412,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     setEditingProject(null);
     setForm(EMPTY_FORM);
     setPendingImages([]);
+    setFormPairBeforeUrl("");
+    setFormPairAfterUrl("");
+    setPendingPairs([]);
     setError("");
     setView("form");
   };
@@ -301,6 +422,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   const openEdit = (project: Project) => {
     setEditingProject(project);
     setPendingImages([]);
+    setFormPairBeforeUrl("");
+    setFormPairAfterUrl("");
+    setPendingPairs([]);
     setForm({
       title: project.title,
       description: project.description || "",
@@ -326,6 +450,12 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     setUploadError("");
     setUploading(false);
     setBrokenImages(new Set());
+    setUploadCaption("");
+    setPairBeforeUrl("");
+    setPairAfterUrl("");
+    setInlineField(null);
+    setInlineDraft("");
+    setInlineDraftTags([]);
     setSelectionMode(false);
     setSelectedImageIds(new Set());
     setBulkConfirmOpen(false);
@@ -373,21 +503,32 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         throw new Error(data.error || "שגיאה בשמירה");
       }
 
-      // If this was a new project with pending images, upload them now
-      if (!editingProject && pendingImages.length > 0) {
+      // If this was a new project with pending images / pairs, upload them now
+      if (!editingProject && (pendingImages.length > 0 || pendingPairs.length > 0)) {
         try {
           const createdProject = await res.clone().json();
           const newProjectId = createdProject?.id;
           if (newProjectId) {
-            const limit = Math.min(pendingImages.length, MAX_IMAGES_PER_PROJECT);
-            for (let i = 0; i < limit; i++) {
+            let order = 0;
+            const imgLimit = Math.min(pendingImages.length, MAX_IMAGES_PER_PROJECT);
+            for (let i = 0; i < imgLimit; i++) {
               await fetch(`/api/designer/projects/${newProjectId}/images`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  imageUrl: pendingImages[i],
-                  sortOrder: i,
-                }),
+                body: JSON.stringify({ imageUrl: pendingImages[i], sortOrder: order++ }),
+              });
+            }
+            for (const pair of pendingPairs) {
+              if (order + 2 > MAX_IMAGES_PER_PROJECT) break;
+              await fetch(`/api/designer/projects/${newProjectId}/images`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageUrl: pair.beforeUrl, caption: "לפני", sortOrder: order++ }),
+              });
+              await fetch(`/api/designer/projects/${newProjectId}/images`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageUrl: pair.afterUrl, caption: "אחרי", sortOrder: order++ }),
               });
             }
           }
@@ -396,6 +537,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         }
       }
       setPendingImages([]);
+      setPendingPairs([]);
+      setFormPairBeforeUrl("");
+      setFormPairAfterUrl("");
 
       await fetchProjects();
       setView("list");
@@ -1009,6 +1153,189 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
           </div>
         </div>
 
+        {/* Inline-editable project details — click pencil to edit, save to persist */}
+        <div className="card-static space-y-4">
+          <h3 className="text-sm font-semibold text-text flex items-center gap-2">
+            <Pencil className="w-4 h-4 text-gold" />
+            פרטי הפרויקט — ערכי כל שדה ישירות
+          </h3>
+
+          {/* Title */}
+          <div className="border-b border-border pb-3">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="text-xs font-semibold text-text-muted">שם הפרויקט</label>
+              {inlineField !== "title" && (
+                <button type="button" onClick={() => startInlineEdit("title", selectedProject.title)} className="text-gold hover:text-gold-dim p-1" aria-label="ערוך שם">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {inlineField === "title" ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={inlineDraft}
+                  onChange={(e) => setInlineDraft(e.target.value)}
+                  className="input-field flex-1"
+                />
+                <button type="button" onClick={() => saveInlineField("title")} disabled={inlineSaving} className="btn-gold text-sm">
+                  <Save className="w-3.5 h-3.5" />{inlineSaving ? "שומר..." : "שמור"}
+                </button>
+                <button type="button" onClick={cancelInlineEdit} className="text-text-muted hover:text-text text-sm px-2">ביטול</button>
+              </div>
+            ) : (
+              <div className="text-sm text-text">{selectedProject.title}</div>
+            )}
+          </div>
+
+          {/* Description */}
+          <div className="border-b border-border pb-3">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="text-xs font-semibold text-text-muted">פרטים נוספים על הפרויקט</label>
+              {inlineField !== "description" && (
+                <button type="button" onClick={() => startInlineEdit("description", selectedProject.description || "")} className="text-gold hover:text-gold-dim p-1" aria-label="ערוך תיאור">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {inlineField === "description" ? (
+              <div className="space-y-2">
+                <textarea
+                  value={inlineDraft}
+                  onChange={(e) => setInlineDraft(e.target.value)}
+                  rows={5}
+                  className="input-field w-full resize-none"
+                  placeholder={g(gdr, "תאר את הפרויקט...", "תארי את הפרויקט...")}
+                />
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => saveInlineField("description")} disabled={inlineSaving} className="btn-gold text-sm">
+                    <Save className="w-3.5 h-3.5" />{inlineSaving ? "שומר..." : "שמור"}
+                  </button>
+                  <button type="button" onClick={cancelInlineEdit} className="text-text-muted hover:text-text text-sm px-2">ביטול</button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-text whitespace-pre-wrap">{selectedProject.description || <span className="text-text-muted">— לא נכתב טקסט —</span>}</div>
+            )}
+          </div>
+
+          {/* Category */}
+          <div className="border-b border-border pb-3">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="text-xs font-semibold text-text-muted">קטגוריה</label>
+              {inlineField !== "category" && (
+                <button type="button" onClick={() => startInlineEdit("category", selectedProject.category)} className="text-gold hover:text-gold-dim p-1" aria-label="ערוך קטגוריה">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {inlineField === "category" ? (
+              <div className="flex items-center gap-2">
+                <select value={inlineDraft} onChange={(e) => setInlineDraft(e.target.value)} className="select-field flex-1">
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={() => saveInlineField("category")} disabled={inlineSaving} className="btn-gold text-sm">
+                  <Save className="w-3.5 h-3.5" />{inlineSaving ? "שומר..." : "שמור"}
+                </button>
+                <button type="button" onClick={cancelInlineEdit} className="text-text-muted hover:text-text text-sm px-2">ביטול</button>
+              </div>
+            ) : (
+              <div className="text-sm text-text">{getCategoryLabel(selectedProject.category)}</div>
+            )}
+          </div>
+
+          {/* Style tags */}
+          <div className="border-b border-border pb-3">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="text-xs font-semibold text-text-muted">סגנונות</label>
+              {inlineField !== "styleTags" && (
+                <button type="button" onClick={() => startInlineEdit("styleTags", selectedProject.styleTags)} className="text-gold hover:text-gold-dim p-1" aria-label="ערוך סגנונות">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {inlineField === "styleTags" ? (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {STYLE_TAGS.map((tag) => {
+                    const active = inlineDraftTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setInlineDraftTags((prev) => active ? prev.filter((t) => t !== tag) : [...prev, tag])}
+                        className={active ? "badge badge-gold cursor-pointer" : "badge badge-gray cursor-pointer"}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => saveInlineField("styleTags")} disabled={inlineSaving} className="btn-gold text-sm">
+                    <Save className="w-3.5 h-3.5" />{inlineSaving ? "שומר..." : "שמור"}
+                  </button>
+                  <button type="button" onClick={cancelInlineEdit} className="text-text-muted hover:text-text text-sm px-2">ביטול</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedProject.styleTags.length === 0 ? (
+                  <span className="text-sm text-text-muted">— לא נבחרו —</span>
+                ) : (
+                  selectedProject.styleTags.map((tag) => (
+                    <span key={tag} className="badge badge-gold">{tag}</span>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Status */}
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="text-xs font-semibold text-text-muted">סטטוס</label>
+              {inlineField !== "status" && (
+                <button type="button" onClick={() => startInlineEdit("status", selectedProject.status)} className="text-gold hover:text-gold-dim p-1" aria-label="ערוך סטטוס">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {inlineField === "status" ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setInlineDraft("public")}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${inlineDraft === "public" ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-bg-surface border-border text-text-muted"}`}
+                >
+                  <Eye className="w-3.5 h-3.5" />ציבורי
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInlineDraft("private")}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${inlineDraft === "private" ? "bg-orange-50 border-orange-300 text-orange-700" : "bg-bg-surface border-border text-text-muted"}`}
+                >
+                  <EyeOff className="w-3.5 h-3.5" />פרטי
+                </button>
+                <button type="button" onClick={() => saveInlineField("status")} disabled={inlineSaving} className="btn-gold text-sm">
+                  <Save className="w-3.5 h-3.5" />{inlineSaving ? "שומר..." : "שמור"}
+                </button>
+                <button type="button" onClick={cancelInlineEdit} className="text-text-muted hover:text-text text-sm px-2">ביטול</button>
+              </div>
+            ) : (
+              <div className="text-sm text-text">
+                {selectedProject.status === "public" ? (
+                  <span className="inline-flex items-center gap-1 text-emerald-700"><Eye className="w-3.5 h-3.5" />ציבורי</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-orange-700"><EyeOff className="w-3.5 h-3.5" />פרטי</span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Add Image — split into Main + Secondary (feature #11) */}
         <div className="card-static space-y-5">
           {/* Limits info */}
@@ -1100,24 +1427,44 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 הגעת למקסימום {MAX_IMAGES_PER_PROJECT} תמונות לפרויקט. {g(gdr, "מחק תמונה קיימת כדי להוסיף חדשה.", "מחקי תמונה קיימת כדי להוסיף חדשה.")}
               </div>
             ) : (
-              <FileUpload
-                category="image"
-                folder="portfolio"
-                label="העלאת תמונות לפרויקט (ניתן לבחור כמה)"
-                multiple
-                skipEditor
-                maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
-                onUpload={async (file: UploadedFile) => {
-                  if (!selectedProject) return;
-                  try {
-                    const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        imageUrl: file.url,
-                        sortOrder: projectImages.length,
-                      }),
-                    });
+              <>
+                {/* Prominent caption input — applied to all images in the next batch */}
+                <div className="mb-3 bg-gold-50 border-2 border-border-gold rounded-xl p-3">
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-gold-dim mb-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    כיתוב לתמונות (אופציונלי — יוחל על כל התמונות שתעלי עכשיו)
+                  </label>
+                  <input
+                    type="text"
+                    value={uploadCaption}
+                    onChange={(e) => setUploadCaption(e.target.value)}
+                    placeholder={'לדוגמה: "סלון — מבט מהכניסה"'}
+                    className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white"
+                  />
+                  <p className="text-[11px] text-text-muted mt-1.5 m-0">
+                    טיפ: התחילי את הכיתוב ב־&ldquo;לפני&rdquo; או &ldquo;אחרי&rdquo; כדי להציג את התמונות כמחוון השוואה אוטומטי בדף הציבורי.
+                  </p>
+                </div>
+
+                <FileUpload
+                  category="image"
+                  folder="portfolio"
+                  label="העלאת תמונות לפרויקט (ניתן לבחור כמה)"
+                  multiple
+                  skipEditor
+                  maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+                  onUpload={async (file: UploadedFile) => {
+                    if (!selectedProject) return;
+                    try {
+                      const res = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          imageUrl: file.url,
+                          caption: uploadCaption.trim() || undefined,
+                          sortOrder: projectImages.length,
+                        }),
+                      });
                     if (res.ok) {
                       const image = await res.json();
                       setProjectImages((prev) => [...prev, image]);
@@ -1139,8 +1486,9 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                     console.error("Add image error", e);
                   }
                 }}
-                onError={(err: string) => alert(err)}
-              />
+                  onError={(err: string) => alert(err)}
+                />
+              </>
             )}
           </div>
         </div>
@@ -1761,6 +2109,150 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
             </div>
           )}
 
+          {/* Before/After pairs */}
+          <div>
+            <label className="form-label flex items-center gap-2">
+              <ImagePlus className="w-4 h-4 text-gold" />
+              צמדי לפני / אחרי (אופציונלי)
+            </label>
+            <p className="text-xs text-text-muted mb-3">
+              העלי זוגות של תמונות &ldquo;לפני&rdquo; ו&ldquo;אחרי&rdquo;. הן יוצגו כמחוון השוואה בדף הציבורי, אחרי הגלריה הרגילה.
+            </p>
+
+            {/* Existing pairs list (for edit: the pairs already exist in projectImages; here we show pendingPairs) */}
+            {pendingPairs.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                {pendingPairs.map((pair, idx) => (
+                  <div key={`${pair.beforeUrl}-${idx}`} className="flex gap-2 items-center border border-border rounded-xl p-2 bg-bg-surface">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <div className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={pair.beforeUrl} alt="לפני" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-1 right-1 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">לפני</span>
+                      </div>
+                      <div className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={pair.afterUrl} alt="אחרי" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-1 right-1 text-[10px] bg-black/70 text-white px-1.5 py-0.5 rounded">אחרי</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPendingPairs(prev => prev.filter((_, i) => i !== idx))}
+                      className="text-red-600 hover:text-red-800 p-1"
+                      aria-label="הסר צמד"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border border-border rounded-xl p-3 bg-bg-surface">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <div className="text-xs font-semibold text-text mb-2">לפני</div>
+                  {formPairBeforeUrl ? (
+                    <div className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={formPairBeforeUrl} alt="לפני" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormPairBeforeUrl("")}
+                        className="absolute top-2 left-2 bg-white/90 text-red-700 text-xs px-2 py-1 rounded-md border border-red-200"
+                      >
+                        הסר
+                      </button>
+                    </div>
+                  ) : (
+                    <FileUpload
+                      category="image"
+                      folder="portfolio"
+                      label="בחר תמונת 'לפני'"
+                      skipEditor
+                      maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+                      onUpload={(file: UploadedFile) => setFormPairBeforeUrl(file.url)}
+                      onError={(err: string) => alert(err)}
+                    />
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-text mb-2">אחרי</div>
+                  {formPairAfterUrl ? (
+                    <div className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={formPairAfterUrl} alt="אחרי" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormPairAfterUrl("")}
+                        className="absolute top-2 left-2 bg-white/90 text-red-700 text-xs px-2 py-1 rounded-md border border-red-200"
+                      >
+                        הסר
+                      </button>
+                    </div>
+                  ) : (
+                    <FileUpload
+                      category="image"
+                      folder="portfolio"
+                      label="בחר תמונת 'אחרי'"
+                      skipEditor
+                      maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+                      onUpload={(file: UploadedFile) => setFormPairAfterUrl(file.url)}
+                      onError={(err: string) => alert(err)}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-3">
+                <button
+                  type="button"
+                  disabled={!formPairBeforeUrl || !formPairAfterUrl || formPairSaving}
+                  onClick={async () => {
+                    if (!formPairBeforeUrl || !formPairAfterUrl) return;
+                    if (editingProject) {
+                      setFormPairSaving(true);
+                      try {
+                        const baseOrder = (editingProject.images?.length || 0);
+                        const beforeRes = await fetch(`/api/designer/projects/${editingProject.id}/images`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ imageUrl: formPairBeforeUrl, caption: "לפני", sortOrder: baseOrder }),
+                        });
+                        const afterRes = await fetch(`/api/designer/projects/${editingProject.id}/images`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ imageUrl: formPairAfterUrl, caption: "אחרי", sortOrder: baseOrder + 1 }),
+                        });
+                        if (beforeRes.ok && afterRes.ok) {
+                          setFormPairBeforeUrl("");
+                          setFormPairAfterUrl("");
+                          showToast("הצמד נוסף לפרויקט");
+                          await fetchProjects();
+                        } else {
+                          alert("שגיאה בשמירת הצמד");
+                        }
+                      } catch (e) {
+                        console.error("Form pair save error", e);
+                        alert("שגיאה בשמירת הצמד");
+                      } finally {
+                        setFormPairSaving(false);
+                      }
+                    } else {
+                      setPendingPairs(prev => [...prev, { beforeUrl: formPairBeforeUrl, afterUrl: formPairAfterUrl }]);
+                      setFormPairBeforeUrl("");
+                      setFormPairAfterUrl("");
+                    }
+                  }}
+                  className="btn-gold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {formPairSaving ? "שומר..." : editingProject ? "הוסף צמד לפרויקט" : "הוסף צמד לרשימה"}
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Status */}
           <div>
             <label className="form-label">סטטוס</label>
@@ -1967,6 +2459,86 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
               </button>
             )}
           </div>
+        </div>
+
+        {/* ===== PROCESS DURATIONS EDITOR ===== */}
+        <div className="mt-5 bg-bg-card border border-border rounded-[14px] p-4">
+          <button
+            type="button"
+            onClick={() => setProcessOpen((v) => !v)}
+            className="w-full flex items-center justify-between gap-3 text-right"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-[38px] h-[38px] rounded-[10px] bg-gold-50 text-gold-dim grid place-items-center">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-text">זמני תהליך בדף הציבורי</div>
+                <p className="text-xs text-text-muted m-0 mt-0.5">
+                  הכיתובים הקטנים תחת 4 שלבי התהליך (שיחה ראשונית / סקיצה / ליווי ביצוע / מסירה) שמוצגים ללקוח בדף הפרויקט.
+                </p>
+              </div>
+            </div>
+            <ChevronLeft
+              className={`w-4 h-4 text-text-muted transition-transform ${processOpen ? "-rotate-90" : "rotate-0"}`}
+            />
+          </button>
+
+          {processOpen && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-text mb-1">שיחה ראשונית</label>
+                <input
+                  type="text"
+                  value={processDurations.initialCall}
+                  onChange={(e) => setProcessDurations((prev) => ({ ...prev, initialCall: e.target.value }))}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white"
+                  placeholder="30 דקות · חינם"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-text mb-1">סקיצה ראשונית</label>
+                <input
+                  type="text"
+                  value={processDurations.initialSketch}
+                  onChange={(e) => setProcessDurations((prev) => ({ ...prev, initialSketch: e.target.value }))}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white"
+                  placeholder="שבועיים"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-text mb-1">ליווי ביצוע</label>
+                <input
+                  type="text"
+                  value={processDurations.executionSupport}
+                  onChange={(e) => setProcessDurations((prev) => ({ ...prev, executionSupport: e.target.value }))}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white"
+                  placeholder="3-9 חודשים"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-text mb-1">מסירה</label>
+                <input
+                  type="text"
+                  value={processDurations.handoff}
+                  onChange={(e) => setProcessDurations((prev) => ({ ...prev, handoff: e.target.value }))}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white"
+                  placeholder="עם חיוך"
+                />
+              </div>
+              <div className="sm:col-span-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={saveProcessDurations}
+                  disabled={savingProcess}
+                  className="btn-gold text-sm disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {savingProcess ? "שומר..." : "שמור"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ===== KPI STRIP ===== */}
