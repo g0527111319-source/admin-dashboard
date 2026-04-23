@@ -226,8 +226,10 @@ export default function ProjectDetailClient({
     }
   }, [project]);
 
-  // Pair "לפני"/"אחרי" captions by order of appearance.
-  const beforeAfterPairs: BeforeAfterPair[] = useMemo(() => {
+  // Pair "לפני"/"אחרי" captions by order of appearance, and compute the set of
+  // image ids that participated in a pair so we can exclude them from the
+  // regular gallery (they render in the comparison slider instead).
+  const { beforeAfterPairs, pairedImageIds } = useMemo(() => {
     const befores: ProjectImage[] = [];
     const afters: ProjectImage[] = [];
     for (const img of project.images) {
@@ -237,6 +239,7 @@ export default function ProjectDetailClient({
     }
     const count = Math.min(befores.length, afters.length);
     const out: BeforeAfterPair[] = [];
+    const paired = new Set<string>();
     for (let i = 0; i < count; i++) {
       out.push({
         beforeUrl: befores[i].imageUrl,
@@ -244,9 +247,16 @@ export default function ProjectDetailClient({
         beforeCaption: befores[i].caption,
         afterCaption: afters[i].caption,
       });
+      paired.add(befores[i].id);
+      paired.add(afters[i].id);
     }
-    return out;
+    return { beforeAfterPairs: out, pairedImageIds: paired };
   }, [project.images]);
+
+  const galleryImages = useMemo(
+    () => project.images.filter((img) => !pairedImageIds.has(img.id)),
+    [project.images, pairedImageIds]
+  );
 
   const descParagraphs = (project.description || "")
     .split(/\n\s*\n/)
@@ -264,9 +274,9 @@ export default function ProjectDetailClient({
   return (
     <div className="min-h-screen bg-bg text-text">
       {/* Lightbox */}
-      {lightboxIndex !== null && project.images.length > 0 && (
+      {lightboxIndex !== null && galleryImages.length > 0 && (
         <Lightbox
-          images={project.images}
+          images={galleryImages}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
         />
@@ -594,30 +604,15 @@ export default function ProjectDetailClient({
           </aside>
         </div>
 
-        {/* ========= BEFORE / AFTER ========= */}
-        {beforeAfterPairs.length > 0 && (
-          <section className="my-8">
-            <div className="flex items-baseline justify-between flex-wrap gap-2.5 mb-4">
-              <h3 className="font-heading font-medium text-[28px] tracking-[-0.4px] m-0 text-text">
-                לפני / אחרי
-              </h3>
-              <span className="text-[13px] text-text-muted">
-                {beforeAfterPairs.length} {beforeAfterPairs.length === 1 ? "השוואה" : "השוואות"} · גררו את הידית
-              </span>
-            </div>
-            <BeforeAfterSlider pairs={beforeAfterPairs} />
-          </section>
-        )}
-
         {/* ========= GALLERY MASONRY ========= */}
-        {project.images.length > 0 && (
+        {galleryImages.length > 0 && (
           <div>
             <div className="flex items-baseline justify-between flex-wrap gap-2.5 mt-7 mb-4">
               <h3 className="font-heading font-medium text-[28px] tracking-[-0.4px] m-0 text-text">
                 הגלריה המלאה
               </h3>
               <span className="text-[13px] text-text-muted">
-                {project.images.length} תמונות · לחצו להגדלה
+                {galleryImages.length} תמונות · לחצו להגדלה
               </span>
             </div>
 
@@ -630,7 +625,7 @@ export default function ProjectDetailClient({
                 @media (max-width: 550px) { .masonry-gallery { columns: 1 !important; } }
               `}</style>
               <div className="masonry-gallery" style={{ columns: "inherit", columnGap: "inherit" }}>
-                {project.images.map((image, index) => (
+                {galleryImages.map((image, index) => (
                   <button
                     key={image.id}
                     onClick={() => setLightboxIndex(index)}
@@ -660,6 +655,21 @@ export default function ProjectDetailClient({
               </div>
             </div>
           </div>
+        )}
+
+        {/* ========= BEFORE / AFTER ========= */}
+        {beforeAfterPairs.length > 0 && (
+          <section className="my-8">
+            <div className="flex items-baseline justify-between flex-wrap gap-2.5 mb-4">
+              <h3 className="font-heading font-medium text-[28px] tracking-[-0.4px] m-0 text-text">
+                לפני / אחרי
+              </h3>
+              <span className="text-[13px] text-text-muted">
+                {beforeAfterPairs.length} {beforeAfterPairs.length === 1 ? "השוואה" : "השוואות"} · גררו את הידית
+              </span>
+            </div>
+            <BeforeAfterSlider pairs={beforeAfterPairs} />
+          </section>
         )}
 
         {/* ========= PROCESS STRIP ========= */}

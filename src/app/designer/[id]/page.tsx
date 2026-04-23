@@ -21,7 +21,6 @@ import CrmQuotes from "@/components/crm/CrmQuotes";
 import CrmTimeTracking from "@/components/crm/CrmTimeTracking";
 import CrmSurveys from "@/components/crm/CrmSurveys";
 import CrmApprovals from "@/components/crm/CrmApprovals";
-import CrmBeforeAfter from "@/components/crm/CrmBeforeAfter";
 import CrmHandoffChecklist from "@/components/crm/CrmHandoffChecklist";
 import CrmOnboarding from "@/components/crm/CrmOnboarding";
 import CrmChat from "@/components/crm/CrmChat";
@@ -104,7 +103,7 @@ type DealHistoryItem = {
 // NOTE: "projects" tab was removed — projects now live only nested inside a
 // specific client's view (CrmClients → selected client → "פרויקטים" sub-tab).
 // See redirect handling in the hash-init useEffect below for legacy links.
-type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "before-after" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks" | "leads";
+type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks" | "leads";
 
 interface NavGroup {
   title: string;
@@ -154,7 +153,6 @@ const navGroups: NavGroup[] = [
     title: "עיצוב",
     items: [
       { key: "portfolio", label: "תיק עבודות", icon: FolderKanban },
-      { key: "before-after", label: "לפני/אחרי", icon: Grid3X3 },
       { key: "style-quiz", label: "שאלון סגנון", icon: Star },
       { key: "crm-suppliers", label: "ספקים שלי", icon: Building2 },
       // 3D models live on their own route so the viewer can own the whole
@@ -1215,9 +1213,6 @@ export default function DesignerDashboard() {
             )}
             {activeTab === "approvals" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmApprovals gender={gender} /></FeatureGate>
-            )}
-            {activeTab === "before-after" && (
-              <FeatureGate feature="crm" designerId={designerIdForGate}><CrmBeforeAfter gender={gender} /></FeatureGate>
             )}
             {activeTab === "handoff" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmHandoffChecklist gender={gender} /></FeatureGate>

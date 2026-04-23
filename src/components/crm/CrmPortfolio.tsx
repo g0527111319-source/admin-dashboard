@@ -177,6 +177,11 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
 
+  // Before/After pair upload state
+  const [pairBeforeUrl, setPairBeforeUrl] = useState<string>("");
+  const [pairAfterUrl, setPairAfterUrl] = useState<string>("");
+  const [pairSaving, setPairSaving] = useState(false);
+
   // Image editor state (feature #9)
   const [editingImage, setEditingImage] = useState<ProjectImage | null>(null);
   const [editingImageFile, setEditingImageFile] = useState<File | null>(null);
@@ -1137,6 +1142,121 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
                 onError={(err: string) => alert(err)}
               />
             )}
+          </div>
+        </div>
+
+        {/* Before/After pair upload — creates two images with captions "לפני" / "אחרי"
+            which auto-pair into a comparison slider on the public project page. */}
+        <div className="card-static space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-1 flex items-center gap-2">
+              <ImagePlus className="w-4 h-4 text-gold" />
+              צמד לפני / אחרי
+            </h3>
+            <p className="text-xs text-text-muted">
+              העלי שתי תמונות — אחת לפני ואחת אחרי. הן יוצגו ביחד כמחוון השוואה בדף הציבורי של הפרויקט, אחרי תמונות הפרויקט הרגילות.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div className="text-xs font-semibold text-text mb-2">לפני</div>
+              {pairBeforeUrl ? (
+                <div className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                  <img src={pairBeforeUrl} alt="לפני" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setPairBeforeUrl("")}
+                    className="absolute top-2 left-2 bg-white/90 text-red-700 text-xs px-2 py-1 rounded-md border border-red-200"
+                  >
+                    הסר
+                  </button>
+                </div>
+              ) : (
+                <FileUpload
+                  category="image"
+                  folder="portfolio"
+                  label="בחר תמונת 'לפני'"
+                  skipEditor
+                  maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+                  onUpload={(file: UploadedFile) => setPairBeforeUrl(file.url)}
+                  onError={(err: string) => alert(err)}
+                />
+              )}
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-text mb-2">אחרי</div>
+              {pairAfterUrl ? (
+                <div className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                  <img src={pairAfterUrl} alt="אחרי" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setPairAfterUrl("")}
+                    className="absolute top-2 left-2 bg-white/90 text-red-700 text-xs px-2 py-1 rounded-md border border-red-200"
+                  >
+                    הסר
+                  </button>
+                </div>
+              ) : (
+                <FileUpload
+                  category="image"
+                  folder="portfolio"
+                  label="בחר תמונת 'אחרי'"
+                  skipEditor
+                  maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+                  onUpload={(file: UploadedFile) => setPairAfterUrl(file.url)}
+                  onError={(err: string) => alert(err)}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              disabled={!pairBeforeUrl || !pairAfterUrl || pairSaving || projectImages.length + 2 > MAX_IMAGES_PER_PROJECT}
+              onClick={async () => {
+                if (!selectedProject || !pairBeforeUrl || !pairAfterUrl) return;
+                if (projectImages.length + 2 > MAX_IMAGES_PER_PROJECT) {
+                  alert(`הגעת למקסימום ${MAX_IMAGES_PER_PROJECT} תמונות לפרויקט`);
+                  return;
+                }
+                setPairSaving(true);
+                try {
+                  const baseOrder = projectImages.length;
+                  const beforeRes = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ imageUrl: pairBeforeUrl, caption: "לפני", sortOrder: baseOrder }),
+                  });
+                  const afterRes = await fetch(`/api/designer/projects/${selectedProject.id}/images`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ imageUrl: pairAfterUrl, caption: "אחרי", sortOrder: baseOrder + 1 }),
+                  });
+                  if (beforeRes.ok && afterRes.ok) {
+                    const before = await beforeRes.json();
+                    const after = await afterRes.json();
+                    setProjectImages((prev) => [...prev, before, after]);
+                    setPairBeforeUrl("");
+                    setPairAfterUrl("");
+                    showToast("הצמד נוסף לפרויקט");
+                    await fetchProjects();
+                  } else {
+                    alert("שגיאה בשמירת הצמד");
+                  }
+                } catch (e) {
+                  console.error("Save pair error", e);
+                  alert("שגיאה בשמירת הצמד");
+                } finally {
+                  setPairSaving(false);
+                }
+              }}
+              className="btn-gold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {pairSaving ? "שומר..." : "הוסף צמד לפרויקט"}
+            </button>
           </div>
         </div>
 
