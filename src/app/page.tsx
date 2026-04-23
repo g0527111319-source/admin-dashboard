@@ -96,10 +96,10 @@ const pillars: Pillar[] = [
 ];
 
 const stats = [
-  { value: "+120", label: "מעצבות בקהילה" },
-  { value: "+45", label: "ספקים מובחרים" },
-  { value: "24/7", label: "תמיכה וליווי" },
-  { value: "100%", label: "נשים בתעשייה" },
+  { value: "+1200", label: "מעצבות מובילות" },
+  { value: "+50", label: "ספקים מובילים" },
+  { value: "24/6", label: "עזרה הדדית" },
+  { value: "+60", label: "הצעות עבודה למעצבות בשנה" },
 ] as const;
 
 const galleryImages = [
@@ -216,7 +216,7 @@ export default function HomePage() {
               custom={2}
               className="leading-[1.02] text-[2.75rem] sm:text-6xl lg:text-[5.5rem] text-[#1a1410] tracking-tight"
             >
-              <span className="font-suez">איפה שהעיצוב</span>
+              <span className="font-suez">כשעולם העיצוב</span>
               <GoldText className="block mt-4 font-bellefair">
                 פוגש משפחה
               </GoldText>
