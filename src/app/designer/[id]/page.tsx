@@ -441,7 +441,7 @@ export default function DesignerDashboard() {
               <div className="flex items-center gap-3">
                 <div className="avatar-gold flex-shrink-0">
                   {designerData.designerLogo ? (
-                    <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden" style={{ boxShadow: '0 0 20px rgba(201, 168, 76, 0.3)' }}>
+                    <div className="w-10 h-10 rounded-xl border-2 border-gold overflow-hidden" style={{ boxShadow: '0 0 20px rgba(201, 168, 76, 0.3)' }}>
                       <Image src={designerData.designerLogo} alt={designerData.fullName} width={40} height={40} className="w-full h-full object-contain" />
                     </div>
                   ) : (
@@ -565,7 +565,7 @@ export default function DesignerDashboard() {
             {/* User Badge */}
             <div className="hidden sm:flex items-center gap-2 text-xs text-text-muted bg-bg-surface/80 rounded-xl px-3 py-2 backdrop-blur-sm">
               {designerData.designerLogo ? (
-                <div className="w-6 h-6 rounded-full border border-gold overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 10px rgba(201, 168, 76, 0.2)' }}>
+                <div className="w-6 h-6 rounded-md border border-gold overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 10px rgba(201, 168, 76, 0.2)' }}>
                   <Image src={designerData.designerLogo} alt={designerData.fullName} width={24} height={24} className="w-full h-full object-contain" />
                 </div>
               ) : (
@@ -802,7 +802,7 @@ export default function DesignerDashboard() {
                     {/* Letterhead style preview */}
                     <div className="flex items-center gap-3 pb-3 border-b border-border-subtle">
                       {designerData.designerLogo ? (
-                        <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
+                        <div className="w-10 h-10 rounded-xl border-2 border-gold overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 12px rgba(201, 168, 76, 0.2)' }}>
                           <Image src={designerData.designerLogo} alt={designerData.fullName} width={40} height={40} className="w-full h-full object-contain" />
                         </div>
                       ) : (
