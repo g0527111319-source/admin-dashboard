@@ -256,6 +256,49 @@ export default function DesignerDashboard() {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
     const [calendarView, setCalendarView] = useState<"events" | "schedule">("events");
 
+    // Deal reporting form state
+    const [dealForm, setDealForm] = useState({
+      supplierId: "",
+      amount: "",
+      description: "",
+      dealDate: "",
+      ratingText: "",
+    });
+    const [dealSaving, setDealSaving] = useState(false);
+    const [dealMsg, setDealMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+    const submitDeal = async () => {
+      if (!designerIdForGate) return;
+      if (!dealForm.supplierId) { setDealMsg({ type: "error", text: "בחרי ספק" }); return; }
+      if (!dealForm.amount || Number(dealForm.amount) <= 0) { setDealMsg({ type: "error", text: "סכום העסקה חובה" }); return; }
+      setDealSaving(true);
+      setDealMsg(null);
+      try {
+        const res = await fetch("/api/deals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            designerId: designerIdForGate,
+            supplierId: dealForm.supplierId,
+            amount: Number(dealForm.amount),
+            description: dealForm.description || null,
+            dealDate: dealForm.dealDate || undefined,
+            ratingText: dealForm.ratingText || null,
+          }),
+        });
+        if (res.ok) {
+          setDealMsg({ type: "success", text: "הדיווח נשלח בהצלחה" });
+          setDealForm({ supplierId: "", amount: "", description: "", dealDate: "", ratingText: "" });
+        } else {
+          const data = await res.json().catch(() => ({}));
+          setDealMsg({ type: "error", text: data?.error || "שגיאה בשליחת הדיווח" });
+        }
+      } catch {
+        setDealMsg({ type: "error", text: "שגיאה בשליחת הדיווח" });
+      } finally {
+        setDealSaving(false);
+      }
+    };
+
     // Profile editing form state
     const [profileForm, setProfileForm] = useState({
       firstName: "", lastName: "", gender: "female" as "male" | "female",
@@ -1021,29 +1064,69 @@ export default function DesignerDashboard() {
                 <div className="card-static space-y-4">
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::083", "ספק")}</label>
-                    <select className="select-field">
+                    <select
+                      className="select-field"
+                      value={dealForm.supplierId}
+                      onChange={(e) => setDealForm((f) => ({ ...f, supplierId: e.target.value }))}
+                    >
                       <option value="">{g(gender, "בחר ספק...", "בחרי ספק...")}</option>
                       {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::085", "סכום העסקה (₪)")}</label>
-                    <input type="number" className="input-field" placeholder="0" dir="ltr" />
+                    <input
+                      type="number"
+                      className="input-field"
+                      placeholder="0"
+                      dir="ltr"
+                      value={dealForm.amount}
+                      onChange={(e) => setDealForm((f) => ({ ...f, amount: e.target.value }))}
+                    />
                   </div>
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::086", "תיאור קצר")}</label>
-                    <input type="text" className="input-field" placeholder="מה הוזמן?" />
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="מה הוזמן?"
+                      value={dealForm.description}
+                      onChange={(e) => setDealForm((f) => ({ ...f, description: e.target.value }))}
+                    />
                   </div>
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::088", "תאריך העסקה")}</label>
-                    <input type="date" className="input-field" dir="ltr" />
+                    <input
+                      type="date"
+                      className="input-field"
+                      dir="ltr"
+                      value={dealForm.dealDate}
+                      onChange={(e) => setDealForm((f) => ({ ...f, dealDate: e.target.value }))}
+                    />
                   </div>
                   <div>
                     <label className="form-label">{txt("src/app/designer/[id]/page.tsx::090", "הערות (אופציונלי — אנונימי)")}</label>
-                    <textarea className="input-field h-20 resize-none" placeholder={g(gender, "שתף את החוויה שלך...", "שתפי את החוויה שלך...")} />
+                    <textarea
+                      className="input-field h-20 resize-none"
+                      placeholder={g(gender, "שתף את החוויה שלך...", "שתפי את החוויה שלך...")}
+                      value={dealForm.ratingText}
+                      onChange={(e) => setDealForm((f) => ({ ...f, ratingText: e.target.value }))}
+                    />
                   </div>
-                  <TwistButton variant="primary" size="md" className="w-full">{txt("src/app/designer/[id]/page.tsx::092", "שלח דיווח")}</TwistButton>
-                  <p className="text-text-muted text-xs text-center">{g(gender, "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנס להגרלה החודשית!", "הספק יתבקש לאשר את העסקה. לאחר אישור תיכנסי להגרלה החודשית!")}</p>
+                  <TwistButton
+                    variant="primary"
+                    size="md"
+                    className="w-full"
+                    onClick={submitDeal}
+                    disabled={dealSaving}
+                  >
+                    {dealSaving ? "שולח..." : txt("src/app/designer/[id]/page.tsx::092", "שלח דיווח")}
+                  </TwistButton>
+                  {dealMsg && (
+                    <p className={`text-xs text-center ${dealMsg.type === "success" ? "text-emerald-700" : "text-red-700"}`}>
+                      {dealMsg.text}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
