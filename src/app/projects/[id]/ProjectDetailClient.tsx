@@ -398,10 +398,10 @@ export default function ProjectDetailClient({
               style={{ background: "linear-gradient(135deg, #E8C97A, #8B6914)" }}
             />
           )}
-          {project.images.length > 0 && (
+          {project.images.length > 1 && (
             <div className="absolute top-5 right-5 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[12px] font-medium text-text">
               <ImageIcon className="w-3.5 h-3.5" />
-              1 מתוך {project.images.length} תמונות
+              {project.images.length} תמונות
             </div>
           )}
         </div>
@@ -703,11 +703,11 @@ export default function ProjectDetailClient({
               פרויקטים נוספים של {firstName}
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5">
             <Link
               href={`/projects?designer=${project.designer.id}`}
               className="relative rounded-[14px] overflow-hidden border border-border-subtle shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all block"
-              style={{ aspectRatio: "2/1" }}
+              style={{ aspectRatio: "3/1" }}
             >
               <div
                 className="absolute inset-0"
@@ -727,32 +727,6 @@ export default function ProjectDetailClient({
                 </div>
                 <h4 className="font-heading font-medium text-2xl m-0 tracking-[-0.3px]">
                   צפי בתיק העבודות המלא
-                </h4>
-              </div>
-            </Link>
-            <Link
-              href="/projects"
-              className="relative rounded-[14px] overflow-hidden border border-border-subtle shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all block"
-              style={{ aspectRatio: "2/1" }}
-            >
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: "linear-gradient(135deg, #FBF7ED, #D4A437)",
-                }}
-              />
-              <div
-                className="absolute inset-0 flex flex-col justify-center px-9 text-white"
-                style={{
-                  background:
-                    "linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.1))",
-                }}
-              >
-                <div className="text-[11.5px] opacity-85 tracking-[1px] uppercase mb-1">
-                  גלריית הקהילה
-                </div>
-                <h4 className="font-heading font-medium text-2xl m-0 tracking-[-0.3px]">
-                  עוד פרויקטים מכל הארץ
                 </h4>
               </div>
             </Link>

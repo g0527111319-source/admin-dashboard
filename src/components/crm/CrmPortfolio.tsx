@@ -1527,12 +1527,15 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
 
           {/* Description */}
           <div>
-            <label className="form-label">תיאור</label>
+            <label className="form-label">פרטים נוספים על הפרויקט</label>
+            <p className="text-xs text-text-muted mb-2">
+              טקסט חופשי שיוצג ללקוחות בדף הפרויקט — ספרי על הקונספט, האתגרים, הפתרונות.
+            </p>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder={g(gdr, "תאר את הפרויקט...", "תארי את הפרויקט...")}
-              rows={4}
+              rows={5}
               className="input-field w-full resize-none"
             />
           </div>

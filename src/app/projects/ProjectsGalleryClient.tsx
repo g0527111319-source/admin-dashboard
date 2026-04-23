@@ -398,15 +398,7 @@ function ProjectsContent() {
             <>
               <MasonryGallery
                 items={masonryItems}
-                onItemClick={(i) => setLightboxIndex(i)}
                 columns={{ base: 1, sm: 2, lg: 3 }}
-                layoutIdPrefix="portfolio"
-              />
-              <Lightbox
-                images={lightboxImages}
-                index={lightboxIndex}
-                onClose={() => setLightboxIndex(null)}
-                onChange={(i) => setLightboxIndex(i)}
                 layoutIdPrefix="portfolio"
               />
 
