@@ -131,3 +131,45 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+// PUT /api/supplier/profile
+// Currently used only to persist the logo / sticker uploaded via the profile
+// page. Keeps an explicit allow-list to avoid accidentally mutating fields
+// that aren't ready to be edited from the UI yet.
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, logo } = body as { id?: string; logo?: string | null };
+
+    if (!id) {
+      return NextResponse.json({ error: "חסר מזהה ספק" }, { status: 400 });
+    }
+
+    // Security: suppliers can only edit their own profile, admins can edit any
+    const authenticatedUserId = req.headers.get("x-user-id");
+    const userRole = req.headers.get("x-user-role");
+    if (userRole !== "admin" && authenticatedUserId && id !== authenticatedUserId) {
+      return NextResponse.json({ error: "אין הרשאה לעדכן פרופיל של ספק אחר" }, { status: 403 });
+    }
+
+    const update: Record<string, unknown> = {};
+    if (logo !== undefined) {
+      update.logo = logo === "" ? null : logo;
+    }
+
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ error: "לא התקבלו שדות לעדכון" }, { status: 400 });
+    }
+
+    const supplier = await prisma.supplier.update({
+      where: { id },
+      data: update,
+      select: { id: true, logo: true },
+    });
+
+    return NextResponse.json({ success: true, supplier });
+  } catch (error) {
+    console.error("Supplier profile update error:", error);
+    return NextResponse.json({ error: "שגיאה בעדכון פרופיל" }, { status: 500 });
+  }
+}

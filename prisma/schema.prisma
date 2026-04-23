@@ -81,6 +81,7 @@ model Designer {
   yearsExperience      Int?
   instagram            String?
   website              String?
+  logoUrl              String?  // לוגו / מדבקה של המעצבת — מוצג לה באזור האישי וללקוחות ב-client-portal
 
   // פרטים אישיים מורחבים
   idNumber             String?  // מס' ת.ז.

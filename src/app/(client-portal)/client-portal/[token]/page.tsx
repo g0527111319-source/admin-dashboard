@@ -30,9 +30,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     });
 
-    if (portalToken?.client?.designer?.crmSettings) {
-      designerLogo = portalToken.client.designer.crmSettings.logoUrl;
-      companyName = portalToken.client.designer.crmSettings.companyName;
+    if (portalToken?.client?.designer) {
+      // Prefer the designer's direct logoUrl (set via profile), fall back to CRM settings.
+      designerLogo = portalToken.client.designer.logoUrl
+        || portalToken.client.designer.crmSettings?.logoUrl
+        || null;
+      companyName = portalToken.client.designer.crmSettings?.companyName || null;
     }
   } catch {
     // Fallback to defaults

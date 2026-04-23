@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
         employmentType: true,
         yearsAsIndependent: true,
         workTypes: true,
+        logoUrl: true,
       },
     });
 
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
     const deals = await prisma.deal.findMany({
       where: { designerId },
       include: {
-        supplier: { select: { name: true } },
+        supplier: { select: { name: true, logo: true } },
       },
       orderBy: { reportedAt: "desc" },
       take: 20,
@@ -82,6 +83,7 @@ export async function GET(req: NextRequest) {
     const dealHistory = deals.map((d) => ({
       id: d.id,
       supplier: d.supplier?.name || "",
+      supplierLogo: d.supplier?.logo || null,
       amount: d.amount,
       date: d.reportedAt
         ? new Date(d.reportedAt).toLocaleDateString("he-IL")
@@ -177,7 +179,7 @@ export async function GET(req: NextRequest) {
 
     // Format designer profile
     const profile = {
-      designerLogo: "",
+      designerLogo: designer.logoUrl || "",
       fullName: designer.fullName,
       gender: designer.gender || "female",
       city: designer.city || "",
@@ -277,6 +279,11 @@ export async function PUT(req: NextRequest) {
     if (updateData.instagram !== undefined) update.instagram = updateData.instagram;
     if (updateData.website !== undefined) update.website = updateData.website;
     if (updateData.area !== undefined) update.area = updateData.area;
+
+    // Logo / sticker — empty string treated as clearing (null)
+    if (updateData.logoUrl !== undefined) {
+      update.logoUrl = updateData.logoUrl === "" ? null : updateData.logoUrl;
+    }
 
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: "לא התקבלו שדות לעדכון" }, { status: 400 });

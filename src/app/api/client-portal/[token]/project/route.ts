@@ -10,10 +10,24 @@ export async function GET(
   try {
     const { token } = await params;
 
-    // Find active portal token
+    // Find active portal token. Include the owning designer so we can surface
+    // their logo + display name in the client dashboard header.
     const portalToken = await prisma.clientPortalToken.findUnique({
       where: { token },
-      include: { client: true },
+      include: {
+        client: {
+          include: {
+            designer: {
+              select: {
+                id: true,
+                fullName: true,
+                logoUrl: true,
+                crmSettings: { select: { logoUrl: true, companyName: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!portalToken || !portalToken.isActive) {
@@ -89,11 +103,18 @@ export async function GET(
       data: { lastUsedAt: new Date() },
     });
 
+    const designer = portalToken.client.designer;
+    const designerLogo = designer?.logoUrl || designer?.crmSettings?.logoUrl || null;
+    const designerName = designer?.crmSettings?.companyName || designer?.fullName || null;
+
     return NextResponse.json({
       client: {
         id: portalToken.client.id,
         name: portalToken.client.name,
       },
+      designer: designer
+        ? { id: designer.id, name: designerName, logoUrl: designerLogo }
+        : null,
       projects,
     });
   } catch (error) {

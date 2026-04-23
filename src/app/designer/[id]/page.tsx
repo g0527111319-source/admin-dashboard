@@ -13,6 +13,7 @@ import CrmWebhooks from "@/components/crm/CrmWebhooks";
 import CrmWorkflowTemplates from "@/components/crm/CrmWorkflowTemplates";
 import CrmContracts from "@/components/crm/CrmContracts";
 import CrmCalendar from "@/components/crm/CrmCalendar";
+import ImageUploader from "@/components/business-card/ImageUploader";
 // CrmProjects is still imported *inside* CrmClients.tsx for the per-client
 // project view — removing the top-level tab, so we no longer need it here.
 import CrmScheduler from "@/components/crm/CrmScheduler";
@@ -96,7 +97,7 @@ type SupplierItem = {
 
 // Deal history populated from API
 type DealHistoryItem = {
-    id: string; supplier: string; amount: number; date: string;
+    id: string; supplier: string; supplierLogo?: string | null; amount: number; date: string;
     status: string; rating: number | null;
 };
 
@@ -266,6 +267,7 @@ export default function DesignerDashboard() {
       specialization: "", employmentType: "FREELANCE" as "SALARIED" | "FREELANCE",
       yearsExperience: "", yearsAsIndependent: "",
       workTypes: [] as string[], instagram: "", website: "",
+      logoUrl: "",
     });
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileMsg, setProfileMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -297,6 +299,7 @@ export default function DesignerDashboard() {
           workTypes: Array.isArray(designerData.workTypes) ? designerData.workTypes : [],
           instagram: designerData.instagram || "",
           website: designerData.website || "",
+          logoUrl: designerData.designerLogo || "",
         });
       }
     }, [designerData]);
@@ -340,6 +343,7 @@ export default function DesignerDashboard() {
             workTypes: profileForm.workTypes,
             instagram: profileForm.instagram,
             website: profileForm.website,
+            designerLogo: profileForm.logoUrl,
           }));
           setTimeout(() => setProfileMsg(null), 4000);
         } else {
@@ -1074,8 +1078,12 @@ export default function DesignerDashboard() {
                     {dealHistory.map(deal => (
                       <div key={deal.id} className="flex items-center justify-between p-3 bg-bg-surface rounded-lg hover:bg-bg-surface-2 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-gold/8 flex items-center justify-center">
-                            <HandCoins className="w-4 h-4 text-gold" />
+                          <div className="w-9 h-9 rounded-xl bg-gold/8 flex items-center justify-center overflow-hidden border border-gold/20">
+                            {deal.supplierLogo ? (
+                              <Image src={deal.supplierLogo} alt={deal.supplier} width={36} height={36} className="w-full h-full object-contain" />
+                            ) : (
+                              <HandCoins className="w-4 h-4 text-gold" />
+                            )}
                           </div>
                           <div>
                             <p className="text-text-primary text-sm font-medium">{deal.supplier}</p>
@@ -1239,12 +1247,12 @@ export default function DesignerDashboard() {
             {/* ===== PROFILE TAB ===== */}
             {activeTab === "profile" && (
               <div className="space-y-6 animate-in max-w-2xl mx-auto">
-                {/* Profile Logo Display */}
+                {/* Profile Logo Display + live preview of the draft logoUrl */}
                 <div className="card-glass flex flex-col items-center py-8">
                   <div className="relative">
-                    {designerData.designerLogo ? (
+                    {profileForm.logoUrl ? (
                       <div className="w-24 h-24 rounded-full border-4 border-gold overflow-hidden animate-pulse-slow" style={{ boxShadow: '0 0 30px rgba(201, 168, 76, 0.4)' }}>
-                        <Image src={designerData.designerLogo} alt={designerData.fullName} width={96} height={96} className="w-full h-full object-contain" />
+                        <Image src={profileForm.logoUrl} alt={designerData.fullName} width={96} height={96} unoptimized className="w-full h-full object-contain" />
                       </div>
                     ) : (
                       <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center border-4 border-gold" style={{ boxShadow: '0 0 30px rgba(201, 168, 76, 0.4)' }}>
@@ -1254,6 +1262,32 @@ export default function DesignerDashboard() {
                   </div>
                   <h2 className="text-lg font-heading font-bold text-text-primary mt-5">{profileForm.firstName} {profileForm.lastName}</h2>
                   <p className="text-sm text-text-muted">{profileForm.specialization} &middot; {profileForm.city}</p>
+                </div>
+
+                {/* === Section: Logo / Sticker === */}
+                <div className="card-static space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
+                    <Image src="/icons/icon-72.png" alt="" width={16} height={16} className="w-4 h-4" />
+                    <h3 className="text-sm font-semibold text-gold">{g(gender, "לוגו / מדבקה", "לוגו / מדבקה")}</h3>
+                  </div>
+                  <p className="text-xs text-text-muted leading-relaxed">
+                    {g(gender,
+                      "הלוגו יוצג לך באזור האישי שלך ובאזור האישי של הלקוחות שלך.",
+                      "הלוגו יוצג לך באזור האישי שלך ובאזור האישי של הלקוחות שלך.")}
+                    {" "}
+                    מומלץ: ריבוע ~512×512 או SVG/PNG שקוף. עד 5MB.
+                  </p>
+                  <ImageUploader
+                    value={profileForm.logoUrl}
+                    onChange={(url) => setProfileForm(p => ({ ...p, logoUrl: url }))}
+                    label={g(gender, "העלה לוגו / מדבקה", "העלי לוגו / מדבקה")}
+                    shape="circle"
+                    folder="designer-logos"
+                    sticker
+                  />
+                  <p className="text-[11px] text-text-muted">
+                    השינוי יישמר כשתלחץ/י על <span className="text-gold font-medium">שמור פרופיל</span> בסוף הדף.
+                  </p>
                 </div>
 
                 {/* === Section: Personal Info === */}
@@ -1486,7 +1520,14 @@ export default function DesignerDashboard() {
           <div className="modal-overlay" onClick={() => setShowDealModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-heading text-text-primary">{txt("src/app/designer/[id]/page.tsx::123", "דיווח עסקה —")} {selectedSupplier.name}</h3>
+                <div className="flex items-center gap-3 min-w-0">
+                  {selectedSupplier.logo ? (
+                    <div className="w-10 h-10 rounded-xl border border-gold/30 overflow-hidden flex-shrink-0 bg-white">
+                      <Image src={selectedSupplier.logo} alt={selectedSupplier.name} width={40} height={40} className="w-full h-full object-contain" />
+                    </div>
+                  ) : null}
+                  <h3 className="text-lg font-heading text-text-primary truncate">{txt("src/app/designer/[id]/page.tsx::123", "דיווח עסקה —")} {selectedSupplier.name}</h3>
+                </div>
                 <button onClick={() => setShowDealModal(false)} className="p-1.5 rounded-lg hover:bg-bg-surface transition-colors">
                   <X className="w-5 h-5 text-text-muted" />
                 </button>

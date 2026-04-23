@@ -8,6 +8,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { FileText, HandCoins, Star, Calendar, Upload, Clock, Send, Edit, Image as ImageIcon, BarChart3, Eye, TrendingUp, CheckCircle2, XCircle, Phone, Mail, Globe, MapPin, Camera, UserPlus, X, Plus, CreditCard, ShieldCheck, Loader2, MessageSquare, } from "lucide-react";
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
 import SupplierReviews from "@/components/supplier/SupplierReviews";
+import ImageUploader from "@/components/business-card/ImageUploader";
 
 interface SupplierData {
     name: string;
@@ -102,6 +103,9 @@ export default function SupplierDashboard() {
     const [recommenders, setRecommenders] = useState<Recommender[]>([]);
     const [newRecommender, setNewRecommender] = useState({ name: "", phone: "" });
     const [showAddRecommender, setShowAddRecommender] = useState(false);
+    const [logoDraft, setLogoDraft] = useState<string>("");
+    const [savingLogo, setSavingLogo] = useState(false);
+    const [logoMsg, setLogoMsg] = useState<string | null>(null);
 
     const fetchSupplierProfile = useCallback(async () => {
         try {
@@ -114,6 +118,7 @@ export default function SupplierDashboard() {
             setRecentPosts(data.recentPosts ?? []);
             setRecentDeals(data.recentDeals ?? []);
             setRecommenders(data.recommenders ?? []);
+            setLogoDraft(data.supplierData?.supplierLogo ?? "");
         } catch (err) {
             console.error(err);
             setError(err instanceof Error ? err.message : "שגיאה בטעינת נתונים");
@@ -135,6 +140,29 @@ export default function SupplierDashboard() {
     };
     const handleRemoveRecommender = (id: string) => {
         setRecommenders(recommenders.filter(r => r.id !== id));
+    };
+
+    const handleSaveLogo = async () => {
+        if (!routeParams.id) return;
+        try {
+            setSavingLogo(true);
+            setLogoMsg(null);
+            const res = await fetch("/api/supplier/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: routeParams.id, logo: logoDraft || "" }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data?.error || "שגיאה בשמירת הלוגו");
+            }
+            setSupplierData(prev => ({ ...prev, supplierLogo: logoDraft }));
+            setLogoMsg("נשמר בהצלחה");
+        } catch (err) {
+            setLogoMsg(err instanceof Error ? err.message : "שגיאה בשמירה");
+        } finally {
+            setSavingLogo(false);
+        }
     };
     const tabs = [
         { key: "overview", label: txt("src/app/supplier/[id]/page.tsx::017", "סקירה כללית"), icon: BarChart3 },
@@ -506,13 +534,27 @@ export default function SupplierDashboard() {
         {activeTab === "profile" && (<div className="space-y-6 animate-in max-w-2xl mx-auto">
             <h2 className="text-xl font-heading text-text-primary">{txt("src/app/supplier/[id]/page.tsx::068", "עריכת פרופיל")}</h2>
             <div className="card-static space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-xl bg-bg-surface border-2 border-dashed border-border-subtle flex items-center justify-center cursor-pointer hover:border-gold/50 transition-colors">
-                  <Camera className="w-8 h-8 text-text-muted opacity-40"/>
-                </div>
-                <div>
-                  <p className="text-text-primary font-medium">{txt("src/app/supplier/[id]/page.tsx::069", "לוגו העסק")}</p>
-                  <p className="text-text-muted text-xs">{txt("src/app/supplier/[id]/page.tsx::070", "לחץ להחלפה — JPG/PNG, עד 2MB")}</p>
+              <div>
+                <p className="text-text-primary font-medium mb-1">{txt("src/app/supplier/[id]/page.tsx::069", "לוגו / מדבקה של העסק")}</p>
+                <p className="text-text-muted text-xs mb-3">{txt("src/app/supplier/[id]/page.tsx::070", "תמונה שתוצג לכם ולמעצבות בכל מקום בו מופיע הספק — JPG/PNG/WebP עד 5MB")}</p>
+                <ImageUploader
+                  value={logoDraft}
+                  onChange={(url) => setLogoDraft(url)}
+                  label={txt("src/app/supplier/[id]/page.tsx::069a", "העלה לוגו / מדבקה")}
+                  shape="circle"
+                  folder="supplier-logos"
+                  sticker
+                />
+                <div className="flex items-center gap-3 mt-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveLogo}
+                    disabled={savingLogo || logoDraft === (supplierData.supplierLogo || "")}
+                    className="btn-gold px-4 py-2 text-sm disabled:opacity-50"
+                  >
+                    {savingLogo ? txt("src/app/supplier/[id]/page.tsx::069b", "שומר...") : txt("src/app/supplier/[id]/page.tsx::069c", "שמור לוגו")}
+                  </button>
+                  {logoMsg && <span className="text-sm text-text-muted">{logoMsg}</span>}
                 </div>
               </div>
 

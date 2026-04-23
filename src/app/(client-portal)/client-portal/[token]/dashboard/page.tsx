@@ -67,6 +67,7 @@ export default function ClientPortalDashboard() {
 
   const [lang, setLang] = useState<Lang>("he");
   const [clientName, setClientName] = useState("");
+  const [designerInfo, setDesignerInfo] = useState<{ name: string | null; logoUrl: string | null } | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "documents" | "photos" | "messages" | "plans">("overview");
@@ -123,6 +124,9 @@ export default function ClientPortalDashboard() {
       }
       const data = await res.json();
       setClientName(data.client?.name || "");
+      if (data.designer) {
+        setDesignerInfo({ name: data.designer.name, logoUrl: data.designer.logoUrl });
+      }
       setProjects(data.projects || []);
       if (data.projects?.length > 0 && !selectedProject) {
         setSelectedProject(data.projects[0]);
@@ -316,12 +320,22 @@ export default function ClientPortalDashboard() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-heading text-text-primary mb-1">
-            {ct("hello", lang)} {clientName} 👋
-          </h1>
-          <p className="text-text-muted text-sm">{ct("projectPortal", lang)}</p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          {designerInfo?.logoUrl && (
+            <div className="w-14 h-14 rounded-full border-2 border-gold overflow-hidden bg-white flex-shrink-0 shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={designerInfo.logoUrl} alt={designerInfo.name || ""} className="w-full h-full object-contain" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className="text-2xl font-heading text-text-primary mb-1 truncate">
+              {ct("hello", lang)} {clientName} 👋
+            </h1>
+            <p className="text-text-muted text-sm truncate">
+              {designerInfo?.name ? designerInfo.name : ct("projectPortal", lang)}
+            </p>
+          </div>
         </div>
         <ClientLanguageSwitcher onChange={handleLangChange} />
       </div>
