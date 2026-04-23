@@ -18,7 +18,6 @@ import {
   Store,
   Calendar,
   Gem,
-  Star,
   ShieldCheck,
   ChevronDown,
   Heart,
@@ -79,12 +78,11 @@ const pillars: Pillar[] = [
     title: "CRM מתקדם למעצבות",
     desc: "מערכת ניהול לקוחות מלאה — פרויקטים, חוזים, הצעות מחיר, תשלומים ותקשורת במקום אחד.",
     tint: "from-[#F5ECD3] to-white",
-    highlight: true,
   },
   {
     icon: Store,
     title: "ספקים מובחרים",
-    desc: "קטלוג ספקים שעברו סינון קפדני — נגרים, שיש, אריחים, חשמל ועוד, עם דירוגי קהילה.",
+    desc: "קטלוג ספקים שעברו סינון קפדני — נגרים, שיש, אריחים, חשמל ועוד.",
     tint: "from-[#FDF8E8] to-white",
   },
   {
@@ -100,15 +98,6 @@ const stats = [
   { value: "+50", label: "ספקים מובילים" },
   { value: "24/6", label: "עזרה הדדית" },
   { value: "+60", label: "הצעות עבודה למעצבות בשנה" },
-] as const;
-
-const galleryImages = [
-  { src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80", label: "בית פרטי" },
-  { src: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80", label: "מטבח מעוצב" },
-  { src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80", label: "סלון יוקרתי" },
-  { src: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80", label: "פול-האוס" },
-  { src: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80", label: "וילה מודרנית" },
-  { src: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=800&q=80", label: "חדר רחצה" },
 ] as const;
 
 /* ──────────────────────────────────────────────────────────────
@@ -412,84 +401,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ═══════════════════════════════════════════════════════
-          GALLERY STRIP — חללים שמספרים סיפור
-          ═══════════════════════════════════════════════════════ */}
-      <DepthSection
-        image={DEPTH_IMAGES.livingGallery}
-        speed={0.3}
-        opacity={0.08}
-        overlayTone="none"
-      >
-        <section className="relative py-20 sm:py-28 px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-80px" }}
-              variants={fadeUp}
-              className="text-center mb-14"
-            >
-              <div className="inline-flex items-center gap-2 mb-5">
-                <div className="h-px w-10 bg-gold/40" />
-                <Eyebrow>השראה</Eyebrow>
-                <div className="h-px w-10 bg-gold/40" />
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#1a1410]">
-                <span className="font-suez">חללים</span>{" "}
-                <GoldText className="font-bellefair">שמספרים סיפור</GoldText>
-              </h2>
-              <p className="mt-4 text-text-muted max-w-xl mx-auto">
-                פרויקטים אמיתיים של המעצבות בקהילה — מהסלון ועד הגינה.
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              {galleryImages.map((img, i) => (
-                <motion.div
-                  key={img.src}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, margin: "-40px" }}
-                  variants={fadeScale}
-                  custom={i}
-                  className="group relative aspect-[4/5] rounded-[22px] overflow-hidden border border-gold/15 shadow-[0_12px_30px_rgba(26,20,16,0.06)] hover:shadow-[0_25px_50px_rgba(201,168,76,0.18)] hover:-translate-y-1.5 transition-all duration-700 cursor-pointer"
-                >
-                  <div
-                    className="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-[1.2s]"
-                    style={{ backgroundImage: `url(${img.src})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1410]/85 via-[#1a1410]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                    <div className="flex items-center gap-2 text-white text-sm font-medium">
-                      <Star className="w-3.5 h-3.5 text-gold" />
-                      {img.label}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={3}
-              className="text-center mt-10"
-            >
-              <Link
-                href="/projects"
-                className="inline-flex items-center gap-2 text-gold-dim font-medium hover:text-gold transition-colors group"
-              >
-                לגלריית הפרויקטים המלאה
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              </Link>
-            </motion.div>
-          </div>
-        </section>
-      </DepthSection>
 
       {/* ═══════════════════════════════════════════════════════
           CLOSING CTA — הזמנה חמה להצטרף
