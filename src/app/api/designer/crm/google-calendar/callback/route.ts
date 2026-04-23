@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
       update: {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token || undefined,
+        calendarId: "primary",
         googleEmail: googleEmail || undefined,
         syncEnabled: true,
         lastSyncAt: new Date(),
