@@ -48,36 +48,44 @@ export async function PATCH(req: NextRequest) {
       welcomeMessage,
       completionMessage,
       notifications,
+      processDurations,
     } = body;
 
-    const settings = await prisma.designerCrmSettings.upsert({
-      where: { designerId },
-      create: {
-        designerId,
-        ...(companyName !== undefined && { companyName }),
-        ...(logoUrl !== undefined && { logoUrl }),
-        ...(portfolioHeroImageUrl !== undefined && { portfolioHeroImageUrl }),
-        ...(primaryColor !== undefined && { primaryColor }),
-        ...(secondaryColor !== undefined && { secondaryColor }),
-        ...(tagline !== undefined && { tagline }),
-        ...(defaultPhases !== undefined && { defaultPhases }),
-        ...(welcomeMessage !== undefined && { welcomeMessage }),
-        ...(completionMessage !== undefined && { completionMessage }),
-        ...(notifications !== undefined && { notifications }),
-      },
-      update: {
-        ...(companyName !== undefined && { companyName }),
-        ...(logoUrl !== undefined && { logoUrl }),
-        ...(portfolioHeroImageUrl !== undefined && { portfolioHeroImageUrl }),
-        ...(primaryColor !== undefined && { primaryColor }),
-        ...(secondaryColor !== undefined && { secondaryColor }),
-        ...(tagline !== undefined && { tagline }),
-        ...(defaultPhases !== undefined && { defaultPhases }),
-        ...(welcomeMessage !== undefined && { welcomeMessage }),
-        ...(completionMessage !== undefined && { completionMessage }),
-        ...(notifications !== undefined && { notifications }),
-      },
-    });
+    const baseFields = {
+      ...(companyName !== undefined && { companyName }),
+      ...(logoUrl !== undefined && { logoUrl }),
+      ...(portfolioHeroImageUrl !== undefined && { portfolioHeroImageUrl }),
+      ...(primaryColor !== undefined && { primaryColor }),
+      ...(secondaryColor !== undefined && { secondaryColor }),
+      ...(tagline !== undefined && { tagline }),
+      ...(defaultPhases !== undefined && { defaultPhases }),
+      ...(welcomeMessage !== undefined && { welcomeMessage }),
+      ...(completionMessage !== undefined && { completionMessage }),
+      ...(notifications !== undefined && { notifications }),
+    };
+
+    let settings;
+    try {
+      settings = await prisma.designerCrmSettings.upsert({
+        where: { designerId },
+        create: {
+          designerId,
+          ...baseFields,
+          ...(processDurations !== undefined && { processDurations }),
+        },
+        update: {
+          ...baseFields,
+          ...(processDurations !== undefined && { processDurations }),
+        },
+      });
+    } catch {
+      // processDurations column may not exist yet — fall back without it
+      settings = await prisma.designerCrmSettings.upsert({
+        where: { designerId },
+        create: { designerId, ...baseFields },
+        update: baseFields,
+      });
+    }
 
     return NextResponse.json(settings);
   } catch (error) {

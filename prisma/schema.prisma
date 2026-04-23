@@ -777,6 +777,9 @@ model DesignerCrmSettings {
   // שלבי פרויקט ברירת מחדל
   defaultPhases       Json     @default("[\"ייעוץ ראשוני\",\"תכנון ועיצוב\",\"בחירת חומרים\",\"ביצוע\",\"פיקוח\",\"מסירה\"]")
 
+  // טקסט קצר לשלבי התהליך בדף הפרויקט הציבורי — 4 משכי זמן לעריכה ע"י המעצבת
+  processDurations    Json?
+
   // הודעות אוטומטיות
   welcomeMessage      String?
   completionMessage   String?

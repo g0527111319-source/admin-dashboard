@@ -102,7 +102,7 @@ export default function CrmSettings({ gender }: { gender?: string } = {}) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [newPhase, setNewPhase] = useState("");
-  const [activeSection, setActiveSection] = useState<"branding" | "phases" | "messages" | "office-hours" | "automations" | "notifications">("branding");
+  const [activeSection, setActiveSection] = useState<"branding" | "phases" | "process" | "messages" | "office-hours" | "automations" | "notifications">("branding");
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -118,6 +118,10 @@ export default function CrmSettings({ gender }: { gender?: string } = {}) {
     officeHoursEnd: "17:00",
     notifyEmail: true,
     notifyWhatsApp: false,
+    processInitialCall: "30 דקות · חינם",
+    processInitialSketch: "שבועיים",
+    processExecutionSupport: "3-9 חודשים",
+    processHandoff: "עם חיוך",
   });
 
   useEffect(() => {
@@ -151,6 +155,12 @@ export default function CrmSettings({ gender }: { gender?: string } = {}) {
             ? JSON.parse(data.notifications)
             : data.notifications || {};
         } catch { /* keep default */ }
+        let pd: Record<string, string> = {};
+        try {
+          pd = typeof data.processDurations === "string"
+            ? JSON.parse(data.processDurations)
+            : data.processDurations || {};
+        } catch { /* keep default */ }
         setFormData({
           companyName: data.companyName || "",
           primaryColor: data.primaryColor || "#2563eb",
@@ -165,6 +175,10 @@ export default function CrmSettings({ gender }: { gender?: string } = {}) {
           officeHoursEnd: data.officeHoursEnd || "17:00",
           notifyEmail: notif.email !== undefined ? notif.email : true,
           notifyWhatsApp: notif.whatsapp !== undefined ? notif.whatsapp : false,
+          processInitialCall: pd.initialCall || "30 דקות · חינם",
+          processInitialSketch: pd.initialSketch || "שבועיים",
+          processExecutionSupport: pd.executionSupport || "3-9 חודשים",
+          processHandoff: pd.handoff || "עם חיוך",
         });
       }
     } catch {
@@ -199,6 +213,12 @@ export default function CrmSettings({ gender }: { gender?: string } = {}) {
           notifications: {
             email: formData.notifyEmail,
             whatsapp: formData.notifyWhatsApp,
+          },
+          processDurations: {
+            initialCall: formData.processInitialCall,
+            initialSketch: formData.processInitialSketch,
+            executionSupport: formData.processExecutionSupport,
+            handoff: formData.processHandoff,
           },
         }),
       });
@@ -290,6 +310,7 @@ export default function CrmSettings({ gender }: { gender?: string } = {}) {
   const sections = [
     { key: "branding" as const, label: "מיתוג", icon: Palette },
     { key: "phases" as const, label: "שלבי פרויקט", icon: Settings },
+    { key: "process" as const, label: "תהליך בדף הציבורי", icon: Clock },
     { key: "messages" as const, label: "הודעות", icon: Mail },
     { key: "office-hours" as const, label: "שעות קבלה", icon: Clock },
     { key: "notifications" as const, label: "העדפות התראות", icon: Bell },
@@ -450,6 +471,60 @@ export default function CrmSettings({ gender }: { gender?: string } = {}) {
               <Plus className="w-4 h-4" />
               הוסף
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Process Timeline (public project page) */}
+      {activeSection === "process" && (
+        <div className="card-static space-y-4">
+          <h3 className="text-base font-heading text-text-primary">
+            טקסט משך הזמן בדף הפרויקט הציבורי
+          </h3>
+          <p className="text-text-muted text-xs">
+            ערכי את הטקסט הקצר שמופיע מתחת לכל שלב (שיחה ראשונית, סקיצה, ליווי ביצוע, מפתחות) בדף הפרויקט שנחשף ללקוחות.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">שיחה ראשונית</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.processInitialCall}
+                onChange={(e) => setFormData({ ...formData, processInitialCall: e.target.value })}
+                placeholder="לדוגמה: 30 דקות · חינם"
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">סקיצה ראשונית</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.processInitialSketch}
+                onChange={(e) => setFormData({ ...formData, processInitialSketch: e.target.value })}
+                placeholder="לדוגמה: שבועיים"
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">ליווי ביצוע</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.processExecutionSupport}
+                onChange={(e) => setFormData({ ...formData, processExecutionSupport: e.target.value })}
+                placeholder="לדוגמה: 3-9 חודשים"
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-sm font-medium block mb-1">מפתחות</label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.processHandoff}
+                onChange={(e) => setFormData({ ...formData, processHandoff: e.target.value })}
+                placeholder="לדוגמה: עם חיוך"
+              />
+            </div>
           </div>
         </div>
       )}

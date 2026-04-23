@@ -10,31 +10,61 @@ export async function GET(
   try {
     const { projectId } = await params;
 
-    const project = await prisma.designerProject.findFirst({
-      where: {
-        id: projectId,
-        status: "public",
-      },
-      include: {
-        designer: {
-          select: {
-            id: true,
-            fullName: true,
-            city: true,
-            area: true,
-            specialization: true,
-            instagram: true,
-            website: true,
-            crmSettings: {
-              select: { logoUrl: true, companyName: true },
+    let project;
+    try {
+      project = await prisma.designerProject.findFirst({
+        where: {
+          id: projectId,
+          status: "public",
+        },
+        include: {
+          designer: {
+            select: {
+              id: true,
+              fullName: true,
+              city: true,
+              area: true,
+              specialization: true,
+              instagram: true,
+              website: true,
+              crmSettings: {
+                select: { logoUrl: true, companyName: true, processDurations: true },
+              },
             },
           },
+          images: {
+            orderBy: { sortOrder: "asc" },
+          },
         },
-        images: {
-          orderBy: { sortOrder: "asc" },
+      });
+    } catch {
+      // processDurations column may not exist yet — fall back without it
+      project = await prisma.designerProject.findFirst({
+        where: {
+          id: projectId,
+          status: "public",
         },
-      },
-    });
+        include: {
+          designer: {
+            select: {
+              id: true,
+              fullName: true,
+              city: true,
+              area: true,
+              specialization: true,
+              instagram: true,
+              website: true,
+              crmSettings: {
+                select: { logoUrl: true, companyName: true },
+              },
+            },
+          },
+          images: {
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      });
+    }
 
     if (!project) {
       return NextResponse.json({ error: "פרויקט לא נמצא" }, { status: 404 });

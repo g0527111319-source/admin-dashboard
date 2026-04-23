@@ -43,7 +43,16 @@ type Designer = {
   specialization: string | null;
   instagram: string | null;
   website: string | null;
-  crmSettings?: { logoUrl: string | null; companyName: string | null } | null;
+  crmSettings?: {
+    logoUrl: string | null;
+    companyName: string | null;
+    processDurations?: {
+      initialCall?: string;
+      initialSketch?: string;
+      executionSupport?: string;
+      handoff?: string;
+    } | null;
+  } | null;
 };
 
 export type PublicProject = {
@@ -666,28 +675,28 @@ export default function ProjectDetailClient({
               <MessageCircle className="w-[22px] h-[22px]" />
             </div>
             <div className="font-heading font-semibold text-[13px] mb-0.5">שיחה ראשונית</div>
-            <div className="text-[11.5px] text-text-muted">30 דקות · חינם</div>
+            <div className="text-[11.5px] text-text-muted">{project.designer.crmSettings?.processDurations?.initialCall || "30 דקות · חינם"}</div>
           </div>
           <div>
             <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-white grid place-items-center text-gold-dim">
               <LayoutTemplate className="w-[22px] h-[22px]" />
             </div>
             <div className="font-heading font-semibold text-[13px] mb-0.5">סקיצה ראשונית</div>
-            <div className="text-[11.5px] text-text-muted">שבועיים</div>
+            <div className="text-[11.5px] text-text-muted">{project.designer.crmSettings?.processDurations?.initialSketch || "שבועיים"}</div>
           </div>
           <div>
             <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-white grid place-items-center text-gold-dim">
               <Hammer className="w-[22px] h-[22px]" />
             </div>
             <div className="font-heading font-semibold text-[13px] mb-0.5">ליווי ביצוע</div>
-            <div className="text-[11.5px] text-text-muted">3-9 חודשים</div>
+            <div className="text-[11.5px] text-text-muted">{project.designer.crmSettings?.processDurations?.executionSupport || "3-9 חודשים"}</div>
           </div>
           <div>
             <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-white grid place-items-center text-gold-dim">
               <KeyRound className="w-[22px] h-[22px]" />
             </div>
             <div className="font-heading font-semibold text-[13px] mb-0.5">מפתחות</div>
-            <div className="text-[11.5px] text-text-muted">עם חיוך</div>
+            <div className="text-[11.5px] text-text-muted">{project.designer.crmSettings?.processDurations?.handoff || "עם חיוך"}</div>
           </div>
         </div>
       </div>
