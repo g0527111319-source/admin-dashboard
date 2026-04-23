@@ -197,7 +197,7 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
   useEffect(() => { fetchProjects(); fetchClients(); }, [fetchProjects, fetchClients]);
 
   // Google Calendar status
-  const [gcalStatus, setGcalStatus] = useState<{ configured: boolean; connected: boolean; syncEnabled: boolean; lastSyncAt: string | null } | null>(null);
+  const [gcalStatus, setGcalStatus] = useState<{ configured: boolean; connected: boolean; syncEnabled: boolean; lastSyncAt: string | null; googleEmail?: string | null } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
@@ -518,12 +518,22 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         </h2>
         <div className="flex items-center gap-2 flex-wrap">
           {gcalStatus?.connected ? (
-            <div className="flex items-center gap-2">
-              <span className="text-emerald-600 text-xs flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Google</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700 text-xs font-medium">מחובר</span>
+                {gcalStatus.googleEmail && (
+                  <span className="text-emerald-700/80 text-xs truncate max-w-[180px]" dir="ltr" title={gcalStatus.googleEmail}>
+                    {gcalStatus.googleEmail}
+                  </span>
+                )}
+              </div>
               <button onClick={handleGoogleSync} disabled={syncing} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-all">
                 {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}{syncing ? "מסנכרן..." : "סנכרן"}
               </button>
-              <button onClick={handleGoogleDisconnect} className="text-xs text-red-500 hover:underline">נתק</button>
+              <button onClick={handleGoogleDisconnect} className="text-xs px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all">
+                התנתק
+              </button>
             </div>
           ) : (
             <button onClick={handleGoogleAuth} disabled={!gcalStatus?.configured} className="btn-outline text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-subtle hover:border-gold hover:text-gold transition-all">

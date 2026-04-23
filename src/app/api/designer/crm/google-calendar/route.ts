@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const config = await prisma.designerGoogleCalendar.findUnique({
       where: { designerId },
-      select: { syncEnabled: true, lastSyncAt: true, calendarId: true },
+      select: { syncEnabled: true, lastSyncAt: true, calendarId: true, googleEmail: true },
     });
 
     if (!GOOGLE_CLIENT_ID) {
@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
       connected: !!config?.calendarId,
       syncEnabled: config?.syncEnabled || false,
       lastSyncAt: config?.lastSyncAt || null,
+      googleEmail: config?.googleEmail || null,
     });
   } catch (error) {
     console.error("Google Calendar status error:", error);
@@ -155,7 +156,7 @@ export async function POST(req: NextRequest) {
     if (action === "disconnect") {
       await prisma.designerGoogleCalendar.update({
         where: { designerId },
-        data: { accessToken: null, refreshToken: null, calendarId: null, syncEnabled: false },
+        data: { accessToken: null, refreshToken: null, calendarId: null, googleEmail: null, syncEnabled: false },
       });
       return NextResponse.json({ success: true });
     }

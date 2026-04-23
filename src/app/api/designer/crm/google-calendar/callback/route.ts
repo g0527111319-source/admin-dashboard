@@ -46,6 +46,22 @@ export async function GET(req: NextRequest) {
 
     const tokenData = await tokenRes.json();
 
+    // Fetch primary calendar to get the connected Google account email.
+    // The `id` of the primary calendar is the user's Google email — this
+    // avoids adding the `email`/`profile` scope (which would trigger
+    // re-verification). Uses the existing `calendar` scope only.
+    let googleEmail: string | null = null;
+    try {
+      const calRes = await fetch(
+        "https://www.googleapis.com/calendar/v3/calendars/primary",
+        { headers: { Authorization: `Bearer ${tokenData.access_token}` } }
+      );
+      if (calRes.ok) {
+        const calData = await calRes.json();
+        if (typeof calData.id === "string") googleEmail = calData.id;
+      }
+    } catch { /* non-fatal — connection still works without the email */ }
+
     // Save tokens
     await prisma.designerGoogleCalendar.upsert({
       where: { designerId: state },
@@ -54,12 +70,14 @@ export async function GET(req: NextRequest) {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token || null,
         calendarId: "primary",
+        googleEmail,
         syncEnabled: true,
         lastSyncAt: new Date(),
       },
       update: {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token || undefined,
+        googleEmail: googleEmail || undefined,
         syncEnabled: true,
         lastSyncAt: new Date(),
       },

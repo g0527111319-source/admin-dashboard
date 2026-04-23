@@ -1320,6 +1320,7 @@ model DesignerGoogleCalendar {
   accessToken  String?
   refreshToken String?
   calendarId   String?
+  googleEmail  String?
   syncEnabled  Boolean   @default(false)
   lastSyncAt   DateTime?
   createdAt    DateTime  @default(now())
