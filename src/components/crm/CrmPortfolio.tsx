@@ -167,6 +167,8 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   const [googlePhotosWarning, setGooglePhotosWarning] = useState(false);
   const [multiAddCount, setMultiAddCount] = useState<number | null>(null);
   const [coverImageWarning, setCoverImageWarning] = useState(false);
+  // Pending images to upload when creating a new project (not yet saved)
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
 
   // Image upload state
   const [imageAddMode, setImageAddMode] = useState<"url" | "upload">("url");
@@ -286,12 +288,14 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     }
     setEditingProject(null);
     setForm(EMPTY_FORM);
+    setPendingImages([]);
     setError("");
     setView("form");
   };
 
   const openEdit = (project: Project) => {
     setEditingProject(project);
+    setPendingImages([]);
     setForm({
       title: project.title,
       description: project.description || "",
@@ -364,6 +368,30 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
         throw new Error(data.error || "שגיאה בשמירה");
       }
 
+      // If this was a new project with pending images, upload them now
+      if (!editingProject && pendingImages.length > 0) {
+        try {
+          const createdProject = await res.clone().json();
+          const newProjectId = createdProject?.id;
+          if (newProjectId) {
+            const limit = Math.min(pendingImages.length, MAX_IMAGES_PER_PROJECT);
+            for (let i = 0; i < limit; i++) {
+              await fetch(`/api/designer/projects/${newProjectId}/images`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  imageUrl: pendingImages[i],
+                  sortOrder: i,
+                }),
+              });
+            }
+          }
+        } catch (imgErr) {
+          console.error("Pending images upload error", imgErr);
+        }
+      }
+      setPendingImages([]);
+
       await fetchProjects();
       setView("list");
     } catch (e: unknown) {
@@ -386,6 +414,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
   const handleDuplicate = (project: Project) => {
     // Open create form prefilled from this project
     setEditingProject(null);
+    setPendingImages([]);
     setForm({
       title: `${project.title} (עותק)`,
       description: project.description || "",
@@ -951,7 +980,7 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
     return (
       <div className="space-y-6 animate-in" dir="rtl">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <button
             onClick={() => setView("list")}
             className="flex items-center gap-2 text-sm text-gold hover:text-gold-dim transition-colors font-semibold"
@@ -959,9 +988,20 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
             <ChevronLeft className="w-4 h-4" />
             חזרה לרשימה
           </button>
-          <h2 className="font-heading text-xl text-text">
-            תמונות — {selectedProject.title}
-          </h2>
+          <div className="flex items-center gap-3 flex-wrap">
+            <a
+              href={`/projects/${selectedProject.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-gold text-sm"
+            >
+              <ExternalLink className="w-4 h-4" />
+              תצוגת פרויקט ללקוח
+            </a>
+            <h2 className="font-heading text-xl text-text">
+              תמונות — {selectedProject.title}
+            </h2>
+          </div>
         </div>
 
         {/* Add Image — split into Main + Secondary (feature #11) */}
@@ -1550,6 +1590,53 @@ export default function CrmPortfolio({ onSwitchToCard, gender }: CrmPortfolioPro
               onError={(err: string) => alert(err)}
             />
           </div>
+
+          {/* Multi-image upload — only for new projects */}
+          {!editingProject && (
+            <div>
+              <label className="form-label flex items-center gap-2">
+                <ImagePlus className="w-4 h-4 text-gold" />
+                תמונות נוספות של הפרויקט (אופציונלי)
+              </label>
+              <p className="text-xs text-text-muted mb-3">
+                ניתן להעלות עד {MAX_IMAGES_PER_PROJECT} תמונות. יתווספו לגלריה של הפרויקט לאחר שמירה.
+              </p>
+              {pendingImages.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
+                  {pendingImages.map((url, idx) => (
+                    <div key={`${url}-${idx}`} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-bg-surface">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setPendingImages(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute top-1 left-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="הסר תמונה"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {pendingImages.length < MAX_IMAGES_PER_PROJECT && (
+                <FileUpload
+                  category="image"
+                  folder="portfolio"
+                  label="העלאת תמונות (ניתן לבחור כמה)"
+                  multiple
+                  skipEditor
+                  maxSize={MAX_TOTAL_SIZE_PER_PROJECT}
+                  onUpload={(file: UploadedFile) => {
+                    setPendingImages(prev =>
+                      prev.length >= MAX_IMAGES_PER_PROJECT ? prev : [...prev, file.url]
+                    );
+                  }}
+                  onError={(err: string) => alert(err)}
+                />
+              )}
+            </div>
+          )}
 
           {/* Status */}
           <div>
