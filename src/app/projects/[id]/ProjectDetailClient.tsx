@@ -471,6 +471,9 @@ export default function ProjectDetailClient({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[50px] pt-[50px] pb-10 items-start">
           {/* LEFT: story */}
           <div className="text-text-secondary text-base leading-[1.85]">
+            <h3 className="font-heading font-medium text-2xl mb-3 tracking-[-0.3px] text-text">
+              על הפרויקט
+            </h3>
             {leadParagraph ? (
               <p
                 className="text-[19px] leading-[1.65] text-text font-normal mb-6 pr-4"
@@ -486,23 +489,15 @@ export default function ProjectDetailClient({
                 {project.title}
               </p>
             )}
-
-            <h3 className="font-heading font-medium text-2xl mt-8 mb-3 tracking-[-0.3px] text-text">
-              על הפרויקט
-            </h3>
             {restParagraphs.length > 0 ? (
               restParagraphs.map((para, i) => (
                 <p key={i} className="mb-[18px]">
                   {para}
                 </p>
               ))
-            ) : (
-              <p className="mb-[18px]">
-                {project.description
-                  ? ""
-                  : "פרטים נוספים על הפרויקט יתווספו בקרוב."}
-              </p>
-            )}
+            ) : !project.description ? (
+              <p className="mb-[18px]">פרטים נוספים על הפרויקט יתווספו בקרוב.</p>
+            ) : null}
 
             {project.styleTags.length > 0 && (
               <>
