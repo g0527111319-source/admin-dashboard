@@ -908,21 +908,11 @@ function DesignerPortfolioView({
               <p className="text-text-muted text-sm">אין פרויקטים להצגה</p>
             </div>
           ) : (
-            <>
-              <MasonryGallery
-                items={masonryItems}
-                onItemClick={(i) => setLightboxIndex(i)}
-                columns={{ base: 1, sm: 2, lg: 3 }}
-                layoutIdPrefix="portfolio"
-              />
-              <Lightbox
-                images={lightboxImages}
-                index={lightboxIndex}
-                onClose={() => setLightboxIndex(null)}
-                onChange={(i) => setLightboxIndex(i)}
-                layoutIdPrefix="portfolio"
-              />
-            </>
+            <MasonryGallery
+              items={masonryItems}
+              columns={{ base: 1, sm: 2, lg: 3 }}
+              layoutIdPrefix="portfolio"
+            />
           )}
         </div>
 
