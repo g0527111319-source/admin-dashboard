@@ -8,6 +8,7 @@ import {
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { TwistButton } from "@/components/ds";
+import { buildCsv, downloadCsv } from "@/lib/export-csv";
 
 /* ─── Types ─── */
 interface Attendee {
@@ -266,6 +267,7 @@ export default function EventsPage() {
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [previewEvent, setPreviewEvent] = useState<string | null>(null);
   const [reminderState, setReminderState] = useState<Record<string, { week: boolean; day: boolean; hour: boolean }>>({});
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -303,6 +305,76 @@ export default function EventsPage() {
       ...prev,
       [eventId]: { ...prev[eventId], [key]: !prev[eventId][key] },
     }));
+  };
+
+  const reloadEvents = async () => {
+    try {
+      const data = await fetch("/api/events").then((r) => r.json()).catch(() => []);
+      if (Array.isArray(data)) {
+        const mapped = data.map(mapEventFromApi);
+        setEvents(mapped);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const exportEventCsv = (event: EventItem) => {
+    const rows = [{
+      title: event.title,
+      date: event.date ? new Date(event.date).toLocaleString("he-IL") : "",
+      location: event.location,
+      description: event.description,
+      isPaid: event.isPaid ? "בתשלום" : "חינם",
+      price: event.price ?? "",
+      maxAttendees: event.maxAttendees,
+      registered: event.registered,
+      paid: event.paid,
+      status: event.status,
+    }];
+    const csv = buildCsv(rows, [
+      { key: "title", label: "כותרת" },
+      { key: "date", label: "תאריך" },
+      { key: "location", label: "מיקום" },
+      { key: "description", label: "תיאור" },
+      { key: "isPaid", label: "תשלום" },
+      { key: "price", label: "מחיר ₪" },
+      { key: "maxAttendees", label: "מקסימום משתתפות" },
+      { key: "registered", label: "נרשמו" },
+      { key: "paid", label: "שילמו" },
+      { key: "status", label: "סטטוס" },
+    ]);
+    downloadCsv(`event-${event.title || event.id}`, csv);
+  };
+
+  const deleteEvent = async (event: EventItem) => {
+    if (!confirm(`למחוק את האירוע "${event.title}"? האירוע יסומן כמבוטל.`)) return;
+    try {
+      await fetch(`/api/admin/events/${event.id}`, { method: "DELETE" });
+      await reloadEvents();
+    } catch (err) {
+      console.error("Event delete error:", err);
+    }
+  };
+
+  const startEditEvent = (event: EventItem) => {
+    setEditingEventId(event.id);
+    setNewTitle(event.title);
+    setNewDesc(event.description);
+    setNewDate(event.date ? event.date.slice(0, 16) : "");
+    setNewLocation(event.location);
+    setNewType(event.type || EVENT_TYPES[0]);
+    setNewIsFree(!event.isPaid);
+    setNewPrice(event.price !== null && event.price !== undefined ? String(event.price) : "");
+    setNewMaxAttendees(event.maxAttendees ? String(event.maxAttendees) : "");
+    setNewImageUrl(event.imageUrl || "");
+    setActiveTab("create");
+  };
+
+  const sendEventReminder = (event: EventItem) => {
+    const rem = reminderState[event.id] || event.reminders;
+    const active = Object.entries(rem).filter(([, v]) => v).map(([k]) => k).join(", ");
+    alert(`תזכורת עבור "${event.title}" תישלח למשתתפות דרך מערכת התזכורות האוטומטית (${active || "הגדירי סוג תזכורת לפני שליחה"}).`);
   };
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [
@@ -610,12 +682,18 @@ export default function EventsPage() {
                     {"רשימת נרשמות"}
                     {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </button>
-                  <button className="btn-outline text-xs flex items-center gap-1">
+                  <button
+                    onClick={() => exportEventCsv(event)}
+                    className="btn-outline text-xs flex items-center gap-1"
+                  >
                     <Download className="w-3 h-3" />
                     {"ייצוא Excel"}
                   </button>
                   {!isPast && (
-                    <button className="btn-outline text-xs flex items-center gap-1">
+                    <button
+                      onClick={() => sendEventReminder(event)}
+                      className="btn-outline text-xs flex items-center gap-1"
+                    >
                       <Send className="w-3 h-3" />
                       {"שלח תזכורת"}
                     </button>
@@ -627,11 +705,17 @@ export default function EventsPage() {
                     <Eye className="w-3 h-3" />
                     {"Preview"}
                   </button>
-                  <button className="btn-outline text-xs flex items-center gap-1">
+                  <button
+                    onClick={() => startEditEvent(event)}
+                    className="btn-outline text-xs flex items-center gap-1"
+                  >
                     <Edit3 className="w-3 h-3" />
                     {"עריכה"}
                   </button>
-                  <button className="btn-outline text-xs flex items-center gap-1 text-red-400 hover:text-red-300">
+                  <button
+                    onClick={() => deleteEvent(event)}
+                    className="btn-outline text-xs flex items-center gap-1 text-red-400 hover:text-red-300"
+                  >
                     <Trash2 className="w-3 h-3" />
                     {"מחיקה"}
                   </button>

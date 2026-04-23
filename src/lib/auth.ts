@@ -144,14 +144,50 @@ export async function isAdmin(): Promise<boolean> {
   return session?.role === "admin";
 }
 
-/** כניסת אדמין */
+const ADMIN_PASSWORD_SETTING_KEY = "admin_password_hash";
+
+/** כניסת אדמין — קודם בודק hash ב-SystemSetting, אם אין נופל חזרה ל-env var */
 export async function loginAdmin(email: string, password: string): Promise<boolean> {
   const adminEmail = process.env.ADMIN_EMAIL || "";
+  if (email !== adminEmail) return false;
+
+  try {
+    const setting = await withTimeout(
+      prisma.systemSetting.findUnique({ where: { key: ADMIN_PASSWORD_SETTING_KEY } }),
+      DB_QUERY_TIMEOUT,
+    );
+    if (setting && typeof setting.value === "string" && setting.value.length > 0) {
+      return verifyPassword(password, setting.value);
+    }
+  } catch (err) {
+    console.error("Admin password DB lookup failed:", err);
+    // נופלים ל-env var
+  }
+
   const adminPassword = process.env.ADMIN_PASSWORD || "";
-  return (
-    email === adminEmail &&
-    password === adminPassword
-  );
+  return password === adminPassword;
+}
+
+/** שינוי סיסמת אדמין — שומר hash חדש ב-SystemSetting */
+export async function changeAdminPassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ success: boolean; error?: string }> {
+  const adminEmail = process.env.ADMIN_EMAIL || "";
+  const valid = await loginAdmin(adminEmail, currentPassword);
+  if (!valid) return { success: false, error: "הסיסמה הנוכחית שגויה" };
+
+  if (!newPassword || newPassword.length < 8) {
+    return { success: false, error: "הסיסמה החדשה חייבת להכיל לפחות 8 תווים" };
+  }
+
+  const hash = await hashPassword(newPassword);
+  await prisma.systemSetting.upsert({
+    where: { key: ADMIN_PASSWORD_SETTING_KEY },
+    create: { key: ADMIN_PASSWORD_SETTING_KEY, value: hash },
+    update: { value: hash },
+  });
+  return { success: true };
 }
 
 /** כניסה עם אימייל וסיסמה */

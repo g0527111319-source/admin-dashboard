@@ -6,6 +6,7 @@ import {
   ChevronUp, Filter, Clock, Shield, Loader2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { buildCsv, downloadCsv, openWhatsApp } from "@/lib/export-csv";
 import dynamic from "next/dynamic";
 
 const ChartLoading = () => (
@@ -145,6 +146,110 @@ export default function ReportsPage() {
     setDeals(prev => prev.filter(d => d.id !== id));
   };
 
+  const exportActiveReport = useCallback((format: "csv" | "pdf") => {
+    if (format === "pdf") {
+      window.print();
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    switch (activeReport) {
+      case "deals": {
+        const csv = buildCsv(dealsMonthlyData, [
+          { key: "month", label: "חודש" },
+          { key: "deals", label: "עסקאות" },
+          { key: "revenue", label: "הכנסות ₪" },
+        ]);
+        downloadCsv(`deals-monthly-${today}`, csv);
+        break;
+      }
+      case "posts": {
+        const csv = buildCsv(postsMonthlyData, [
+          { key: "month", label: "חודש" },
+          { key: "published", label: "פורסמו" },
+          { key: "pending", label: "ממתינים" },
+          { key: "rejected", label: "נדחו" },
+        ]);
+        downloadCsv(`posts-monthly-${today}`, csv);
+        break;
+      }
+      case "payments": {
+        const csv = buildCsv(paymentsMonthlyData, [
+          { key: "month", label: "חודש" },
+          { key: "paid", label: "שולם" },
+          { key: "overdue", label: "איחור" },
+          { key: "pending", label: "ממתין" },
+        ]);
+        downloadCsv(`payments-monthly-${today}`, csv);
+        break;
+      }
+      case "approval": {
+        const csv = buildCsv(deals, [
+          { key: "designerName", label: "מעצבת" },
+          { key: "supplierName", label: "ספק" },
+          { key: "amount", label: "סכום ₪" },
+          { key: "category", label: "קטגוריה" },
+          { key: "date", label: "תאריך" },
+          { key: "description", label: "תיאור" },
+        ]);
+        downloadCsv(`pending-deals-${today}`, csv);
+        break;
+      }
+      default: {
+        alert("ייצוא לקטגוריה זו אינו זמין עדיין — השתמשי ב-PDF (הדפס) כתחליף.");
+      }
+    }
+  }, [activeReport, dealsMonthlyData, postsMonthlyData, paymentsMonthlyData, deals]);
+
+  const sendOverdueReminder = useCallback((entry: OverdueEntry) => {
+    const msg = `שלום ${entry.name}, זוהתה יתרת חוב פתוחה בסך ${formatCurrency(entry.debt)} (${entry.days} ימי איחור). נודה לעדכון בהקדם. — זירת האדריכלות`;
+    const phone = prompt(`שליחת תזכורת ל-${entry.name}. הזיני מספר WhatsApp (לדוגמה 050-1234567):`);
+    if (!phone) return;
+    openWhatsApp(phone, msg);
+  }, []);
+
+  const generateReport = useCallback(() => {
+    const el = document.getElementById("report-hub-summary");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const downloadQuickReport = useCallback((kind: string) => {
+    const today = new Date().toISOString().slice(0, 10);
+    switch (kind) {
+      case "suppliers": {
+        alert("לייצוא ספקים מלא יש לגשת לעמוד 'מנויים ומחירים' ולהשתמש בכפתור הייצוא.");
+        break;
+      }
+      case "deals": {
+        const csv = buildCsv(deals, [
+          { key: "designerName", label: "מעצבת" },
+          { key: "supplierName", label: "ספק" },
+          { key: "amount", label: "סכום ₪" },
+          { key: "date", label: "תאריך" },
+        ]);
+        downloadCsv(`deals-pending-${today}`, csv);
+        break;
+      }
+      case "ratings": {
+        const csv = buildCsv(ratingDistData, [
+          { key: "rating", label: "דירוג" },
+          { key: "count", label: "כמות" },
+        ]);
+        downloadCsv(`ratings-${today}`, csv);
+        break;
+      }
+      case "posts": {
+        const csv = buildCsv(postsMonthlyData, [
+          { key: "month", label: "חודש" },
+          { key: "published", label: "פורסמו" },
+          { key: "pending", label: "ממתינים" },
+          { key: "rejected", label: "נדחו" },
+        ]);
+        downloadCsv(`posts-stats-${today}`, csv);
+        break;
+      }
+    }
+  }, [deals, ratingDistData, postsMonthlyData]);
+
   // Report hub generated summary
   const kpi = reportData?.kpi;
   const postKpi = reportData?.postKpi;
@@ -210,10 +315,10 @@ export default function ReportsPage() {
           <p className="text-text-muted text-sm mt-1">נתונים מפורטים על כל הפעילות בקהילה</p>
         </div>
         <div className="flex gap-2">
-          <button className="btn-outline text-sm flex items-center gap-1">
+          <button onClick={() => exportActiveReport("pdf")} className="btn-outline text-sm flex items-center gap-1">
             <Download className="w-4 h-4" />ייצוא PDF
           </button>
-          <button className="btn-outline text-sm flex items-center gap-1">
+          <button onClick={() => exportActiveReport("csv")} className="btn-outline text-sm flex items-center gap-1">
             <Download className="w-4 h-4" />ייצוא Excel
           </button>
         </div>
@@ -645,7 +750,7 @@ export default function ReportsPage() {
                       {s.days} ימים
                     </td>
                     <td className="text-text-muted">{s.lastPayment}</td>
-                    <td><button className="btn-outline text-xs">שלח תזכורת</button></td>
+                    <td><button onClick={() => sendOverdueReminder(s)} className="btn-outline text-xs">שלח תזכורת</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -835,21 +940,46 @@ export default function ReportsPage() {
                 <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
                   className="input-dark text-sm" dir="ltr" />
               </div>
-              <button className="btn-gold text-sm mt-5">הפק דוח</button>
+              <button onClick={generateReport} className="btn-gold text-sm mt-5">הפק דוח</button>
             </div>
           </div>
 
           {/* Generated Report Summary */}
-          <div className="card-static border-gold/20">
+          <div id="report-hub-summary" className="card-static border-gold/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-text-primary font-heading text-lg">
                 סיכום {reportSummary.typeLabel} — {dateFrom} עד {dateTo}
               </h3>
               <div className="flex gap-2">
-                <button className="btn-outline text-xs flex items-center gap-1">
+                <button onClick={() => exportActiveReport("pdf")} className="btn-outline text-xs flex items-center gap-1">
                   <Download className="w-3 h-3" /> PDF
                 </button>
-                <button className="btn-gold text-xs flex items-center gap-1">
+                <button onClick={() => {
+                  const today = new Date().toISOString().slice(0, 10);
+                  const rows = [{
+                    type: reportSummary.typeLabel,
+                    from: dateFrom,
+                    to: dateTo,
+                    deals: reportSummary.totalDeals,
+                    revenue: reportSummary.totalRevenue,
+                    newDesigners: reportSummary.newDesigners,
+                    activeSuppliers: reportSummary.activeSuppliers,
+                    postsPublished: reportSummary.postsPublished,
+                    eventsHeld: reportSummary.eventsHeld,
+                  }];
+                  const csv = buildCsv(rows, [
+                    { key: "type", label: "סוג דוח" },
+                    { key: "from", label: "מתאריך" },
+                    { key: "to", label: "עד תאריך" },
+                    { key: "deals", label: "עסקאות" },
+                    { key: "revenue", label: "הכנסות ₪" },
+                    { key: "newDesigners", label: "מעצבות חדשות" },
+                    { key: "activeSuppliers", label: "ספקים פעילים" },
+                    { key: "postsPublished", label: "פרסומים" },
+                    { key: "eventsHeld", label: "אירועים" },
+                  ]);
+                  downloadCsv(`report-summary-${today}`, csv);
+                }} className="btn-gold text-xs flex items-center gap-1">
                   <Download className="w-3 h-3" /> Excel
                 </button>
               </div>
@@ -881,12 +1011,12 @@ export default function ReportsPage() {
             <h3 className="text-text-primary font-heading mb-4">דוחות מהירים</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: "רשימת ספקים + סטטוס", desc: "כל הספקים עם פרטי תשלום" },
-                { label: "עסקאות החודש", desc: "פירוט כל העסקאות" },
-                { label: "דירוגי ספקים", desc: "ממוצע דירוגים + תגובות" },
-                { label: "פרסומים — סטטיסטיקה", desc: "כמות, אחוז אישור, סיבות דחייה" },
+                { kind: "suppliers", label: "רשימת ספקים + סטטוס", desc: "כל הספקים עם פרטי תשלום" },
+                { kind: "deals", label: "עסקאות החודש", desc: "פירוט כל העסקאות" },
+                { kind: "ratings", label: "דירוגי ספקים", desc: "ממוצע דירוגים + תגובות" },
+                { kind: "posts", label: "פרסומים — סטטיסטיקה", desc: "כמות, אחוז אישור, סיבות דחייה" },
               ].map((report, i) => (
-                <button key={i} className="text-right p-4 bg-bg-surface rounded-xl border border-border-subtle hover:border-gold/30 transition-all group">
+                <button key={i} onClick={() => downloadQuickReport(report.kind)} className="text-right p-4 bg-bg-surface rounded-xl border border-border-subtle hover:border-gold/30 transition-all group">
                   <div className="flex items-center justify-between mb-2">
                     <FileText className="w-5 h-5 text-text-muted group-hover:text-gold transition-colors" />
                     <Download className="w-4 h-4 text-text-muted group-hover:text-gold transition-colors" />

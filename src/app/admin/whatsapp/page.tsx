@@ -95,6 +95,59 @@ export default function WhatsAppPage() {
     setActiveTab("broadcast");
   };
 
+  const saveTemplates = async (next: WaTemplate[]) => {
+    setTemplates(next);
+    try {
+      await fetch("/api/admin/whatsapp/templates", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templates: next }),
+      });
+    } catch (err) {
+      console.error("Template save error:", err);
+    }
+  };
+
+  const handleAddTemplate = () => {
+    const name = prompt("שם התבנית:");
+    if (!name || !name.trim()) return;
+    const body = prompt("תוכן התבנית (ניתן להשתמש ב-{name}, {event}, {deal_amount}):");
+    if (!body) return;
+    const vars = Array.from(body.matchAll(/\{(\w+)\}/g)).map((m) => `{${m[1]}}`);
+    const next: WaTemplate[] = [
+      ...TEMPLATES,
+      { id: `tpl-${Date.now()}`, name: name.trim(), body, variables: Array.from(new Set(vars)) },
+    ];
+    saveTemplates(next);
+  };
+
+  const handleEditTemplate = (tpl: WaTemplate) => {
+    const name = prompt("שם התבנית:", tpl.name);
+    if (name === null) return;
+    const body = prompt("תוכן התבנית:", tpl.body);
+    if (body === null) return;
+    const vars = Array.from(body.matchAll(/\{(\w+)\}/g)).map((m) => `{${m[1]}}`);
+    const next = TEMPLATES.map((t) =>
+      t.id === tpl.id ? { ...t, name: name.trim() || t.name, body, variables: Array.from(new Set(vars)) } : t,
+    );
+    saveTemplates(next);
+  };
+
+  const handleReconnect = async () => {
+    if (!confirm("לנתק את החיבור הנוכחי ולרענן את המצב?")) return;
+    setShowQR(true);
+    await fetchWhatsappData();
+  };
+
+  const handleSendBroadcast = () => {
+    if (!messageText.trim()) return;
+    alert(
+      `שליחת שידור ל-${recipientLabel}.\n\n` +
+      `כדי לשלוח בפועל יש להתחבר לוואטסאפ ולהגדיר ספק API (Green API / Whapi).\n\n` +
+      `תוכן ההודעה:\n${messageText}`,
+    );
+  };
+
   const recipientLabel = useMemo(() => {
     if (recipientType === "all") return "כל החברות";
     if (recipientType === "area") return selectedAreas.length > 0 ? selectedAreas.join(", ") : "לא נבחרו אזורים";
@@ -162,7 +215,7 @@ export default function WhatsAppPage() {
           </div>
           <div className="flex gap-2">
             {isConnected ? (
-              <button className="btn-outline text-sm flex items-center gap-1">
+              <button onClick={handleReconnect} className="btn-outline text-sm flex items-center gap-1">
                 <RefreshCw className="w-4 h-4" />{"נתק וחבר מחדש"}
               </button>
             ) : (
@@ -445,7 +498,8 @@ export default function WhatsAppPage() {
                 )}
               </p>
               <button
-                disabled={!isConnected || messageText.length === 0}
+                onClick={handleSendBroadcast}
+                disabled={messageText.length === 0}
                 className="btn-gold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" />
@@ -463,7 +517,7 @@ export default function WhatsAppPage() {
                 <Copy className="w-4 h-4 text-gold" />
                 {"ספריית תבניות"}
               </h3>
-              <button className="btn-outline text-xs flex items-center gap-1">
+              <button onClick={handleAddTemplate} className="btn-outline text-xs flex items-center gap-1">
                 <Plus className="w-3 h-3" />
                 {"תבנית חדשה"}
               </button>
@@ -486,7 +540,7 @@ export default function WhatsAppPage() {
                     {tpl.body}
                   </p>
                   <div className="flex justify-end gap-2">
-                    <button className="btn-outline text-xs flex items-center gap-1">
+                    <button onClick={() => handleEditTemplate(tpl)} className="btn-outline text-xs flex items-center gap-1">
                       <Edit3 className="w-3 h-3" />
                       {"עריכה"}
                     </button>

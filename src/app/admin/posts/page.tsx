@@ -79,15 +79,71 @@ export default function PostsManagementPage() {
     const [rejectReason, setRejectReason] = useState("");
     const filteredPosts = posts.filter((p) => filter === ALL_POSTS_FILTER || p.status === filter);
     const pendingCount = posts.filter((p) => p.status === "PENDING").length;
-    const handleApprove = (postId: string) => {
-        // TODO: API call
-        console.log("Approving post:", postId);
+    const reloadPosts = async () => {
+        try {
+            const data = await fetch("/api/posts").then((r) => r.json()).catch(() => []);
+            if (Array.isArray(data)) setPosts(data.map(mapPostFromApi));
+        } catch { /* ignore */ }
     };
-    const handleReject = (postId: string) => {
-        // TODO: API call
-        console.log("Rejecting post:", postId, "Reason:", rejectReason);
-        setShowRejectModal(false);
-        setRejectReason("");
+    const handleApprove = async (postId: string) => {
+        try {
+            const res = await fetch("/api/posts", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: postId, action: "approve" }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert(data?.error || "שגיאה באישור הפרסום");
+                return;
+            }
+            await reloadPosts();
+        } catch (err) {
+            console.error("Post approve error:", err);
+            alert("שגיאת רשת. נסי שוב.");
+        }
+    };
+    const handleReject = async (postId: string) => {
+        try {
+            const res = await fetch("/api/posts", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: postId, action: "reject", rejectionReason: rejectReason }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert(data?.error || "שגיאה בדחיית הפרסום");
+                return;
+            }
+            setShowRejectModal(false);
+            setRejectReason("");
+            await reloadPosts();
+        } catch (err) {
+            console.error("Post reject error:", err);
+            alert("שגיאת רשת. נסי שוב.");
+        }
+    };
+    const handleReschedule = async (post: PendingPost) => {
+        const newDate = prompt(`דחייה לתאריך חדש (YYYY-MM-DD):`, post.scheduledDate);
+        if (!newDate) return;
+        const newTime = prompt(`שעה חדשה (HH:MM):`, post.scheduledTime || "12:00");
+        if (!newTime) return;
+        try {
+            const res = await fetch(`/api/admin/posts/${post.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ scheduledDate: newDate, scheduledTime: newTime }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert(data?.error || "שגיאה בעדכון התזמון");
+                return;
+            }
+            await reloadPosts();
+        } catch (err) {
+            console.error("Post reschedule error:", err);
+            alert("שגיאת רשת. נסי שוב.");
+        }
     };
     if (loading) {
         return (
@@ -188,7 +244,7 @@ export default function PostsManagementPage() {
                     setShowRejectModal(true);
                 }} className="btn-danger flex-1 flex items-center justify-center gap-2 text-sm">
                   <X className="w-4 h-4"/>{txt("src/app/admin/posts/page.tsx::032", "דחה")}</button>
-                <button className="btn-outline px-3 text-sm">
+                <button onClick={() => handleReschedule(post)} className="btn-outline px-3 text-sm" title="תזמון מחדש">
                   <Calendar className="w-4 h-4"/>
                 </button>
               </div>)}

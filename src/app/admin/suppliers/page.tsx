@@ -9,6 +9,8 @@ import {
 import StatusBadge from "@/components/ui/StatusBadge";
 import StarRating from "@/components/ui/StarRating";
 import { formatDateShort, formatCurrency, SUPPLIER_CATEGORIES, AREAS } from "@/lib/utils";
+import { buildCsv, downloadCsv, openWhatsApp } from "@/lib/export-csv";
+import { useRouter } from "next/navigation";
 
 // ==========================================
 // Types
@@ -166,10 +168,31 @@ const ALL = "__ALL__";
 // Component
 // ==========================================
 
+const SUPPLIER_CSV_COLUMNS = [
+  { key: "name", label: "שם העסק" },
+  { key: "contactName", label: "איש קשר" },
+  { key: "phone", label: "טלפון" },
+  { key: "email", label: "מייל" },
+  { key: "category", label: "קטגוריה" },
+  { key: "city", label: "עיר" },
+  { key: "area", label: "אזור" },
+  { key: "paymentStatus", label: "סטטוס תשלום" },
+  { key: "monthlyFee", label: "תשלום חודשי ₪" },
+  { key: "totalDeals", label: "סה״כ עסקאות" },
+  { key: "totalDealAmount", label: "סה״כ סכום עסקאות" },
+  { key: "averageRating", label: "דירוג ממוצע" },
+  { key: "ratingCount", label: "כמות דירוגים" },
+  { key: "postsThisMonth", label: "פרסומים החודש" },
+  { key: "isActive", label: "פעיל", format: (r: Supplier) => (r.isActive ? "כן" : "לא") },
+  { key: "subscriptionEnd", label: "חוזה עד" },
+];
+
 export default function SuppliersPage() {
+  const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState(ALL);
   const [statusFilter, setStatusFilter] = useState(ALL);
@@ -233,10 +256,22 @@ export default function SuppliersPage() {
   const clearSelection = useCallback(() => setSelectedIds({}), []);
 
   // Suspend/Activate
-  const toggleSuspend = useCallback((id: string) => {
-    setSuppliers(prev => prev.map(s => s.id === id ? { ...s, isSuspended: !s.isSuspended, isActive: s.isSuspended } : s));
+  const toggleSuspend = useCallback(async (id: string) => {
+    const current = suppliers.find((s) => s.id === id);
+    if (!current) return;
+    const nextActive = current.isSuspended; // if suspended → activate; if active → suspend
+    setSuppliers(prev => prev.map(s => s.id === id ? { ...s, isSuspended: !s.isSuspended, isActive: nextActive } : s));
     setConfirmSuspend(null);
-  }, []);
+    try {
+      await fetch(`/api/admin/suppliers/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: nextActive }),
+      });
+    } catch (err) {
+      console.error("Toggle suspend error:", err);
+    }
+  }, [suppliers]);
 
   // Verification
   const toggleVerificationItem = useCallback((id: string, key: keyof VerificationChecklist) => {
@@ -260,10 +295,101 @@ export default function SuppliersPage() {
     setEditingSupplier(supplier.id);
     setShowAddForm(true);
   }, []);
-  const handleSubmitForm = useCallback(() => {
-    console.log(editingSupplier ? "Updating:" : "Creating:", formData);
-    setShowAddForm(false); setFormData(emptyForm); setEditingSupplier(null);
+  const handleSubmitForm = useCallback(async () => {
+    try {
+      const payload = {
+        name: formData.name.trim(),
+        contactName: formData.contactName.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim() || undefined,
+        category: formData.category,
+        city: formData.city.trim() || undefined,
+        area: formData.area || undefined,
+        website: formData.website.trim() || undefined,
+        description: formData.description.trim() || undefined,
+        monthlyFee: formData.monthlyFee ? Number(formData.monthlyFee) : undefined,
+        notes: formData.notes.trim() || undefined,
+      };
+      if (editingSupplier) {
+        await fetch(`/api/admin/suppliers/${editingSupplier}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch("/api/suppliers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      const fresh = await fetch("/api/suppliers").then((r) => r.json()).catch(() => []);
+      if (Array.isArray(fresh)) setSuppliers(fresh.map(mapSupplierFromApi));
+    } catch (err) {
+      console.error("Supplier save error:", err);
+    } finally {
+      setShowAddForm(false); setFormData(emptyForm); setEditingSupplier(null);
+    }
   }, [formData, editingSupplier]);
+
+  // Export suppliers to Excel (CSV with BOM)
+  const exportAll = useCallback(() => {
+    const csv = buildCsv(filteredSuppliers, SUPPLIER_CSV_COLUMNS);
+    downloadCsv(`ziratadrichalut-suppliers-${new Date().toISOString().slice(0, 10)}`, csv);
+  }, [filteredSuppliers]);
+
+  const exportSelected = useCallback(() => {
+    const rows = suppliers.filter((s) => selectedIds[s.id]);
+    if (rows.length === 0) return;
+    const csv = buildCsv(rows, SUPPLIER_CSV_COLUMNS);
+    downloadCsv(`ziratadrichalut-suppliers-selected-${new Date().toISOString().slice(0, 10)}`, csv);
+  }, [suppliers, selectedIds]);
+
+  // Bulk suspend selected
+  const bulkSuspend = useCallback(async () => {
+    const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
+    if (ids.length === 0) return;
+    if (!confirm(`להשעות ${ids.length} ספקים? ניתן להפעיל מחדש.`)) return;
+    setBulkBusy(true);
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/admin/suppliers/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isActive: false }),
+          }).catch(() => null),
+        ),
+      );
+      const fresh = await fetch("/api/suppliers").then((r) => r.json()).catch(() => []);
+      if (Array.isArray(fresh)) setSuppliers(fresh.map(mapSupplierFromApi));
+      setSelectedIds({});
+    } finally {
+      setBulkBusy(false);
+    }
+  }, [selectedIds]);
+
+  // Bulk send reminder via WhatsApp (opens first selected; for multiple show sequential)
+  const bulkReminder = useCallback(() => {
+    const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
+    if (ids.length === 0) return;
+    const chosen = suppliers.filter((s) => ids.includes(s.id));
+    const msg = "שלום, רק מזכירים שטרם הגיע התשלום החודשי במערכת זירת האדריכלות. נודה להסדרה. תודה 🌟";
+    chosen.forEach((s, idx) => {
+      if (s.phone) {
+        setTimeout(() => openWhatsApp(s.phone, `${s.contactName ? s.contactName + "," : ""} ${msg}`), idx * 250);
+      }
+    });
+  }, [selectedIds, suppliers]);
+
+  const viewProfile = useCallback((id: string) => {
+    router.push(`/supplier/${id}`);
+  }, [router]);
+
+  const sendWhatsApp = useCallback((supplier: Supplier) => {
+    const msg = `שלום ${supplier.contactName || ""} 👋`;
+    openWhatsApp(supplier.phone, msg);
+  }, []);
 
   // Stats
   const totalRevenue = suppliers.filter(s => s.isActive && s.paymentStatus === "PAID").reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
@@ -303,7 +429,7 @@ export default function SuppliersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="btn-outline flex items-center gap-2 text-sm">
+          <button onClick={exportAll} className="btn-outline flex items-center gap-2 text-sm">
             <Download className="w-4 h-4" />ייצוא Excel
           </button>
           <button onClick={handleOpenAdd} className="btn-gold flex items-center gap-2 text-sm">
@@ -426,13 +552,13 @@ export default function SuppliersPage() {
                 </button>
               </div>
               <div className="flex gap-2">
-                <button className="btn-outline text-xs flex items-center gap-1.5">
+                <button onClick={bulkReminder} className="btn-outline text-xs flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5" />שלח תזכורת
                 </button>
-                <button className="btn-outline text-xs flex items-center gap-1.5 text-red-400 border-red-400/30 hover:bg-red-400/10">
+                <button onClick={bulkSuspend} disabled={bulkBusy} className="btn-outline text-xs flex items-center gap-1.5 text-red-400 border-red-400/30 hover:bg-red-400/10 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Pause className="w-3.5 h-3.5" />השעה נבחרים
                 </button>
-                <button className="btn-outline text-xs flex items-center gap-1.5">
+                <button onClick={exportSelected} className="btn-outline text-xs flex items-center gap-1.5">
                   <Download className="w-3.5 h-3.5" />ייצוא נבחרים
                 </button>
               </div>
@@ -612,10 +738,10 @@ export default function SuppliersPage() {
                         )}
 
                         <div className="flex gap-2 flex-wrap">
-                          <button className="btn-outline text-xs flex items-center gap-1">
+                          <button onClick={() => viewProfile(supplier.id)} className="btn-outline text-xs flex items-center gap-1">
                             <Eye className="w-3 h-3" />צפה בפרופיל
                           </button>
-                          <button className="btn-outline text-xs flex items-center gap-1">
+                          <button onClick={() => sendWhatsApp(supplier)} className="btn-outline text-xs flex items-center gap-1">
                             <MessageCircle className="w-3 h-3" />שלח WhatsApp
                           </button>
                           {confirmSuspend === supplier.id ? (

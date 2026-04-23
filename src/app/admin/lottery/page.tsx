@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCurrency } from "@/lib/utils";
+import { openWhatsApp } from "@/lib/export-csv";
 
 // ── Interfaces ──────────────────────────────────────────
 
@@ -32,6 +33,7 @@ interface LotteryData {
 interface EligibleDesigner {
   id: string;
   name: string;
+  phone?: string;
   deals: number;
   amount: number;
 }
@@ -140,6 +142,7 @@ export default function LotteryPage() {
           setEligibleDesigners(designersData.map((d: any) => ({
             id: d.id,
             name: d.fullName || "",
+            phone: d.phone || d.whatsappPhone || "",
             deals: d.totalDealsReported || 0,
             amount: d.totalDealAmount || 0,
           })));
@@ -216,6 +219,37 @@ export default function LotteryPage() {
 
   const whatsAppMsg = (name: string, prize: string) =>
     `🎉 מזל טוב ${name}! זכית ב${prize} בהגרלה החודשית של קהילת זירת. נציגה שלנו תיצור איתך קשר בקרוב 💛`;
+
+  const handleAddEligibleManually = () => {
+    const name = prompt("שם המעצבת להוספה לרשימת הזכאיות:");
+    if (!name || !name.trim()) return;
+    const dealsStr = prompt("מספר עסקאות החודש (אופציונלי):", "1");
+    const amountStr = prompt("סכום עסקאות ₪ (אופציונלי):", "0");
+    const entry: EligibleDesigner = {
+      id: `manual-${Date.now()}`,
+      name: name.trim(),
+      deals: Number(dealsStr) || 0,
+      amount: Number(amountStr) || 0,
+    };
+    setEligibleDesigners((prev) => [...prev, entry]);
+  };
+
+  const handleRemoveEligible = (designer: EligibleDesigner) => {
+    if (!confirm(`להסיר את ${designer.name} מרשימת הזכאיות?`)) return;
+    setEligibleDesigners((prev) => prev.filter((d) => d.id !== designer.id));
+  };
+
+  const handleSendWinnerWhatsApp = () => {
+    if (!currentLottery || drawnWinners.length === 0) return;
+    for (const w of drawnWinners) {
+      const designer = eligibleDesigners.find((d) => d.name === w.name);
+      if (designer?.phone) {
+        openWhatsApp(designer.phone, whatsAppMsg(w.name, currentLottery.prize));
+      } else {
+        alert(`אין מספר טלפון זמין עבור ${w.name} — יש לפנות ידנית.`);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -367,21 +401,28 @@ export default function LotteryPage() {
               <h3 className="text-text-primary font-heading flex items-center gap-1">
                 <Users className="w-4 h-4 text-gold" />רשימת זכאיות</h3>
               <div className="flex gap-2">
-                <button className="btn-outline text-xs flex items-center gap-1">
+                <button onClick={handleAddEligibleManually} className="btn-outline text-xs flex items-center gap-1">
                   <UserPlus className="w-3 h-3" />הוסף ידנית</button>
-                <button className="btn-outline text-xs flex items-center gap-1">
-                  <UserMinus className="w-3 h-3" />הסר</button>
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full table-luxury">
-                <thead><tr><th>שם</th><th>עסקאות החודש</th><th>סכום כולל</th></tr></thead>
+                <thead><tr><th>שם</th><th>עסקאות החודש</th><th>סכום כולל</th><th></th></tr></thead>
                 <tbody>
                   {eligibleDesigners.map((d) => (
                     <tr key={d.id}>
                       <td className="text-gold">{d.name}</td>
                       <td className="font-mono">{d.deals}</td>
                       <td className="font-mono">{formatCurrency(d.amount)}</td>
+                      <td>
+                        <button
+                          onClick={() => handleRemoveEligible(d)}
+                          className="text-text-muted hover:text-red-400 transition-colors text-xs flex items-center gap-1"
+                          title="הסר מהרשימה"
+                        >
+                          <UserMinus className="w-3 h-3" />הסר
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -432,7 +473,7 @@ export default function LotteryPage() {
                         </div>
                       ))}
                     </div>
-                    <button className="btn-gold flex items-center gap-2 mx-auto">
+                    <button onClick={handleSendWinnerWhatsApp} className="btn-gold flex items-center gap-2 mx-auto">
                       <MessageCircle className="w-4 h-4" />שלח הודעת WhatsApp
                     </button>
                   </div>

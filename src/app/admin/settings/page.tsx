@@ -143,7 +143,11 @@ export default function SettingsPage() {
 
   // Security state
   const [adminEmail, setAdminEmail] = useState("z.adrichalut@gmail.com");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMessage, setPwMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   // Loading / saving state
   const [pageLoading, setPageLoading] = useState(true);
@@ -540,26 +544,84 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-text-muted text-sm block mb-1">{"שינוי סיסמה"}</label>
+                <label className="text-text-muted text-sm block mb-1">{"סיסמה נוכחית"}</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="הכניסי את הסיסמה הנוכחית"
+                  className="input-dark w-full"
+                  autoComplete="current-password"
+                />
+              </div>
+              <div>
+                <label className="text-text-muted text-sm block mb-1">{"סיסמה חדשה"}</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="סיסמה חדשה"
+                  placeholder="לפחות 8 תווים"
                   className="input-dark w-full"
-                  disabled
+                  autoComplete="new-password"
                 />
-                <p className="text-text-muted text-xs mt-2 leading-relaxed">
-                  {"סיסמת האדמין מוגדרת במשתנה סביבה (ADMIN_PASSWORD) ב־Vercel ולא ניתנת לשינוי דרך הממשק לצרכי אבטחה."}
-                </p>
               </div>
+              <div>
+                <label className="text-text-muted text-sm block mb-1">{"אימות סיסמה חדשה"}</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="חזרי על הסיסמה החדשה"
+                  className="input-dark w-full"
+                  autoComplete="new-password"
+                />
+              </div>
+              {pwMessage && (
+                <p className={`text-sm ${pwMessage.kind === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                  {pwMessage.text}
+                </p>
+              )}
               <button
                 type="button"
-                disabled
-                className="btn-outline text-sm opacity-50 cursor-not-allowed"
-                title="שינוי סיסמה זמין רק דרך משתני סביבה ב־Vercel"
+                disabled={pwBusy}
+                className="btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={async () => {
+                  setPwMessage(null);
+                  if (!currentPassword || !newPassword || !confirmPassword) {
+                    setPwMessage({ kind: "error", text: "יש למלא את כל השדות" });
+                    return;
+                  }
+                  if (newPassword.length < 8) {
+                    setPwMessage({ kind: "error", text: "הסיסמה החדשה חייבת להכיל לפחות 8 תווים" });
+                    return;
+                  }
+                  if (newPassword !== confirmPassword) {
+                    setPwMessage({ kind: "error", text: "הסיסמאות החדשות אינן תואמות" });
+                    return;
+                  }
+                  setPwBusy(true);
+                  try {
+                    const res = await fetch("/api/admin/settings/password", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ currentPassword, newPassword }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      setPwMessage({ kind: "error", text: data?.error || "שגיאה בעדכון הסיסמה" });
+                    } else {
+                      setPwMessage({ kind: "success", text: "הסיסמה עודכנה בהצלחה" });
+                      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+                    }
+                  } catch (err) {
+                    console.error("Password change error:", err);
+                    setPwMessage({ kind: "error", text: "שגיאת רשת. נסי שוב." });
+                  } finally {
+                    setPwBusy(false);
+                  }
+                }}
               >
-                {"עדכן סיסמה"}
+                {pwBusy ? "מעדכן..." : "עדכן סיסמה"}
               </button>
             </div>
           </div>
