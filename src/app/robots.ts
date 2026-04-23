@@ -9,7 +9,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/"],
+        // Allow static assets (fonts/CSS/JS) and the PWA manifest explicitly —
+        // Google needs them to render pages correctly and to verify the PWA.
+        allow: ["/", "/_next/static/", "/manifest.json"],
         disallow: [
           "/admin",
           "/admin/",
@@ -22,8 +24,7 @@ export default function robots(): MetadataRoute.Robots {
           "/contract/sign/",
           "/designer/*/onboarding",
           "/designer/*/subscription",
-          "/_next/",
-          "/*.json$",
+          "/_next/data/",
         ],
       },
     ],
