@@ -68,6 +68,7 @@ export default function CouponsManager({ plans }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   // Form state
   const [code, setCode] = useState("");
@@ -150,22 +151,13 @@ export default function CouponsManager({ plans }: Props) {
   };
 
   const toggleActive = async (c: Coupon) => {
+    if (c.isActive && !confirm(`להשבית את הקופון "${c.code}"? ניתן להפעיל אותו מחדש אחר כך.`)) return;
     try {
       await fetch(`/api/admin/coupons/${c.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !c.isActive }),
       });
-      await loadCoupons();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const deleteCoupon = async (c: Coupon) => {
-    if (!confirm(`להשבית את הקופון "${c.code}"? המימושים הקיימים יישמרו.`)) return;
-    try {
-      await fetch(`/api/admin/coupons/${c.id}`, { method: "DELETE" });
       await loadCoupons();
     } catch (err) {
       console.error(err);
@@ -344,15 +336,26 @@ export default function CouponsManager({ plans }: Props) {
 
       {/* Coupons list */}
       <section>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h2 className="font-heading text-xl font-bold text-text-primary tracking-tight">
             קופונים קיימים
           </h2>
-          {!loading && coupons.length > 0 && (
-            <Badge variant="outline" size="sm">
-              {coupons.length} קופונים
-            </Badge>
-          )}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="w-4 h-4 accent-gold"
+              />
+              הצג גם לא פעילים
+            </label>
+            {!loading && coupons.length > 0 && (
+              <Badge variant="outline" size="sm">
+                {coupons.filter((c) => showInactive || c.isActive).length} קופונים
+              </Badge>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -369,17 +372,17 @@ export default function CouponsManager({ plans }: Props) {
               </Card>
             ))}
           </div>
-        ) : coupons.length === 0 ? (
+        ) : coupons.filter((c) => showInactive || c.isActive).length === 0 ? (
           <Card padding="lg">
             <EmptyState
               icon={<Ticket />}
-              title="אין קופונים עדיין"
-              description="צרי קופון ראשון בטופס למעלה."
+              title={coupons.length === 0 ? "אין קופונים עדיין" : "אין קופונים פעילים"}
+              description={coupons.length === 0 ? "צרי קופון ראשון בטופס למעלה." : "סמני ״הצג גם לא פעילים״ כדי לראות קופונים שהושבתו."}
             />
           </Card>
         ) : (
           <div className="grid gap-3">
-            {coupons.map((c) => {
+            {coupons.filter((c) => showInactive || c.isActive).map((c) => {
               const active = c.isActive;
               const used = c._count?.redemptions ?? c.redemptionCount ?? 0;
               return (
@@ -437,20 +440,12 @@ export default function CouponsManager({ plans }: Props) {
                         {copiedId === c.id ? "הועתק" : "העתק"}
                       </Button>
                       <Button
-                        variant="secondary"
+                        variant={active ? "danger" : "secondary"}
                         size="xs"
                         onClick={() => toggleActive(c)}
-                        iconLeft={<Power className="w-3.5 h-3.5" />}
+                        iconLeft={active ? <Trash2 className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                       >
-                        {active ? "השבת" : "הפעל"}
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="xs"
-                        onClick={() => deleteCoupon(c)}
-                        iconLeft={<Trash2 className="w-3.5 h-3.5" />}
-                      >
-                        מחק
+                        {active ? "השבת" : "הפעל מחדש"}
                       </Button>
                     </div>
                   </div>

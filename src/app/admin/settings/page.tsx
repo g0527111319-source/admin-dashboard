@@ -547,9 +547,20 @@ export default function SettingsPage() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="סיסמה חדשה"
                   className="input-dark w-full"
+                  disabled
                 />
+                <p className="text-text-muted text-xs mt-2 leading-relaxed">
+                  {"סיסמת האדמין מוגדרת במשתנה סביבה (ADMIN_PASSWORD) ב־Vercel ולא ניתנת לשינוי דרך הממשק לצרכי אבטחה."}
+                </p>
               </div>
-              <button className="btn-outline text-sm">{"עדכן סיסמה"}</button>
+              <button
+                type="button"
+                disabled
+                className="btn-outline text-sm opacity-50 cursor-not-allowed"
+                title="שינוי סיסמה זמין רק דרך משתני סביבה ב־Vercel"
+              >
+                {"עדכן סיסמה"}
+              </button>
             </div>
           </div>
         </div>
