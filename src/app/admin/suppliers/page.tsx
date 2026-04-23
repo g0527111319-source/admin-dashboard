@@ -109,8 +109,11 @@ function mapSupplierFromApi(s: any): Supplier {
 // ==========================================
 
 function MiniSparkline({ data, color = "#C9A84C" }: { data: number[]; color?: string }) {
-  const max = Math.max(...data, 1);
   const w = 80, h = 24;
+  if (!data || data.length < 2) {
+    return <svg width={w} height={h} className="inline-block" aria-hidden />;
+  }
+  const max = Math.max(...data, 1);
   const points = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * h}`).join(" ");
   return (
     <svg width={w} height={h} className="inline-block">
@@ -581,7 +584,7 @@ export default function SuppliersPage() {
                           </div>
                           <div>
                             <span className="text-text-muted">פעילות אחרונה: </span>
-                            <span className="text-text-primary">{formatDateShort(supplier.lastActivityDate)}</span>
+                            <span className="text-text-primary">{supplier.lastActivityDate ? formatDateShort(supplier.lastActivityDate) : "—"}</span>
                           </div>
                           <div>
                             <span className="text-text-muted">אזור: </span>
@@ -670,7 +673,7 @@ export default function SuppliersPage() {
                         </a>
                       </div>
                       <div className="flex items-center gap-1 text-text-muted text-xs">
-                        <Calendar className="w-3 h-3" />חוזה עד {formatDateShort(supplier.subscriptionEnd)}
+                        <Calendar className="w-3 h-3" />חוזה עד {supplier.subscriptionEnd ? formatDateShort(supplier.subscriptionEnd) : "—"}
                       </div>
                     </div>
 
@@ -758,7 +761,7 @@ export default function SuppliersPage() {
                             <span className="text-xs font-mono text-gold">{s.averageRating}</span>
                           </div>
                         </td>
-                        <td className="text-text-muted text-xs">{formatDateShort(s.lastActivityDate)}</td>
+                        <td className="text-text-muted text-xs">{s.lastActivityDate ? formatDateShort(s.lastActivityDate) : "—"}</td>
                         <td>
                           <div className="flex gap-1">
                             <button onClick={() => handleOpenEdit(s)} className="text-text-muted hover:text-gold">
