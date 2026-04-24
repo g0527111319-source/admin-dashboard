@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Bug, Lightbulb, X, Upload, Loader2, Check } from "lucide-react";
 
 type FeedbackType = "BUG" | "FEATURE";
@@ -108,9 +109,21 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
     }
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  if (!mounted) return null;
+
+  const content = (
     <div
-      className="fixed inset-0 z-[10001] flex items-center sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-[10001] flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto overscroll-contain"
       role="dialog"
       aria-modal="true"
       aria-label={label}
@@ -118,10 +131,11 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
         if (e.target === e.currentTarget && !submitting) onClose();
       }}
       dir="rtl"
+      style={{ paddingTop: "max(1rem, env(safe-area-inset-top))", paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
       <div
-        className="bg-bg-card border border-border-subtle shadow-2xl w-full sm:max-w-lg flex flex-col rounded-none sm:rounded-2xl"
-        style={{ maxHeight: "100dvh", height: "auto" }}
+        className="bg-bg-card border border-border-subtle shadow-2xl w-full sm:max-w-lg flex flex-col rounded-2xl mx-2 sm:mx-4 my-auto"
+        style={{ maxHeight: "calc(100dvh - 2rem)" }}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-card flex-shrink-0">
           <h2 className="font-heading font-bold text-text-primary flex items-center gap-2">
@@ -256,4 +270,6 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
