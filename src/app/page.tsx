@@ -219,7 +219,7 @@ export default function HomePage() {
               custom={3}
               className="mt-8 text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed font-rubik"
             >
-              מרחב אחד למעצבות פנים ואדריכלות — <span className="text-gold-dim font-medium">קהילה חמה</span>,
+              מרחב אחד למעצבות פנים ואדריכלות — <span className="text-gold-dim font-medium">קהילת ספקים ומעצבות פעילה</span>,
               מערכת <span className="text-gold-dim font-medium">CRM מקצועית</span> לניהול לקוחות,
               ספקים מובחרים ואירועים שמרימים את המקצוע לרמה אחרת.
             </motion.p>
