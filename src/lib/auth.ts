@@ -146,29 +146,42 @@ export async function isAdmin(): Promise<boolean> {
 
 const ADMIN_PASSWORD_SETTING_KEY = "admin_password_hash";
 
-/** כניסת אדמין — קודם בודק hash ב-SystemSetting, אם אין נופל חזרה ל-env var */
+/** מחלץ hash מתוך SystemSetting value — תומך גם ב-string וגם ב-{ hash } */
+function extractAdminHash(value: unknown): string | null {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (value && typeof value === "object" && "hash" in value) {
+    const h = (value as { hash?: unknown }).hash;
+    if (typeof h === "string" && h.length > 0) return h;
+  }
+  return null;
+}
+
+/** כניסת אדמין — בודק hash ב-SystemSetting, ומתיר גם סיסמת ENV כגיבוי */
 export async function loginAdmin(email: string, password: string): Promise<boolean> {
   const adminEmail = process.env.ADMIN_EMAIL || "";
   if (email !== adminEmail) return false;
+
+  // ENV password תמיד עובד כגיבוי (לשחזור במקרה של אובדן גישה)
+  const adminPassword = process.env.ADMIN_PASSWORD || "";
+  if (adminPassword && password === adminPassword) return true;
 
   try {
     const setting = await withTimeout(
       prisma.systemSetting.findUnique({ where: { key: ADMIN_PASSWORD_SETTING_KEY } }),
       DB_QUERY_TIMEOUT,
     );
-    if (setting && typeof setting.value === "string" && setting.value.length > 0) {
-      return verifyPassword(password, setting.value);
+    const hash = extractAdminHash(setting?.value);
+    if (hash) {
+      return verifyPassword(password, hash);
     }
   } catch (err) {
     console.error("Admin password DB lookup failed:", err);
-    // נופלים ל-env var
   }
 
-  const adminPassword = process.env.ADMIN_PASSWORD || "";
-  return password === adminPassword;
+  return false;
 }
 
-/** שינוי סיסמת אדמין — שומר hash חדש ב-SystemSetting */
+/** שינוי סיסמת אדמין — שומר hash חדש ב-SystemSetting כאובייקט { hash } */
 export async function changeAdminPassword(
   currentPassword: string,
   newPassword: string,
@@ -184,8 +197,8 @@ export async function changeAdminPassword(
   const hash = await hashPassword(newPassword);
   await prisma.systemSetting.upsert({
     where: { key: ADMIN_PASSWORD_SETTING_KEY },
-    create: { key: ADMIN_PASSWORD_SETTING_KEY, value: hash },
-    update: { value: hash },
+    create: { key: ADMIN_PASSWORD_SETTING_KEY, value: { hash } },
+    update: { value: { hash } },
   });
   return { success: true };
 }
