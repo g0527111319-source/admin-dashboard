@@ -123,7 +123,7 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
 
   const content = (
     <div
-      className="fixed inset-0 z-[10001] flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto overscroll-contain"
+      className="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={label}
@@ -131,11 +131,13 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
         if (e.target === e.currentTarget && !submitting) onClose();
       }}
       dir="rtl"
-      style={{ paddingTop: "max(1rem, env(safe-area-inset-top))", paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
       <div
-        className="bg-bg-card border border-border-subtle shadow-2xl w-full sm:max-w-lg flex flex-col rounded-2xl mx-2 sm:mx-4 my-auto"
-        style={{ maxHeight: "calc(100dvh - 2rem)" }}
+        className="absolute left-1/2 -translate-x-1/2 bg-bg-card border border-border-subtle shadow-2xl w-[calc(100%-1rem)] sm:w-full sm:max-w-lg flex flex-col rounded-2xl"
+        style={{
+          top: "max(0.5rem, env(safe-area-inset-top))",
+          maxHeight: "calc(100dvh - max(1rem, env(safe-area-inset-top)) - max(1rem, env(safe-area-inset-bottom)))",
+        }}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-card flex-shrink-0">
           <h2 className="font-heading font-bold text-text-primary flex items-center gap-2">
