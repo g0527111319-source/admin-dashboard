@@ -597,7 +597,7 @@ export default function DesignerDashboard() {
                   setSearch(e.target.value);
                   if (e.target.value && activeTab !== "suppliers") setActiveTab("suppliers");
                 }}
-                placeholder={txt("src/app/designer/[id]/page.tsx::049", "חיפוש ספקים...")}
+                placeholder={txt("src/app/designer/[id]/page.tsx::049", "חיפוש ספק")}
                 className="search-global"
               />
             </div>
