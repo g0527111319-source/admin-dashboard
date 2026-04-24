@@ -156,10 +156,19 @@ function extractAdminHash(value: unknown): string | null {
   return null;
 }
 
+/** רשימת מיילים מותרים למנהלת — z.adrichalut@gmail.com תמיד מותרת, פלוס ADMIN_EMAIL מה-ENV */
+const CANONICAL_ADMIN_EMAIL = "z.adrichalut@gmail.com";
+function isAllowedAdminEmail(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  if (normalized === CANONICAL_ADMIN_EMAIL) return true;
+  const envEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  if (envEmail && normalized === envEmail) return true;
+  return false;
+}
+
 /** כניסת אדמין — בודק hash ב-SystemSetting, ומתיר גם סיסמת ENV כגיבוי */
 export async function loginAdmin(email: string, password: string): Promise<boolean> {
-  const adminEmail = process.env.ADMIN_EMAIL || "";
-  if (email !== adminEmail) return false;
+  if (!isAllowedAdminEmail(email)) return false;
 
   // ENV password תמיד עובד כגיבוי (לשחזור במקרה של אובדן גישה)
   const adminPassword = process.env.ADMIN_PASSWORD || "";
@@ -186,8 +195,7 @@ export async function changeAdminPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const adminEmail = process.env.ADMIN_EMAIL || "";
-  const valid = await loginAdmin(adminEmail, currentPassword);
+  const valid = await loginAdmin(CANONICAL_ADMIN_EMAIL, currentPassword);
   if (!valid) return { success: false, error: "הסיסמה הנוכחית שגויה" };
 
   if (!newPassword || newPassword.length < 8) {
