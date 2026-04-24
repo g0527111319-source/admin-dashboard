@@ -592,7 +592,12 @@ export default function DesignerDashboard() {
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint" />
               <input
                 type="text"
-                placeholder={txt("src/app/designer/[id]/page.tsx::049", "חיפוש...")}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  if (e.target.value && activeTab !== "suppliers") setActiveTab("suppliers");
+                }}
+                placeholder={txt("src/app/designer/[id]/page.tsx::049", "חיפוש ספקים...")}
                 className="search-global"
               />
             </div>
