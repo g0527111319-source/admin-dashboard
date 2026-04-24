@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="112" fill="#0a0a0a"/>
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5D074"/>
+      <stop offset="50%" stop-color="#D4A437"/>
+      <stop offset="100%" stop-color="#A47A08"/>
+    </linearGradient>
+  </defs>
+  <!-- Only the house - larger, centered, with thick stroke for legibility at small sizes -->
+  <path d="M 128 368 L 128 224 L 256 112 L 384 224 L 384 368 Q 384 392 360 392 L 152 392 Q 128 392 128 368 Z"
+    fill="none" stroke="url(#goldGrad)" stroke-width="36" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

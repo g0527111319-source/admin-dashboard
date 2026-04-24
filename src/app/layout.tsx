@@ -150,7 +150,9 @@ export const metadata: Metadata = {
     },
     icons: {
         icon: [
-            { url: "/favicon.ico" },
+            { url: "/favicon.ico", sizes: "any" },
+            { url: "/favicon.svg", type: "image/svg+xml" },
+            { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
             { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
             { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
             { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -204,7 +206,7 @@ export default function RootLayout({ children, }: Readonly<{
         <link rel="dns-prefetch" href="https://r2.dev" />
         <link rel="dns-prefetch" href="https://r2.cloudflarestorage.com" />
         <meta name="google-site-verification" content="yfcoIh96qYOARTamBbB2-Tq1ZTWaNmkdUce1stOym1s" />
-        <meta name="theme-color" content="#C9A84C" />
+        <meta name="theme-color" content="#D4A437" />
         {/* iOS Safari: enable PWA mode when user adds to home screen */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
