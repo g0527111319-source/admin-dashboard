@@ -110,7 +110,7 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
 
   return (
     <div
-      className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[10001] flex items-center sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-label={label}
@@ -119,8 +119,11 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
       }}
       dir="rtl"
     >
-      <div className="bg-bg-card border border-border-subtle rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle sticky top-0 bg-bg-card">
+      <div
+        className="bg-bg-card border border-border-subtle shadow-2xl w-full sm:max-w-lg flex flex-col rounded-none sm:rounded-2xl"
+        style={{ maxHeight: "100dvh", height: "auto" }}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-bg-card flex-shrink-0">
           <h2 className="font-heading font-bold text-text-primary flex items-center gap-2">
             {type === "BUG" ? <Bug className="w-5 h-5 text-red-500" /> : <Lightbulb className="w-5 h-5 text-gold" />}
             {label}
@@ -145,89 +148,91 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
             <div className="text-sm text-text-muted mt-1">נחזור אלייך בהקדם</div>
           </div>
         ) : (
-          <div className="p-5 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1.5">
-                נושא (אופציונלי)
-              </label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                maxLength={120}
-                placeholder={type === "BUG" ? "לדוגמה: כפתור שמירה לא עובד" : "לדוגמה: להוסיף סינון לפי תאריך"}
-                className="w-full px-3 py-2 rounded-lg bg-bg-surface-2 border border-border-subtle text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-gold/40"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1.5">
-                תיאור <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={6}
-                maxLength={5000}
-                placeholder={placeholderMsg}
-                className="w-full px-3 py-2 rounded-lg bg-bg-surface-2 border border-border-subtle text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-gold/40 resize-none"
-              />
-              <div className="text-[11px] text-text-muted mt-1 text-left">
-                {message.length} / 5000
+          <>
+            <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-1.5">
+                  נושא (אופציונלי)
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  maxLength={120}
+                  placeholder={type === "BUG" ? "לדוגמה: כפתור שמירה לא עובד" : "לדוגמה: להוסיף סינון לפי תאריך"}
+                  className="w-full px-3 py-2 rounded-lg bg-bg-surface-2 border border-border-subtle text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-gold/40"
+                />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-1.5">
-                תמונה {type === "FEATURE" ? "(מומלץ — מיקום השינוי)" : "(אופציונלי)"}
-              </label>
-              {imagePreview ? (
-                <div className="relative inline-block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imagePreview}
-                    alt="תצוגה מקדימה"
-                    className="max-h-40 rounded-lg border border-border-subtle"
-                  />
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-1.5">
+                  תיאור <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  maxLength={5000}
+                  placeholder={placeholderMsg}
+                  className="w-full px-3 py-2 rounded-lg bg-bg-surface-2 border border-border-subtle text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-gold/40 resize-y min-h-[110px]"
+                />
+                <div className="text-[11px] text-text-muted mt-1 text-left">
+                  {message.length} / 5000
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-1.5">
+                  תמונה {type === "FEATURE" ? "(מומלץ — מיקום השינוי)" : "(אופציונלי)"}
+                </label>
+                {imagePreview ? (
+                  <div className="relative inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imagePreview}
+                      alt="תצוגה מקדימה"
+                      className="max-h-32 rounded-lg border border-border-subtle"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onPickImage(null)}
+                      className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow"
+                      aria-label="הסרת תמונה"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => onPickImage(null)}
-                    className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow"
-                    aria-label="הסרת תמונה"
+                    onClick={() => inputRef.current?.click()}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-surface-2 hover:bg-bg-surface-3 border border-dashed border-border-subtle text-text-muted hover:text-text-primary transition-colors"
                   >
-                    <X className="w-3 h-3" />
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm">בחרי תמונה</span>
                   </button>
+                )}
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    onPickImage(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+
+              {error && (
+                <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                  {error}
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-surface-2 hover:bg-bg-surface-3 border border-dashed border-border-subtle text-text-muted hover:text-text-primary transition-colors"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span className="text-sm">בחרי תמונה</span>
-                </button>
               )}
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] || null;
-                  onPickImage(f);
-                  e.target.value = "";
-                }}
-              />
             </div>
 
-            {error && (
-              <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border-subtle bg-bg-card flex-shrink-0">
               <button
                 type="button"
                 onClick={onClose}
@@ -246,7 +251,7 @@ function FeedbackModal({ type, onClose }: { type: FeedbackType; onClose: () => v
                 שליחה
               </button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
