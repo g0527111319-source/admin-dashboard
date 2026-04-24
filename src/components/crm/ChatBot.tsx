@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, Sparkles, Copy, Check, ChevronDown, Trash2, Maximize2, Minimize2, Users, Palette, Settings } from "lucide-react";
 import { g } from "@/lib/gender";
+import { useDraggableY } from "@/hooks/useDraggableY";
 
 // ==========================================
 // Types
@@ -761,6 +762,8 @@ export default function ChatBot({ designerContext, gender }: ChatBotProps) {
 
   const greetingMessageRef = useRef(getGreetingMessage(ctx, gdr));
 
+  const fabDrag = useDraggableY("chatbot-fab-offset-y", 500);
+
   // Show tooltip after 5s idle
   useEffect(() => {
     if (!isOpen && !initialized) {
@@ -899,10 +902,16 @@ export default function ChatBot({ designerContext, gender }: ChatBotProps) {
   return (
     <>
       {/* ============ FLOATING ACTION BUTTON ============ */}
-      <div className="fixed bottom-6 left-6 z-50">
+      <div
+        className="fixed left-6 z-50"
+        style={{
+          bottom: `calc(5.5rem + env(safe-area-inset-bottom, 0px) + ${fabDrag.offsetY}px)`,
+          touchAction: "none",
+        }}
+      >
         {/* Tooltip */}
         {showTooltip && !isOpen && (
-          <div className="absolute bottom-[70px] left-0 chat-tooltip-enter">
+          <div className="absolute bottom-[70px] left-0 chat-tooltip-enter pointer-events-none">
             <div className="bg-black/90 backdrop-blur-xl text-white text-sm px-4 py-2.5 rounded-2xl rounded-bl-sm shadow-xl border border-white/10 whitespace-nowrap">
               {firstName(ctx) ? `${firstName(ctx)}, ${g(gdr, "צריך", "צריכה")} עזרה? 💬` : `${g(gdr, "צריך", "צריכה")} עזרה? 💬`}
             </div>
@@ -911,21 +920,29 @@ export default function ChatBot({ designerContext, gender }: ChatBotProps) {
 
         {/* Pulse ring */}
         {!isOpen && (
-          <div className="absolute inset-0 w-14 h-14 rounded-full bg-gold/20 animate-ping" style={{ animationDuration: "2s" }} />
+          <div className="absolute inset-0 w-14 h-14 rounded-full bg-gold/20 animate-ping pointer-events-none" style={{ animationDuration: "2s" }} />
         )}
 
         {/* FAB Button */}
         <button
-          onClick={() => isOpen ? handleClose() : handleOpen()}
+          onPointerDown={fabDrag.onPointerDown}
+          onPointerMove={fabDrag.onPointerMove}
+          onPointerUp={fabDrag.onPointerUp}
+          onPointerCancel={fabDrag.onPointerCancel}
+          onClick={() => {
+            if (fabDrag.wasDragged) { fabDrag.resetDragFlag(); return; }
+            isOpen ? handleClose() : handleOpen();
+          }}
           className={`
             relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center
-            transition-all duration-300 ease-out
+            transition-all duration-300 ease-out touch-none select-none
             ${isOpen
               ? "bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/30 rotate-0"
               : "bg-gradient-to-br from-gold to-gold-dark shadow-gold/30 hover:shadow-gold/50 hover:scale-110"
             }
           `}
-          title="צ'אט עזרה"
+          style={{ touchAction: "none" }}
+          title="צ'אט עזרה (גרירה אנכית כדי להזיז)"
         >
           <div className={`transition-transform duration-300 ${isOpen ? "rotate-90" : "rotate-0"}`}>
             {isOpen ? (

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useDraggableY } from "@/hooks/useDraggableY";
 
 type AccessibilitySettings = {
   fontSize: number; // 0=100%, 1=120%, 2=140%
@@ -22,6 +23,7 @@ const FONT_SIZES = [100, 120, 140];
 export default function AccessibilityWidget() {
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<AccessibilitySettings>(defaultSettings);
+  const fabDrag = useDraggableY("a11y-fab-offset-y", 500);
 
   // Apply settings to document
   const applySettings = useCallback((s: AccessibilitySettings) => {
@@ -124,10 +126,17 @@ export default function AccessibilityWidget() {
 
       {/* FAB Button */}
       <button
-        onClick={() => setOpen(!open)}
+        onPointerDown={fabDrag.onPointerDown}
+        onPointerMove={fabDrag.onPointerMove}
+        onPointerUp={fabDrag.onPointerUp}
+        onPointerCancel={fabDrag.onPointerCancel}
+        onClick={() => {
+          if (fabDrag.wasDragged) { fabDrag.resetDragFlag(); return; }
+          setOpen(!open);
+        }}
         style={{
           position: "fixed",
-          bottom: 90,
+          bottom: `calc(10rem + env(safe-area-inset-bottom, 0px) + ${fabDrag.offsetY}px)`,
           left: 20,
           zIndex: 10000,
           width: 56,
@@ -142,16 +151,11 @@ export default function AccessibilityWidget() {
           alignItems: "center",
           justifyContent: "center",
           boxShadow: "0 4px 16px rgba(201,168,76,0.4)",
-          transition: "transform 0.2s, box-shadow 0.2s",
+          touchAction: "none",
+          userSelect: "none",
         }}
-        aria-label="נגישות"
-        title="נגישות"
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = "scale(1.1)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-        }}
+        aria-label="נגישות (ניתן לגרירה אנכית)"
+        title="נגישות — אפשר לגרור מעלה/מטה"
       >
         ♿
       </button>
@@ -161,7 +165,7 @@ export default function AccessibilityWidget() {
         <div
           style={{
             position: "fixed",
-            bottom: 160,
+            bottom: `calc(14rem + env(safe-area-inset-bottom, 0px) + ${fabDrag.offsetY}px)`,
             left: 20,
             zIndex: 10000,
             background: "#1a1a1a",
