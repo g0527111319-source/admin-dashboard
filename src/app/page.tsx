@@ -352,7 +352,7 @@ export default function HomePage() {
             className="text-lg sm:text-xl text-text-secondary leading-relaxed max-w-3xl mx-auto"
           >
             זירת האדריכלות היא הבית של מעצבות הפנים והאדריכלות בישראל —
-            קהילה חמה שחיה ונושמת, ובצמוד אליה <strong className="text-gold-dim">מערכת CRM מלאה</strong> שמנהלת עבורך את
+            קהילת ספקים ומעצבות פעילה, תוססת ומלאה בשיתופי פעולה, ובצמוד אליה <strong className="text-gold-dim">מערכת CRM מלאה</strong> שמנהלת עבורך את
             הלקוחות, הפרויקטים, הצעות המחיר, החוזים, התשלומים והתקשורת —
             הכל בממשק אחד, בעברית, ובסטנדרט של מעצבות אמיתיות.
           </motion.p>
