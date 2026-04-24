@@ -9,7 +9,7 @@ import {
   GoldText,
   DsCard,
 } from "@/components/ds";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Sparkles,
@@ -24,7 +24,6 @@ import {
   Home,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
 
 /* ──────────────────────────────────────────────────────────────
    אנימציות משותפות — fade-up עם stagger
@@ -104,14 +103,6 @@ const stats = [
    רכיב: עמוד הבית
    ────────────────────────────────────────────────────────────── */
 export default function HomePage() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-text-primary overflow-hidden" dir="rtl">
       {/* ═══════════════════════════════════════════════════════
@@ -144,17 +135,15 @@ export default function HomePage() {
         fullHeight
         className="bg-gradient-to-b from-[#FDFCFA] via-[#FAF9F6] to-[#F5ECD3]/30"
       >
-        <section ref={heroRef} className="relative isolate min-h-screen pt-16">
-          {/* אורות זהב רכים ברקע */}
-          <motion.div
-            className="absolute -top-40 left-1/4 w-[520px] h-[520px] rounded-full bg-gold/20 blur-[140px] pointer-events-none"
-            animate={{ scale: [1, 1.08, 1], opacity: [0.5, 0.7, 0.5] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        <section className="relative isolate min-h-screen pt-16">
+          {/* אורות זהב רכים ברקע — סטטיים, המראה נשמר בלי לעלות GPU בכל פריים */}
+          <div
+            aria-hidden
+            className="absolute -top-40 left-1/4 w-[520px] h-[520px] rounded-full bg-gold/20 blur-[140px] pointer-events-none opacity-60"
           />
-          <motion.div
-            className="absolute top-1/3 -right-32 w-[380px] h-[380px] rounded-full bg-[#E8C97A]/25 blur-[120px] pointer-events-none"
-            animate={{ scale: [1.05, 1, 1.05], opacity: [0.45, 0.65, 0.45] }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          <div
+            aria-hidden
+            className="absolute top-1/3 -right-32 w-[380px] h-[380px] rounded-full bg-[#E8C97A]/25 blur-[120px] pointer-events-none opacity-55"
           />
 
           {/* שבכת נקודות עדינה */}
@@ -163,10 +152,7 @@ export default function HomePage() {
           {/* קו זהב עליון */}
           <div className="absolute top-16 left-0 right-0 h-[2px] bg-gradient-to-l from-transparent via-gold to-transparent opacity-60" />
 
-          <motion.div
-            style={{ y: heroY, opacity: heroOpacity }}
-            className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-24 text-center"
-          >
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-24 text-center">
             {/* לוגו ראשי */}
             <motion.div
               initial="hidden"
@@ -289,7 +275,7 @@ export default function HomePage() {
                 </motion.div>
               ))}
             </motion.div>
-          </motion.div>
+          </div>
 
           {/* חץ גלילה */}
           <motion.div
