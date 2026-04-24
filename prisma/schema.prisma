@@ -2081,6 +2081,39 @@ model SystemSetting {
 }
 
 // ==========================================
+// משוב משתמשים — User Feedback (bugs + suggestions)
+// ==========================================
+enum FeedbackType {
+  BUG
+  FEATURE
+}
+
+enum FeedbackStatus {
+  NEW
+  READ
+  RESOLVED
+}
+
+model Feedback {
+  id         String         @id @default(cuid())
+  type       FeedbackType
+  status     FeedbackStatus @default(NEW)
+  senderName String?
+  senderEmail String?
+  designerId String?
+  subject    String?
+  message    String         @db.Text
+  imageUrl   String?
+  pageUrl    String?
+  userAgent  String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([type, createdAt])
+  @@index([status, createdAt])
+}
+
+// ==========================================
 // מנויים — Subscriptions / Membership
 // ==========================================
 model SubscriptionPlan {

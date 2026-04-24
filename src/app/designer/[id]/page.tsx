@@ -37,6 +37,7 @@ import CrmPortfolio from "@/components/crm/CrmPortfolio";
 import CrmTasks from "@/components/crm/CrmTasks";
 import FeatureGate from "@/components/FeatureGate";
 import NotificationBell from "@/components/NotificationBell";
+import FeedbackWidget from "@/components/FeedbackWidget";
 import AccountSettings from "@/components/designer/AccountSettings";
 import TodayDashboard from "@/components/designer/TodayDashboard";
 import InboxView from "@/components/designer/InboxView";
@@ -603,6 +604,8 @@ export default function DesignerDashboard() {
                 <Bell className="w-5 h-5" />
               </button>
             )}
+            {/* Feedback — דיווח על תקלה + הצעה לשיפור */}
+            <FeedbackWidget />
             {/* User Badge */}
             <div className="hidden sm:flex items-center gap-2 text-xs text-text-muted bg-bg-surface/80 rounded-xl px-3 py-2 backdrop-blur-sm">
               {designerData.designerLogo ? (
