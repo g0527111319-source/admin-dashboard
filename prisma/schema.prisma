@@ -64,6 +64,7 @@ model Supplier {
   designerReviews   SupplierDesignerReview[]
   events            Event[]
   crmCalendarEvents CrmCalendarEvent[] @relation("CrmCalendarEventSupplier")
+  clientLinks       CrmClientSupplier[] @relation("CommunitySupplierClientLinks")
 }
 
 // ==========================================
@@ -154,6 +155,7 @@ model Designer {
   crmContractTemplates CrmContractTemplate[]
   crmQuoteTemplates    CrmQuoteTemplate[]
   crmSuppliers         CrmSupplier[]
+  crmClientSuppliers   CrmClientSupplier[]
   messageTemplates     CrmMessageTemplate[]
   whatsAppConfig       WhatsAppConfig?
   whatsAppMessages     WhatsAppMessage[]
@@ -642,11 +644,60 @@ model CrmClient {
   clientUploads        CrmClientUpload[]
   activityLogs         CrmActivityLog[]     @relation("ClientActivityLogs")
   recommendations      CrmClientRecommendation[]
+  projectSuppliers     CrmClientSupplier[]
 
   // מודלים תלת-מימדיים משויכים ללקוח
   models3d             Model3D[]
 
   @@index([designerId])
+}
+
+// Per-client supplier list — what's used on the project. Three sources:
+//   1. communitySupplierId set → from Supplier table; logo is captured as
+//      a snapshot so it stays even if the row is later removed.
+//   2. crmSupplierId set      → from the designer's personal CrmSupplier
+//      list; no logo (matches the "personal supplier has no logo" rule).
+//   3. neither set            → a one-off entry the designer typed in by
+//      hand (custom). Still no logo.
+// All display fields (name/phone/email/website/logo/notes) are stored on
+// this row directly — that's both a snapshot of the source and the place
+// where designer-edited overrides live. The relevant source FK is kept
+// only as a reference so we can detect duplicates and surface community
+// updates (none of that is read at render time).
+model CrmClientSupplier {
+  id                    String        @id @default(uuid())
+  designerId            String
+  designer              Designer      @relation(fields: [designerId], references: [id])
+  clientId              String
+  client                CrmClient     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  communitySupplierId   String?
+  communitySupplier     Supplier?     @relation("CommunitySupplierClientLinks", fields: [communitySupplierId], references: [id], onDelete: SetNull)
+  crmSupplierId         String?
+  crmSupplier           CrmSupplier?  @relation("CrmSupplierClientLinks", fields: [crmSupplierId], references: [id], onDelete: SetNull)
+
+  // Display fields — always present, editable by designer.
+  name                  String        // שם הספק
+  category              String?       // קטגוריה
+  contactName           String?       // איש קשר
+  phone                 String?
+  email                 String?
+  website               String?
+  logo                  String?       // לוגו: רק כשמדובר בספק קהילה (snapshot)
+  notes                 String?       // הערות פרטיות של המעצבת
+
+  // Designer can temporarily hide an entry from the client portal without
+  // deleting it.
+  showToClient          Boolean       @default(true)
+
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+
+  @@index([designerId, clientId])
+  @@index([clientId])
+  @@index([communitySupplierId])
+  @@index([crmSupplierId])
 }
 
 // פרויקט עיצוב
@@ -1102,6 +1153,7 @@ model CrmSupplier {
   deletedAt     DateTime?
 
   calendarEvents CrmCalendarEvent[]
+  clientLinks    CrmClientSupplier[] @relation("CrmSupplierClientLinks")
 
   @@index([designerId])
   @@index([category])

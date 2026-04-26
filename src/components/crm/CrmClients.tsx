@@ -31,6 +31,7 @@ import CrmOnboarding from "@/components/crm/CrmOnboarding";
 import CrmStyleQuiz from "@/components/crm/CrmStyleQuiz";
 import CrmSurveys from "@/components/crm/CrmSurveys";
 import CrmInspirationLibrary from "@/components/crm/CrmInspirationLibrary";
+import ClientSuppliersPanel from "@/components/crm/ClientSuppliersPanel";
 
 type CrmClient = {
   id: string;
@@ -75,11 +76,12 @@ type ClientSubTab =
   | "moodboards" | "calendar" | "plans" | "materials" | "budget"
   | "timeline" | "before-after" | "approvals" | "time-tracking"
   | "handoff" | "scheduler" | "onboarding" | "style-quiz"
-  | "surveys" | "inspiration";
+  | "surveys" | "inspiration" | "suppliers";
 
 const SUB_TABS: { key: ClientSubTab; label: string; icon: typeof User }[] = [
   { key: "details", label: "פרטים", icon: User },
   { key: "projects", label: "פרויקטים", icon: FolderOpen },
+  { key: "suppliers", label: "ספקי הפרויקט", icon: Building2 },
   { key: "tasks", label: "משימות", icon: CheckSquare },
   { key: "quotes", label: "הצעות מחיר", icon: FileText },
   { key: "contracts", label: "חוזים", icon: ScrollText },
@@ -770,6 +772,7 @@ export default function CrmClients({ gender }: { gender?: string }) {
           )}
 
           {activeSubTab === "projects" && <CrmProjects clientId={selectedClient.id} />}
+          {activeSubTab === "suppliers" && <ClientSuppliersPanel clientId={selectedClient.id} />}
           {activeSubTab === "tasks" && <CrmTasks clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "quotes" && <CrmQuotes clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "contracts" && <CrmContracts clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}

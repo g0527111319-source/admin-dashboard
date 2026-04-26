@@ -6,7 +6,7 @@ import {
   CheckCircle2, Circle, Clock, FileText, Image as ImageIcon,
   MessageCircle, Send, Loader2, AlertCircle,
   Download, Calendar, MapPin, FolderOpen, Ruler, Maximize2,
-  Bell, Mail, Building2, Save,
+  Bell, Mail, Building2, Save, Phone,
 } from "lucide-react";
 import { ct, getClientLang, setClientLang, type Lang } from "@/lib/client-portal-i18n";
 import ClientLanguageSwitcher from "@/components/ClientLanguageSwitcher";
@@ -70,13 +70,30 @@ export default function ClientPortalDashboard() {
   const [designerInfo, setDesignerInfo] = useState<{ name: string | null; logoUrl: string | null } | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "documents" | "photos" | "messages" | "plans">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "documents" | "photos" | "messages" | "plans" | "suppliers">("overview");
   const [viewingPlan, setViewingPlan] = useState<Document | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Per-project suppliers picked by the designer for this client. Loaded on
+  // demand when the "ספקים" tab is opened.
+  type PortalSupplier = {
+    id: string;
+    name: string;
+    category: string | null;
+    contactName: string | null;
+    phone: string | null;
+    email: string | null;
+    website: string | null;
+    logo: string | null;
+    communitySupplierId: string | null;
+    crmSupplierId: string | null;
+  };
+  const [suppliers, setSuppliers] = useState<PortalSupplier[]>([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
 
   // Notification preferences
   const [notifyEmail, setNotifyEmail] = useState(true);
@@ -137,6 +154,19 @@ export default function ClientPortalDashboard() {
       setLoading(false);
     }
   }, [token, selectedProject, lang]);
+
+  // Fetch suppliers (lazy — only when tab is active)
+  useEffect(() => {
+    if (activeTab !== "suppliers") return;
+    let cancelled = false;
+    setSuppliersLoading(true);
+    fetch(`/api/client-portal/${token}/suppliers`)
+      .then((r) => (r.ok ? r.json() : { suppliers: [] }))
+      .then((data) => { if (!cancelled) setSuppliers(data.suppliers || []); })
+      .catch(() => { /* ignore */ })
+      .finally(() => { if (!cancelled) setSuppliersLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab, token]);
 
   // Fetch messages
   const fetchMessages = useCallback(async () => {
@@ -418,6 +448,7 @@ export default function ClientPortalDashboard() {
               { key: "plans" as const, label: `${ct("plans", lang)} (${selectedProject.documents.filter(d => d.category).length})`, icon: Ruler },
               { key: "documents" as const, label: `${ct("documents", lang)} (${selectedProject.documents.filter(d => !d.category).length})`, icon: FileText },
               { key: "photos" as const, label: `${ct("photos", lang)} (${selectedProject.photos.length})`, icon: ImageIcon },
+              { key: "suppliers" as const, label: lang === "en" ? "Suppliers" : "ספקים", icon: Building2 },
               { key: "messages" as const, label: ct("messages", lang), icon: MessageCircle },
             ].map((tab) => (
               <button
@@ -652,6 +683,73 @@ export default function ClientPortalDashboard() {
                         )}
                         {photo.phaseName && (
                           <p className="text-white/70 text-xs">{photo.phaseName}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Suppliers — picked by the designer for this project */}
+          {activeTab === "suppliers" && (
+            <div className="space-y-4 animate-in">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-gold" />
+                  {lang === "en" ? "Suppliers chosen for your project" : "ספקים שנבחרו לפרויקט שלך"}
+                </h3>
+                <p className="text-text-muted text-sm">
+                  {lang === "en"
+                    ? "These are the suppliers your designer recommended."
+                    : "המעצבת בחרה את הספקים האלו עבור הפרויקט. ליצירת קשר ישיר — לחצי על הטלפון או המייל."}
+                </p>
+              </div>
+
+              {suppliersLoading ? (
+                <div className="text-center py-10 text-text-muted">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                </div>
+              ) : suppliers.length === 0 ? (
+                <div className="bg-bg-surface/50 rounded-xl p-8 text-center text-text-muted">
+                  <Building2 className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                  <p>{lang === "en" ? "No suppliers selected yet." : "המעצבת עדיין לא הוסיפה ספקים לפרויקט."}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {suppliers.map((s) => (
+                    <div key={s.id} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        {s.logo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={s.logo} alt={s.name} className="w-14 h-14 rounded object-contain bg-white border border-gray-100 p-1 flex-shrink-0" />
+                        ) : (
+                          <div className="w-14 h-14 rounded bg-gold/15 flex items-center justify-center text-gold font-bold flex-shrink-0">
+                            {s.name[0]}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900">{s.name}</p>
+                          {s.category && <p className="text-sm text-text-muted">{s.category}</p>}
+                          {s.contactName && <p className="text-sm text-text-muted mt-0.5">{s.contactName}</p>}
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-3 text-sm">
+                        {s.phone && (
+                          <a href={`tel:${s.phone}`} dir="ltr" className="flex items-center gap-1 text-gold hover:underline">
+                            <Phone className="w-3.5 h-3.5" />{s.phone}
+                          </a>
+                        )}
+                        {s.email && (
+                          <a href={`mailto:${s.email}`} dir="ltr" className="flex items-center gap-1 text-gold hover:underline truncate max-w-[180px]">
+                            <Mail className="w-3.5 h-3.5" />{s.email}
+                          </a>
+                        )}
+                        {s.website && (
+                          <a href={s.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-gold hover:underline">
+                            <Building2 className="w-3.5 h-3.5" />{lang === "en" ? "Website" : "אתר"}
+                          </a>
                         )}
                       </div>
                     </div>
