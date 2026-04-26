@@ -254,7 +254,68 @@ export default function SuppliersPage() {
   const [expandedSupplier, setExpandedSupplier] = useState<string | null>(null);
   const [formData, setFormData] = useState<SupplierFormData>(emptyForm);
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<"all" | "queue">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "queue" | "active">("all");
+
+  // === "עבודות פעילות" tab state ===
+  type ActiveSupplierRow = {
+    id: string;
+    name: string;
+    logo: string | null;
+    category: string;
+    city: string | null;
+    activeDesigners: number;
+    activeClients: number;
+  };
+  type ActiveDesignerRow = {
+    id: string;
+    fullName: string;
+    city: string | null;
+    email: string | null;
+    phone: string;
+    isActive: boolean;
+    clients: { id: string; name: string; city: string | null; addedAt: string }[];
+  };
+  const [activeRows, setActiveRows] = useState<ActiveSupplierRow[]>([]);
+  const [activeLoading, setActiveLoading] = useState(false);
+  const [drillSupplierId, setDrillSupplierId] = useState<string | null>(null);
+  const [drillSupplier, setDrillSupplier] = useState<ActiveSupplierRow | null>(null);
+  const [drillDesigners, setDrillDesigners] = useState<ActiveDesignerRow[]>([]);
+  const [drillLoading, setDrillLoading] = useState(false);
+
+  const loadActive = useCallback(async () => {
+    setActiveLoading(true);
+    try {
+      const r = await fetch("/api/admin/suppliers/active-projects", { cache: "no-store" });
+      if (r.ok) {
+        const d = await r.json();
+        setActiveRows(d.suppliers || []);
+      }
+    } finally {
+      setActiveLoading(false);
+    }
+  }, []);
+
+  const openDrill = useCallback(async (s: ActiveSupplierRow) => {
+    setDrillSupplierId(s.id);
+    setDrillSupplier(s);
+    setDrillLoading(true);
+    setDrillDesigners([]);
+    try {
+      const r = await fetch(`/api/admin/suppliers/${s.id}/active-designers`, { cache: "no-store" });
+      if (r.ok) {
+        const d = await r.json();
+        setDrillDesigners(d.designers || []);
+      }
+    } finally {
+      setDrillLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "active" && activeRows.length === 0 && !activeLoading) {
+      loadActive();
+    }
+  }, [activeTab, activeRows.length, activeLoading, loadActive]);
   const [confirmSuspend, setConfirmSuspend] = useState<string | null>(null);
 
   // Filters
@@ -626,6 +687,10 @@ export default function SuppliersPage() {
           className={`px-4 py-2 text-sm rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === "queue" ? "bg-gold/10 text-gold font-semibold border-b-2 border-gold" : "text-text-muted hover:text-text-primary"}`}>
           <Shield className="w-4 h-4" /> תור אימות ({verificationQueue.length})
         </button>
+        <button onClick={() => setActiveTab("active")}
+          className={`px-4 py-2 text-sm rounded-t-lg transition-colors flex items-center gap-2 ${activeTab === "active" ? "bg-gold/10 text-gold font-semibold border-b-2 border-gold" : "text-text-muted hover:text-text-primary"}`}>
+          <TrendingUp className="w-4 h-4" /> עבודות פעילות
+        </button>
       </div>
 
       {/* ============ VERIFICATION QUEUE TAB ============ */}
@@ -773,6 +838,157 @@ export default function SuppliersPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============ ACTIVE PROJECTS TAB ============ */}
+      {activeTab === "active" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-text-primary font-medium">ספקים בעבודה פעילה כרגע</p>
+              <p className="text-text-muted text-xs mt-1">
+                כל ספק קהילה עם מספר המעצבות שצירפו אותו ללקוח שלהן. לחיצה על ספק תציג את שמות המעצבות.
+              </p>
+            </div>
+            <button
+              onClick={loadActive}
+              disabled={activeLoading}
+              className="btn-outline text-xs flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {activeLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              רענן
+            </button>
+          </div>
+
+          {activeLoading ? (
+            <div className="text-center py-12 text-text-muted">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+            </div>
+          ) : activeRows.length === 0 ? (
+            <div className="card-static text-center py-12 text-text-muted">
+              <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p>אין כרגע ספקי קהילה בעבודה פעילה.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {activeRows.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => openDrill(s)}
+                  className={`card-static text-right hover:border-gold/50 transition-colors ${s.activeDesigners === 0 ? "opacity-60" : ""}`}
+                >
+                  <div className="flex items-start gap-3">
+                    {s.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={s.logo} alt={s.name} className="w-12 h-12 rounded object-contain bg-white border border-border-subtle p-1 flex-shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-gold/15 flex items-center justify-center text-gold font-bold flex-shrink-0">
+                        {s.name[0]}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-text-primary truncate">{s.name}</p>
+                      <p className="text-text-muted text-xs">{s.category}{s.city ? ` · ${s.city}` : ""}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
+                    <div className="flex items-center gap-1.5 text-gold font-mono">
+                      <Users className="w-4 h-4" />
+                      <span className="text-2xl font-bold">{s.activeDesigners}</span>
+                      <span className="text-xs text-text-muted">{s.activeDesigners === 1 ? "מעצבת" : "מעצבות"}</span>
+                    </div>
+                    {s.activeClients > 0 && (
+                      <div className="text-text-muted text-xs">
+                        {s.activeClients} {s.activeClients === 1 ? "פרויקט" : "פרויקטים"}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Drill-down modal */}
+          {drillSupplierId && drillSupplier && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+              onClick={(e) => { if (e.target === e.currentTarget) { setDrillSupplierId(null); setDrillSupplier(null); } }}
+            >
+              <div className="bg-bg-card border border-border-subtle rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+                  <div className="flex items-center gap-3">
+                    {drillSupplier.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={drillSupplier.logo} alt={drillSupplier.name} className="w-10 h-10 rounded object-contain bg-white border border-border-subtle p-1" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-gold/15 flex items-center justify-center text-gold font-bold">
+                        {drillSupplier.name[0]}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-heading text-text-primary">{drillSupplier.name}</h3>
+                      <p className="text-text-muted text-xs">{drillSupplier.category}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => { setDrillSupplierId(null); setDrillSupplier(null); }} className="p-1.5 rounded hover:bg-bg-surface-2 text-text-muted">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="p-5">
+                  {drillLoading ? (
+                    <div className="text-center py-10 text-text-muted">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                    </div>
+                  ) : drillDesigners.length === 0 ? (
+                    <div className="text-center py-10 text-text-muted">
+                      <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                      <p>אין מעצבות עם פרויקט פעיל אצל הספק הזה.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-text-muted text-sm">
+                        {drillDesigners.length} {drillDesigners.length === 1 ? "מעצבת עובדת" : "מעצבות עובדות"} עם {drillSupplier.name} כרגע:
+                      </p>
+                      {drillDesigners.map((d) => (
+                        <div key={d.id} className="flex items-start gap-3 p-3 rounded-card border border-border-subtle bg-bg-surface/30">
+                          <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center text-gold font-bold flex-shrink-0">
+                            {d.fullName[0] || "?"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-text-primary font-medium">{d.fullName}</p>
+                            {d.city && <p className="text-text-muted text-xs">{d.city}</p>}
+                            <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                              {d.phone && <a href={`tel:${d.phone}`} dir="ltr" className="text-text-muted hover:text-gold flex items-center gap-1"><Phone className="w-3 h-3" />{d.phone}</a>}
+                              {d.email && <a href={`mailto:${d.email}`} dir="ltr" className="text-text-muted hover:text-gold flex items-center gap-1 truncate max-w-[160px]"><Mail className="w-3 h-3" />{d.email}</a>}
+                            </div>
+                            {d.clients.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-border/20">
+                                <p className="text-text-muted text-[10px] mb-1">
+                                  {d.clients.length === 1 ? "לקוח אחד" : `${d.clients.length} לקוחות`} עם הספק:
+                                </p>
+                                <ul className="text-xs text-text-primary space-y-0.5">
+                                  {d.clients.map((c) => (
+                                    <li key={c.id} className="flex items-center justify-between gap-2">
+                                      <span className="truncate">• {c.name}{c.city ? ` (${c.city})` : ""}</span>
+                                      <span className="text-text-muted text-[10px] flex-shrink-0">
+                                        {new Date(c.addedAt).toLocaleDateString("he-IL")}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
