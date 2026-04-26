@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_SUPPLIER } from "@/lib/api-auth";
 
 /**
  * GET /api/supplier/insights?supplierId=... (optional; otherwise from header)
@@ -18,6 +19,8 @@ import prisma from "@/lib/prisma";
  */
 
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_SUPPLIER);
+  if (!auth.ok) return auth.response;
   try {
     const headerSupplier = req.headers.get("x-supplier-id");
     const querySupplier = new URL(req.url).searchParams.get("supplierId");

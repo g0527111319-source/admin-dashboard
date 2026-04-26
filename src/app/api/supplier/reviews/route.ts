@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { requireRole, ADMIN_OR_SUPPLIER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/supplier/reviews — list reviews this supplier sent
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_SUPPLIER);
+  if (!auth.ok) return auth.response;
   try {
-    const supplierId = req.headers.get("x-user-id");
-    const role = req.headers.get("x-user-role");
-    if (!supplierId || (role !== "supplier" && role !== "admin")) {
-      return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
-    }
+    const supplierId = auth.userId;
 
     const reviews = await prisma.supplierDesignerReview.findMany({
       where: { supplierId },
@@ -30,12 +29,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/supplier/reviews — create a new review request and email the designer
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_SUPPLIER);
+  if (!auth.ok) return auth.response;
   try {
-    const supplierId = req.headers.get("x-user-id");
-    const role = req.headers.get("x-user-role");
-    if (!supplierId || (role !== "supplier" && role !== "admin")) {
-      return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
-    }
+    const supplierId = auth.userId;
 
     const body = await req.json();
     const { designerId } = body;

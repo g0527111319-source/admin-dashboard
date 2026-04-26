@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_SUPPLIER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -8,14 +9,9 @@ export const dynamic = "force-dynamic";
 // no internal data. The community manager is the only party with access to
 // quality/rating data about designers or suppliers.
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_SUPPLIER);
+  if (!auth.ok) return auth.response;
   try {
-    const supplierId = req.headers.get("x-user-id");
-    const role = req.headers.get("x-user-role");
-
-    if (!supplierId || (role !== "supplier" && role !== "admin")) {
-      return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
-    }
-
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get("q") || "").trim();
 

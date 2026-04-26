@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_SUPPLIER } from "@/lib/api-auth";
 
 /**
  * POST /api/supplier/posts/batch-schedule
@@ -52,6 +53,8 @@ function advanceDate(current: Date, cadence: Cadence): Date {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_SUPPLIER);
+  if (!auth.ok) return auth.response;
   try {
     const supplierId =
       req.headers.get("x-supplier-id") || req.headers.get("x-user-id");

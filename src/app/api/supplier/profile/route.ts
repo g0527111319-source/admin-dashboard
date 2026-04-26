@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_SUPPLIER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/supplier/profile?id=<supplierId>
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_SUPPLIER);
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const supplierId = searchParams.get("id");
@@ -137,6 +140,8 @@ export async function GET(req: NextRequest) {
 // page. Keeps an explicit allow-list to avoid accidentally mutating fields
 // that aren't ready to be edited from the UI yet.
 export async function PUT(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_SUPPLIER);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { id, logo } = body as { id?: string; logo?: string | null };
