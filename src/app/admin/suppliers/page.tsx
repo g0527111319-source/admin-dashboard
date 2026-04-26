@@ -5,6 +5,7 @@ import {
   MapPin, Calendar, X, Edit3, Eye, MessageCircle, CheckCircle, Clock,
   Shield, ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, Trash2,
   Bell, Pause, Play, FileText, BarChart3, TrendingUp, XCircle, Loader2,
+  UserCheck,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import StarRating from "@/components/ui/StarRating";
@@ -17,6 +18,42 @@ import { useRouter } from "next/navigation";
 // ==========================================
 
 type VerificationStatus = "unverified" | "pending" | "verified";
+
+interface PendingRecommender {
+  id: string;
+  name: string;
+  phone: string;
+  trustVerified: boolean;
+  serviceVerified: boolean;
+  professionalismVerified: boolean;
+  responsibilityVerified: boolean;
+}
+
+interface PendingSupplier {
+  id: string;
+  name: string;
+  contactName: string;
+  email: string | null;
+  phone: string;
+  category: string;
+  city: string | null;
+  recommenders: PendingRecommender[];
+}
+
+const RECOMMENDER_CRITERIA: { key: keyof Pick<PendingRecommender, "trustVerified" | "serviceVerified" | "professionalismVerified" | "responsibilityVerified">; label: string }[] = [
+  { key: "trustVerified", label: "אמינות" },
+  { key: "serviceVerified", label: "שירות" },
+  { key: "professionalismVerified", label: "מקצועיות" },
+  { key: "responsibilityVerified", label: "לקיחת אחריות" },
+];
+
+function isRecommenderFullyVerified(r: PendingRecommender): boolean {
+  return r.trustVerified && r.serviceVerified && r.professionalismVerified && r.responsibilityVerified;
+}
+
+function countVerifiedRecommenders(s: PendingSupplier): number {
+  return s.recommenders.filter(isRecommenderFullyVerified).length;
+}
 
 interface VerificationChecklist {
   license: boolean;
@@ -209,6 +246,7 @@ export default function SuppliersPage() {
       .catch(() => setError("שגיאה בטעינת ספקים. נסו לרענן את הדף."))
       .finally(() => setLoading(false));
   }, []);
+
   const [verificationFilter, setVerificationFilter] = useState(ALL);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -230,10 +268,79 @@ export default function SuppliersPage() {
     });
   }, [suppliers, search, categoryFilter, statusFilter, verificationFilter]);
 
-  // Verification queue
-  const verificationQueue = useMemo(() => {
-    return suppliers.filter(s => s.verificationStatus !== "verified");
-  }, [suppliers]);
+  // ===== New verification queue (pending suppliers + recommenders) =====
+  const [pendingSuppliers, setPendingSuppliers] = useState<PendingSupplier[]>([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  const loadQueue = useCallback(async () => {
+    setQueueLoading(true);
+    try {
+      const res = await fetch("/api/admin/suppliers/queue");
+      if (!res.ok) throw new Error("queue fetch failed");
+      const data = await res.json();
+      if (Array.isArray(data)) setPendingSuppliers(data as PendingSupplier[]);
+    } catch (err) {
+      console.error("Queue load error:", err);
+    } finally {
+      setQueueLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadQueue();
+  }, [loadQueue]);
+
+  const toggleRecommenderFlag = useCallback(async (
+    supplierId: string,
+    recommenderId: string,
+    field: keyof Pick<PendingRecommender, "trustVerified" | "serviceVerified" | "professionalismVerified" | "responsibilityVerified">,
+  ) => {
+    const supplier = pendingSuppliers.find(s => s.id === supplierId);
+    const rec = supplier?.recommenders.find(r => r.id === recommenderId);
+    if (!supplier || !rec) return;
+    const next = !rec[field];
+    setPendingSuppliers(prev => prev.map(s => s.id !== supplierId ? s : {
+      ...s,
+      recommenders: s.recommenders.map(r => r.id !== recommenderId ? r : { ...r, [field]: next }),
+    }));
+    try {
+      await fetch(`/api/admin/suppliers/recommenders/${recommenderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: next }),
+      });
+    } catch (err) {
+      console.error("Toggle recommender flag error:", err);
+      setPendingSuppliers(prev => prev.map(s => s.id !== supplierId ? s : {
+        ...s,
+        recommenders: s.recommenders.map(r => r.id !== recommenderId ? r : { ...r, [field]: !next }),
+      }));
+    }
+  }, [pendingSuppliers]);
+
+  const approveSupplier = useCallback(async (supplierId: string) => {
+    setApprovingId(supplierId);
+    try {
+      const res = await fetch("/api/admin/suppliers-waitlist", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, action: "approve" }),
+      });
+      if (!res.ok) throw new Error("approve failed");
+      setPendingSuppliers(prev => prev.filter(s => s.id !== supplierId));
+      const fresh = await fetch("/api/suppliers").then(r => r.json()).catch(() => []);
+      if (Array.isArray(fresh)) setSuppliers(fresh.map(mapSupplierFromApi));
+    } catch (err) {
+      console.error("Approve supplier error:", err);
+    } finally {
+      setApprovingId(null);
+    }
+  }, []);
+
+  // Legacy: kept only so old fetch hooks still compile. The actual queue tab
+  // now uses pendingSuppliers instead.
+  const verificationQueue = pendingSuppliers;
 
   // Selection
   const selectedCount = Object.values(selectedIds).filter(Boolean).length;
@@ -477,59 +584,144 @@ export default function SuppliersPage() {
       {/* ============ VERIFICATION QUEUE TAB ============ */}
       {activeTab === "queue" && (
         <div className="space-y-4">
-          <p className="text-text-muted text-sm">ספקים שטרם השלימו את תהליך האימות:</p>
-          {verificationQueue.length === 0 ? (
+          <div className="flex items-center justify-between">
+            <p className="text-text-muted text-sm">
+              ספקים בהמתנה לאישור — סמני 4 קריטריונים לכל מעצבת ממליצה ולחצי "הוסף ספק לקהילה":
+            </p>
+            <button
+              onClick={loadQueue}
+              disabled={queueLoading}
+              className="btn-outline text-xs flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {queueLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              רענן
+            </button>
+          </div>
+
+          {queueLoading && pendingSuppliers.length === 0 ? (
+            <div className="card-static text-center py-12 text-text-muted">
+              <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin" />
+              <p>טוען ספקים בהמתנה…</p>
+            </div>
+          ) : pendingSuppliers.length === 0 ? (
             <div className="card-static text-center py-12 text-text-muted">
               <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-emerald-400" />
-              <p className="font-heading text-lg">כל הספקים מאומתים! 🎉</p>
+              <p className="font-heading text-lg">אין ספקים בהמתנה 🎉</p>
+              <p className="text-xs mt-1">ספקים חדשים יופיעו כאן אחרי הרשמה.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {verificationQueue.map(supplier => {
-                const progress = getVerificationProgress(supplier.verificationChecklist);
-                const config = verificationStatusConfig[supplier.verificationStatus];
-                const StatusIcon = config.icon;
+            <div className="space-y-4">
+              {pendingSuppliers.map(supplier => {
+                const verifiedCount = countVerifiedRecommenders(supplier);
+                const allDone = supplier.recommenders.length === 3 && verifiedCount === 3;
+                const isApproving = approvingId === supplier.id;
                 return (
                   <div key={supplier.id} className="card-static">
-                    <div className="flex items-start justify-between mb-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
                       <div>
-                        <h3 className="font-heading text-text-primary font-bold flex items-center gap-2">
+                        <h3 className="font-heading text-text-primary font-bold text-lg flex items-center gap-2">
                           {supplier.name}
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
-                            <StatusIcon className="w-3 h-3 inline ml-1" />{config.label}
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-500">
+                            <Clock className="w-3 h-3 inline ml-1" />ממתין לאישור
                           </span>
                         </h3>
-                        <p className="text-text-muted text-sm">{supplier.contactName} · {supplier.category}</p>
+                        <p className="text-text-muted text-sm">
+                          {supplier.contactName} · {supplier.category}
+                          {supplier.city ? ` · ${supplier.city}` : ""}
+                        </p>
+                        <div className="text-xs text-text-muted mt-1 flex items-center gap-3" dir="ltr">
+                          <a href={`tel:${supplier.phone}`} className="hover:text-gold flex items-center gap-1">
+                            <Phone className="w-3 h-3" />{supplier.phone}
+                          </a>
+                          {supplier.email && (
+                            <a href={`mailto:${supplier.email}`} className="hover:text-gold flex items-center gap-1">
+                              <Mail className="w-3 h-3" />{supplier.email}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-xs text-text-muted">
+                        מעצבות מאומתות:{" "}
+                        <span className={`font-mono font-bold ${allDone ? "text-emerald-400" : "text-gold"}`}>
+                          {verifiedCount} / {supplier.recommenders.length || 3}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Progress bar */}
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-text-muted">התקדמות אימות</span>
-                        <span className="text-gold font-mono">{Math.round(progress * 100)}%</span>
+                    {/* Recommenders table */}
+                    {supplier.recommenders.length === 0 ? (
+                      <div className="text-sm text-red-400 bg-red-400/5 rounded p-3">
+                        לא נשלחו המלצות עם הרשמה זו. (ספק ישן לפני עדכון הקריטריונים)
                       </div>
-                      <div className="h-2 bg-bg-surface rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-l from-gold to-yellow-600 rounded-full transition-all duration-500"
-                          style={{ width: `${progress * 100}%` }} />
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-text-muted text-xs">
+                              <th className="text-right pb-2 pl-3 font-normal">מעצבת ממליצה</th>
+                              {RECOMMENDER_CRITERIA.map(c => (
+                                <th key={c.key} className="text-center pb-2 px-2 font-normal whitespace-nowrap">
+                                  {c.label}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {supplier.recommenders.map(rec => (
+                              <tr key={rec.id} className="border-t border-border-subtle">
+                                <td className="py-2 pl-3">
+                                  <div className="text-text-primary font-medium">{rec.name}</div>
+                                  <a
+                                    href={`tel:${rec.phone}`}
+                                    className="text-text-muted text-xs hover:text-gold"
+                                    dir="ltr"
+                                  >
+                                    {rec.phone}
+                                  </a>
+                                </td>
+                                {RECOMMENDER_CRITERIA.map(c => {
+                                  const checked = rec[c.key];
+                                  return (
+                                    <td key={c.key} className="py-2 px-2 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleRecommenderFlag(supplier.id, rec.id, c.key)}
+                                        aria-label={`${c.label} — ${rec.name}`}
+                                        className={`w-7 h-7 rounded-md border-2 flex items-center justify-center mx-auto transition-colors ${
+                                          checked
+                                            ? "bg-emerald-400 border-emerald-400 text-white"
+                                            : "bg-transparent border-border-subtle hover:border-gold"
+                                        }`}
+                                      >
+                                        {checked && <CheckCircle className="w-4 h-4" />}
+                                      </button>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Checklist */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {(Object.keys(supplier.verificationChecklist) as Array<keyof VerificationChecklist>).map(key => (
-                        <button key={key} onClick={() => toggleVerificationItem(supplier.id, key)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                            supplier.verificationChecklist[key]
-                              ? "bg-emerald-400/10 text-emerald-400 border border-emerald-400/20"
-                              : "bg-bg-surface text-text-muted border border-border-subtle hover:border-gold/30"
-                          }`}>
-                          {supplier.verificationChecklist[key]
-                            ? <CheckCircle className="w-4 h-4" />
-                            : <XCircle className="w-4 h-4" />}
-                          {verificationLabels[key]}
-                        </button>
-                      ))}
+                    {/* Approve button */}
+                    <div className="mt-4 flex items-center justify-end gap-2">
+                      <span className="text-xs text-text-muted">
+                        {allDone
+                          ? "כל הקריטריונים סומנו ✓"
+                          : `נדרשים כל 12 הסימונים (${verifiedCount * 4 + supplier.recommenders.reduce((acc, r) => acc + (isRecommenderFullyVerified(r) ? 0 : [r.trustVerified, r.serviceVerified, r.professionalismVerified, r.responsibilityVerified].filter(Boolean).length), 0)} / 12)`}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!allDone || isApproving}
+                        onClick={() => approveSupplier(supplier.id)}
+                        className="px-4 py-2 rounded-lg font-semibold inline-flex items-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 disabled:bg-bg-surface disabled:text-text-muted disabled:cursor-not-allowed disabled:hover:bg-bg-surface"
+                      >
+                        {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
+                        הוסף ספק לקהילה
+                      </button>
                     </div>
                   </div>
                 );

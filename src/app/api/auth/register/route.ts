@@ -37,6 +37,16 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: "נדרשים שם איש קשר, שם עסק וקטגוריה" }, { status: 400 });
             }
 
+            // ולידציה: 3 מעצבות ממליצות עם שם וטלפון
+            const rawRecs = Array.isArray(body.recommenders) ? body.recommenders : [];
+            const recommenders = rawRecs.slice(0, 3).map((r: { name?: string; phone?: string }) => ({
+                name: (r?.name || "").trim(),
+                phone: (r?.phone || "").trim(),
+            }));
+            if (recommenders.length !== 3 || recommenders.some((r: { name: string; phone: string }) => !r.name || !r.phone)) {
+                return NextResponse.json({ error: "נדרשות 3 המלצות מעצבות עם שם וטלפון" }, { status: 400 });
+            }
+
             const result = await registerSupplier({
                 contactName,
                 businessName,
@@ -47,6 +57,7 @@ export async function POST(req: NextRequest) {
                 website: body.website || undefined,
                 description: body.description || undefined,
                 city: body.city || undefined,
+                recommenders,
             });
 
             if (!result.success) {

@@ -84,6 +84,11 @@ export default function RegisterPage() {
     category: "",
     website: "",
     description: "",
+    recommenders: [
+      { name: "", phone: "" },
+      { name: "", phone: "" },
+      { name: "", phone: "" },
+    ] as { name: string; phone: string }[],
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -121,6 +126,14 @@ export default function RegisterPage() {
     if (role === "designer" && (!form.firstName.trim() || !form.lastName.trim())) {
       setError("יש למלא שם פרטי ושם משפחה");
       return;
+    }
+
+    if (role === "supplier") {
+      const cleanRecs = form.recommenders.map(r => ({ name: r.name.trim(), phone: r.phone.trim() }));
+      if (cleanRecs.some(r => !r.name || !r.phone)) {
+        setError("יש למלא שם וטלפון של 3 מעצבות ממליצות");
+        return;
+      }
     }
 
     setLoading(true);
@@ -161,6 +174,7 @@ export default function RegisterPage() {
         category: form.category || undefined,
         website: form.website || undefined,
         description: form.description || undefined,
+        recommenders: form.recommenders.map(r => ({ name: r.name.trim(), phone: r.phone.trim() })),
         role: "supplier",
       };
 
@@ -548,6 +562,60 @@ export default function RegisterPage() {
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-1">{t.descriptionLabel}</label>
                       <textarea name="description" value={form.description} onChange={handleChange} placeholder={t.descriptionPlaceholder} className="input-field h-20 resize-none" />
+                    </div>
+
+                    {/* ======= 3 מעצבות ממליצות ======= */}
+                    <SectionTitle icon={Sparkles} title="3 מעצבות ממליצות" />
+                    <p className="text-xs text-text-muted -mt-2">
+                      כדי להצטרף לקהילה נדרשות 3 המלצות ממעצבות שעבדו איתך. הצוות יצור קשר לאימות.
+                    </p>
+                    <div className="space-y-3">
+                      {form.recommenders.map((rec, idx) => (
+                        <div key={idx} className="rounded-lg border border-border-subtle bg-bg-surface/50 p-3">
+                          <div className="text-xs font-semibold text-text-primary mb-2">מעצבת ממליצה #{idx + 1}</div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-text-muted mb-1">שם מלא *</label>
+                              <div className="relative">
+                                <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                                <input
+                                  type="text"
+                                  value={rec.name}
+                                  onChange={(e) => {
+                                    const next = [...form.recommenders];
+                                    next[idx] = { ...next[idx], name: e.target.value };
+                                    setForm({ ...form, recommenders: next });
+                                    setError("");
+                                  }}
+                                  placeholder="שם המעצבת"
+                                  required
+                                  className="input-field pr-9"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-text-muted mb-1">טלפון *</label>
+                              <div className="relative">
+                                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                                <input
+                                  type="tel"
+                                  value={rec.phone}
+                                  onChange={(e) => {
+                                    const next = [...form.recommenders];
+                                    next[idx] = { ...next[idx], phone: e.target.value };
+                                    setForm({ ...form, recommenders: next });
+                                    setError("");
+                                  }}
+                                  placeholder="0501234567"
+                                  required
+                                  dir="ltr"
+                                  className="input-field pr-9"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}

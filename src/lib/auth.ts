@@ -479,9 +479,11 @@ export async function registerSupplier(data: {
   website?: string;
   description?: string;
   city?: string;
+  recommenders?: { name: string; phone: string }[];
 }): Promise<{ success: boolean; supplierId?: string; status?: string; error?: string }> {
   const passwordHash = await hashPassword(data.password);
   const loginToken = crypto.randomUUID();
+  const recs = (data.recommenders || []).map(r => ({ name: r.name, phone: r.phone }));
 
   // בדיקה אם האימייל כבר קיים
   const existing = await prisma.supplier.findUnique({
@@ -510,6 +512,13 @@ export async function registerSupplier(data: {
           loginToken,
         },
       });
+      // החלפת ההמלצות מההגשה הקודמת
+      if (recs.length > 0) {
+        await prisma.supplierRecommender.deleteMany({ where: { supplierId: updated.id } });
+        await prisma.supplierRecommender.createMany({
+          data: recs.map(r => ({ ...r, supplierId: updated.id })),
+        });
+      }
       return { success: true, supplierId: updated.id, status: "reapplied" };
     }
     // כבר אושר
@@ -531,6 +540,9 @@ export async function registerSupplier(data: {
       approvalStatus: "PENDING",
       passwordHash,
       loginToken,
+      ...(recs.length > 0 ? {
+        recommenders: { create: recs },
+      } : {}),
     },
   });
 

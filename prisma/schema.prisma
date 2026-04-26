@@ -333,13 +333,19 @@ model LotteryWinner {
 // מעצבות ממליצות לספקים
 // ==========================================
 model SupplierRecommender {
-  id           String   @id @default(uuid())
-  supplierId   String
-  supplier     Supplier @relation(fields: [supplierId], references: [id])
-  name         String   // שם המעצבת הממליצה
-  phone        String   // טלפון
+  id                       String   @id @default(uuid())
+  supplierId               String
+  supplier                 Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  name                     String   // שם המעצבת הממליצה
+  phone                    String   // טלפון
 
-  createdAt    DateTime @default(now())
+  // אימות אדמין — 4 קריטריונים
+  trustVerified            Boolean  @default(false) // אמינות
+  serviceVerified          Boolean  @default(false) // שירות
+  professionalismVerified  Boolean  @default(false) // מקצועיות
+  responsibilityVerified   Boolean  @default(false) // לקיחת אחריות
+
+  createdAt                DateTime @default(now())
 
   @@index([supplierId])
 }

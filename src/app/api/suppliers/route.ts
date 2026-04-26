@@ -9,7 +9,9 @@ export async function GET(req: NextRequest) {
         const category = searchParams.get("category");
         const area = searchParams.get("area");
         const active = searchParams.get("active");
-        const where: Record<string, unknown> = {};
+        const where: Record<string, unknown> = {
+            approvalStatus: "APPROVED",
+        };
         if (category)
             where.category = category;
         if (area)
