@@ -31,6 +31,7 @@ export default function AdminSidebar() {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const handleLogout = async () => {
+        if (!confirm("האם הנך רוצה לצאת מהחשבון?")) return;
         await fetch("/api/auth/logout", { method: "POST" });
         router.push("/login");
     };
@@ -72,8 +73,8 @@ export default function AdminSidebar() {
         </nav>
 
         <div className="p-4 border-t border-border-subtle">
-          <button onClick={handleLogout} className="flex items-center gap-2 text-text-muted text-sm hover:text-red-500 transition-colors px-3 py-2 w-full">
-            <LogOut className="w-4 h-4"/>{"התנתקות"}</button>
+          <button onClick={handleLogout} className="flex items-center gap-2 text-red-500 hover:bg-red-50 text-sm font-medium transition-colors px-3 py-2 rounded-btn w-full">
+            <LogOut className="w-4 h-4"/>{"התנתקות מהחשבון"}</button>
         </div>
       </aside>
     </>);

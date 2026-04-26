@@ -9,6 +9,7 @@ import { FileText, HandCoins, Star, Calendar, Upload, Clock, Send, Edit, Image a
 import BusinessCardBuilder from "@/components/business-card/BusinessCardBuilder";
 import SupplierReviews from "@/components/supplier/SupplierReviews";
 import ImageUploader from "@/components/business-card/ImageUploader";
+import LogoutButton from "@/components/LogoutButton";
 
 interface SupplierData {
     name: string;
@@ -240,6 +241,7 @@ export default function SupplierDashboard() {
                 <p className="text-gold font-heading font-bold text-lg">{supplierData.name}</p>
                 <p className="text-text-muted text-xs">{txt("src/app/supplier/[id]/page.tsx::023", "דשבורד ספק")}</p>
               </div>
+              <LogoutButton />
             </div>
           </div>
         </div>
