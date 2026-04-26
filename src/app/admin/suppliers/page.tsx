@@ -380,6 +380,53 @@ export default function SuppliersPage() {
     }
   }, [suppliers]);
 
+  // Permanent delete — two-step confirmation: warning + name typing
+  const hardDeleteSupplier = useCallback(async (supplier: Supplier) => {
+    const warning =
+      `⚠️ מחיקה לצמיתות של ${supplier.name}\n\n` +
+      `הפעולה תמחק את הספק וכל הנתונים הקשורים אליו:\n` +
+      `• כל הפרסומים\n` +
+      `• כל הביקורות\n` +
+      `• כל ההזמנות בלוח השנה\n` +
+      `• כל העסקאות שדווחו עליו\n` +
+      `• המלצות מעצבות שצירף בהרשמה\n\n` +
+      `הפעולה אינה הפיכה. להמשיך?`;
+    if (!confirm(warning)) return;
+
+    const typed = prompt(`לאישור סופי, הקלידי את שם הספק במדויק:\n\n${supplier.name}`);
+    if (typed === null) return;
+    if (typed.trim() !== supplier.name.trim()) {
+      alert("השם שהוקלד אינו תואם. המחיקה בוטלה.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/suppliers/${supplier.id}?hard=true`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmName: supplier.name.trim() }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(err.error || "שגיאה במחיקה");
+        return;
+      }
+      const data = await res.json() as {
+        message?: string;
+        deleted?: { posts: number; reviews: number; reservations: number; deals: number };
+      };
+      setSuppliers(prev => prev.filter(s => s.id !== supplier.id));
+      const d = data.deleted;
+      const summary = d
+        ? `\n\nנמחקו: ${d.posts} פרסומים, ${d.reviews} ביקורות, ${d.reservations} הזמנות, ${d.deals} עסקאות`
+        : "";
+      alert(`${data.message || "הספק נמחק"}${summary}`);
+    } catch (err) {
+      console.error("Hard delete supplier error:", err);
+      alert("שגיאה במחיקה");
+    }
+  }, []);
+
   // Verification
   const toggleVerificationItem = useCallback((id: string, key: keyof VerificationChecklist) => {
     setSuppliers(prev => prev.map(s => {
@@ -958,6 +1005,14 @@ export default function SuppliersPage() {
                               {supplier.isSuspended ? "הפעל מחדש" : "השעה ספק"}
                             </button>
                           )}
+                          <button
+                            onClick={() => hardDeleteSupplier(supplier)}
+                            className="text-xs flex items-center gap-1 px-3 py-1.5 rounded border border-red-500/40 text-red-600 bg-red-500/5 hover:bg-red-500/15 transition-colors"
+                            title="מחיקה לצמיתות — אינה הפיכה"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            מחק לצמיתות
+                          </button>
                         </div>
                       </div>
                     )}
