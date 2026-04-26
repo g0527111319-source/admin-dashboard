@@ -13,7 +13,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Inbox, Sparkles, Users, Star, MapPin, Ruler, Banknote, Clock, Palette,
+  Inbox, Sparkles, Users, MapPin, Ruler, Banknote, Clock, Palette,
   Loader2, Heart, HeartOff, Eye, EyeOff, CheckCircle2,
   AlertCircle, AlertTriangle, Archive, RotateCw, User, Phone, Mail, Home,
   Handshake,
@@ -516,10 +516,6 @@ function CommunityTab({ leads, busy, onToggleInterest, gender }: {
                   <MapPin className="w-4 h-4 text-gold" />
                   {l.city || "עיר לא צוינה"}
                 </h3>
-              </div>
-              <div className="flex items-center gap-1 text-xs text-text-muted bg-bg-surface rounded-full px-2 py-1">
-                <Star className="w-3 h-3 text-gold" />
-                <span>{l.totalInterested} {g(gender, "הביעו עניין", "הביעו עניין")}</span>
               </div>
             </div>
 
