@@ -92,6 +92,9 @@ const API_PUBLIC_PREFIXES = [
   // Public contract signing API — authenticated via signToken path param.
   // Client has no user account, just the signed magic link.
   "/api/contract/sign/",
+  // Public supplier-review submission — designer receives a magic link by
+  // email and submits via the path-param token. No session expected.
+  "/api/supplier/reviews/token/",
 ];
 
 async function verifyTokenMiddleware(token: string) {
