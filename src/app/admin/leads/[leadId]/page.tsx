@@ -19,7 +19,7 @@ import {
   ArrowRight, Loader2, AlertTriangle, User, Phone, Mail, MapPin, Home, Ruler,
   Banknote, Clock, Palette, MessageSquare, Send, Archive, Trash2, RotateCw,
   CheckCircle2, Sparkles, Users, Eye, EyeOff, XCircle, CreditCard, Star,
-  TrendingUp, Save, AlertCircle,
+  TrendingUp, Save, AlertCircle, Pencil, X,
 } from "lucide-react";
 
 type LeadStatus = "NEW" | "REVIEWING" | "POSTED_TO_COMMUNITY" | "DISTRIBUTED" | "CONVERTED" | "ARCHIVED";
@@ -131,6 +131,23 @@ export default function AdminLeadDetailPage() {
   const [savedNotes, setSavedNotes] = useState(false);
   const [selectedDesignerIds, setSelectedDesignerIds] = useState<Set<string>>(new Set());
   const [assignError, setAssignError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    sizeSqm: "",
+    scope: "",
+    renovationBudget: "",
+    designerBudget: "",
+    startTiming: "",
+    stylePreference: "",
+    additionalNotes: "",
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -142,6 +159,8 @@ export default function AdminLeadDetailPage() {
       setLead(data.lead);
       setAdminNotes(data.lead.adminNotes || "");
       setSelectedDesignerIds(new Set());
+      setIsEditing(false);
+      setEditError(null);
     } catch {
       setError("שגיאה בטעינת הליד");
     } finally {
@@ -279,6 +298,80 @@ export default function AdminLeadDetailPage() {
     return ["NEW", "REVIEWING"].includes(lead.status);
   }, [lead]);
 
+  const canEdit = useMemo(() => {
+    if (!lead) return false;
+    return ["NEW", "REVIEWING"].includes(lead.status);
+  }, [lead]);
+
+  const startEdit = () => {
+    if (!lead) return;
+    setEditForm({
+      firstName: lead.firstName || "",
+      lastName: lead.lastName || "",
+      phone: lead.phone || "",
+      email: lead.email || "",
+      address: lead.address || "",
+      city: lead.city || "",
+      sizeSqm: lead.sizeSqm == null ? "" : String(lead.sizeSqm),
+      scope: lead.scope || "",
+      renovationBudget: lead.renovationBudget == null ? "" : String(lead.renovationBudget),
+      designerBudget: lead.designerBudget == null ? "" : String(lead.designerBudget),
+      startTiming: lead.startTiming || "",
+      stylePreference: lead.stylePreference || "",
+      additionalNotes: lead.additionalNotes || "",
+    });
+    setEditError(null);
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditError(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editForm.firstName.trim() || !editForm.lastName.trim() || !editForm.phone.trim() || !editForm.email.trim() || !editForm.city.trim() || !editForm.scope.trim()) {
+      setEditError("שם פרטי, שם משפחה, טלפון, אימייל, עיר ופירוט שיפוץ הם שדות חובה");
+      return;
+    }
+    setBusy("edit");
+    setEditError(null);
+    try {
+      const payload: Record<string, unknown> = {
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        phone: editForm.phone,
+        email: editForm.email,
+        city: editForm.city,
+        scope: editForm.scope,
+        address: editForm.address,
+        startTiming: editForm.startTiming,
+        stylePreference: editForm.stylePreference,
+        additionalNotes: editForm.additionalNotes,
+        sizeSqm: editForm.sizeSqm,
+        renovationBudget: editForm.renovationBudget,
+        designerBudget: editForm.designerBudget,
+      };
+      const res = await fetch(`/api/admin/leads/${leadId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        setEditError(err.error || "שגיאה בשמירה");
+      } else {
+        await load();
+      }
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const setEditField = (key: keyof typeof editForm) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => setEditForm((p) => ({ ...p, [key]: e.target.value }));
+
   const canAssign = useMemo(() => {
     if (!lead) return false;
     return ["NEW", "REVIEWING", "POSTED_TO_COMMUNITY", "DISTRIBUTED"].includes(lead.status);
@@ -332,7 +425,16 @@ export default function AdminLeadDetailPage() {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {lead.status === "NEW" && (
+            {canEdit && !isEditing && (
+              <button
+                onClick={startEdit}
+                disabled={!!busy}
+                className="btn-outline flex items-center gap-2 text-sm"
+              >
+                <Pencil className="w-4 h-4" /> ערוך ליד
+              </button>
+            )}
+            {lead.status === "NEW" && !isEditing && (
               <button
                 onClick={() => updateLead({ status: "REVIEWING" }, "reviewing")}
                 disabled={!!busy}
@@ -368,39 +470,116 @@ export default function AdminLeadDetailPage() {
           </div>
         </div>
 
-        {/* Lead data grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6 pt-6 border-t border-border/30">
-          <DataField icon={User} label="שם מלא" value={leadName} />
-          <DataField icon={Phone} label="טלפון" value={<a href={`tel:${lead.phone}`} className="hover:text-gold" dir="ltr">{lead.phone}</a>} />
-          <DataField icon={Mail} label="אימייל" value={<a href={`mailto:${lead.email}`} className="hover:text-gold" dir="ltr">{lead.email}</a>} />
-          <DataField icon={Home} label="כתובת הנכס" value={lead.address || "—"} />
-          <DataField icon={MapPin} label="עיר" value={lead.city || "—"} />
-          <DataField icon={Ruler} label="גודל הדירה" value={lead.sizeSqm ? `${lead.sizeSqm} מ״ר` : "—"} />
-          <DataField icon={Banknote} label="תקציב שיפוץ" value={fmtMoney(lead.renovationBudget)} />
-          <DataField icon={Banknote} label="תקציב למעצבת" value={fmtMoney(lead.designerBudget)} />
-          <DataField icon={Clock} label="תזמון התחלה" value={lead.startTiming || "—"} />
-          <DataField icon={Palette} label="סגנון מועדף" value={lead.stylePreference || "—"} />
-        </div>
+        {/* Lead data — read or edit */}
+        {!isEditing ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6 pt-6 border-t border-border/30">
+              <DataField icon={User} label="שם מלא" value={leadName} />
+              <DataField icon={Phone} label="טלפון" value={<a href={`tel:${lead.phone}`} className="hover:text-gold" dir="ltr">{lead.phone}</a>} />
+              <DataField icon={Mail} label="אימייל" value={<a href={`mailto:${lead.email}`} className="hover:text-gold" dir="ltr">{lead.email}</a>} />
+              <DataField icon={Home} label="כתובת הנכס" value={lead.address || "—"} />
+              <DataField icon={MapPin} label="עיר" value={lead.city || "—"} />
+              <DataField icon={Ruler} label="גודל הדירה" value={lead.sizeSqm ? `${lead.sizeSqm} מ״ר` : "—"} />
+              <DataField icon={Banknote} label="תקציב שיפוץ" value={fmtMoney(lead.renovationBudget)} />
+              <DataField icon={Banknote} label="תקציב למעצבת" value={fmtMoney(lead.designerBudget)} />
+              <DataField icon={Clock} label="תזמון התחלה" value={lead.startTiming || "—"} />
+              <DataField icon={Palette} label="סגנון מועדף" value={lead.stylePreference || "—"} />
+            </div>
 
-        {/* Scope */}
-        <div className="mt-5 pt-5 border-t border-border/30">
-          <h3 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
-            <Home className="w-3 h-3" /> פירוט השיפוץ
-          </h3>
-          <p className="text-text-primary whitespace-pre-wrap bg-bg-surface/50 rounded-card p-3 text-sm">
-            {lead.scope || "—"}
-          </p>
-        </div>
+            <div className="mt-5 pt-5 border-t border-border/30">
+              <h3 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
+                <Home className="w-3 h-3" /> פירוט השיפוץ
+              </h3>
+              <p className="text-text-primary whitespace-pre-wrap bg-bg-surface/50 rounded-card p-3 text-sm">
+                {lead.scope || "—"}
+              </p>
+            </div>
 
-        {/* Additional notes */}
-        {lead.additionalNotes && (
-          <div className="mt-5 pt-5 border-t border-border/30">
-            <h3 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> דגש נוסף מהלקוח
-            </h3>
-            <p className="text-text-primary whitespace-pre-wrap bg-gold/5 border border-gold/20 rounded-card p-3 text-sm">
-              {lead.additionalNotes}
-            </p>
+            {lead.additionalNotes && (
+              <div className="mt-5 pt-5 border-t border-border/30">
+                <h3 className="text-text-muted text-xs font-medium mb-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> דגש נוסף מהלקוח
+                </h3>
+                <p className="text-text-primary whitespace-pre-wrap bg-gold/5 border border-gold/20 rounded-card p-3 text-sm">
+                  {lead.additionalNotes}
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="mt-6 pt-6 border-t border-border/30 space-y-4">
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-card p-3 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              עריכה אפשרית רק לפני פרסום לקהילה ולפני הקצאה למעצבות.
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <EditField icon={User} label="שם פרטי" required>
+                <input className="input-dark w-full" value={editForm.firstName} onChange={setEditField("firstName")} />
+              </EditField>
+              <EditField icon={User} label="שם משפחה" required>
+                <input className="input-dark w-full" value={editForm.lastName} onChange={setEditField("lastName")} />
+              </EditField>
+              <EditField icon={Phone} label="טלפון" required>
+                <input dir="ltr" className="input-dark w-full" value={editForm.phone} onChange={setEditField("phone")} />
+              </EditField>
+              <EditField icon={Mail} label="אימייל" required>
+                <input dir="ltr" type="email" className="input-dark w-full" value={editForm.email} onChange={setEditField("email")} />
+              </EditField>
+              <EditField icon={Home} label="כתובת הנכס">
+                <input className="input-dark w-full" value={editForm.address} onChange={setEditField("address")} />
+              </EditField>
+              <EditField icon={MapPin} label="עיר" required>
+                <input className="input-dark w-full" value={editForm.city} onChange={setEditField("city")} />
+              </EditField>
+              <EditField icon={Ruler} label="גודל הדירה (מ״ר)">
+                <input type="number" min="0" className="input-dark w-full" value={editForm.sizeSqm} onChange={setEditField("sizeSqm")} />
+              </EditField>
+              <EditField icon={Banknote} label="תקציב שיפוץ (₪)">
+                <input type="number" min="0" className="input-dark w-full" value={editForm.renovationBudget} onChange={setEditField("renovationBudget")} />
+              </EditField>
+              <EditField icon={Banknote} label="תקציב למעצבת (₪)">
+                <input type="number" min="0" className="input-dark w-full" value={editForm.designerBudget} onChange={setEditField("designerBudget")} />
+              </EditField>
+              <EditField icon={Clock} label="תזמון התחלה">
+                <input className="input-dark w-full" value={editForm.startTiming} onChange={setEditField("startTiming")} />
+              </EditField>
+              <EditField icon={Palette} label="סגנון מועדף">
+                <input className="input-dark w-full" value={editForm.stylePreference} onChange={setEditField("stylePreference")} />
+              </EditField>
+            </div>
+
+            <EditField icon={Home} label="פירוט השיפוץ" required>
+              <textarea rows={4} className="input-dark w-full resize-none" value={editForm.scope} onChange={setEditField("scope")} />
+            </EditField>
+
+            <EditField icon={AlertCircle} label="דגש נוסף מהלקוח">
+              <textarea rows={3} className="input-dark w-full resize-none" value={editForm.additionalNotes} onChange={setEditField("additionalNotes")} />
+            </EditField>
+
+            {editError && (
+              <div className="text-xs text-red-600 flex items-center gap-1 bg-red-50 border border-red-200 px-3 py-2 rounded">
+                <AlertTriangle className="w-4 h-4" /> {editError}
+              </div>
+            )}
+
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={saveEdit}
+                disabled={busy === "edit"}
+                className="btn-primary flex items-center gap-2 text-sm"
+              >
+                {busy === "edit" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                שמור שינויים
+              </button>
+              <button
+                onClick={cancelEdit}
+                disabled={busy === "edit"}
+                className="btn-outline flex items-center gap-2 text-sm"
+              >
+                <X className="w-4 h-4" /> ביטול
+              </button>
+            </div>
           </div>
         )}
 
@@ -653,6 +832,20 @@ function DataField({ icon: Icon, label, value }: {
         <Icon className="w-3 h-3" /> {label}
       </p>
       <p className="text-text-primary text-sm font-medium">{value}</p>
+    </div>
+  );
+}
+
+function EditField({ icon: Icon, label, required, children }: {
+  icon: typeof User; label: string; required?: boolean; children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="text-text-muted text-xs flex items-center gap-1 mb-1">
+        <Icon className="w-3 h-3" /> {label}
+        {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
     </div>
   );
 }

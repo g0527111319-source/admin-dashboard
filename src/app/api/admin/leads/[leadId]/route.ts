@@ -63,6 +63,42 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ lead
   return NextResponse.json({ lead });
 }
 
+const EDITABLE_STRING_FIELDS = [
+  "firstName",
+  "lastName",
+  "phone",
+  "email",
+  "city",
+  "scope",
+] as const;
+
+const EDITABLE_NULLABLE_STRING_FIELDS = [
+  "address",
+  "startTiming",
+  "stylePreference",
+  "additionalNotes",
+] as const;
+
+const EDITABLE_NULLABLE_NUMBER_FIELDS = [
+  "sizeSqm",
+  "renovationBudget",
+  "designerBudget",
+] as const;
+
+type EditableBody = Partial<Record<
+  (typeof EDITABLE_STRING_FIELDS)[number]
+  | (typeof EDITABLE_NULLABLE_STRING_FIELDS)[number]
+  | (typeof EDITABLE_NULLABLE_NUMBER_FIELDS)[number],
+  unknown
+>>;
+
+function bodyHasEditableFields(body: EditableBody): boolean {
+  for (const k of EDITABLE_STRING_FIELDS) if (k in body) return true;
+  for (const k of EDITABLE_NULLABLE_STRING_FIELDS) if (k in body) return true;
+  for (const k of EDITABLE_NULLABLE_NUMBER_FIELDS) if (k in body) return true;
+  return false;
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ leadId: string }> }) {
   if (req.headers.get("x-user-role") !== "admin") {
     return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
@@ -72,7 +108,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ le
     status?: string;
     adminNotes?: string;
     restore?: boolean;
-  };
+  } & EditableBody;
 
   const data: Record<string, unknown> = {};
   if (typeof body.adminNotes === "string") data.adminNotes = body.adminNotes.slice(0, 2000);
@@ -84,6 +120,50 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ le
   if (body.restore === true) {
     data.status = "NEW";
     data.archivedAt = null;
+  }
+
+  if (bodyHasEditableFields(body)) {
+    const existing = await prisma.lead.findUnique({
+      where: { id: leadId },
+      select: { status: true },
+    });
+    if (!existing) return NextResponse.json({ error: "לא נמצא" }, { status: 404 });
+    if (existing.status !== "NEW" && existing.status !== "REVIEWING") {
+      return NextResponse.json(
+        { error: "לא ניתן לערוך ליד שכבר פורסם או הוקצה" },
+        { status: 400 },
+      );
+    }
+
+    for (const key of EDITABLE_STRING_FIELDS) {
+      if (key in body) {
+        const v = body[key];
+        if (typeof v !== "string" || !v.trim()) {
+          return NextResponse.json({ error: `שדה חובה ריק: ${key}` }, { status: 400 });
+        }
+        data[key] = v.trim();
+      }
+    }
+    for (const key of EDITABLE_NULLABLE_STRING_FIELDS) {
+      if (key in body) {
+        const v = body[key];
+        if (v == null || v === "") data[key] = null;
+        else if (typeof v === "string") data[key] = v.trim();
+      }
+    }
+    for (const key of EDITABLE_NULLABLE_NUMBER_FIELDS) {
+      if (key in body) {
+        const v = body[key];
+        if (v == null || v === "") data[key] = null;
+        else {
+          const n = Number(v);
+          if (!Number.isFinite(n) || n < 0) {
+            return NextResponse.json({ error: `ערך לא תקין: ${key}` }, { status: 400 });
+          }
+          data[key] = n;
+        }
+      }
+    }
   }
 
   if (Object.keys(data).length === 0) {
