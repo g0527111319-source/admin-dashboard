@@ -32,6 +32,8 @@ interface EventItem {
   paid: number;
   status: string;
   imageUrl: string | null;
+  supplierId?: string | null;
+  supplier?: { id: string; name: string; logo: string | null; category: string } | null;
   attendees: Attendee[];
   reminders: { week: boolean; day: boolean; hour: boolean };
   survey?: { satisfaction: number; attendanceRate: number };
@@ -61,6 +63,8 @@ function mapEventFromApi(e: any): EventItem {
     paid: e.paid || 0,
     status: e.status || "DRAFT",
     imageUrl: e.imageUrl || null,
+    supplierId: e.supplierId || null,
+    supplier: e.supplier || null,
     attendees: [],
     reminders: { week: false, day: false, hour: false },
     ...(isPast && e.status === "CLOSED" ? { survey: { satisfaction: 0, attendanceRate: 0 }, feedbackQuotes: [] } : {}),
@@ -296,6 +300,75 @@ export default function EventsPage() {
   const [newPrice, setNewPrice] = useState("");
   const [newMaxAttendees, setNewMaxAttendees] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [newSupplierId, setNewSupplierId] = useState<string>("");
+  const [savingEvent, setSavingEvent] = useState(false);
+
+  /* Community-supplier dropdown source */
+  type SupplierOption = { id: string; name: string; category: string; logo: string | null };
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  useEffect(() => {
+    fetch("/api/suppliers?active=true")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setSuppliers(
+            data.map((s: { id: string; name: string; category: string; logo: string | null }) => ({
+              id: s.id, name: s.name, category: s.category, logo: s.logo ?? null,
+            })),
+          );
+        }
+      })
+      .catch(() => { /* non-fatal — dropdown will just be empty */ });
+  }, []);
+
+  const resetForm = () => {
+    setNewTitle(""); setNewDesc(""); setNewDate(""); setNewLocation("");
+    setNewType(EVENT_TYPES[0]); setNewIsFree(true); setNewPrice("");
+    setNewMaxAttendees(""); setNewImageUrl(""); setNewSupplierId("");
+    setEditingEventId(null);
+  };
+
+  const submitEventForm = async () => {
+    if (!newTitle.trim() || !newDate) {
+      alert("חסרים שדות חובה: שם האירוע ותאריך");
+      return;
+    }
+    setSavingEvent(true);
+    try {
+      const payload = {
+        title: newTitle.trim(),
+        description: newDesc.trim() || null,
+        date: newDate,
+        location: newLocation.trim() || null,
+        isPaid: !newIsFree,
+        price: newIsFree ? null : (newPrice ? Number(newPrice) : null),
+        maxAttendees: newMaxAttendees ? Number(newMaxAttendees) : null,
+        imageUrl: newImageUrl.trim() || null,
+        supplierId: newSupplierId || null,
+      };
+      const res = editingEventId
+        ? await fetch(`/api/admin/events/${editingEventId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(err.error || "שגיאה בשמירה");
+        return;
+      }
+      await reloadEvents();
+      resetForm();
+      setActiveTab("upcoming");
+    } finally {
+      setSavingEvent(false);
+    }
+  };
 
   const upcomingEvents = useMemo(() => events.filter((e) => e.date.slice(0, 10) >= TODAY), [events]);
   const pastEvents = useMemo(() => events.filter((e) => e.date.slice(0, 10) < TODAY), [events]);
@@ -368,6 +441,7 @@ export default function EventsPage() {
     setNewPrice(event.price !== null && event.price !== undefined ? String(event.price) : "");
     setNewMaxAttendees(event.maxAttendees ? String(event.maxAttendees) : "");
     setNewImageUrl(event.imageUrl || "");
+    setNewSupplierId(event.supplierId || "");
     setActiveTab("create");
   };
 
@@ -563,14 +637,65 @@ export default function EventsPage() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm text-text-muted mb-1">{"ספק מארח (אופציונלי)"}</label>
+              <select
+                value={newSupplierId}
+                onChange={(e) => setNewSupplierId(e.target.value)}
+                className="select-dark w-full"
+              >
+                <option value="">— ללא ספק —</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} · {s.category}
+                  </option>
+                ))}
+              </select>
+              {newSupplierId && (() => {
+                const picked = suppliers.find((s) => s.id === newSupplierId);
+                if (!picked) return null;
+                return (
+                  <div className="flex items-center gap-3 mt-2 bg-bg-surface rounded-card p-2">
+                    {picked.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={picked.logo} alt={picked.name} className="w-10 h-10 rounded object-contain bg-white p-0.5" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-gold/15 flex items-center justify-center text-gold text-sm font-bold">
+                        {picked.name[0]}
+                      </div>
+                    )}
+                    <div className="text-xs text-text-muted">
+                      <p className="text-text-primary text-sm font-medium">{picked.name}</p>
+                      <p>{picked.category}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+              <p className="text-text-muted text-xs mt-1">
+                כשמעצבת תירשם לאירוע, פרטי הספק והלוגו יופיעו אצלה ביומן.
+              </p>
+            </div>
+
             <div className="gold-separator" />
 
-            <TwistButton variant="primary" size="sm" className="w-full">
-              <span className="inline-flex items-center justify-center gap-2">
-                <Plus className="w-4 h-4" />
-                {"צור אירוע"}
-              </span>
-            </TwistButton>
+            <button
+              type="button"
+              onClick={submitEventForm}
+              disabled={savingEvent}
+              className="btn-primary w-full inline-flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {savingEvent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {editingEventId ? "שמור שינויים" : "צור אירוע"}
+            </button>
+            {editingEventId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="btn-outline w-full text-sm"
+              >
+                ביטול עריכה
+              </button>
+            )}
           </div>
         </div>
       )}

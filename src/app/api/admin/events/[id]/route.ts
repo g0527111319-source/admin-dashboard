@@ -27,6 +27,19 @@ export async function PATCH(
     if (body.maxAttendees !== undefined) data.maxAttendees = body.maxAttendees === null || body.maxAttendees === "" ? null : Number(body.maxAttendees);
     if (body.status !== undefined) data.status = body.status;
     if (body.imageUrl !== undefined) data.imageUrl = body.imageUrl === null ? null : String(body.imageUrl);
+    // supplierId: null/"" clears the link; a string is validated against
+    // approved community suppliers.
+    if (body.supplierId !== undefined) {
+      if (body.supplierId === null || body.supplierId === "") {
+        data.supplierId = null;
+      } else {
+        const s = await prisma.supplier.findFirst({
+          where: { id: String(body.supplierId), approvalStatus: "APPROVED" },
+          select: { id: true },
+        });
+        data.supplierId = s ? s.id : null;
+      }
+    }
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "אין שדות לעדכון" }, { status: 400 });

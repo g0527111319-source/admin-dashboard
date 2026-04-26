@@ -62,6 +62,8 @@ model Supplier {
   recommenders      SupplierRecommender[]
   reservations      SupplierReservation[]
   designerReviews   SupplierDesignerReview[]
+  events            Event[]
+  crmCalendarEvents CrmCalendarEvent[] @relation("CrmCalendarEventSupplier")
 }
 
 // ==========================================
@@ -458,10 +460,19 @@ model Event {
   imageUrl              String?
   status                EventStatus @default(DRAFT)
 
+  // Optional community-supplier link. Admin can attach a supplier when
+  // creating the event; designers see the supplier name + logo on the event
+  // card and on their calendar after they register.
+  supplierId            String?
+  supplier              Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
 
   registrations         EventRegistration[]
+  crmCalendarEntries    CrmCalendarEvent[]  @relation("EventCrmCalendarEntries")
+
+  @@index([supplierId])
 }
 
 // ==========================================
@@ -1090,6 +1101,8 @@ model CrmSupplier {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
+  calendarEvents CrmCalendarEvent[]
+
   @@index([designerId])
   @@index([category])
 }
@@ -1320,12 +1333,35 @@ model CrmCalendarEvent {
   clientReminderHours  Int?
   clientReminderSentAt DateTime?
 
+  // Supplier reference. At most one of (supplierId, crmSupplierId) is set.
+  //   supplierId    → community supplier (Supplier table) — has logo
+  //   crmSupplierId → designer's personal supplier (CrmSupplier) — no logo
+  // supplierName + supplierLogoSnapshot are denormalized at create-time so
+  // the calendar entry keeps showing the supplier even if the row is later
+  // renamed/deleted (and so the client portal can render the logo without
+  // an extra join into the supplier table).
+  supplierId           String?
+  supplier             Supplier?    @relation("CrmCalendarEventSupplier", fields: [supplierId], references: [id], onDelete: SetNull)
+  crmSupplierId        String?
+  crmSupplier          CrmSupplier? @relation(fields: [crmSupplierId], references: [id], onDelete: SetNull)
+  supplierName         String?
+  supplierLogoSnapshot String?
+
+  // When the calendar entry was created from an admin community event the
+  // designer registered for, we keep the source event id so the entry can be
+  // cleaned up if registration is cancelled.
+  sourceEventId        String?
+  sourceEvent          Event?       @relation("EventCrmCalendarEntries", fields: [sourceEventId], references: [id], onDelete: SetNull)
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   @@index([designerId])
   @@index([projectId])
   @@index([startAt])
+  @@index([supplierId])
+  @@index([crmSupplierId])
+  @@index([sourceEventId])
 }
 
 model DesignerGoogleCalendar {

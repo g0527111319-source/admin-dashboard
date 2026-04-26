@@ -21,6 +21,13 @@ type CalendarEvent = {
   eventType?: string | null;
   notifyClient?: boolean;
   clientReminderHours?: number | null;
+  // Supplier link snapshot (filled when the event was created with a supplier
+  // — community via supplierId, personal via crmSupplierId).
+  supplierId?: string | null;
+  crmSupplierId?: string | null;
+  supplierName?: string | null;
+  supplierLogoSnapshot?: string | null;
+  sourceEventId?: string | null;
 };
 
 type CrmTask = {
@@ -103,7 +110,38 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     notifyClient: false,
     enableClientReminder: false,
     clientReminderHours: DEFAULT_CLIENT_REMINDER_HOURS,
+    // Supplier link. supplierType controls which dropdown is shown:
+    //   "" = no supplier
+    //   "community" = pick from /api/suppliers (logo captured)
+    //   "personal" = pick from /api/designer/crm/suppliers (no logo)
+    supplierType: "" as "" | "community" | "personal",
+    supplierId: "",
+    crmSupplierId: "",
   });
+
+  // Supplier dropdown sources — fetched on mount, cheap to keep in memory.
+  type CommunitySupplierOption = { id: string; name: string; category: string; logo: string | null; city: string | null };
+  type CrmSupplierOption = { id: string; name: string; category: string };
+  const [communitySuppliers, setCommunitySuppliers] = useState<CommunitySupplierOption[]>([]);
+  const [crmSuppliers, setCrmSuppliers] = useState<CrmSupplierOption[]>([]);
+  useEffect(() => {
+    fetch("/api/suppliers?active=true")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) setCommunitySuppliers(data.map((s: { id: string; name: string; category: string; logo: string | null; city: string | null }) => ({
+          id: s.id, name: s.name, category: s.category, logo: s.logo ?? null, city: s.city ?? null,
+        })));
+      })
+      .catch(() => { /* non-fatal */ });
+    fetch("/api/designer/crm/suppliers")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) setCrmSuppliers(data.map((s: { id: string; name: string; category: string }) => ({
+          id: s.id, name: s.name, category: s.category,
+        })));
+      })
+      .catch(() => { /* non-fatal */ });
+  }, []);
   const [taskFormData, setTaskFormData] = useState({ title: "", description: "", dueDate: "", clientId: "", projectId: "" });
 
   const [holidays, setHolidays] = useState<{ date: string; name: string; isYomTov: boolean; emoji: string }[]>([]);
@@ -318,6 +356,9 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
           eventType: addMode === "task" ? "event" : addMode,
           notifyClient: canNotifyClient && formData.notifyClient,
           clientReminderHours: clientReminderHoursPayload,
+          // Supplier link: only one of these is sent based on supplierType.
+          supplierId: formData.supplierType === "community" && formData.supplierId ? formData.supplierId : null,
+          crmSupplierId: formData.supplierType === "personal" && formData.crmSupplierId ? formData.crmSupplierId : null,
         }),
       });
       if (!res.ok) {
@@ -373,6 +414,9 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
     notifyClient: false,
     enableClientReminder: false,
     clientReminderHours: DEFAULT_CLIENT_REMINDER_HOURS,
+    supplierType: "",
+    supplierId: "",
+    crmSupplierId: "",
   });
 
   const deleteEvent = async (eventId: string) => {
@@ -474,6 +518,9 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
         notifyClient: mode === "meeting",
         enableClientReminder: mode === "meeting",
         clientReminderHours: DEFAULT_CLIENT_REMINDER_HOURS,
+        supplierType: "",
+        supplierId: "",
+        crmSupplierId: "",
       });
     }
     setAddMode(mode);
@@ -752,6 +799,84 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
               {/* Location is irrelevant for reminders */}
               {addMode !== "reminder" && (
                 <input type="text" className="input-field" placeholder={addMode === "meeting" ? "מיקום הפגישה (אופציונלי)" : "מיקום (אופציונלי)"} value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+              )}
+
+              {/* Supplier link — only meaningful for meetings (e.g. designer
+                  meets client at supplier showroom). Shown for "event" too in
+                  case the designer wants to mark a generic visit. */}
+              {(addMode === "meeting" || addMode === "event") && (
+                <div className="bg-bg-surface/30 border border-border-subtle rounded-lg p-3 space-y-2">
+                  <label className="text-text-secondary text-xs block">פגישה אצל ספק (אופציונלי)</label>
+                  <select
+                    className="select-field"
+                    value={formData.supplierType}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      supplierType: e.target.value as "" | "community" | "personal",
+                      supplierId: "",
+                      crmSupplierId: "",
+                    })}
+                  >
+                    <option value="">— ללא ספק —</option>
+                    <option value="community">ספק מהקהילה (עם לוגו)</option>
+                    <option value="personal">ספק שלי (ידני, ללא לוגו)</option>
+                  </select>
+
+                  {formData.supplierType === "community" && (
+                    <>
+                      <select
+                        className="select-field"
+                        value={formData.supplierId}
+                        onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+                      >
+                        <option value="">בחרי ספק מהקהילה...</option>
+                        {communitySuppliers.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name} · {s.category}</option>
+                        ))}
+                      </select>
+                      {(() => {
+                        const picked = communitySuppliers.find((s) => s.id === formData.supplierId);
+                        if (!picked) return null;
+                        return (
+                          <div className="flex items-center gap-3 mt-1 bg-bg-surface rounded p-2">
+                            {picked.logo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={picked.logo} alt={picked.name} className="w-9 h-9 rounded object-contain bg-white p-0.5" />
+                            ) : (
+                              <div className="w-9 h-9 rounded bg-gold/15 flex items-center justify-center text-gold text-xs font-bold">
+                                {picked.name[0]}
+                              </div>
+                            )}
+                            <div className="text-xs">
+                              <p className="text-text-primary font-medium">{picked.name}</p>
+                              <p className="text-text-muted">{picked.category}{picked.city ? ` · ${picked.city}` : ""}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
+
+                  {formData.supplierType === "personal" && (
+                    <>
+                      <select
+                        className="select-field"
+                        value={formData.crmSupplierId}
+                        onChange={(e) => setFormData({ ...formData, crmSupplierId: e.target.value })}
+                      >
+                        <option value="">בחרי ספק שלי...</option>
+                        {crmSuppliers.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name} · {s.category}</option>
+                        ))}
+                      </select>
+                      {crmSuppliers.length === 0 && (
+                        <p className="text-xs text-text-muted">
+                          עדיין לא הוספת ספקים אישיים. אפשר להוסיף ב&quot;ספקים שלי&quot;.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
 
               {/* Client-first */}
@@ -1077,15 +1202,26 @@ export default function CrmCalendar({ clientId, projectId, gender }: { clientId?
             {dayEvents.map(evt => (
               <div key={evt.id} className="flex items-start gap-3 p-3 rounded-btn border border-border-subtle bg-white">
                 <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ backgroundColor: evt.source === "google" ? "#4285F4" : (evt.color || "#2563eb"), minHeight: 40 }} />
+                {/* Supplier logo, when this event was created with a community supplier */}
+                {evt.supplierLogoSnapshot && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={evt.supplierLogoSnapshot}
+                    alt={evt.supplierName || ""}
+                    className="w-9 h-9 rounded object-contain bg-white border border-border-subtle p-0.5 flex-shrink-0"
+                  />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-text-primary text-sm font-medium">{evt.title}</p>
                     {evt.source === "google" && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Google</span>}
+                    {evt.sourceEventId && <span className="text-[9px] bg-gold/10 text-gold px-1.5 py-0.5 rounded">אירוע קהילה</span>}
                   </div>
                   {evt.description && <p className="text-xs text-text-muted mt-0.5">{evt.description}</p>}
                   <div className="flex flex-wrap gap-3 mt-1 text-xs text-text-muted">
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{evt.isAllDay ? "כל היום" : `${new Date(evt.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} - ${new Date(evt.endAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}`}</span>
                     {evt.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{evt.location}</span>}
+                    {evt.supplierName && <span className="flex items-center gap-1 text-gold">🏷️ {evt.supplierName}</span>}
                     {evt.projectId && <span className="flex items-center gap-1 text-gold"><FolderOpen className="w-3 h-3" />{getProjectName(evt.projectId)}</span>}
                     {evt.clientId && <span className="flex items-center gap-1 text-emerald-600"><Users className="w-3 h-3" />{getClientName(evt.clientId)}</span>}
                   </div>

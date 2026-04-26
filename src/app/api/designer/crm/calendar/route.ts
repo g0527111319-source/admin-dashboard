@@ -154,6 +154,11 @@ export async function POST(req: NextRequest) {
       eventType,          // "event" | "task" | "meeting" | "reminder"
       notifyClient,       // boolean — email the client a meeting invite on create
       clientReminderHours, // number | null — hours before to email the client a reminder
+      // Supplier link — at most one of these should be set:
+      //   supplierId    → community supplier (Supplier table; logo is captured)
+      //   crmSupplierId → designer's personal supplier (CrmSupplier; no logo)
+      supplierId,
+      crmSupplierId,
     } = body;
 
     if (!title?.trim()) {
@@ -208,6 +213,45 @@ export async function POST(req: NextRequest) {
       if (ownedProject) safeProjectId = projectId;
     }
 
+    // Resolve supplier — at most one of (community supplier, personal CRM
+    // supplier) wins. Community is preferred when both are sent. Snapshots
+    // (name + logo) are captured at create-time so the entry stays consistent
+    // even if the supplier is later renamed/deleted.
+    let resolvedSupplierId: string | null = null;
+    let resolvedCrmSupplierId: string | null = null;
+    let resolvedSupplierName: string | null = null;
+    let resolvedSupplierLogo: string | null = null;
+    let resolvedSupplierLocation: string | null = null;
+    if (supplierId) {
+      const s = await prisma.supplier.findFirst({
+        where: { id: String(supplierId), approvalStatus: "APPROVED" },
+        select: { id: true, name: true, logo: true, city: true },
+      });
+      if (s) {
+        resolvedSupplierId = s.id;
+        resolvedSupplierName = s.name;
+        resolvedSupplierLogo = s.logo || null;
+        resolvedSupplierLocation = s.city || null;
+      }
+    } else if (crmSupplierId) {
+      const cs = await prisma.crmSupplier.findFirst({
+        where: { id: String(crmSupplierId), designerId, deletedAt: null },
+        select: { id: true, name: true },
+      });
+      if (cs) {
+        resolvedCrmSupplierId = cs.id;
+        resolvedSupplierName = cs.name;
+      }
+    }
+
+    // If the caller didn't supply a location but did pick a community
+    // supplier with a city, use that. Designer-supplied location wins.
+    const resolvedLocation =
+      location?.trim() ||
+      (resolvedSupplierName && resolvedSupplierLocation
+        ? `${resolvedSupplierName} — ${resolvedSupplierLocation}`
+        : null);
+
     // Base fields that are guaranteed to exist even on unmigrated DBs.
     const baseData = {
       designerId,
@@ -215,7 +259,7 @@ export async function POST(req: NextRequest) {
       description: description?.trim() || null,
       startAt: new Date(startAt),
       endAt: new Date(endAt),
-      location: location?.trim() || null,
+      location: resolvedLocation,
       isAllDay: isAllDay ?? false,
       color: color || null,
       projectId: safeProjectId,
@@ -229,6 +273,10 @@ export async function POST(req: NextRequest) {
       eventType: resolvedEventType,
       notifyClient: Boolean(notifyClient) && Boolean(safeClientId),
       clientReminderHours: resolvedClientReminderHours,
+      supplierId: resolvedSupplierId,
+      crmSupplierId: resolvedCrmSupplierId,
+      supplierName: resolvedSupplierName,
+      supplierLogoSnapshot: resolvedSupplierLogo,
     };
 
     // Try full insert; fall back to core fields if the DB isn't migrated yet.

@@ -41,6 +41,7 @@ import FeedbackWidget from "@/components/FeedbackWidget";
 import LogoutButton from "@/components/LogoutButton";
 import AccountSettings from "@/components/designer/AccountSettings";
 import TodayDashboard from "@/components/designer/TodayDashboard";
+import CommunityEventsList from "@/components/community/CommunityEventsList";
 import InboxView from "@/components/designer/InboxView";
 import CommunityLeadsFeed from "@/components/leads/CommunityLeadsFeed";
 import { useParams, useRouter } from "next/navigation";
@@ -105,7 +106,7 @@ type DealHistoryItem = {
 // NOTE: "projects" tab was removed — projects now live only nested inside a
 // specific client's view (CrmClients → selected client → "פרויקטים" sub-tab).
 // See redirect handling in the hash-init useEffect below for legacy links.
-type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks" | "leads";
+type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks" | "leads" | "events";
 
 interface NavGroup {
   title: string;
@@ -131,6 +132,7 @@ const navGroups: NavGroup[] = [
     items: [
       { key: "suppliers", label: "ספריית ספקים", icon: Search },
       { key: "leads", label: "לידים מהקהילה", icon: Inbox },
+      { key: "events", label: "אירועי קהילה", icon: CalendarIcon },
       { key: "deals", label: "דיווח עסקה", icon: HandCoins },
       { key: "history", label: "היסטוריה", icon: History },
     ]
@@ -1240,6 +1242,9 @@ export default function DesignerDashboard() {
             )}
 
             {/* ===== COMMUNITY LEADS ===== */}
+            {activeTab === "events" && (
+              <CommunityEventsList designerId={designerIdForGate || ""} gender={gender} />
+            )}
             {activeTab === "leads" && (
               <CommunityLeadsFeed gender={gender} />
             )}
