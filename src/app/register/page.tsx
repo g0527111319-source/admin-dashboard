@@ -153,6 +153,7 @@ export default function RegisterPage() {
         role: "designer",
       } : {
         fullName: form.firstName.trim() + (form.lastName.trim() ? ` ${form.lastName.trim()}` : ""),
+        contactName: form.firstName.trim() + (form.lastName.trim() ? ` ${form.lastName.trim()}` : ""),
         email: form.email,
         phone: form.phone,
         password: form.password,
