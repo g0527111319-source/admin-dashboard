@@ -16,8 +16,9 @@ import {
   Inbox, Sparkles, Users, MapPin, Ruler, Banknote, Clock, Palette,
   Loader2, Heart, HeartOff, Eye, EyeOff, CheckCircle2,
   AlertCircle, AlertTriangle, Archive, RotateCw, User, Phone, Mail, Home,
-  Handshake,
+  Handshake, Shield, ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 import { g } from "@/lib/gender";
 
 type TabKey = "community" | "assignments";
@@ -113,6 +114,7 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
   const [showDismissed, setShowDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   // When the designer taps "אני מעוניינת" we first show a commission
   // disclosure modal. Only after she actively confirms do we POST interest.
@@ -123,6 +125,10 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
   const loadCommunity = useCallback(async () => {
     try {
       const res = await fetch("/api/designer/leads/community", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
       if (!res.ok) {
         const body = await res.text().catch(() => "");
         console.error("[community feed] load failed", res.status, body);
@@ -142,6 +148,10 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
         ? "/api/designer/leads/assignments?includeDismissed=1"
         : "/api/designer/leads/assignments";
       const res = await fetch(url, { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
       if (!res.ok) {
         const body = await res.text().catch(() => "");
         console.error("[assignments] load failed", res.status, body);
@@ -158,6 +168,7 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
   const reloadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setForbidden(false);
     await Promise.all([loadCommunity(), loadAssignments()]);
     setLoading(false);
   }, [loadCommunity, loadAssignments]);
@@ -320,6 +331,24 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
         <div className="flex items-center justify-center py-16 text-text-muted gap-2">
           <Loader2 className="w-6 h-6 animate-spin" />
           <span>טוען...</span>
+        </div>
+      ) : forbidden ? (
+        <div className="card-static text-center py-10 max-w-xl mx-auto">
+          <Shield className="w-10 h-10 mx-auto mb-3 text-gold opacity-80" />
+          <h3 className="text-text-primary font-heading text-lg mb-2">
+            הדף הזה מיועד למעצבות בלבד
+          </h3>
+          <p className="text-text-muted text-sm mb-4">
+            הגעת לכאן עם חשבון שאינו מעצבת. כדי לראות לידים מצד מנהלת הקהילה,
+            עברי לדשבורד האדמין.
+          </p>
+          <Link
+            href="/admin/leads"
+            className="inline-flex items-center gap-2 btn-outline text-sm"
+          >
+            <ExternalLink className="w-4 h-4" />
+            לרשימת הלידים באדמין
+          </Link>
         </div>
       ) : error ? (
         <div className="text-center py-10 text-red-500">
