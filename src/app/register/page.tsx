@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "@/components/ui/Logo";
 import { siteText } from "@/content/siteText";
 import { TwistButton } from "@/components/ds";
 import {
   User, Mail, Phone, Lock, Eye, EyeOff, MapPin, Briefcase, Loader2,
   CheckCircle2, Store, Palette, ArrowLeft, Hash, Calendar, Home, Building2,
+  Sparkles,
 } from "lucide-react";
 
 type RegisterRole = "designer" | "supplier";
@@ -34,6 +35,25 @@ export default function RegisterPage() {
   const [step, setStep] = useState<"choose" | "form">("choose");
   const [role, setRole] = useState<RegisterRole>("designer");
   const t = siteText.auth.register;
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      const code = ref.trim().toUpperCase().slice(0, 64);
+      if (code) {
+        setReferralCode(code);
+        try { sessionStorage.setItem("zirat_ref", code); } catch { }
+        return;
+      }
+    }
+    try {
+      const saved = sessionStorage.getItem("zirat_ref");
+      if (saved) setReferralCode(saved);
+    } catch { }
+  }, []);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -129,6 +149,7 @@ export default function RegisterPage() {
         employmentType: form.employmentType,
         yearsAsIndependent: form.yearsAsIndependent ? parseInt(form.yearsAsIndependent) : undefined,
         workTypes: form.workTypes.length > 0 ? form.workTypes : undefined,
+        referralCode: referralCode || undefined,
         role: "designer",
       } : {
         fullName: form.firstName.trim() + (form.lastName.trim() ? ` ${form.lastName.trim()}` : ""),
@@ -156,6 +177,7 @@ export default function RegisterPage() {
         return;
       }
 
+      try { sessionStorage.removeItem("zirat_ref"); } catch { }
       setSuccess(true);
     } catch {
       setError(siteText.auth.common.networkError);
@@ -277,6 +299,15 @@ export default function RegisterPage() {
               <p className="text-text-muted mb-6 text-sm">
                 {role === "designer" ? t.designerSubtitle : t.supplierSubtitle}
               </p>
+
+              {referralCode && (
+                <div className="mb-4 px-4 py-3 rounded-xl bg-gold/10 border border-gold/30 flex items-center gap-2 text-sm">
+                  <Sparkles className="w-4 h-4 text-gold flex-shrink-0" />
+                  <span className="text-text-primary">
+                    נרשמת דרך <b className="text-gold">{referralCode}</b>
+                  </span>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-3">
 

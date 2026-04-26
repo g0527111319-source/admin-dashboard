@@ -138,6 +138,7 @@ export async function POST(req: NextRequest) {
             hebrewBirthDate: body.hebrewBirthDate || undefined,
             workTypes: body.workTypes || undefined,
             gender: body.gender || "female",
+            referralCode: body.referralCode || undefined,
         });
 
         if (!result.success) {

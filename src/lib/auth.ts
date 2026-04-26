@@ -364,6 +364,7 @@ export async function registerDesigner(data: {
   hebrewBirthDate?: string;
   workTypes?: string[];
   gender?: string;
+  referralCode?: string;
 }): Promise<{ success: boolean; designerId?: string; status?: string; error?: string }> {
   const passwordHash = await hashPassword(data.password);
   const loginToken = crypto.randomUUID();
@@ -437,6 +438,16 @@ export async function registerDesigner(data: {
     }
   }
 
+  // Validate referral code (only persist codes that exist + are active)
+  let validatedReferralCode: string | null = null;
+  if (data.referralCode) {
+    const code = data.referralCode.trim().toUpperCase();
+    if (code) {
+      const link = await prisma.referralLink.findUnique({ where: { code } });
+      if (link && link.active) validatedReferralCode = code;
+    }
+  }
+
   const designer = await prisma.designer.create({
     data: {
       fullName: data.fullName,
@@ -449,6 +460,7 @@ export async function registerDesigner(data: {
       approvalStatus: "PENDING",
       passwordHash,
       loginToken,
+      referralCode: validatedReferralCode,
       ...extendedFields,
     },
   });
