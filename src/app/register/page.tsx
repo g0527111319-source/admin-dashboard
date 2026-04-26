@@ -113,7 +113,7 @@ export default function RegisterPage() {
       return;
     }
 
-    if (form.password.length < 6) {
+    if (form.password.length < 8 || !/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password)) {
       setError(t.passwordTooShort);
       return;
     }
@@ -223,7 +223,9 @@ export default function RegisterPage() {
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-gold/20 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 text-center px-12">
-          <Logo size="xl" variant="dark" />
+          <div className="bg-white rounded-3xl p-10 inline-block shadow-2xl">
+            <Logo size="xl" variant="dark" />
+          </div>
         </div>
       </div>
 
