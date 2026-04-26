@@ -32,6 +32,7 @@ import CrmStyleQuiz from "@/components/crm/CrmStyleQuiz";
 import CrmSurveys from "@/components/crm/CrmSurveys";
 import CrmInspirationLibrary from "@/components/crm/CrmInspirationLibrary";
 import ClientSuppliersPanel from "@/components/crm/ClientSuppliersPanel";
+import ClientContractsAndQuotes from "@/components/crm/ClientContractsAndQuotes";
 
 type CrmClient = {
   id: string;
@@ -83,23 +84,18 @@ const SUB_TABS: { key: ClientSubTab; label: string; icon: typeof User }[] = [
   { key: "projects", label: "פרויקטים", icon: FolderOpen },
   { key: "suppliers", label: "ספקי הפרויקט", icon: Building2 },
   { key: "tasks", label: "משימות", icon: CheckSquare },
-  { key: "quotes", label: "הצעות מחיר", icon: FileText },
-  { key: "contracts", label: "חוזים", icon: ScrollText },
-  { key: "moodboards", label: "מודבורד", icon: Palette },
+  { key: "contracts", label: "חוזים והצעות מחיר", icon: ScrollText },
   { key: "calendar", label: "יומן", icon: Calendar },
   { key: "plans", label: "תכניות", icon: Layout },
   { key: "materials", label: "חומרים", icon: Package },
   { key: "budget", label: "תקציב", icon: DollarSign },
-  { key: "timeline", label: "ציר זמן", icon: GitBranch },
   { key: "before-after", label: "לפני/אחרי", icon: ArrowLeftRight },
   { key: "approvals", label: "אישורים", icon: ThumbsUp },
   { key: "time-tracking", label: "מעקב שעות", icon: Clock },
   { key: "handoff", label: "מסירה", icon: ClipboardCheck },
-  { key: "scheduler", label: "תזמון", icon: CalendarClock },
   { key: "onboarding", label: "אונבורדינג", icon: UserPlus },
   { key: "style-quiz", label: "שאלון סגנון", icon: Sparkles },
   { key: "surveys", label: "סקרים", icon: BarChart3 },
-  { key: "inspiration", label: "השראה", icon: Lightbulb },
 ];
 
 const EMPTY_FORM = {
@@ -774,23 +770,18 @@ export default function CrmClients({ gender }: { gender?: string }) {
           {activeSubTab === "projects" && <CrmProjects clientId={selectedClient.id} />}
           {activeSubTab === "suppliers" && <ClientSuppliersPanel clientId={selectedClient.id} />}
           {activeSubTab === "tasks" && <CrmTasks clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
-          {activeSubTab === "quotes" && <CrmQuotes clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
-          {activeSubTab === "contracts" && <CrmContracts clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
-          {activeSubTab === "moodboards" && <CrmMoodboards clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
+          {activeSubTab === "contracts" && <ClientContractsAndQuotes clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "calendar" && <CrmCalendar clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "plans" && <CrmPlans clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "materials" && <CrmMaterials clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "budget" && <CrmBudgetTracker clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
-          {activeSubTab === "timeline" && <CrmTimeline clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "before-after" && <CrmBeforeAfter clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "approvals" && <CrmApprovals clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "time-tracking" && <CrmTimeTracking clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "handoff" && <CrmHandoffChecklist clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
-          {activeSubTab === "scheduler" && <CrmScheduler clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "onboarding" && <CrmOnboarding clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
           {activeSubTab === "style-quiz" && <CrmStyleQuiz designerId="" clientId={selectedClient.id} />}
           {activeSubTab === "surveys" && <CrmSurveys clientId={selectedClient.id} projectId={selectedProject?.id !== "__details__" ? selectedProject?.id : undefined} />}
-          {activeSubTab === "inspiration" && <CrmInspirationLibrary clientId={selectedClient.id} />}
         </div>
       </div>
     );

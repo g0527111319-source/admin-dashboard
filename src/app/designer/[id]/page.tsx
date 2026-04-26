@@ -42,6 +42,7 @@ import LogoutButton from "@/components/LogoutButton";
 import AccountSettings from "@/components/designer/AccountSettings";
 import TodayDashboard from "@/components/designer/TodayDashboard";
 import CommunityEventsList from "@/components/community/CommunityEventsList";
+import TemplatesHub from "@/components/crm/TemplatesHub";
 import InboxView from "@/components/designer/InboxView";
 import CommunityLeadsFeed from "@/components/leads/CommunityLeadsFeed";
 import { useParams, useRouter } from "next/navigation";
@@ -106,7 +107,7 @@ type DealHistoryItem = {
 // NOTE: "projects" tab was removed — projects now live only nested inside a
 // specific client's view (CrmClients → selected client → "פרויקטים" sub-tab).
 // See redirect handling in the hash-init useEffect below for legacy links.
-type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks" | "leads" | "events";
+type TabKey = "home" | "today" | "inbox" | "suppliers" | "deals" | "history" | "profile" | "card" | "account-settings" | "clients" | "crm-suppliers" | "workflows" | "templates" | "templates-hub" | "whatsapp" | "webhooks" | "crm-settings" | "contracts" | "calendar" | "quotes" | "time-tracking" | "surveys" | "approvals" | "handoff" | "onboarding" | "style-quiz" | "chat" | "portfolio" | "tasks" | "leads" | "events";
 
 interface NavGroup {
   title: string;
@@ -124,7 +125,7 @@ const navGroups: NavGroup[] = [
       { key: "home", label: "הבית שלי", icon: Home },
       { key: "profile", label: "פרופיל", icon: User },
       { key: "card", label: "כרטיס ביקור", icon: CreditCard },
-      { key: "account-settings", label: "הגדרות חשבון", icon: Settings },
+      { key: "account-settings", label: "הגדרות", icon: Settings },
     ]
   },
   {
@@ -138,26 +139,16 @@ const navGroups: NavGroup[] = [
     ]
   },
   {
-    title: "CRM",
-    // "לקוחות" is first; "יומן" is placed directly beneath it per product request
-    // (all scheduling — events, tasks, meetings, reminders — is unified inside
-    // the calendar). Projects no longer appear as a tab — they're accessed via
-    // a client's detail view.
+    // "עבודה" — daily work surfaces. Removed: contracts/quotes/time-tracking
+    //   (they live inside each client). approvals also moved to per-client.
+    //   Per-client items are reachable through "לקוחות" → client detail.
+    title: "עבודה",
     items: [
       { key: "clients", label: "לקוחות", icon: Users },
       { key: "calendar", label: "יומן ולוח זמנים", icon: CalendarIcon },
       { key: "tasks", label: "משימות", icon: ListChecks },
-      { key: "contracts", label: "חוזים", icon: FileText },
-      { key: "quotes", label: "הצעות מחיר", icon: CreditCard },
-      { key: "time-tracking", label: "מעקב שעות", icon: Clock },
       { key: "chat", label: "צ׳אט", icon: MessageCircle },
-    ]
-  },
-  {
-    title: "עיצוב",
-    items: [
       { key: "portfolio", label: "תיק עבודות", icon: FolderKanban },
-      { key: "style-quiz", label: "שאלון סגנון", icon: Star },
       { key: "crm-suppliers", label: "ספקים שלי", icon: Building2 },
       // 3D models live on their own route so the viewer can own the whole
       // viewport (sidebar collapses visually inside the page).
@@ -165,17 +156,15 @@ const navGroups: NavGroup[] = [
     ]
   },
   {
-    title: "ניהול",
+    // "תבניות" centralises every reusable template manager (workflows,
+    // messages, contracts, quotes, onboarding, handoff, surveys, style-quiz)
+    // under a single tab with internal sub-tabs — keeps the sidebar clean
+    // while the templates themselves remain editable.
+    // WhatsApp + Webhooks integrations are intentionally hidden until the
+    // designer enables them (they live as sub-tabs inside "הגדרות").
+    title: "תבניות וניהול",
     items: [
-      { key: "approvals", label: "אישורים", icon: CheckCircle2 },
-      { key: "onboarding", label: "קליטת לקוח", icon: Users },
-      { key: "handoff", label: "מסירה", icon: CheckCircle2 },
-      { key: "surveys", label: "סקרים", icon: Star },
-      { key: "workflows", label: "תבניות עבודה", icon: Workflow },
-      { key: "templates", label: "תבניות הודעות", icon: MessageSquare },
-      { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
-      { key: "webhooks", label: "Webhooks", icon: Zap },
-      { key: "crm-settings", label: "הגדרות CRM", icon: Settings },
+      { key: "templates-hub", label: "תבניות", icon: Workflow },
     ]
   },
 ];
@@ -1264,6 +1253,9 @@ export default function DesignerDashboard() {
             )}
             {activeTab === "templates" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmTemplates gender={gender} /></FeatureGate>
+            )}
+            {activeTab === "templates-hub" && (
+              <FeatureGate feature="crm" designerId={designerIdForGate}><TemplatesHub gender={gender} /></FeatureGate>
             )}
             {activeTab === "crm-settings" && (
               <FeatureGate feature="crm" designerId={designerIdForGate}><CrmSettings gender={gender} /></FeatureGate>
