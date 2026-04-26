@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { seedSubscriptionPlans } from "@/lib/subscription-seed";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/admin/subscriptions/plans — List all plans (auto-seed if empty)
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     let plans = await prisma.subscriptionPlan.findMany({
       orderBy: { sortOrder: "asc" },
@@ -25,6 +28,8 @@ export async function GET() {
 
 // POST — Create plan
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { name, slug, price, currency, billingCycle, features, description, sortOrder } = body;
@@ -61,6 +66,8 @@ export async function POST(req: NextRequest) {
 
 // PATCH — Update plan
 export async function PATCH(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { id, ...data } = body;
@@ -78,6 +85,8 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE — Soft delete (isActive=false)
 export async function DELETE(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");

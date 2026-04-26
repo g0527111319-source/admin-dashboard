@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET single subscription
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
     const sub = await prisma.designerSubscription.findUnique({
@@ -31,6 +34,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
     const body = await req.json();
@@ -65,9 +70,11 @@ export async function PATCH(
 
 // DELETE — Cancel subscription (soft)
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
     const updated = await prisma.designerSubscription.update({

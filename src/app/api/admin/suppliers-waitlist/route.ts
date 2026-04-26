@@ -2,9 +2,12 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 // GET /api/admin/suppliers-waitlist — Fetch suppliers by approval status
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || "PENDING";
@@ -57,6 +60,8 @@ export async function GET(req: NextRequest) {
 
 // PATCH /api/admin/suppliers-waitlist — Approve or reject a supplier
 export async function PATCH(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { supplierId, action } = body as {

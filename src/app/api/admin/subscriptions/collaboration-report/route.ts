@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/admin/subscriptions/collaboration-report
 // For each active designer: count distinct suppliers, total deal volume,
 // and check eligibility for discounted plan per active SubscriptionRule(s).
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

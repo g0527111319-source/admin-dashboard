@@ -8,13 +8,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { notifyDesignerAssignment } from "@/lib/leads";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ leadId: string }> }) {
-  if (req.headers.get("x-user-role") !== "admin") {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   const { leadId } = await params;
   const body = await req.json().catch(() => ({})) as { designerIds?: string[] };
   const ids = Array.isArray(body.designerIds) ? body.designerIds.filter((x) => typeof x === "string" && x).slice(0, 3) : [];

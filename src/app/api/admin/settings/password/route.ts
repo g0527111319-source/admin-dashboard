@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin, changeAdminPassword } from "@/lib/auth";
+import { changeAdminPassword } from "@/lib/auth";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/admin/settings/password — change admin password
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
-    const admin = await isAdmin();
-    if (!admin) {
-      return NextResponse.json({ error: "אין הרשאה" }, { status: 401 });
-    }
-
     const body = await req.json();
     const currentPassword = String(body?.currentPassword || "");
     const newPassword = String(body?.newPassword || "");

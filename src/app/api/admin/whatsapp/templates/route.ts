@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +13,9 @@ interface WaTemplate {
 
 // PUT /api/admin/whatsapp/templates — replace full templates list
 export async function PUT(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
-    const admin = await isAdmin();
-    if (!admin) return NextResponse.json({ error: "אין הרשאה" }, { status: 401 });
-
     const body = await req.json();
     const templates = Array.isArray(body?.templates) ? body.templates : null;
     if (!templates) return NextResponse.json({ error: "חסרים נתונים" }, { status: 400 });

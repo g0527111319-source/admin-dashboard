@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ interface AutomationRule {
 }
 
 // GET /api/admin/automations — list all admin automation rules
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const setting = await prisma.systemSetting.findUnique({
       where: { key: SETTING_KEY },
@@ -34,6 +37,8 @@ export async function GET() {
 
 // POST /api/admin/automations — create a new rule
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { trigger, conditionValue, action, actionDetail } = body;
@@ -66,6 +71,8 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/admin/automations — update rule (toggle, edit, delete)
 export async function PATCH(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { id, action: patchAction, ...updates } = body;

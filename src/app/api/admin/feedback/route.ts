@@ -2,8 +2,11 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
+  const auth = requireRole(request, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const url = new URL(request.url);
     const typeParam = url.searchParams.get("type");
@@ -29,6 +32,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const auth = requireRole(request, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await request.json().catch(() => null);
     const id = body?.id as string | undefined;
@@ -48,6 +53,8 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = requireRole(request, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");

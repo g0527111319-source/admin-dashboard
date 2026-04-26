@@ -3,14 +3,14 @@
 // Middleware blocks non-admins, but we double-check here as a defense-in-depth.
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get("x-user-role") !== "admin") {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");

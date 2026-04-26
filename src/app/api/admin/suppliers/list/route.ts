@@ -1,10 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 // GET /api/admin/suppliers/list — return all suppliers (id + name) for dropdowns
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const suppliers = await prisma.supplier.findMany({
       where: { isActive: true },

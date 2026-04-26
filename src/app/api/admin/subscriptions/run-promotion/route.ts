@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +8,9 @@ export const dynamic = "force-dynamic";
 // For each active rule, finds designers who collaborated with at least
 // `minSupplierCount` distinct suppliers (via Deal) within `timeWindowDays`
 // and upgrades their subscription to the rule's targetPlanId.
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const rules = await prisma.subscriptionRule.findMany({
       where: { isActive: true },

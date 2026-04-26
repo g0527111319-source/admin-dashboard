@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,9 @@ interface AdminTask {
 }
 
 // GET /api/admin/tasks — list all admin tasks
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const setting = await prisma.systemSetting.findUnique({
       where: { key: SETTING_KEY },
@@ -38,6 +41,8 @@ export async function GET() {
 
 // POST /api/admin/tasks — create a new task
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { title, priority, dueDate, category, description } = body;
@@ -84,6 +89,8 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/admin/tasks — update task status or delete
 export async function PATCH(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { id, status, action } = body;

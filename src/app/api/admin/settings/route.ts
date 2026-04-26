@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit-logger";
 import { clearIcountConfigCache } from "@/lib/icount-config";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 const SETTINGS_KEY = "admin_settings";
 
@@ -74,7 +75,9 @@ const DEFAULT_SETTINGS: AdminSettings = {
   ],
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const setting = await prisma.systemSetting.findUnique({
       where: { key: SETTINGS_KEY },
@@ -126,6 +129,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const auth = requireRole(request, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await request.json();
 

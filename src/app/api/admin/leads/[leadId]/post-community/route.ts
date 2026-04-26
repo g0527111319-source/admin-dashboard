@@ -6,13 +6,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ leadId: string }> }) {
-  if (req.headers.get("x-user-role") !== "admin") {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   const { leadId } = await params;
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return NextResponse.json({ error: "לא נמצא" }, { status: 404 });

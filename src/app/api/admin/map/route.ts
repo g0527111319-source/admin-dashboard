@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,9 @@ function determineActivityLevel(totalDeals: number): "high" | "medium" | "low" {
 }
 
 // GET /api/admin/map — designers with region mapping
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const rawDesigners = await prisma.designer.findMany({
       where: { isActive: true },

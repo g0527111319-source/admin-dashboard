@@ -1,9 +1,12 @@
 import { txt } from "@/content/siteText";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 export const dynamic = "force-dynamic";
 // GET /api/admin/actions — פריטים דורשי טיפול
-export async function GET() {
+export async function GET(req: NextRequest) {
+    const auth = requireRole(req, ADMIN_ONLY);
+    if (!auth.ok) return auth.response;
     try {
         const now = new Date();
         const actions = [];

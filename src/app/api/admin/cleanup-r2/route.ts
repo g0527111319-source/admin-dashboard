@@ -2,23 +2,15 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { listR2Objects, deleteFromR2 } from "@/lib/r2";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 const BATCH_SIZE = 100;
 
 // POST /api/admin/cleanup-r2 — Delete orphaned R2 files
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
-    // Auth: verify admin role via middleware header
-    const userId = req.headers.get("x-user-id");
-    const userRole = req.headers.get("x-user-role");
-    if (!userId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
-
-    if (userRole !== "admin") {
-      return NextResponse.json({ error: "אין הרשאת מנהל" }, { status: 403 });
-    }
-
     // 1. List all R2 objects
     const r2Objects = await listR2Objects();
     const r2KeySet = new Set(r2Objects.map((obj) => obj.key));

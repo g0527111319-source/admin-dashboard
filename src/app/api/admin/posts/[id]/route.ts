@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,10 +9,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
-    const admin = await isAdmin();
-    if (!admin) return NextResponse.json({ error: "אין הרשאה" }, { status: 401 });
-
     const { id } = await params;
     if (!id) return NextResponse.json({ error: "חסר מזהה פרסום" }, { status: 400 });
 

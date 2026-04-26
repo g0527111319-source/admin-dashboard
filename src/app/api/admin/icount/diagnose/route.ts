@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getIcountConfig } from "@/lib/icount-config";
 import { isMockMode } from "@/lib/icount";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 /**
  * GET /api/admin/icount/diagnose
@@ -20,12 +21,9 @@ import { isMockMode } from "@/lib/icount";
  * to confirm the webhook URL is registered correctly on iCount's side.
  */
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
-    const role = req.headers.get("x-user-role");
-    if (role !== "admin") {
-      return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-    }
-
     const cfg = await getIcountConfig();
     const mock = await isMockMode();
 

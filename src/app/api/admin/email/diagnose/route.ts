@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail, isSandboxFrom, getFromEmail } from "@/lib/email";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 /**
  * GET /api/admin/email/diagnose
@@ -11,10 +12,8 @@ import { sendEmail, isSandboxFrom, getFromEmail } from "@/lib/email";
  * from the UI) without grep-ing Vercel logs.
  */
 export async function GET(req: NextRequest) {
-  const role = req.headers.get("x-user-role");
-  if (role !== "admin") {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
 
   const fromEmail = getFromEmail();
   const sandbox = isSandboxFrom();
@@ -51,10 +50,8 @@ export async function GET(req: NextRequest) {
  * FROM_EMAIL / domain is actually delivering.
  */
 export async function POST(req: NextRequest) {
-  const role = req.headers.get("x-user-role");
-  if (role !== "admin") {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
 
   const body = await req.json().catch(() => null) as { to?: string } | null;
   const to = body?.to?.trim();

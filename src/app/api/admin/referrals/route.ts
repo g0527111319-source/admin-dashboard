@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 const CODE_REGEX = /^[A-Z0-9_-]{2,64}$/;
 
@@ -12,7 +13,9 @@ function normalizeCode(input: unknown): string | null {
   return code;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const links = await prisma.referralLink.findMany({
       orderBy: { createdAt: "desc" },
@@ -74,6 +77,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = requireRole(request, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await request.json().catch(() => null);
     const code = normalizeCode(body?.code);
@@ -112,6 +117,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const auth = requireRole(request, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await request.json().catch(() => null);
     const id = typeof body?.id === "string" ? body.id : null;
@@ -143,6 +150,8 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = requireRole(request, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");

@@ -2,9 +2,12 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_ONLY } from "@/lib/api-auth";
 
 // GET /api/admin/reservations — fetch reservations (optionally filtered by week)
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const weekStart = searchParams.get("weekStart"); // YYYY-MM-DD
@@ -55,6 +58,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/reservations — create a new reservation
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { supplierId, date, time, notes } = body || {};
@@ -122,6 +127,8 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/admin/reservations?id=xxx — delete a reservation
 export async function DELETE(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_ONLY);
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
