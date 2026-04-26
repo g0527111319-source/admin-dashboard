@@ -38,6 +38,7 @@ import CrmTasks from "@/components/crm/CrmTasks";
 import FeatureGate from "@/components/FeatureGate";
 import NotificationBell from "@/components/NotificationBell";
 import FeedbackWidget from "@/components/FeedbackWidget";
+import LogoutButton from "@/components/LogoutButton";
 import AccountSettings from "@/components/designer/AccountSettings";
 import TodayDashboard from "@/components/designer/TodayDashboard";
 import InboxView from "@/components/designer/InboxView";
@@ -622,6 +623,8 @@ export default function DesignerDashboard() {
               )}
               <span className="font-medium">{designerData.fullName}</span>
             </div>
+            {/* Logout — יציאה מהחשבון */}
+            <LogoutButton />
           </div>
         </header>
 
