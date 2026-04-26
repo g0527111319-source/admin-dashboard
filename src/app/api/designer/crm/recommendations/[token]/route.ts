@@ -1,12 +1,15 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // GET /api/designer/crm/recommendations/[token] — קבלת בקשת המלצה (ציבורי)
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const { token } = await params;
 
@@ -34,6 +37,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const { token } = await params;
 

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/designer/profile?id=<designerId>
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const designerId = searchParams.get("id");
@@ -13,9 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Security: designers can only view their own profile, admins can view any
-    const authenticatedUserId = req.headers.get("x-user-id");
-    const userRole = req.headers.get("x-user-role");
-    if (userRole !== "admin" && authenticatedUserId && designerId !== authenticatedUserId) {
+    if (auth.role !== "admin" && designerId !== auth.userId) {
       return NextResponse.json({ error: "אין הרשאה לצפות בפרופיל של מעצב/ת אחר/ת" }, { status: 403 });
     }
 
@@ -232,6 +233,8 @@ export async function GET(req: NextRequest) {
 
 // PUT /api/designer/profile
 export async function PUT(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { id, ...updateData } = body;

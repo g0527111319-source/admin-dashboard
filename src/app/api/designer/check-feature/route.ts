@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { canAccessFeature, Feature } from "@/lib/subscription-gate";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 const VALID_FEATURES: Feature[] = [
   "crm",
@@ -15,11 +16,13 @@ const VALID_FEATURES: Feature[] = [
 
 // GET /api/designer/check-feature?feature=crm&designerId=xxx
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const { searchParams } = new URL(req.url);
     const feature = searchParams.get("feature") as Feature | null;
     const designerId =
-      searchParams.get("designerId") || req.headers.get("x-user-id");
+      searchParams.get("designerId") || auth.userId;
 
     if (!feature || !VALID_FEATURES.includes(feature)) {
       return NextResponse.json(

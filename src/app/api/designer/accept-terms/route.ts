@@ -1,14 +1,14 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // POST /api/designer/accept-terms
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     // Get IP and User-Agent
     const forwardedFor = req.headers.get("x-forwarded-for");
@@ -46,11 +46,10 @@ export async function POST(req: NextRequest) {
 
 // GET /api/designer/accept-terms - check if terms accepted
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const designer = await prisma.designer.findUnique({
       where: { id: designerId },

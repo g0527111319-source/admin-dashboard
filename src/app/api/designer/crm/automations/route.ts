@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 const DEFAULT_RULES = [
   { ruleType: "phase_complete_notify", config: { emailTemplate: "", includeNextPhase: true } },
@@ -15,11 +16,10 @@ const DEFAULT_RULES = [
 
 // GET /api/designer/crm/automations — כללי אוטומציה
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     let rules = await prisma.crmAutomationRule.findMany({
       where: { designerId },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +9,10 @@ const GOOGLE_CLIENT_SECRET = (process.env.GOOGLE_CLIENT_SECRET || "").trim();
 
 // GET — fetch Google Calendar events for display
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    const designerId = auth.userId;
 
     const { searchParams } = new URL(req.url);
     const start = searchParams.get("start");

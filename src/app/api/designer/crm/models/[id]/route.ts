@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { deleteFromR2 } from "@/lib/r2";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // ==========================================
 // Single 3D model
@@ -28,10 +29,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const designerId = req.headers.get("x-user-id");
-  if (!designerId) {
-    return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-  }
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
 
   try {
     const model = await prisma.model3D.findFirst({
@@ -56,10 +56,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const designerId = req.headers.get("x-user-id");
-  if (!designerId) {
-    return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-  }
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
 
   try {
     const model = await assertOwnership(designerId, params.id);

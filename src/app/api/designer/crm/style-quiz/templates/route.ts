@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/designer/crm/style-quiz/templates — רשימת תבניות שאלון סגנון
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const templates = await prisma.crmStyleQuizTemplate.findMany({
       where: { designerId },
@@ -25,11 +25,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/designer/crm/style-quiz/templates — יצירת תבנית שאלון סגנון
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const body = await req.json();
     const { question, questionType, options, sortOrder } = body;

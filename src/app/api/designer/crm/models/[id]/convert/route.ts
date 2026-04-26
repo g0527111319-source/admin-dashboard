@@ -6,6 +6,7 @@ export const maxDuration = 300; // seconds
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { uploadToR2, generateFileKey, getPublicUrl, deleteFromR2 } from "@/lib/r2";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 import {
   convertModel,
   UnsupportedFormatError,
@@ -38,10 +39,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const designerId = req.headers.get("x-user-id");
-  if (!designerId) {
-    return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-  }
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
 
   // Explicit opt-out of the "don't duplicate work" guards. The retry
   // button and the client auto-heal both send this. Without it, a

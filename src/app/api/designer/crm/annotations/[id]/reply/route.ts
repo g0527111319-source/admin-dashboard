@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { ttlForStatus } from "@/lib/annotation-ttl";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // ==========================================
 // Designer reply into an annotation thread
@@ -18,10 +19,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const designerId = req.headers.get("x-user-id");
-  if (!designerId) {
-    return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-  }
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
 
   try {
     const payload: Body = await req.json();

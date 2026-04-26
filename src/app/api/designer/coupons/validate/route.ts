@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { validateCoupon, applyCouponToPrice } from "@/lib/coupons";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/designer/coupons/validate
 // Body: { code, planId, designerId }
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { code, planId, designerId } = body || {};

@@ -1,14 +1,17 @@
 export const dynamic = "force-dynamic";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   connectWhatsApp,
   disconnectWhatsApp,
   getConnectionState,
   getQRCode,
 } from "@/lib/whatsapp";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // GET — current connection status + QR code
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const state = getConnectionState();
     const qr = getQRCode();
@@ -27,7 +30,9 @@ export async function GET() {
 }
 
 // POST — initiate connection (generates QR code)
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const currentState = getConnectionState();
 
@@ -64,7 +69,9 @@ export async function POST() {
 }
 
 // DELETE — disconnect
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     await disconnectWhatsApp();
     return NextResponse.json({

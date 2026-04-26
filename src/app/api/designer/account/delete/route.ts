@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit-logger";
 import { sendEmail } from "@/lib/email";
+import { requireRole, DESIGNER_ONLY } from "@/lib/api-auth";
 
 // POST /api/designer/account/delete — authenticated: designer self-deletes
 // Requires a confirmation string in the body ("DELETE") to prevent accidental
@@ -10,12 +11,10 @@ import { sendEmail } from "@/lib/email";
 // removes the designer record itself. The session cookie is cleared by the
 // client after a successful 200 response.
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, DESIGNER_ONLY);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    const role = req.headers.get("x-user-role");
-    if (!designerId || role !== "designer") {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const body = await req.json().catch(() => ({}));
     const { confirm } = body as { confirm?: string };

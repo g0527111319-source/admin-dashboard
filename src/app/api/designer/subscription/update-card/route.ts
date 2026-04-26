@@ -8,6 +8,7 @@ import {
   getOrCreatePayPage,
   generatePaymentUrl,
 } from "@/lib/icount";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 /**
  * POST /api/designer/subscription/update-card
@@ -21,12 +22,11 @@ import {
  * The caller must be authenticated (x-user-id header set by middleware).
  */
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     // Security: only the authenticated designer can update their own card.
-    const authenticatedDesignerId = req.headers.get("x-user-id");
-    if (!authenticatedDesignerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const authenticatedDesignerId = auth.userId;
 
     const existing = await prisma.designerSubscription.findUnique({
       where: { designerId: authenticatedDesignerId },

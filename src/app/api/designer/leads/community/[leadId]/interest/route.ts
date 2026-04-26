@@ -6,15 +6,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, DESIGNER_ONLY } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ leadId: string }> }) {
-  const role = req.headers.get("x-user-role");
-  const designerId = req.headers.get("x-user-id");
-  if (role !== "designer" || !designerId) {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, DESIGNER_ONLY);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
   const { leadId } = await params;
   const lead = await prisma.lead.findUnique({ where: { id: leadId }, select: { status: true } });
   if (!lead) return NextResponse.json({ error: "לא נמצא" }, { status: 404 });
@@ -60,11 +59,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ lea
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ leadId: string }> }) {
-  const role = req.headers.get("x-user-role");
-  const designerId = req.headers.get("x-user-id");
-  if (role !== "designer" || !designerId) {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, DESIGNER_ONLY);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
   const { leadId } = await params;
   await prisma.leadInterest.deleteMany({ where: { leadId, designerId } });
   return NextResponse.json({ ok: true });

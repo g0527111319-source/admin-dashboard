@@ -13,8 +13,11 @@ import prisma from "@/lib/prisma";
 import { logSubscriptionAudit } from "@/lib/subscription-audit";
 import { createNotification } from "@/lib/notifications";
 import { sendEmail, subscriptionCancelledEmail } from "@/lib/email";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json().catch(() => ({}));
     const { designerId, reason } = body as {

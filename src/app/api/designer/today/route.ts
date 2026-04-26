@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 /**
  * GET /api/designer/today
@@ -16,11 +17,10 @@ import prisma from "@/lib/prisma";
  * Every query is scoped to the authenticated designer.
  */
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);

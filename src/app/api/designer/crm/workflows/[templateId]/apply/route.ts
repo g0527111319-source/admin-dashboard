@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 /**
  * POST /api/designer/crm/workflows/:templateId/apply
@@ -35,11 +36,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { templateId: string } }
 ) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const body = await req.json().catch(() => ({}));
     const projectId: string | undefined = body?.projectId;

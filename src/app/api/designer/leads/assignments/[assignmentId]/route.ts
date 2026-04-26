@@ -7,15 +7,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, DESIGNER_ONLY } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ assignmentId: string }> }) {
-  const role = req.headers.get("x-user-role");
-  const designerId = req.headers.get("x-user-id");
-  if (role !== "designer" || !designerId) {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, DESIGNER_ONLY);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
   const { assignmentId } = await params;
   const existing = await prisma.leadAssignment.findUnique({ where: { id: assignmentId } });
   if (!existing || existing.designerId !== designerId) {

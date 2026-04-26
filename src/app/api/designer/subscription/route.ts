@@ -7,19 +7,14 @@ import {
   createInvoice,
   cancelSubscription as icountCancel,
 } from "@/lib/icount";
-
-function getDesignerId(req: NextRequest): string | null {
-  // Security: only use authenticated user ID from middleware, never from query params
-  return req.headers.get("x-user-id");
-}
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // GET /api/designer/subscription — current subscription info
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = getDesignerId(req);
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const subscription = await prisma.designerSubscription.findUnique({
       where: { designerId },
@@ -40,11 +35,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/designer/subscription — subscribe to a plan
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = getDesignerId(req);
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const body = await req.json();
     const { planId, paymentMethod } = body as { planId?: string; paymentMethod?: string };
@@ -227,11 +221,10 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/designer/subscription — cancel
 export async function DELETE(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = getDesignerId(req);
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const body = await req.json().catch(() => ({}));
     const reason = (body as { reason?: string }).reason || null;

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { generateFileKey, getPublicUrl, generatePresignedUploadUrl } from "@/lib/r2";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // ==========================================
 // Pre-signed Upload URL for 3D models
@@ -25,10 +26,9 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
-  const designerId = request.headers.get("x-user-id");
-  if (!designerId) {
-    return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-  }
+  const auth = requireRole(request, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
 
   const ip = getClientIp(request);
   const { allowed, remaining, resetAt } = checkRateLimit(

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 // ==========================================
 // Designer annotations list (inbox view)
@@ -15,10 +16,9 @@ import type { Prisma } from "@/generated/prisma/client";
 // doesn't need to see the cron's graveyard.
 
 export async function GET(req: NextRequest) {
-  const designerId = req.headers.get("x-user-id");
-  if (!designerId) {
-    return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
-  }
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
 
   try {
     const { searchParams } = new URL(req.url);

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/designer/crm/tasks — all tasks for designer
 export async function GET(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    const designerId = auth.userId;
 
     const { searchParams } = new URL(req.url);
     const clientId = searchParams.get("clientId");
@@ -37,9 +39,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/designer/crm/tasks — create task
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    const designerId = auth.userId;
 
     const body = await req.json();
     const { title, description, dueDate, clientId, projectId, assignee } = body;
@@ -94,9 +97,10 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/designer/crm/tasks — update task
 export async function PATCH(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    const designerId = auth.userId;
 
     const body = await req.json();
     const { id, ...updates } = body;
@@ -133,9 +137,10 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/designer/crm/tasks — delete task
 export async function DELETE(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+    const designerId = auth.userId;
 
     const { searchParams } = new URL(req.url);
     const taskId = searchParams.get("id");

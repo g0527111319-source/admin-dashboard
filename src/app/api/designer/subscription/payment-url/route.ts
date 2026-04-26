@@ -8,6 +8,7 @@ import {
   getOrCreatePayPage,
   generatePaymentUrl,
 } from "@/lib/icount";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 /**
  * POST /api/designer/subscription/payment-url
@@ -24,6 +25,8 @@ import {
  * Body: { designerId, planId }
  */
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json();
     const { designerId, planId } = body as {

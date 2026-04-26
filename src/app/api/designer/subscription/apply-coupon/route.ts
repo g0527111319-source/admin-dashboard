@@ -11,8 +11,11 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { validateCoupon, redeemCoupon, applyCouponToPrice } from "@/lib/coupons";
 import { createNotification } from "@/lib/notifications";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
     const body = await req.json().catch(() => ({}));
     const { designerId, code } = body as { designerId?: string; code?: string };

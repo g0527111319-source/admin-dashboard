@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, ADMIN_OR_DESIGNER } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,11 +8,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ boardId: string }> }
 ) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מורשה" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const { boardId } = await params;
 
@@ -62,11 +62,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ boardId: string }> }
 ) {
+  const auth = requireRole(req, ADMIN_OR_DESIGNER);
+  if (!auth.ok) return auth.response;
   try {
-    const designerId = req.headers.get("x-user-id");
-    if (!designerId) {
-      return NextResponse.json({ error: "לא מורשה" }, { status: 401 });
-    }
+    const designerId = auth.userId;
 
     const { boardId } = await params;
 

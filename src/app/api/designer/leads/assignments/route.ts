@@ -5,16 +5,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireRole, DESIGNER_ONLY } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const role = req.headers.get("x-user-role");
-  const designerId = req.headers.get("x-user-id");
-  if (role !== "designer" || !designerId) {
-    return NextResponse.json({ error: "לא מורשה" }, { status: 403 });
-  }
+  const auth = requireRole(req, DESIGNER_ONLY);
+  if (!auth.ok) return auth.response;
+  const designerId = auth.userId;
 
   const { searchParams } = new URL(req.url);
   const includeDismissed = searchParams.get("includeDismissed") === "1";
