@@ -123,11 +123,16 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
   const loadCommunity = useCallback(async () => {
     try {
       const res = await fetch("/api/designer/leads/community", { cache: "no-store" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        console.error("[community feed] load failed", res.status, body);
+        throw new Error(`HTTP ${res.status}`);
+      }
       const data = (await res.json()) as { leads: CommunityLead[] };
       setCommunityLeads(data.leads || []);
-    } catch {
-      setError("שגיאה בטעינת פיד הקהילה");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      setError(`שגיאה בטעינת פיד הקהילה${msg ? ` (${msg})` : ""}`);
     }
   }, []);
 
@@ -137,11 +142,16 @@ export default function CommunityLeadsFeed({ gender = "female" }: { gender?: str
         ? "/api/designer/leads/assignments?includeDismissed=1"
         : "/api/designer/leads/assignments";
       const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        console.error("[assignments] load failed", res.status, body);
+        throw new Error(`HTTP ${res.status}`);
+      }
       const data = (await res.json()) as { assignments: Assignment[] };
       setAssignments(data.assignments || []);
-    } catch {
-      setError("שגיאה בטעינת ההקצאות");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      setError(`שגיאה בטעינת ההקצאות${msg ? ` (${msg})` : ""}`);
     }
   }, [showDismissed]);
 
