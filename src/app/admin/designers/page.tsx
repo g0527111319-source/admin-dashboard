@@ -4,6 +4,7 @@ import {
   Palette, Plus, Search, Download, MapPin, Phone, Instagram, Trophy, TrendingUp,
   Calendar, SortAsc, SortDesc, Mail, Star, Award, Crown, Flame, X, Filter,
   Loader2, AlertTriangle, Briefcase, Home, Hash, ChevronDown, ChevronUp, Eye,
+  Trash2,
 } from "lucide-react";
 import { AREAS, SPECIALIZATIONS, formatCurrency } from "@/lib/utils";
 import { g } from "@/lib/gender";
@@ -228,6 +229,53 @@ export default function DesignersPage() {
       .catch(() => setError("שגיאה בטעינת מעצבות. נסו לרענן את הדף."))
       .finally(() => setLoading(false));
   }, []);
+
+  // Permanent delete — two-step confirmation: warning + name typing
+  const hardDeleteDesigner = async (designer: Designer) => {
+    const warning =
+      `⚠️ מחיקה לצמיתות של ${designer.fullName}\n\n` +
+      `הפעולה תמחק את המעצבת וכל הנתונים הקשורים אליה:\n` +
+      `• כל לקוחות ה-CRM, פרויקטים, משימות וחוזים\n` +
+      `• עסקאות שדווחו על ידה\n` +
+      `• הקצאות לידים והבעות עניין בקהילה\n` +
+      `• הגדרות Google Calendar ו-WhatsApp\n` +
+      `• המלצות, חשבון מנוי, ופרסומי תיק עבודות\n\n` +
+      `הפעולה אינה הפיכה. להמשיך?`;
+    if (!confirm(warning)) return;
+
+    const typed = prompt(`לאישור סופי, הקלידי את שם המעצבת במדויק:\n\n${designer.fullName}`);
+    if (typed === null) return;
+    if (typed.trim() !== designer.fullName.trim()) {
+      alert("השם שהוקלד אינו תואם. המחיקה בוטלה.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/designers/${designer.id}?hard=true`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmName: designer.fullName.trim() }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(err.error || "שגיאה במחיקה");
+        return;
+      }
+      const data = await res.json() as {
+        message?: string;
+        deleted?: Record<string, number>;
+      };
+      setDesigners(prev => prev.filter(d => d.id !== designer.id));
+      const d = data.deleted;
+      const totals = d
+        ? Object.values(d).reduce((a, b) => a + b, 0)
+        : 0;
+      alert(`${data.message || "המעצבת נמחקה"}${totals ? `\n\nסה"כ ${totals} רשומות תלויות נמחקו` : ""}`);
+    } catch (err) {
+      console.error("Hard delete designer error:", err);
+      alert("שגיאה במחיקה");
+    }
+  };
 
   const cities = useMemo(() => getUniqueCities(designers), [designers]);
 
@@ -708,6 +756,17 @@ export default function DesignersPage() {
                             </div>
                           </div>
                         )}
+                        {/* פעולות אדמין */}
+                        <div className="mt-3 pt-3 border-t border-border/20 flex justify-end">
+                          <button
+                            onClick={() => hardDeleteDesigner(d)}
+                            className="text-xs flex items-center gap-1 px-3 py-1.5 rounded border border-red-500/40 text-red-600 bg-red-500/5 hover:bg-red-500/15 transition-colors"
+                            title="מחיקה לצמיתות — אינה הפיכה"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            מחק מעצבת לצמיתות
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
